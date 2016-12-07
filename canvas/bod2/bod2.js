@@ -3,10 +3,10 @@ var Bod2=function() {
   //---
   var parts=[],pairs=[],constraints=[],units=[],
       mousePart,mouseP={x:0,y:0},PI=Math.PI,PI2=PI*2,
-      logs=['Bod2 0.211 '],//FOLDORUPDATEVERSION
+      logs=['Bod2 0.216 '],//FOLDORUPDATEVERSION
       STICK=0,DISTANCE=1,ot,canvas,cont,width,height,
       tparts=[],dpr=1,a=0.2,stones=[],self,gwi=800,ghe=600,
-      gox=50,goy=50,touchCount=0;
+      gox=50,goy=50,tpartCount=0;
   function partNew4(x,y,xa,ya) {
     return partNew6(x,y,x,y,xa,ya);
   }
@@ -196,7 +196,7 @@ var Bod2=function() {
       }
       mx/=u.parts.length;my/=u.parts.length;
       u.mx=mx;u.my=my;
-      if (!mousePart&&(touchCount==0)) {
+      if ((!mousePart)&&(tpartCount==0)) {
         
         var b=5,b2=b*2,ox=b,oy=b;
         if (width<gwi+b2) { ox=Math.min(b,width/2-u.mx);ox=Math.max(ox,width-gwi-b); }
@@ -243,13 +243,15 @@ var Bod2=function() {
   
   function touchStart(e) {
     //var sh='';
-    touchCount=e.touches.length;
+    tpartCount=0;
     for (var h=0;h<e.touches.length;h++) {
       var t=e.touches[h];
       var c=searchPart(t.pageX-gox,t.pageY-goy);
       //sh+=' '+t.identifier+'-'+c;
-      if (c) { c.xt=t.pageX-gox;c.yt=t.pageY-goy; }
-      tparts[t.identifier]=c;//h
+      if (c) { c.xt=t.pageX-gox;c.yt=t.pageY-goy; 
+        tparts[t.identifier]=c;//h
+        tpartCount++;
+      }
     }
     //log('touchstart '+sh);
     if (e.preventDefault) e.preventDefault();
@@ -269,11 +271,12 @@ var Bod2=function() {
   function touchEnd(e) {
     //var sh='';
     var tp={};
-    touchCount=e.touches.length;
+    tpartCount=0;
     for (var h=0;h<e.touches.length;h++) {
       var t=e.touches[h];
       //sh+=' '+t.identifier;
       tp[t.identifier]=tparts[t.identifier];
+      tpartCount++;
     }
     tparts=tp;
     //log('touchend '+sh);
@@ -614,4 +617,8 @@ var Bod2=function() {
 
 //fr o,1
 //fr o,1,18
-//fr p,12,147
+//fr o,1,26
+//fr o,1,27
+//fr o,1,28
+//fr o,1,31
+//fr p,4,178

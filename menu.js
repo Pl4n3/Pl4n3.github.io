@@ -465,6 +465,8 @@ var Menu={};
       window.addEventListener('mouseup',mouseUp);
       window.addEventListener('keydown',Menu.keyDown);
       window.addEventListener('keyup',Menu.keyUp);
+      window.addEventListener('touchstart',Menu.touchStarts);
+      window.addEventListener('touchend',Menu.touchEnds);  
     }
   }
   Menu.mouseUp=function() {
@@ -710,7 +712,6 @@ var Menu={};
 //--
 //fr o,2
 //fr o,2,27
-//fr o,2,34
 //fr o,2,45
 //fr o,2,46
 //fr p,46,42

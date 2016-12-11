@@ -3,10 +3,73 @@ var Bod2=function() {
   //---
   var parts=[],pairs=[],constraints=[],units=[],
       mousePart,mouseP={x:0,y:0},PI=Math.PI,PI2=PI*2,
-      logs=['Bod2 0.216 '],//FOLDORUPDATEVERSION
+      logs=[],version='Bod2 0.327 ',//FOLDORUPDATEVERSION
       STICK=0,DISTANCE=1,ot,canvas,cont,width,height,
       tparts=[],dpr=1,a=0.2,stones=[],self,gwi=800,ghe=600,
-      gox=50,goy=50,tpartCount=0;
+      gox=50,goy=50,tpartCount=0,jpads=[],cv0,audio;
+  
+  //----- audio copied from cutout
+      
+  function sound1(ps) {
+    if (!audio) audio=window.AudioContext?new window.AudioContext():new window.webkitAudioContext();
+    var gain,vol=0.6;//0.2,0.6
+    var oa=[],a=ps.a;
+    if (ps.lv===undefined) {
+      gain=audio.createGain();
+      gain.connect(audio.destination);
+    } else {  
+      gain=audio.createGain();
+      var lgain=audio.createGain(),
+          rgain=audio.createGain(),
+          merger=audio.createChannelMerger(2);
+      lgain.gain.value=ps.lv;
+      rgain.gain.value=ps.rv;
+      gain.connect(lgain);
+      gain.connect(rgain);
+      lgain.connect(merger,0,0);
+      rgain.connect(merger,0,1);
+      merger.connect(audio.destination);
+    }
+    
+    var t=0,at=audio.currentTime;
+    var k=a[0];
+    gain.gain.setValueAtTime(k.v*vol,at);
+    var f=k.fr?k.fr[0]+Math.floor(Math.random()*k.fr[1]):k.f;
+    for (var i=0;i<(k.n?k.n:1);i++) {
+      var osc=audio.createOscillator();
+      osc.frequency.setValueAtTime(f*Math.pow(2,i),at);
+      osc.connect(gain);
+      osc.type='sawtooth';
+      oa.push(osc);
+    }
+    for (var h=1;h<a.length;h++) {
+      var k=a[h];
+      t+=k.t;
+      if (k.v!==undefined) gain.gain.linearRampToValueAtTime(k.v*vol,at+t/1000);
+      var f=undefined;
+      if (k.fr) f=k.fr[0]+Math.floor(Math.random()*k.fr[1]);
+      else if (k.f!==undefined) f=k.f;
+      if (f!==undefined) for (var i=0;i<oa.length;i++) {
+        oa[i].frequency.linearRampToValueAtTime(f*Math.pow(2,i),at+t/1000);
+      }
+    }
+    for (var i=0;i<oa.length;i++) oa[i].start(0);
+    
+    setTimeout(function() {
+      for (var i=0;i<oa.length;i++) {
+        var osc=oa[i];
+        osc.stop(0);
+        osc.disconnect(gain);
+      }
+      //gain.disconnect(audio.destination);
+      gain.isDisconnect=true;
+    }
+    ,t);
+    return gain;
+  }
+  
+  //-----     
+      
   function partNew4(x,y,xa,ya) {
     return partNew6(x,y,x,y,xa,ya);
   }
@@ -156,8 +219,10 @@ var Bod2=function() {
       if (c.type=='fc') calcFc(c,dtime);
     }
     
+    var stoned=false;
     for (var h=parts.length-1;h>=0;h--) {
       var p=parts[h],pr=p.r||10,x=p.x0,y=p.y0;  
+      //p.stoned=false;
       p.x0=Math.min(gwi,Math.max(0,p.x0));
       p.y0=Math.min(ghe,Math.max(0,p.y0));
       for (var i=stones.length-1;i>=0;i--) {
@@ -173,9 +238,16 @@ var Bod2=function() {
         } else p.x0=r.x+r.w+pr;
         var dx=p.x0-p.x1;p.x1+=dx/2;
         var dy=p.y0-p.y1;p.y1+=dy/2; 
+        stoned=true;
       }
     }
     
+    if (self.soundt) 
+      self.soundt=Math.max(0,self.soundt-dtime);
+    else if (stoned) {
+      sound1({a:[{fr:[40,20],v:0,n:1},{t:10,v:1},{t:240,v:0}]});
+      self.soundt=400;
+    }
     
     if (mousePart) {
       mousePart.x0=mouseP.x;mousePart.y0=mouseP.y;
@@ -196,11 +268,44 @@ var Bod2=function() {
       }
       mx/=u.parts.length;my/=u.parts.length;
       u.mx=mx;u.my=my;
-      if ((!mousePart)&&(tpartCount==0)) {
+      
+      if (u.shadowImg) {
+        var mind=Number.MAX_VALUE,mini=-1;
+        for (var i=stones.length-1;i>=0;i--) {
+          var r=stones[i];
+          if ((r.x>mx)||(r.x+r.w<mx)||(r.y<my)) continue;
+          var d=r.y-my;
+          if (d>=mind) continue;
+          mind=d;mini=i;
+        }
+        //onsole.log(mini);
+        u.shadowStone=(mini==-1?undefined:stones[mini]);
+      }
+     
+     
+     if (u.parts.length>12) for (var i=jpads.length-1;i>=0;i--) {
+      var jp=jpads[i];
+      if ((mx>jp.x)&&(mx<jp.x+jp.w)&&(my>jp.y)&&(my<jp.y+jp.h)) { //30,50,470,490
+        var p3=u.parts[3],p2=u.parts[2],
+            pa0=u.parts[9],pa3=u.parts[12];
+        p3.x1=p3.x0-jp.dx;p3.y1=p3.y0-jp.dy;
+        p2.x1=p2.x0-jp.dx;p2.y1=p2.y0-jp.dy;
+        pa0.x1=pa0.x0-jp.dx;pa0.y1=pa0.y0-jp.dy;
+        pa3.x1=pa3.x0-jp.dx;pa3.y1=pa3.y0-jp.dy;
+        self.setFloating(u);
+        sound1({a:[{fr:[50,500],v:0,n:1},{t:10,v:1},{t:200,v:1},{t:140,v:0,fr:[200,400]}]});
+      }
+     }
+     
+     
+     
+     
+      
+      if ((!mousePart)&&(tpartCount==0)&&(h==0)) {
         
         var b=5,b2=b*2,ox=b,oy=b;
-        if (width<gwi+b2) { ox=Math.min(b,width/2-u.mx);ox=Math.max(ox,width-gwi-b); }
-        if (height<ghe+b2) { oy=Math.min(b,height/2-u.my);oy=Math.max(oy,height-ghe-b); }
+        if (width<gwi+b2) { ox=Math.min(b,width/2-u.mx);ox=Math.max(ox,width-gwi-b); } else ox=(width-gwi-b2)/2;
+        if (height<ghe+b2) { oy=Math.min(b,height/2-u.my);oy=Math.max(oy,height-ghe-b); } else oy=(height-ghe-b2)/2;
         gox+=(ox-gox)/10;
         goy+=(oy-goy)/10;
       }
@@ -294,7 +399,12 @@ var Bod2=function() {
     //...
   }
   
-  function init() {
+  function init(p) {
+    console.log(version);
+    if (p) {
+      if (p.w) gwi=p.w;
+      if (p.h) ghe=p.h;
+    }
     dpr=window.devicePixelRatio;
     
     //log('pa0.len='+pa0.len);
@@ -309,7 +419,30 @@ var Bod2=function() {
     cont=canvas.parentNode;
     ot=new Date().getTime();
     resize();
-    self=this;
+    self=this;this.canvas=canvas;
+    
+    //--------------create jumppad
+    
+    
+    var w=50,h=20,h2=(h-1)/2;
+    cv0=document.createElement('canvas');
+    cv0.width=w;cv0.height=h;
+    var ct=cv0.getContext('2d');
+    var id=ct.createImageData(w,h);
+    for (var y=0;y<h;y++) for (var x=0;x<w;x++) {
+      var i=(y*w+x)*4;
+      id.data[i]=255;
+      id.data[i+1]=255;
+      id.data[i+2]=0;
+      id.data[i+3]=255*(1-Math.abs(y/h2-1))*(x<h2?x/h2:1)*(x>w-h2?1-(x-w+h2+1)/h2:1);
+    }
+    var ct=cv0.getContext('2d');
+    ct.putImageData(id,0,0);
+    
+    //---------------
+    
+    
+    
     draw();
   }
   function drawTexTri(ct,img,x0,y0,x1,y1,x2,y2,u0,v0,u1,v1,u2,v2) {
@@ -343,27 +476,72 @@ var Bod2=function() {
     //  log("Canvas "+canvas.width+" x "+canvas.height);
     //}  
     
-    var t=new Date().getTime();var dt=t-ot;ot=t;
+    var t=new Date().getTime();
     
     if (!canvas.getContext) return;
-    var ctx=canvas.getContext('2d'),sc=dpr,ox=gox*dpr,oy=goy*dpr;
+    var ctx=canvas.getContext('2d'),ct=ctx,sc=dpr,ox=gox*dpr,oy=goy*dpr;
     
     //width=canvas.width,height=canvas.height;
-    ctx.fillStyle='#555';//cccccc;
-    ctx.fillRect(0,0,canvas.width,canvas.height);
+    //ctx.fillStyle='#555';//cccccc;
+    ctx.clearRect(0,0,canvas.width,canvas.height);
     ctx.strokeStyle='#000000';
     ctx.lineWidth=1;
     ctx.strokeRect(ox,oy,gwi*sc,ghe*sc);
     
-    calc(10);
+    var dt=t-ot;ot=t;calc(10);
+    //var tc=0;
+    //while (t-ot>10) {
+    //  calc(10);ot+=10;
+    //  tc++;if (tc>5) ot=t;
+    //}
+    //var dt=10;
     
-    ctx.fillStyle='#000000';
+    //ctx.fillStyle='#000000';
+    
+    if (self.extDraw0) self.extDraw0(ctx,ox,oy,sc);
+    
     
     for (var i=stones.length-1;i>=0;i--) {
-      var r=stones[i];
-      ctx.strokeRect(ox+r.x*sc,oy+r.y*sc,r.w*sc,r.h*sc);
+      var r=stones[i],b=20,b2=b*2;
+      if (r.img) {
+        var x0=0.14,y0=0.35,w=0.77,h=0.65;
+        //ctx.globalAlpha=0.1;
+        ctx.drawImage(r.img,ox+(r.x-x0*r.w)*sc,oy+(r.y-y0*r.h)*sc,(r.w/w)*sc,(r.h/h)*sc);
+        //ctx.globalAlpha=1;
+        //ctx.strokeRect(ox+(r.x)*sc,oy+(r.y)*sc,(r.w)*sc,(r.h)*sc);
+        continue;
+      }
+      ctx.fillStyle=r.col||'#999';
+      ctx.fillRect(ox+(r.x-b)*sc,oy+(r.y-b)*sc,(r.w+b2)*sc,(r.h+b2)*sc);
     }
     
+    
+    for (var i=units.length-1;i>=0;i--) {
+      var u=units[i];
+      var st=u.shadowStone;
+      if (!st) continue;
+      var he=st.y-u.my;
+      //onsole.log(he);
+      var h1=300,h0=100;
+      if (he>h1) continue;
+      ctx.globalAlpha=0.6*((he<h0)?1:(1-(he-h0)/(h1-h0)));
+      var w=150,h=30;
+      ctx.drawImage(u.shadowImg,ox+(u.mx-w/2)*sc,oy+(st.y-h/2)*sc,w*sc,h*sc);
+      ctx.globalAlpha=1;
+    }
+    
+    for (var i=jpads.length-1;i>=0;i--) {
+      var jp=jpads[i];
+      if (!jp.shadowImg) continue;
+      var w=jp.w*sc,w2=w/2;
+      
+      var ws=150,hs=30;
+      ct.globalAlpha=0.6;
+      ct.drawImage(jp.shadowImg,ox+(jp.x+jp.w/2-ws/2)*sc,oy+(jp.y+jp.h-hs/2)*sc,ws*sc,hs*sc);
+      ct.globalAlpha=1;
+    }
+    
+    ctx.fillStyle='#000000';
     
     if (0) {
     var pw=5*sc,pw2=pw/2;
@@ -450,18 +628,36 @@ var Bod2=function() {
     for (var h=0;h<logs.length;h++)
       ctx.fillText(logs[h],fs,fs+h*fs);
     
-    self.extDraw(ctx);
+    for (var i=jpads.length-1;i>=0;i--) {
+      var jp=jpads[i],w=jp.w*sc,w2=w/2,l=2*Math.sqrt(jp.dx*jp.dx+jp.dy*jp.dy),c=5;
+        
+      ct.globalAlpha=0.3;
+      ct.drawImage(cv0,ox+jp.x*sc,oy+jp.y*sc,w,jp.h*sc);
+      ct.globalAlpha=1;
+      ct.save();
+      ct.translate(ox+(jp.x+jp.w/2)*sc,oy+(jp.y+jp.h/2)*sc);
+      ct.rotate(Math.atan2(jp.dy,jp.dx)+Math.PI/2);
+      for (var j=0;j<c;j++) { 
+        var y=(j/(c-1)+t*0.0025)%1;
+        ct.globalAlpha=1-Math.abs(2*y-1);
+        ct.drawImage(cv0,-w2,-w2/4-sc*(l*y-jp.h/2),w,w/4);
+      }
+      ct.restore();
+    }
+    
+    
+    if (self.extDraw1) self.extDraw1(ctx,ox,oy,sc);
     
     setTimeout(draw,10);
   }
-  function loadUnit(o) {
+  function loadUnit(o,xp,yp) {
     //alert(o.parts.length);
     o.omx=0;o.omy=0;
     var pa=[];
     for (var i=0;i<o.parts.length;i++) {
       var p=o.parts[i];
       var ph;
-      parts.push(ph=partNew4(p[0],p[1],0,a));
+      parts.push(ph=partNew4(p[0]+xp,p[1]+yp,0,a));
       pa.push(ph);
       o.parts[i]=ph;
     }
@@ -603,22 +799,16 @@ var Bod2=function() {
   this.extCalc=function(dt) {
     //...
   }
-  this.extDraw=function(ct) {
-    //...
-  }
   
   this.loadUnit=loadUnit;
   this.init=init;
   this.parts=parts;
-  stones.push({x:500,y:300,w:310,h:100});
-  stones.push({x:300,y:280,w:250,h:100});
-  stones.push({x:-10,y:570,w:820,h:100});
+  this.stones=stones;
+  this.jpads=jpads;
+  this.units=units;
+  this.sound1=sound1;
 }
 
 //fr o,1
-//fr o,1,18
-//fr o,1,26
-//fr o,1,27
-//fr o,1,28
-//fr o,1,31
-//fr p,4,178
+//fr o,1,25
+//fr p,0,189

@@ -479,6 +479,7 @@ var Menu={};
       Menu.press.on=false;
       Menu.press=undefined;
       Menu.colorCmenu();
+      
       return true;
     }
     return false;
@@ -686,7 +687,7 @@ var Menu={};
   }
   
   function mouseDown(e) {
-    console.log('menu.mouseDown');
+    //onsole.log('menu.mouseDown');
     mD=true;
     if (Menu.mouseDown()) {
       //onsole.log('menu.mouseDown stop propagation');
@@ -711,7 +712,6 @@ var Menu={};
 
 //--
 //fr o,2
-//fr o,2,27
 //fr o,2,45
 //fr o,2,46
-//fr p,46,42
+//fr p,0,65

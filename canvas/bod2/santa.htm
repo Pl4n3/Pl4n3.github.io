@@ -327,16 +327,7 @@ function onload() {
   
   Menu.init([
   mleft={s:'\u2190',px:0.02,py:0.02,pw:0.116,ph:0.116,ydown:true,fs:1.4,keys:[65,37]},
-  mright={s:'\u2192',px:0.88,py:0.02,pw:0.116,ph:0.116,ydown:true,fs:1.4,keys:[68,39],
-  
-  actionf:function() {
-    console.log('mright.actionf');
-    var f0=Math.floor(Math.random()*500)+50,f1=Math.floor(Math.random()*400)+200;
-    bod2.sound1({a:[{f:f0,v:0,n:1},{t:10,v:1},{t:200,v:1},{t:140,v:0,f:f1}]});
-  }
-  
-  
-  }
+  mright={s:'\u2192',px:0.88,py:0.02,pw:0.116,ph:0.116,ydown:true,fs:1.4,keys:[68,39]}
   ],{listen:1});
   Menu.draw();
 }
@@ -349,5 +340,4 @@ function onload() {
 //fr o,14
 //fr o,14,2
 //fr o,14,90
-//fr o,14,106
-//fr p,77,209
+//fr p,83,205

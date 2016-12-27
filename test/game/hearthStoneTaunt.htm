@@ -1,0 +1,263 @@
+<!doctype html><html><head>
+<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+<meta name="viewport" content="width=device-width, user-scalable=yes, minimum-scale=1.0, maximum-scale=10.0">
+<script src="../../menu.js"></script>
+<script src="../../conet.js"></script>
+</head>
+<body bgcolor="#aaaaaa">
+<script type="text/javascript">
+function init() {
+  //...
+  var pars=[{name:'Good',hand:[],field:[],col:{r:200,g:200,b:0},ai_:{move:aiMove,attack:aiAttackAggro},startMana:10,startHand:5,newCards:2,herohp:30},
+            {name:'Evil',hand:[],field:[],col:{r:50,g:200,b:50},ai:{move:aiMove,attack:aiAttackAggro} ,startMana:11,startHand:5,newCards:2,herohp:30}],
+      pools=[pars[0].hand,pars[0].field,pars[1].field,pars[1].hand],h=0.07,log=Conet.log,
+      colg={r:150,g:150,b:150},current=0,mturn,mmove,mattack,mtaunt;
+  var dx=0.1;
+  pars[0].hand.x=0.1+dx;pars[0].field.x=0.25+dx;pars[1].field.x=0.45+dx;pars[1].hand.x=0.6+dx;
+  
+  function adel(a,o) {
+    var i=a.indexOf(o);a.splice(i,1);//onsole.log('adel i='+i);
+    return a;
+  }
+  function ms(c) {
+    var p=pars[c.party],hero=(c.mana!==undefined);
+    var s=p.name+' '+(hero?'Hero ':'')+'<b>'+c.ap+'&middot;'+c.hp+'</b>'+(hero?' Mana '+c.mana:'');//+(c.taunt?' T':'')
+    if (c.taunt) s='!'+s+'!';
+    c.ms=s;
+  }
+  function update() {
+    for (var i=0;i<pools.length;i++) {
+      var pool=pools[i];
+      for (var j=0;j<pool.length;j++) {
+        var c=pool[j];
+        c.px=pool.x-c.pw/2;c.py=0.02+j*h;
+      }
+    }
+    for (pi=pars.length-1;pi>=0;pi--) {
+      var p=pars[pi],c=p.hero;
+      ms(c);
+      //c.ms=p.name+' Hero <b>'+c.ap+'&middot;'+c.hp+'</b> Mana '+c.mana;
+    }
+  }
+  function setSleep(c,o) {
+    c.sleep=o;
+    c.bocol=o?'#f00':'#000';
+    c.bowi=o?0.05:undefined;
+  }
+  function newCard(pi) {
+    //...
+    var p=pars[pi];
+    p.drawCount=p.drawCount?p.drawCount+1:1;
+    var m=p.drawCount*3%8+1;//1+Math.floor(Math.random()*9);
+    var c={//ms:p.name+' <b>'+m+'&middot;'+m+'</b>',
+      ap:m,hp:m,cost:m,px:0.1,py:0.1,pw:0.1,ph:h,checkbox:1,actionf:action0,msCenter:1,pool:p.hand,
+      bgcol:color((m-1)/8,p.col,colg),party:pi};
+    ms(c);
+    return c;
+  }
+  function aiMove() {
+    //...
+    var p=pars[current],maxc=-1,maxi=-1;
+    for (var i=0;i<p.hand.length;i++) {
+      var c=p.hand[i];
+      if (c.cost>p.hero.mana) continue;
+      if (c.cost<=maxc) continue;
+      maxc=c.cost;maxi=i;
+    }
+    //log('aiMove '+maxi);
+    if (maxi==-1) { p.ai.attack();return; }
+    
+    Menu.sim({m:p.hand[maxi],t:500,next:{m:mmove,nextf:p.ai.move}});
+  }
+  function aiAttack() {
+    //...
+    var p=pars[current],pe=pars[1-current],nextMattack={m:mattack,nextf:p.ai.attack};
+    for (var i=1;i<p.field.length;i++) {
+      var c=p.field[i];
+      if (c.sleep) continue;
+      //---first attack taunts
+      for (var j=pe.field.length-1;j>=0;j--) {
+        var ce=pe.field[j];
+        if (!ce.taunt) continue;
+        Menu.sim({m:c,t:500,next:ce.checked?nextMattack:{m:ce,next:nextMattack}});
+        return;
+      }
+      //---then last in field
+      var ce=pe.field[pe.field.length-1];
+      Menu.sim({m:c,t:500,next:ce.checked?nextMattack:{m:ce,next:nextMattack}});
+      return;
+    }
+    
+    var pn={m:mturn,t:500};
+    Menu.sim(pn);
+  }
+  
+  function aiAttackAggro() {
+    //...
+    var p=pars[current],pe=pars[1-current],nextMattack={m:mattack,nextf:p.ai.attack};
+    for (var i=1;i<p.field.length;i++) {
+      var c=p.field[i];
+      if (c.sleep) continue;
+      //---first attack taunts
+      for (var j=0;j<pe.field.length;j++) {
+        var ce=pe.field[j];
+        if (!ce.taunt) continue;
+        Menu.sim({m:c,t:500,next:ce.checked?nextMattack:{m:ce,next:nextMattack}});
+        return;
+      }
+      //---then hero
+      var ce=pe.field[0];
+      Menu.sim({m:c,t:500,next:ce.checked?nextMattack:{m:ce,next:nextMattack}});
+      return;
+    }
+    
+    var pn={m:mturn,t:500};
+    for (var i=p.field.length-1;i>=1;i--) {
+      if (Math.random()>0.3) continue;
+      pn={m:p.field[i],t:500,next:{m:mtaunt,next:pn}};
+    }
+    Menu.sim(pn);
+  }
+  
+  var a=[mmove={s:'Move',fs:1.2,keys:[77],
+  actionf:function() {
+    //onsole.log(this);
+    var p=pars[current];
+    var c=p.hand.sel;
+    if (!c) { log('No hand selected.');return; }
+    Menu.setChecked(c,false);delete(p.hand.sel);
+    if (c.cost>p.hero.mana) { log('Not enough mana.');return; }
+    p.field.push(c);
+    p.hand.splice(p.hand.indexOf(c),1);
+    c.pool=p.field;
+    p.hero.mana-=c.cost;
+    setSleep(c,1);
+    update();
+    //alert(42);
+  }
+  },mattack={s:'Attack',fs:1.2,keys:[65],
+  actionf:function() {
+    var p0=pars[current],p1=pars[1-current],c0=p0.field.sel,c1=p1.field.sel,isdel=false;
+    if (!c0) { log('No attacker selected.');return; }
+    if (!c1) { log('No attack target selected.');return; }
+    
+    if (!c1.taunt) for (var i=p1.field.length-1;i>=0;i--) if (p1.field[i].taunt) {
+      log('Attack taunt first.');return; }
+    Menu.setChecked(c0,false);delete(p0.field.sel);
+    if (c0.sleep) { log('Sleeping, cannot attack.');return; }
+    
+    c0.hp-=c1.ap;
+    if ((c0.hp<=0)&&(c0.mana===undefined)) {
+      Menu.setMenus(a=Menu.roots=adel(Menu.getMenus(),c0));
+      adel(p0.field,c0);isdel=true;
+    } else {
+      setSleep(c0,1);
+      ms(c0);
+    }
+    
+    c1.hp-=c0.ap;
+    if ((c1.hp<=0)&&(c1.mana===undefined)) {
+      Menu.setMenus(a=Menu.roots=adel(Menu.getMenus(),c1));
+      adel(p1.field,c1);isdel=true;
+    } else {
+      ms(c1);
+    }
+    
+    if (isdel) update();
+    //log('Attack');
+    //...
+  }
+  },mtaunt={s:'Taunt',fs:1.2,keys:[84],
+  actionf:function() {
+    var p=pars[current],c=p.field.sel;
+    if (!c) { log('No field selected.');return; }
+    c.taunt=!c.taunt;
+    ms(c);
+  }
+  },mturn={s:'Turn',fs:1.3,keys:[13],ms:'Party: '+pars[current].name,px:Menu.px,py:0.2,pw:0.15,ph:h,bgcol:color(1,pars[current].col,colg),
+  actionf:function() {
+    //...
+    current=1-current;
+    var p0=pars[current];//,c=newCard(current);
+    this.ms='Party: '+p0.name;
+    this.bgcol=color(1,p0.col,colg);
+    
+    for (var i=0;i<p0.newCards;i++) {
+      var c=newCard(current);
+      p0.hand.push(c);
+      Menu.initLoad([c]);
+      a.push(c);Menu.setMenus(a);Menu.roots=a;
+    }
+    p0.hero.mana=p0.startMana;
+    for (var i=p0.field.length-1;i>=0;i--) setSleep(p0.field[i],false);
+    
+    update();
+    
+    if (!p0.ai) return;
+    
+    //Menu.sim({m:p.hand[0],t:500,next:{m:mmove,next:{m:mturn}}});
+    //Menu.sim({m:p.hand[0],t:500,next:{m:mmove,nextf:aiAttack}});
+    p0.ai.move();
+    
+    
+  }
+  },{s:'AI vs AI',fs:1.3,px:Menu.px+0.05,py:0.28,pw:0.1,ph:h*2/3,
+  actionf:function() {
+    var p=pars[0];
+    p.ai=p.ai_;
+    p.ai.move();
+  }
+  
+  }
+  ];
+  
+  function action0() {
+    //alert(this);
+    var pool=this.pool;
+    for (var i=pool.length-1;i>=0;i--) { 
+      var c=pool[i];
+      if (c===this) continue;
+      Menu.setChecked(c,false);
+    }
+    pool.sel=this;
+  }
+  function color(f,c0,c1) {
+    var f1=1-f;
+    return 'rgb('+Math.floor(c0.r*f+c1.r*f1+0.5)+','+Math.floor(c0.g*f+c1.g*f1+0.5)+','+Math.floor(c0.b*f+c1.b*f1+0.5)+')';
+  }
+  
+  for (var pi=0;pi<2;pi++) {
+    var p=pars[pi];
+    for (var i=0;i<p.startHand;i++) {
+      //var m=1+Math.floor(Math.random()*9);
+      //var c={ms:'Good <b>'+m+'&middot;'+m+'</b>',ap:m,hp:m,cost:m,px:0.1,py:0.05+i*h,pw:0.1,ph:h,checkbox:1,actionf:action0,msCenter:1,pool:hand0,
+      //  bgcol:color((m-1)/8,col0,colg)};
+      var c=newCard(pi);
+      p.hand.push(c);a.push(c);
+    }
+    var c=p.hero={ap:0,hp:p.herohp,mana:p.startMana,px:0.1,py:0.05,pw:0.17,ph:h,
+      checkbox:1,actionf:action0,msCenter:1,pool:p.field,bgcol:color(1,p.col,colg),party:pi};
+    ms(c);
+    p.field.push(c);a.push(c);
+    a.push({s:p.name+' hand',fs:1.2,px:p.hand.x-0.2/2,py:0.5,pw:0.2,ph:0.065,noinp:1});
+  }
+  a.push({s:'Battlefield',fs:1.3,px:0.45-0.25/2,py:0.5,pw:0.25,ph:0.065,noinp:1});
+  
+  Menu.son='[X]';Menu.soff='[&nbsp;]';
+  update();
+  Menu.init(a,{listen:1});
+  Menu.draw();
+  log('Hearthstone-ish card-game prototype with variable taunt.');
+  Conet.logc.style.top='2px';
+  var p=pars[current];
+  if (p.ai) p.ai.move();
+}
+init();
+
+</script>
+
+</body>
+</html><script>
+//fr o,8
+//fr o,8,10
+//fr p,72,66

@@ -1,7 +1,7 @@
 var Conet={};
 (function(Conet) {
   Conet.offline=false;
-  Conet.version='v.1.196 ';//FOLDORUPDATEVERSION
+  Conet.version='v.1.198 ';//FOLDORUPDATEVERSION
   var uploads={},fns,logc,logs=[];//fn=>data,first
   function xhr(p) {
     var x=new XMLHttpRequest();
@@ -251,7 +251,7 @@ var Conet={};
       var c=document.createElement('div'),s=c.style;s.fontSize='10px';s.fontFamily='Sans-serif';s.paddingLeft='2px';
       s.position='absolute';c.innerHTML='Log:<br>123...';s.left='2px';s.top='50px';s.backgroundColor='rgba(255,255,255,0.2)';
       s.userSelect=s.MozUserSelect=s.WebkitUserSelect='none';
-      document.body.appendChild(c);logc=c;
+      document.body.appendChild(c);Conet.logc=logc=c;
     }
     logs.push(sh);
     logc.innerHTML='<b>Logs:</b> '+logs.join('<br>');
@@ -300,6 +300,7 @@ console.log('Conet '+Conet.version);
 //fr o,1,7,50
 //fr o,1,8
 //fr o,1,8,1
+//fr o,1,9
 //fr o,1,10
 //fr o,1,10,4
-//fr p,14,47
+//fr p,49,27

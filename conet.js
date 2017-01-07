@@ -1,7 +1,7 @@
 var Conet={};
 (function(Conet) {
   Conet.offline=false;
-  Conet.version='v.1.198 ';//FOLDORUPDATEVERSION
+  Conet.version='v.1.210 ';//FOLDORUPDATEVERSION
   var uploads={},fns,logc,logs=[];//fn=>data,first
   function xhr(p) {
     var x=new XMLHttpRequest();
@@ -43,6 +43,7 @@ var Conet={};
         //setTimeout(function() { xhr({url:fn+'?CONETFC',f:function (s) {alert(s);}}); },1000);
         delete(uploads[fn]);
         if (p.f) p.f(responseText);
+        if (p.log) p.log(responseText===''?'Conet-save error.':'Conet-saved: '+p.fn+'.');
         return;
       }
       console.log('conet-sendChunk '+uh.data.length);
@@ -158,6 +159,8 @@ var Conet={};
     }
     
     }]});
+    
+    if (p.savef) {
     m.sub.push(
     {s:'Save',a:'conetSave',keys:['83_c'],ms:'<span style="color:#00f">ctrl+s</span>',actionf:function() {
       p.savef(m.curFn);
@@ -186,6 +189,7 @@ var Conet={};
       return m.curFn||p.defFn||'';
     }
     });
+    }
     
     if (p.url) {
       //onsole.log('Conet.fileMenu checking url: '+p.url);
@@ -223,7 +227,7 @@ var Conet={};
       if (p.noStartLoad) return;
       m.curFn=p.curFn?p.curFn:m.files[0].fn;
       Menu.ms(m,m.curFn);
-      p.loadf(m.curFn);
+      p.loadf(m.curFn,1);
     }
     });
     
@@ -255,6 +259,17 @@ var Conet={};
     }
     logs.push(sh);
     logc.innerHTML='<b>Logs:</b> '+logs.join('<br>');
+  }
+  Conet.parseUrl=function(s) {
+    var i0=s.indexOf('?');
+    s=(i0==-1?'':s.substr(i0+1));
+    var a=s.split('&'),h={};
+    for (var i=0;i<a.length;i++) {
+      var sh=a[i];
+      var i0=sh.indexOf('=');
+      if (i0==-1) h[sh]=1; else h[sh.substr(0,i0)]=sh.substr(i0+1);
+    }
+    return h;
   }
   Conet.updateEditHistory=function(p) {
     var fn=p.fn;
@@ -293,14 +308,13 @@ var Conet={};
 )(Conet);
 console.log('Conet '+Conet.version);
 //fr o,1
+//fr o,1,4,17
 //fr o,1,7,2
 //fr o,1,7,3
 //fr o,1,7,15
-//fr o,1,7,24
-//fr o,1,7,50
-//fr o,1,8
+//fr o,1,7,22
+//fr o,1,7,53
 //fr o,1,8,1
-//fr o,1,9
 //fr o,1,10
-//fr o,1,10,4
-//fr p,49,27
+//fr o,1,11,4
+//fr p,29,14

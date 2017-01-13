@@ -42,7 +42,7 @@ var logs=[],v30=new Vecmath.Vec3(),isMenu=false,gamet=0;
 var ot,tg=0,canvas,cont,width,height,tparts=[],fpst=0,fpsc=0,fpss='',canv,img,id,c0,cutoutt;
 var segs=[];//segs ordered by z
 var m0=new Vecmath.Mat3(),m1=new Vecmath.Mat3(),m2=new Vecmath.Mat3(),mx,my,mD=false,mmenu,iw,iw0,manim,mzoom,nx,ny;
-var version='v.0.4357 ';//FOLDORUPDATEVERSION;
+var version='v.0.4423 ';//FOLDORUPDATEVERSION;
 var os=[],ros=[],oe,selaki=-1,selseg=-1,omx,omy,keyA=[],oselakt,selai=0,seg0;//,dir=1;
 var sky,boom,hbooms=[],blood=[],sbooms=[],boomt=0,dtscale=1,hbars=[];
 var audio=window.AudioContext?new window.AudioContext():new window.webkitAudioContext(),audiopos=0,audiont=0,so=[],audiofa=[],audiot=75;
@@ -338,12 +338,12 @@ function glTex() {
   gl.bindTexture(gl.TEXTURE_2D, null);
 }
 
-function cDown(x,y) {
+function cDown(x,y,e) {
   mD=true;
   //lert('cDown');
   mx=x;my=y;
   calcmn();
-  if (game.cdown) game.cdown();
+  if (game.cdown) game.cdown(e);
   
   //---moved from mouseDown
   if (!oe) return;
@@ -488,7 +488,7 @@ function mouseDown(e) {
     return;
   }
   if (Menu.mcontrol) return;
-  cDown(x,y);
+  cDown(x,y,e);
   
 }
 function mouseUp(e) {
@@ -552,7 +552,7 @@ function keyDown(ev) {
   keyA[kc]=true; 
   //console.log('keyDown '+kc);
   
-  if (!keyA[17]&&!keyA[16]&&(kc>47)&&(kc<58)) {
+  if (!keyA[17]&&!keyA[16]&&(kc>47)&&(kc<58)&&!Menu.mcontrol) {
     var vh;
   switch (kc-48) {
     case 0:vh=0;break;
@@ -635,6 +635,18 @@ function hide(o) {
   seg0.segs.splice(i,1);
 }
 
+function filterCarve(d,p,ps) {
+  var id=ps.id,ct=ps.ct,idt=ct.createImageData(id);
+  var carves=p.carves||p.rawData.carves;
+  for (var i=0;i<carves.length;i++) carve(id,carves[i],idt);
+  ps.idt=idt;
+  //console.log(ps.canv);
+  //segs[0].img=ps.canv;
+  //carve(id,{"p0":{"x":0.39121,"y":0.89939,"r":0.05865},"p1":{"x":0.54762,"y":0.89939,"r":0.0391},"pd":{"x":0.21506,"y":0.01955},"bo":0.00978,"dabs":0});
+  //carve(id,{"p0":{"x":0.54762,"y":0.89939,"r":0.0391},"p1":{"x":0.74312,"y":0.87984,"r":0.02933},"pd":{"x":0.21506,"y":0.21506},"bo":0.00978,"dabs":0.00978});
+  //carve(id,{"p0":{"x":0.74312,"y":0.87984,"r":0.02933},"p1":{"x":0.86043,"y":0.87007,"r":0.02933},"pd":{"x":0.21506,"y":0.41057},"bo":0.00978,"bbo":0,"dabs":0});
+  
+}
 function filterGreenToRed(d) {
   var ar=0,ag=255,ab=0;      //---> colored skin
   //var ar=255,ag=255,ab=100;//---> colored eyes
@@ -754,19 +766,24 @@ function cut(b,xi,yi,w,h,x0,y0,x,y,img,pfilter,o) {
   if (!o.p.rawData) { b.x=x;b.y=y; }//b.xs=1;b.ys=1;
   return b;
 }
-function carve(id,ps) {
+function carve(id,ps,idt) {
   var iw=id.width,ih=id.height;
   var p0=ps.p0,p1=ps.p1,//{x:0.5,y:0.5,r:0.1},p1={x:0.7,y:0.8,r:0.05},
       bo=ps.bo||0.005,  //--alpha border
       bbo=ps.bbo!==undefined?ps.bbo:bo,   //--black border
       dabs=ps.dabs||0,  //--additional segment width via abs-function
-      pd=ps.pd,xd=Math.floor(pd.x*ih),yd=Math.floor(pd.y*ih),
-      xmin=Math.floor(Math.min(p0.x-p0.r,p1.x-p1.r)*ih),
-      ymin=Math.floor(Math.min(p0.y-p0.r,p1.y-p1.r)*ih),
-      xmax=Math.floor(Math.max(p0.x+p0.r,p1.x+p1.r)*ih),
-      ymax=Math.floor(Math.max(p0.y+p0.r,p1.y+p1.r)*ih);
+      pd=ps.pd,//xd=Math.floor(pd.x*ih),yd=Math.floor(pd.y*ih),
+      //xmin=Math.floor(Math.min(p0.x-p0.r,p1.x-p1.r)*ih),
+      //ymin=Math.floor(Math.min(p0.y-p0.r,p1.y-p1.r)*ih),
+      //xmax=Math.floor(Math.max(p0.x+p0.r,p1.x+p1.r)*ih),
+      //ymax=Math.floor(Math.max(p0.y+p0.r,p1.y+p1.r)*ih);
       //lx=p1.x-p0.x,ly=p1.y-p0.y,ll=Math.sqrt(lx*lx+ly*ly),
       //lo=p1.x*p0.y-p1.y*p0.x
+      xmin=ps.xmin,ymin=ps.ymin,xmax=ps.xmax,ymax=ps.ymax;
+  if (ps.ix===undefined) {
+    alert('cutout.carve ps.ix not calculated');
+    //pd.ix=Math.floor(pd.x*ih);pd.iy=Math.floor(pd.y*ih);
+  } 
   
   function dis(x0,y0,x1,y1) {
     var dx=x1-x0,dy=y1-y0;
@@ -788,7 +805,7 @@ function carve(id,ps) {
   for (var y=ymin;y<=ymax;y++) 
   for (var x=xmin;x<=xmax;x++) {
     var i=(y*iw+x)*4,xr=x/(ih-1),yr=y/(ih-1),
-        i1=((y-ymin+yd)*iw+(x-xmin+xd))*4,
+        i1=((y-ymin+ps.iy)*iw+(x-xmin+ps.ix))*4,
         //d0=dis(xr,yr,p0.x,p0.y),d1=dis(xr,yr,p1.x,p1.y),
         //alpha=(d0<p0.r)||(d1<p1.r)?255:50;
         //alpha=(Math.abs(ly*xr-lx*yr+lo)/ll)<0.1?255:50;
@@ -823,10 +840,10 @@ function carve(id,ps) {
     }
     //    pl.f<0?dist(p,p0)<p0.r?255:50:
     //      ((pl.f>=0&&pl.f<=1)?255:50);
-    id.data[i1]  =Math.floor(0.5+sh*id.data[i]);
-    id.data[i1+1]=Math.floor(0.5+sh*id.data[i+1]);
-    id.data[i1+2]=Math.floor(0.5+sh*id.data[i+2]);
-    id.data[i1+3]=Math.floor(0.5+255*alpha);
+    idt.data[i1]  =Math.floor(0.5+sh*id.data[i]);
+    idt.data[i1+1]=Math.floor(0.5+sh*id.data[i+1]);
+    idt.data[i1+2]=Math.floor(0.5+sh*id.data[i+2]);
+    idt.data[i1+3]=Math.min(id.data[i+3],Math.floor(0.5+255*alpha));
   }
 }
 
@@ -839,8 +856,17 @@ function initSeg(p) {
   
   //seg0=cut(300,100,100,300,50,50,300,300);
   //-seg0=cut(687,9,292,436,170,340,360,420);
-  var c=p.rawData?p.rawData:JSON.parse(p.cutout);c.p=p;c.is=is;
+  var c=p.rawData?p.rawData:JSON.parse(p.cutout);
+  //if (!p.rawData) p.rawData=c;
+  c.p=p;c.is=is;
   if (p.onparse) p.onparse(c);
+  
+  if (c.carves) {
+    //onsole.log('cutout.initSeg now carves?');//
+    carvesToRect(c);p.rawData=c;
+    doFilter(p,filterCarve);
+  }
+  
   for (var h=0;h<c.bones.length;h++) {
     var b=c.bones[h];
     b.m=isGl?new Vecmath.Mat4():new Vecmath.Mat3();
@@ -972,6 +998,115 @@ function glNewtex(img,s) {
   img._cutoutTl=tl;
   img.glti=glti;
 }
+function doFilter(p,filter) {
+  
+  var img=p.img,im=img;
+  //if (p.texfi) {
+  var c=document.createElement('canvas');
+  c.width=img.width;c.height=img.height;
+  var ct=c.getContext('2d');
+  ct.drawImage(im,0,0);
+    
+  var id=ct.getImageData(0,0,c.width,c.height);
+  //p.id_=id;
+  var ps={id:id,ct:ct,canv:c};
+  filter(id.data,p,ps);
+  if (ps.idt) id=ps.idt;
+  ct.putImageData(id,0,0);
+  
+  if (1) {
+    p.img=c;
+    //initSeg(p);
+    return;
+  }
+  
+  
+  im=new Image();
+  im.src=c.toDataURL();
+  //im._cutoutTl=this._cutoutTl;//this.glti-1;//tl;
+  //im._nofile=true;
+  im.onload=function() {
+    this.loaded=true;
+    p.img=im;
+    initSeg(p);
+  }
+  //return;
+  
+  //...
+}
+
+function carvesToRect(rawData) {
+  var cp=0,ih=512,carves=rawData.carves;
+  
+  function pack(c,w,h) {
+    var done=false;
+    for (var yi=-1;yi<carves.length;yi++) {
+      var y=yi==-1?0:carves[yi].bottom;
+      if (y===undefined) continue;
+      if (y+h>ih) continue;
+      for (var xi=-1;xi<carves.length;xi++) {
+        var x=xi==-1?0:carves[xi].right;
+        if (x===undefined) continue;
+        if (x+h>ih) continue;
+        
+        var overlap=false;
+        for (var i=0;i<carves.length;i++) {
+          var ci=carves[i];
+          if (ci.right===undefined) continue;
+          if ((x<ci.right)&&(x+w-1>ci.ix)&&(y<ci.bottom)&&(y+h-1>ci.iy)) {
+            overlap=true;break;
+          }
+        }
+        if (overlap) continue;
+        c.ix=x;c.iy=y;c.right=x+w-1;c.bottom=y+h-1;
+        done=true;
+        break;
+      }
+      if (done) break;
+    }
+    
+    if (!done) console.log('cutout.carvesToRect.pack: no area');
+    //c.ix=cp;c.iy=0;cp+=w;
+    //...
+  }
+  
+  rawData.rects=[];
+  for (var i=0;i<carves.length;i++) {
+    var ps=carves[i],p0=ps.p0,p1=ps.p1,
+        pd=ps.pd,
+        xmin=Math.floor(Math.min(p0.x-p0.r,p1.x-p1.r)*ih),
+        ymin=Math.floor(Math.min(p0.y-p0.r,p1.y-p1.r)*ih),
+        xmax=Math.floor(Math.max(p0.x+p0.r,p1.x+p1.r)*ih),
+        ymax=Math.floor(Math.max(p0.y+p0.r,p1.y+p1.r)*ih)
+        ps0=i==0?undefined:carves[i-1];
+    pack(ps,xmax-xmin,ymax-ymin);
+    //ps.ix=0;//Math.floor(pd.x*ih);
+    //ps.iy=cy;//Math.floor(pd.y*ih);
+    //cy+=(ymax-ymin);
+    ps.xmin=xmin;ps.ymin=ymin;ps.xmax=xmax;ps.ymax=ymax;
+    var r,b;
+    rawData.rects.push(r={x:ps.ix+1,y:ps.iy+1,w:xmax-xmin-1,h:ymax-ymin-1,cx:p0.x*ih-xmin+ps.ix,cy:p0.y*ih-ymin+ps.iy});
+    //rawData.bones.push(b={i:i,p:i-1,z:0,xs:1,ys:1,a:0,x:(i==0?0:(ps0.p1.x-ps0.p0.x)*ih),y:(i==0?0:(ps0.p1.y-ps0.p0.y)*ih)});
+    //console.log(JSON.stringify(b));
+    //console.log('from carves, x:'+(xd+1)+' y:'+(yd+1)+' w:'+(xmax-xmin-1)+' h:'+(ymax-ymin-1)
+    //  +' cx:'+(Math.floor(p0.x*ih)-xmin+xd)+' cy:'+(Math.floor(p0.y*ih)-ymin+yd)
+    //  +' nx:'+Math.floor(0.5+(p1.x-p0.x)*ih)+' ny:'+Math.floor(0.5+(p1.y-p0.y)*ih)
+    //);
+  }
+  for (var i=0;i<rawData.bones.length;i++) {
+    var b=rawData.bones[i];
+    b.a=b.a||0;b.xs=b.xs||1;b.ys=b.ys||1;b.z=b.z||0;
+    if (b.p!=-1) {
+      var c=carves[b.i],cp=carves[rawData.bones[b.p].i];
+      b.x=(c.p0.x-cp.p0.x)*ih;b.y=(c.p0.y-cp.p0.y)*ih;
+    } else {
+      b.x=0;b.y=0;
+    }
+  }
+  
+}
+
+
 function load(p) {
   if (p.json) {
   Conet.download({fn:p.fn+'.json.txt',f:function(v) {
@@ -1035,37 +1170,16 @@ function load(p) {
     //og('cutouts.load.onload '+lastFn(this.src)+' loaded.');//+this.src);
     
     if (p.filter&&p.filterOnce) {
-    var im=this;
-    //if (p.texfi) {
-    var c=document.createElement('canvas');
-    c.width=img.width;c.height=img.height;
-    var ct=c.getContext('2d');
-    ct.drawImage(im,0,0);
-      
-    var id=ct.getImageData(0,0,c.width,c.height);
-    p.id_=id;
-    p.filter(id.data,p);
-    
-    ct.putImageData(id,0,0);
-    
-    if (1) {
-      p.img=c;
-      initSeg(p);
+      doFilter(p,p.filter);
       return;
     }
     
-    
-    im=new Image();
-    im.src=c.toDataURL();
-    //im._cutoutTl=this._cutoutTl;//this.glti-1;//tl;
-    //im._nofile=true;
-    im.onload=function() {
-      this.loaded=true;
-      p.img=im;
-      initSeg(p);
-    }
-      return;
-    }
+    //if (p.rawData&&p.rawData.carves) {
+    //  carvesToRect(p.rawData);
+    //  doFilter(p,filterCarve);
+    //  initSeg(p);
+    //  return;
+    //}
     
     if (cutout||p.rawData) initSeg(p);//initSegs();
     if (edit) {
@@ -2432,6 +2546,7 @@ function draw() {
   ctx.fillStyle='#665';//'rgb(127,127,127)';
   ctx.fillRect(0,0,width,height);
   
+  if (game.drawCanv) game.drawCanv(ctx);
   
   var s=seg0;
   m0.setIdentity();
@@ -2656,20 +2771,17 @@ function oClone(o) {
 }
 </script>
 </head>
-<body style="position:absolute;top:0px;left:0px;overflow:hidden;font-family:Arial;font-size:0.8em;" onload="loaded0();">
+<body style="position:absolute;top:0px;left:0px;overflow:hidden;font-family:Arial;font-size:0.8em;" onload="loaded0();" oncontextmenu="return false;">
 <canvas id="canvas" style="background:black;visibility:hidden;"></canvas>
 </body>
 </html><script>
-//fr o,96,1
-//fr o,96,27
-//fr o,96,27,32
-//fr o,101
-//fr o,101,35,1
-//fr o,102
-//fr o,102,60
-//fr o,102,106
-//fr o,102,107
-//fr o,102,122
-//fr o,102,123
-//fr o,102,138
-//fr p,2,214
+//fr o,99
+//fr o,99,2
+//fr o,102,1
+//fr o,107,35,1
+//fr o,108,106
+//fr o,108,107
+//fr o,108,122
+//fr o,108,123
+//fr o,108,138
+//fr p,25,111

@@ -383,8 +383,8 @@ var Menu={};
       }
       if (!skip) {
         if (!mok) {
-          mok={s:'Ok'};
-          mcancel={s:'Cancel'};
+          mok={s:m.okS||'Ok'};
+          mcancel={s:m.cancelS||'Cancel'};
         }
         if (m.close) {
           menus=[mcancel];mcancel.s='Close';
@@ -578,6 +578,7 @@ var Menu={};
     //onsole.log('Menu.keyDown '+kc);
     var m=keym[kc+(ev.ctrlKey?'_c':0)];
     if (m) { 
+      console.log('Menu.keyDown '+m);
       if (ev.ctrlKey) ev.preventDefault();
       m.on=true;
       if (m.c) {
@@ -586,6 +587,10 @@ var Menu={};
         Menu.action();
       } else {
         if (m.actionf) { m.actionf();ret=1; }
+        else {
+          Menu.cmenu=m;
+          Menu.action();
+        }
       }
     }
     return ret;
@@ -761,7 +766,8 @@ var Menu={};
 
 //--
 //fr o,2
-//fr o,2,18
+//fr o,2,26
+//fr o,2,35
 //fr o,2,42
 //fr o,2,42,2
-//fr p,23,119
+//fr p,26,96

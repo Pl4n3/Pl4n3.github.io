@@ -1,0 +1,288 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+<style>
+body {
+  color: #000;
+  background-color: #fff;
+  margin: 0px;
+  overflow: hidden;
+}
+</style>
+<script src="https://threejs.org/build/three.min.js"></script>
+<script src="https://threejs.org/examples/js/libs/stats.min.js"></script>
+<script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
+<script src="../menu.js"></script>
+<script src="../conet.js"></script>
+</head><body><div id="container"></div><script>
+function lego1() {
+  var camera,controls,scene,renderer,stats,sel,mmode,mmenu;
+  
+  function rani(m) {
+    return Math.floor(Math.random()*m);
+  }
+  
+  scene = new THREE.Scene();
+  renderer = new THREE.WebGLRenderer({antialias:true});
+  renderer.setClearColor( 0x888888 );
+  renderer.shadowMap.enabled=true;
+  renderer.shadowMap.type=THREE.BasicShadowMap;
+  //				renderer.shadowMapEnabled=true;
+  //				renderer.shadowMapType=THREE.PCFShadowMap;//PCFShadowMap;
+  
+  renderer.setPixelRatio( window.devicePixelRatio );
+  renderer.setSize( window.innerWidth, window.innerHeight );
+  
+  var container = document.getElementById('container'),ms=[];
+  container.appendChild( renderer.domElement );
+  
+  camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 1000 );
+  camera.position.z = 500;
+  
+  controls = new THREE.OrbitControls( camera, renderer.domElement );
+  controls.enableDamping=true;
+  controls.dampingFactor=0.25;
+  controls.enableZoom=true;
+  controls.enablePan=false;
+  controls.maxDistance=600;
+  
+  var ca=[0x666666,0x333333,0xf0f000,0x90f000,0x00f000,0x009090,0x0030d0];
+  for (var i=0;i<ca.length;i++) {
+    var m=new THREE.MeshPhongMaterial({color:ca[i],shading:THREE.FlatShading});
+    ms.push(m);
+  }
+  
+  var bw=20,sw=15,sw2=(sw-1)/2,bh=bw/2,grid={};//20,15
+  
+  function box(x,y,z,w,h,b,m) {
+    mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,b),m);
+    mesh.position.set(x,y,z);
+    mesh.updateMatrix();
+    mesh.matrixAutoUpdate = false;
+    mesh.castShadow=true;
+    mesh.receiveShadow=true;
+    scene.add(mesh);
+    return mesh;
+  }
+  function key(x,y,z) {
+    return x+'_'+y+'_'+z;
+  }
+  function box0(b) {
+    var bo=1;//0.5;
+    var mesh=box((b.x-sw2+(b.w-1)/2)*bw,-150+(bw*3/4)+(b.y+(b.h-1)/2)*bh,(b.z-sw2+(b.b-1)/2)*bw,b.w*bw-bo,b.h*bh-bo,b.b*bw-bo,ms[b.col]);
+    for (var xi=0;xi<b.w;xi++) for (var yi=0;yi<b.h;yi++) for (var zi=0;zi<b.b;zi++)
+      grid[key(xi+b.x,yi+b.y,zi+b.z)]=1;
+    b.mesh=mesh;
+    return mesh;
+  }
+  
+  function isfree(x,y,z,w,h,b) {
+    if (y<0) return false;
+    for (var xi=0;xi<w;xi++) for (var yi=0;yi<h;yi++) for (var zi=0;zi<b;zi++)
+      if (grid[key(xi+x,yi+y,zi+z)]) return false;
+    return true;
+  }
+  function brickPos(b,rand) {
+    b.mesh.position.set(
+      (b.x-sw2+(b.w-1)/2)*bw+(Math.random()-0.5)*rand,
+      -150+(bw*3/4)+(b.y+(b.h-1)/2)*bh+(Math.random()-0.5)*rand,
+      (b.z-sw2+(b.b-1)/2)*bw+(Math.random()-0.5)*rand
+    );
+    b.mesh.updateMatrix();
+    //...
+  }
+  //if (1) { box0(-1,0,-1,1,1,1,m2);box0(15,0,-1,1,1,1,m2);
+  //         box0(-1,0,15,1,1,1,m2);box0(15,0,15,1,1,1,m2); }
+  
+  var bricks=[];
+  
+  box(0,-150,0,600,bw,600,ms[1]).castShadow=false;
+  
+  var l=new THREE.AmbientLight(0x555555),f=3;scene.add(l);
+  l=new THREE.PointLight(0xffffff,1,0);l.position.set(-100*f,200*f,100*f);scene.add(l);
+  l=new THREE.PointLight(0xffffaa,1,0);l.position.set(100*f,100*f,100*f);
+  l.castShadow=true;
+  l.shadow.camera.near=100;
+  l.shadow.camera.far=1000;
+  l.shadow.mapSize.width=1024;//2048;
+  l.shadow.mapSize.height=1024;
+  l.shadow.bias=0.01;
+  scene.add(l);
+  l=new THREE.PointLight(0xaaffff,1,0);l.position.set(100*f,-200*f,-100*f);scene.add(l);
+  
+  
+  stats = new Stats();
+  stats.domElement.style.position = 'absolute';
+  stats.domElement.style.top = '0px';
+  stats.domElement.style.zIndex = 100;
+  container.appendChild( stats.domElement );
+  
+  window.addEventListener( 'resize', onWindowResize, false );
+  
+  function menuArrow() {
+    if (mmode.ms=='Select') {
+      brickPos(sel,0);
+      var i=bricks.indexOf(sel),l=bricks.length;
+      if (this.s=='\u2192') sel=bricks[(i+1)%l];
+      if (this.s=='\u2190') sel=bricks[(i-1+l)%l];
+      if (this.s=='\u2191') sel=bricks[(i+10)%l];
+      if (this.s=='\u2193') sel=bricks[(i-Math.min(l,10)+l)%l];
+      
+      return;
+    }
+    
+    if (mmode.ms=='Dimension') {
+      if (this.s=='\u2192') sel.w++;
+      if (this.s=='\u2190') sel.w--;
+      if (this.s=='\u2191') sel.b--;
+      if (this.s=='\u2193') sel.b++;
+      if (this.s=='\u21d1') sel.h++;
+      if (this.s=='\u21d3') sel.h--;
+      scene.remove(sel.mesh);
+      box0(sel);
+      return;
+    }
+    
+    if (this.s=='\u2192') sel.x++;
+    if (this.s=='\u2190') sel.x--;
+    if (this.s=='\u2191') sel.z--;
+    if (this.s=='\u2193') sel.z++;
+    if (this.s=='\u21d1') sel.y++;
+    if (this.s=='\u21d3') sel.y--;
+    
+  }
+  function cloneWithout(o,h) {
+    var n={};
+    for (var k in o) if (o.hasOwnProperty(k)) if (!h[k]) n[k]=o[k];
+    return n;
+  }
+  function serialize() {
+    var s='[\n',without={mesh:1};
+    for (var i=0;i<bricks.length;i++) {
+      s+=JSON.stringify(cloneWithout(bricks[i],without))+((i<bricks.length-1)?',':'')+'\n';
+    }
+    s+=']';
+    return s;
+  }
+  function parseLoad(d) {
+    
+    for (var i=0;i<bricks.length;i++) scene.remove(bricks[i].mesh);
+    
+    bricks=JSON.parse(d);
+    
+    for (var i=0;i<bricks.length;i++) {
+      var b=bricks[i];
+      box0(b);//.x,b.y,b.z,b.w,b.h,b.b,ms[b.col]);
+      sel=b;
+    }
+    Menu.ms(mmenu,bricks.length+' bricks');
+  }
+  
+  Menu.init([mmenu={s:'Menu',ms:' ',msid:'mmenums',sub:[
+  
+  Conet.fileMenu({fn:'lego/files.txt',defFn:'lego/test0.txt',//noStartLoad:1,
+  loadf:function(v) {
+    Conet.download({fn:v,f:parseLoad});
+  }
+  ,savef:function(v) {
+    Conet.upload({fn:v,data:serialize(),f:function(d) {
+      Conet.log(d===''?'Conet.save error.':'Conet.saved: '+v+'.');
+    }
+    });
+  }
+  }),
+  
+  
+  {s:'Export',ms:'Import',doctrl:'Brick data',mcfs:0.07,okS:'Import',cancelS:'Close',ta:true,wrap:1,tacols:50,tarows:20,setfunc:function(v,initLoad) {
+    //tridata=v.length==0?undefined:JSON.parse(v);
+    parseLoad(v);
+  }
+  ,valuef:function() {
+    return serialize();
+  }
+  },
+  
+  
+  {s:'Color',r:1,actionf:function() {
+    sel.col=(sel.col+1)%ms.length;
+    scene.remove(sel.mesh);
+    box0(sel);
+  }
+  },
+  
+  
+  {s:'Del Brick',actionf:function() {
+    if (bricks.length<2) return;
+    var i=bricks.indexOf(sel);
+    scene.remove(sel.mesh);
+    bricks.splice(i,1);
+    if (i==bricks.length) i--;
+    sel=bricks[i];
+    Menu.ms(mmenu,bricks.length+' bricks');
+  }
+  }
+  ]},
+  
+  
+  
+  {s:'New Brick',actionf:function() {
+    brickPos(sel,0);
+    var b={x:sel.x,y:sel.y,z:sel.z,w:sel.w,h:sel.h,b:sel.b,col:sel.col};
+    box0(b);bricks.push(b);
+    sel=b;
+    Menu.ms(mmenu,bricks.length+' bricks');
+  }
+  },
+  
+  mmode={s:'Mode',ms:'Position',autoval:2,sub:[{s:'Position',r:1},{s:'Dimension',r:1},{s:'Select',r:1}]},
+  
+  {s:'\u2190',px:0.02,py:0.02,pw:0.116,ph:0.116,ydown:true,fs:1.4,actionf:menuArrow},
+  {s:'\u2192',px:0.13,py:0.02,pw:0.116,ph:0.116,ydown:true,fs:1.4,actionf:menuArrow},
+  {s:'\u2191',px:0.13,py:0.13,pw:0.116,ph:0.116,ydown:true,fs:1.4,actionf:menuArrow},
+  {s:'\u2193',px:0.02,py:0.13,pw:0.116,ph:0.116,ydown:true,fs:1.4,actionf:menuArrow},
+  {s:'\u21d1',px:0.13,py:0.24,pw:0.116,ph:0.116,ydown:true,fs:1.4,actionf:menuArrow},
+  {s:'\u21d3',px:0.02,py:0.24,pw:0.116,ph:0.116,ydown:true,fs:1.4,actionf:menuArrow}
+  
+  
+  ],{listen:1});
+  onWindowResize();
+  
+  function animate() {
+    
+    requestAnimationFrame( animate );
+    
+    controls.update(); // required if controls.enableDamping = true, or if controls.autoRotate = true
+    stats.update();
+    
+    render();
+    
+  }
+  function render() {
+    var b=sel;
+    if (b) brickPos(b,3);
+    //---
+    renderer.render( scene, camera );
+    
+  }
+  
+  function onWindowResize() {
+    
+    Menu.draw();
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    
+    renderer.setSize( window.innerWidth, window.innerHeight );
+    
+  }
+  
+  
+  animate();
+}
+lego1();
+</script></body></html><script>
+//fr o,17
+//fr o,17,73
+//fr o,17,78
+//fr o,17,92
+//fr o,17,98
+//fr p,37,143

@@ -16,12 +16,107 @@ body {
 <script src="../conet.js"></script>
 </head><body><div id="container"></div><script>
 function lego1() {
-  var camera,controls,scene,renderer,stats,sel,mmode,mmenu;
-  
+  //---
+  function BrickGeometry(width,height,depth,t) {
+    
+    THREE.BufferGeometry.call( this );
+    
+    this.type = 'BrickGeometry';
+    
+    this.parameters = {
+      width: width,
+      height: height,
+      depth: depth,
+    };
+    
+    var scope = this;
+    
+    // buffers
+    
+    var indices = [];
+    var vertices = [];
+    var normals = [];
+    var uvs = [];
+    
+    // helper variables
+    
+    var numberOfVertices = 0;
+    var groupStart = 0;
+    
+    // build each side of the box geometry
+    var w=width,h=height,d=depth,a,mx,mz,xz,
+        roofpa=[[-100,-60,100,0.27,0.4381],[-100,-100,100,0.27,0.4688],[100,-100,100,0.4688,0.4108],[100,-60,100,0.4688,0.3801],[-100,-100,-100,0.1563,0.3676],[-100,100,-100,0.1563,0.2142],[100,-100,-100,0.355,0.3096],[100,100,-100,0.355,0.1563],[100,100,0,0.4119,0.2068],[-100,100,0,0.2131,0.2648],[100,100,-100,0.355,0.1563],[-100,100,-100,0.1563,0.2142],[-100,100,0,0.2131,0.2648],[100,100,0,0.4119,0.2068],[-100,-60,100,0.27,0.4381],[100,-60,100,0.4688,0.3801],[-100,-100,100,0.27,0.4688],[100,-100,100,0.4688,0.4108],[-100,-100,-100,0.1563,0.3676],[100,-100,-100,0.355,0.3096],[100,100,0,0.4119,0.2068],[100,100,-100,0.355,0.1563],[100,-60,100,0.4688,0.3801],[100,-100,100,0.4688,0.4108],[100,-100,-100,0.355,0.3096],[-100,100,-100,0.1563,0.2142],[-100,100,0,0.2131,0.2648],[-100,-60,100,0.27,0.4381],[-100,-100,100,0.27,0.4688],[-100,-100,-100,0.1563,0.3676]],
+        rooffa=[[0,2,1],[2,0,3],[7,4,6],[4,7,5],[11,8,9],[8,11,10],[12,15,14],[15,12,13],[16,19,18],[19,16,17],[22,24,23],[24,22,20],[21,24,20],[27,29,26],[29,27,28],[25,26,29]],
+        roof=[roofpa,rooffa],
+        roofTop=[[[-100,-60,100,0.27,0.4381],[-100,-100,100,0.27,0.4688],[100,-100,100,0.4688,0.4108],[100,-60,100,0.4688,0.3801],[-100,-60,-100,0.1563,0.2142],[100,-60,-100,0.355,0.1563],[100,70,-20,0.4119,0.2068],[-100,70,-20,0.2131,0.2648],[100,-60,-100,0.355,0.1563],[-100,-60,-100,0.1563,0.2142],[-100,70,20,0.2131,0.2648],[100,70,20,0.4119,0.2068],[-100,-60,100,0.27,0.4381],[100,-60,100,0.4688,0.3801],[-100,-100,100,0.27,0.4688],[100,-100,100,0.4688,0.4108],[100,70,-20,0.4119,0.2068],[100,-100,-100,0.355,0.1563],[100,-60,100,0.4688,0.3801],[100,-100,100,0.4688,0.4108],[-100,-100,-100,0.1563,0.2142],[-100,70,-20,0.2131,0.2648],[-100,-60,100,0.27,0.4381],[-100,-100,100,0.27,0.4688],[100,70,20,0.5,0.5],[-100,70,20,0.5,0.5],[100,-100,-100,0.5,0.5],[-100,-100,-100,0.5,0.5],[-100,-60,-100,0.5,0.5],[-100,-100,-100,0.5,0.5],[-100,70,-20,0.5,0.5],[-100,70,20,0.5,0.5],[100,70,20,0.5,0.5],[100,70,-20,0.5,0.5],[100,-60,-100,0.5,0.5],[100,-100,-100,0.5,0.5]],
+                [[0,2,1],[2,0,3],[9,6,7],[6,9,8],[10,13,12],[13,10,11],[5,20,17],[20,5,4],[16,25,21],[25,16,24],[27,19,26],[19,27,23],[30,22,28],[22,30,31],[28,14,29],[14,28,22],[32,34,18],[34,32,33],[18,35,15],[35,18,34]]],
+        roofA=[[[-100,-60,100,0.27,0.4381],[-100,-100,100,0.27,0.4688],[100,-100,100,0.4688,0.4108],[100,-60,100,0.4688,0.3801],[-100,-100,-100,0.1563,0.3676],[-100,100,-100,0.1563,0.2142],[100,-60,-100,0.355,0.3096],[0,100,-100,0.355,0.1563],[0,100,0,0.4119,0.2068],[-100,100,0,0.2131,0.2648],[0,100,-100,0.355,0.1563],[-100,100,-100,0.1563,0.2142],[-100,100,0,0.2131,0.2648],[0,100,0,0.4119,0.2068],[-100,-60,100,0.27,0.4381],[100,-60,100,0.4688,0.3801],[-100,-100,100,0.27,0.4688],[100,-100,100,0.4688,0.4108],[-100,-100,-100,0.1563,0.3676],[100,-100,-100,0.355,0.3096],[0,100,0,0.4119,0.2068],[0,100,-100,0.355,0.1563],[100,-60,100,0.4688,0.3801],[100,-100,100,0.4688,0.4108],[100,-60,-100,0.355,0.3096],[-100,100,-100,0.1563,0.2142],[-100,100,0,0.2131,0.2648],[-100,-60,100,0.27,0.4381],[-100,-100,100,0.27,0.4688],[-100,-100,-100,0.1563,0.3676],[100,-100,-100,0.5,0.5],[100,-60,100,0.5,0.5],[100,-60,-100,0.5,0.5],[100,-100,-100,0.5,0.5]],
+               [[0,2,1],[2,0,3],[7,4,6],[4,7,5],[11,8,9],[8,11,10],[12,15,14],[15,12,13],[16,19,18],[19,16,17],[24,22,20],[21,24,20],[27,29,26],[29,27,28],[25,26,29],[6,4,30],[31,33,23],[33,31,32]]],
+        roofNook=[[[-100,-60,100,0.27,0.4381],[-100,-100,100,0.27,0.4688],[100,-100,100,0.4688,0.4108],[0,100,100,0.4688,0.3801],[-100,-100,-100,0.1563,0.3676],[-100,100,-100,0.1563,0.2142],[100,-100,-100,0.355,0.3096],[100,100,-100,0.355,0.1563],[100,100,100,0.4119,0.2068],[-100,100,0,0.2131,0.2648],[100,100,-100,0.355,0.1563],[-100,100,-100,0.1563,0.2142],[-100,100,0,0.2131,0.2648],[0,100,0,0.4119,0.2068],[-100,-60,100,0.27,0.4381],[0,100,100,0.4688,0.3801],[-100,-100,100,0.27,0.4688],[100,-100,100,0.4688,0.4108],[-100,-100,-100,0.1563,0.3676],[100,-100,-100,0.355,0.3096],[100,100,100,0.4119,0.2068],[100,100,-100,0.355,0.1563],[100,-100,100,0.4688,0.3801],[100,-100,-100,0.355,0.3096],[-100,100,-100,0.1563,0.2142],[-100,100,0,0.2131,0.2648],[-100,-60,100,0.27,0.4381],[-100,-100,100,0.27,0.4688],[-100,-100,-100,0.1563,0.3676],[-100,-60,100,0.5,0.5],[0,100,0,0.5,0.5],[100,100,100,0.5,0.5],[0,100,0,0.5,0.5],[0,100,100,0.5,0.5]],
+               [[0,2,1],[2,0,3],[7,4,6],[4,7,5],[16,19,18],[19,16,17],[23,22,20],[21,23,20],[26,28,25],[28,26,27],[24,25,28],[12,13,14],[30,15,29],[3,31,2],[32,8,33],[8,32,10],[32,11,10],[11,32,9]]],
+        roofNookTop=[[[-100,-60,100,0.27,0.4381],[-100,-100,100,0.27,0.4688],[100,-60,100,0.4688,0.4108],[-20,70,100,0.4688,0.3801],[-100,-60,-100,0.1563,0.3676],[-100,70,-20,0.1563,0.2142],[100,-60,-100,0.355,0.3096],[20,70,-20,0.355,0.1563],[20,70,100,0.4119,0.2068],[-100,70,20,0.2131,0.2648],[20,70,-20,0.355,0.1563],[-100,70,-20,0.1563,0.2142],[-100,70,20,0.2131,0.2648],[-20,70,20,0.4119,0.2068],[-100,-60,100,0.27,0.4381],[-20,70,100,0.4688,0.3801],[-100,-100,100,0.27,0.4688],[100,-100,100,0.4688,0.4108],[-100,-100,-100,0.1563,0.3676],[100,-100,-100,0.355,0.3096],[20,70,100,0.4119,0.2068],[20,70,-20,0.355,0.1563],[100,-60,100,0.4688,0.3801],[100,-60,-100,0.355,0.3096],[-100,70,-20,0.1563,0.2142],[-100,70,20,0.2131,0.2648],[-100,-60,100,0.27,0.4381],[-100,-100,100,0.27,0.4688],[-100,-60,-100,0.1563,0.3676],[-100,-60,100,0.5,0.5],[-20,70,20,0.5,0.5],[20,70,100,0.5,0.5],[-20,70,20,0.5,0.5],[-20,70,100,0.5,0.5],[100,-100,100,0.5,0.5],[-100,-100,-100,0.5,0.5],[100,-60,100,0.5,0.5],[100,-60,-100,0.5,0.5],[100,-100,100,0.5,0.5],[100,-100,-100,0.5,0.5],[100,-60,-100,0.5,0.5],[-100,-60,-100,0.5,0.5],[100,-100,-100,0.5,0.5],[-100,-100,-100,0.5,0.5]],
+               [[0,2,1],[2,0,3],[7,4,6],[4,7,5],[16,19,18],[19,16,17],[23,22,20],[21,23,20],[26,28,25],[28,26,27],[24,25,28],[12,13,14],[30,15,29],[3,31,2],[32,8,33],[8,32,10],[32,11,10],[11,32,9],[1,2,34],[28,27,35],[36,39,38],[39,36,37],[40,43,42],[43,40,41]]],
+        roofTopLean=[[[-100,-60,100,0.27,0.4381],[-100,-100,100,0.27,0.4688],[0,-100,100,0.4688,0.4108],[0,-60,100,0.4688,0.3801],[-100,-60,-100,0.1563,0.2142],[0,-60,-100,0.355,0.1563],[83,70,-20,0.4119,0.2068],[-100,70,-20,0.2131,0.2648],[0,-60,-100,0.355,0.1563],[-100,-60,-100,0.1563,0.2142],[-100,70,20,0.2131,0.2648],[83,70,20,0.4119,0.2068],[-100,-60,100,0.27,0.4381],[0,-60,100,0.4688,0.3801],[-100,-100,100,0.27,0.4688],[0,-100,100,0.4688,0.4108],[83,70,-20,0.4119,0.2068],[0,-100,-100,0.355,0.1563],[0,-60,100,0.4688,0.3801],[0,-100,100,0.4688,0.4108],[-100,-100,-100,0.1563,0.2142],[-100,70,-20,0.2131,0.2648],[-100,-60,100,0.27,0.4381],[-100,-100,100,0.27,0.4688],[83,70,20,0.5,0.5],[-100,70,20,0.5,0.5],[0,-100,-100,0.5,0.5],[-100,-100,-100,0.5,0.5],[-100,-60,-100,0.5,0.5],[-100,-100,-100,0.5,0.5],[-100,70,-20,0.5,0.5],[-100,70,20,0.5,0.5],[83,70,20,0.5,0.5],[83,70,-20,0.5,0.5],[0,-60,-100,0.5,0.5],[0,-100,-100,0.5,0.5],[0,-60,100,0.5,0.5],[0,-60,-100,0.5,0.5]],
+               [[0,2,1],[2,0,3],[9,6,7],[6,9,8],[10,13,12],[13,10,11],[5,20,17],[20,5,4],[16,25,21],[25,16,24],[27,19,26],[19,27,23],[30,22,28],[22,30,31],[28,14,29],[14,28,22],[32,34,18],[34,32,33],[36,35,15],[35,36,37]]];
+    
+                
+    
+    if (t=='roofTop0') a=roofTop; else
+    if (t=='roofTop1') { a=roofTop;xz=true; } else
+    if (t=='roof0') { a=roof; } else 
+    if (t=='roof1') { a=roof;mz=true; } else 
+    if (t=='roof2') { a=roof;xz=true; } else 
+    if (t=='roof3') { a=roof;xz=true;mx=true; } else 
+    if (t=='roofCant0') { a=roofA; } else 
+    if (t=='roofCant1') { a=roofA;mz=true; } else 
+    if (t=='roofCant2') { a=roofA;xz=true; } else 
+    if (t=='roofCant3') { a=roofA;xz=true;mx=true; } else 
+    if (t=='roofNook0') { a=roofNook; } else 
+    if (t=='roofNook1') { a=roofNook;mz=true; } else 
+    if (t=='roofNook2') { a=roofNook;xz=true; } else 
+    if (t=='roofNook3') { a=roofNook;mx=true; } else 
+    if (t=='roofNookTop0') { a=roofNookTop; } else 
+    if (t=='roofNookTop1') { a=roofNookTop;mz=true; } else 
+    if (t=='roofNookTop2') { a=roofNookTop;xz=true; } else 
+    if (t=='roofNookTop3') { a=roofNookTop;mx=true; } else 
+    if (t=='roofTopLean0') { a=roofTopLean; } else 
+    if (t=='roofTopLean1') { a=roofTopLean;mz=true; } else 
+    if (t=='roofTopLean2') { a=roofTopLean;xz=true; } else 
+    if (t=='roofTopLean3') { a=roofTopLean;xz=true;mz=true; } else 
+    {
+      a=[[[-100,100,100,0.27,0.4381],[-100,-100,100,0.27,0.4688],[100,-100,100,0.4688,0.4108],[100,100,100,0.4688,0.3801],[-100,-100,-100,0.1563,0.3676],[-100,100,-100,0.1563,0.2142],[100,-100,-100,0.355,0.3096],[100,100,-100,0.355,0.1563],[100,100,-100,0.355,0.1563],[-100,100,-100,0.1563,0.2142],[-100,100,100,0.27,0.4381],[100,100,100,0.4688,0.3801],[-100,-100,100,0.27,0.4688],[100,-100,100,0.4688,0.4108],[-100,-100,-100,0.1563,0.3676],[100,-100,-100,0.355,0.3096],[100,100,-100,0.355,0.1563],[100,100,100,0.4688,0.3801],[100,-100,100,0.4688,0.4108],[100,-100,-100,0.355,0.3096],[-100,100,-100,0.1563,0.2142],[-100,100,100,0.27,0.4381],[-100,-100,100,0.27,0.4688],[-100,-100,-100,0.1563,0.3676]],
+         [[0,2,1],[2,0,3],[7,4,6],[4,7,5],[12,15,14],[15,12,13],[17,19,18],[23,21,22],[10,16,11],[16,10,20],[17,8,19],[9,21,23]]];
+    }
+    
+    var pa=a[0],fa=a[1];
+    for (var i=0;i<pa.length;i++) { var p=pa[i];
+      var x=(mx?-1:1)*(xz?p[2]:p[0]),
+          y=p[1],
+          z=(mz?-1:1)*(xz?p[0]:p[2]);
+      vertices.push(x*w/200,y*h/200,z*d/200);normals.push(0,0,1);uvs.push(p[3],p[4]); }
+    for (var i=0;i<fa.length;i++) { var f=fa[i];
+      if ((mz&&!xz)||(xz&&!mx&&!mz)||(mx&&!xz)) indices.push(f[0],f[1],f[2]); else indices.push(f[0],f[2],f[1]); 
+    }
+    groupCount=indices.length;
+    scope.addGroup( groupStart, groupCount, 0 );
+    groupStart += groupCount;
+    
+    
+    this.setIndex( indices );
+    this.addAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 ) );
+    this.addAttribute( 'normal', new THREE.Float32BufferAttribute( normals, 3 ) );
+    this.addAttribute( 'uv', new THREE.Float32BufferAttribute( uvs, 2 ) );
+    
+    
+  }
+  BrickGeometry.prototype=Object.create( THREE.BufferGeometry.prototype );
+  BrickGeometry.prototype.constructor=BrickGeometry;
+  //--
+  var camera,controls,scene,renderer,stats,sel,mmode,mmenu,mtype,mmultisel,
+      mpos,mdim,click,raycaster=new THREE.Raycaster(),sels=[];
   function rani(m) {
     return Math.floor(Math.random()*m);
   }
-  
   scene = new THREE.Scene();
   renderer = new THREE.WebGLRenderer({antialias:true});
   renderer.setClearColor( 0x888888 );
@@ -54,8 +149,8 @@ function lego1() {
   
   var bw=20,sw=15,sw2=(sw-1)/2,bh=bw/2,grid={};//20,15
   
-  function box(x,y,z,w,h,b,m) {
-    mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,b),m);
+  function box(x,y,z,w,h,b,m,brick) {
+    mesh=new THREE.Mesh(new BrickGeometry(w,h,b,brick?brick.t:undefined),m);
     mesh.position.set(x,y,z);
     mesh.updateMatrix();
     mesh.matrixAutoUpdate = false;
@@ -69,7 +164,7 @@ function lego1() {
   }
   function box0(b) {
     var bo=1;//0.5;
-    var mesh=box((b.x-sw2+(b.w-1)/2)*bw,-150+(bw*3/4)+(b.y+(b.h-1)/2)*bh,(b.z-sw2+(b.b-1)/2)*bw,b.w*bw-bo,b.h*bh-bo,b.b*bw-bo,ms[b.col]);
+    var mesh=box((b.x-sw2+(b.w-1)/2)*bw,-150+(bw*3/4)+(b.y+(b.h-1)/2)*bh,(b.z-sw2+(b.b-1)/2)*bw,b.w*bw-bo,b.h*bh-bo,b.b*bw-bo,ms[b.col],b);
     for (var xi=0;xi<b.w;xi++) for (var yi=0;yi<b.h;yi++) for (var zi=0;zi<b.b;zi++)
       grid[key(xi+b.x,yi+b.y,zi+b.z)]=1;
     b.mesh=mesh;
@@ -117,49 +212,64 @@ function lego1() {
   stats.domElement.style.zIndex = 100;
   container.appendChild( stats.domElement );
   
-  window.addEventListener( 'resize', onWindowResize, false );
+  window.addEventListener('resize',onWindowResize,false);
   
+  function onClick(e) {
+    click=new THREE.Vector2(2*e.clientX/window.innerWidth-1,-2*e.clientY/window.innerHeight+1);
+    //console.log(click);
+  }
   function menuArrow() {
-    if (mmode.ms=='Select') {
-      brickPos(sel,0);
-      var i=bricks.indexOf(sel),l=bricks.length;
-      if (this.s=='\u2192') sel=bricks[(i+1)%l];
-      if (this.s=='\u2190') sel=bricks[(i-1+l)%l];
-      if (this.s=='\u2191') sel=bricks[(i+10)%l];
-      if (this.s=='\u2193') sel=bricks[(i-Math.min(l,10)+l)%l];
-      
+    //if (mmode.ms=='Select') {
+    //  brickPos(sel,0);
+    //  var i=bricks.indexOf(sel),l=bricks.length;
+    //  if (this.s=='\u2192') sel=bricks[(i+1)%l];
+    //  if (this.s=='\u2190') sel=bricks[(i-1+l)%l];
+    //  if (this.s=='\u2191') sel=bricks[(i+10)%l];
+    //  if (this.s=='\u2193') sel=bricks[(i-Math.min(l,10)+l)%l];
+    //  
+    //  return;
+    //}
+    
+    for (var j=sels.length-1;j>=0;j--) {
+    var b=sels[j];
+    
+    if (mdim.checked) {//mmode.ms=='Dimension') {
+      if (this.s=='\u2192') b.w++;
+      if (this.s=='\u2190') b.w--;
+      if (this.s=='\u2191') b.b--;
+      if (this.s=='\u2193') b.b++;
+      if (this.s=='\u21d1') b.h++;
+      if (this.s=='\u21d3') b.h--;
+      scene.remove(b.mesh);
+      box0(b);
       return;
     }
     
-    if (mmode.ms=='Dimension') {
-      if (this.s=='\u2192') sel.w++;
-      if (this.s=='\u2190') sel.w--;
-      if (this.s=='\u2191') sel.b--;
-      if (this.s=='\u2193') sel.b++;
-      if (this.s=='\u21d1') sel.h++;
-      if (this.s=='\u21d3') sel.h--;
-      scene.remove(sel.mesh);
-      box0(sel);
-      return;
+    if (this.s=='\u2192') b.x++;
+    if (this.s=='\u2190') b.x--;
+    if (this.s=='\u2191') b.z--;
+    if (this.s=='\u2193') b.z++;
+    if (this.s=='\u21d1') b.y++;
+    if (this.s=='\u21d3') b.y--;
     }
-    
-    if (this.s=='\u2192') sel.x++;
-    if (this.s=='\u2190') sel.x--;
-    if (this.s=='\u2191') sel.z--;
-    if (this.s=='\u2193') sel.z++;
-    if (this.s=='\u21d1') sel.y++;
-    if (this.s=='\u21d3') sel.y--;
-    
   }
   function cloneWithout(o,h) {
     var n={};
     for (var k in o) if (o.hasOwnProperty(k)) if (!h[k]) n[k]=o[k];
     return n;
   }
+  function diff(o0,o1) {
+    //returns all fields from o1, that are different in o0
+    var r={}
+    for (var k in o1) if (o1.hasOwnProperty(k)&&(o1[k]!=o0[k])) r[k]=o1[k];
+    return r;
+  }
   function serialize() {
-    var s='[\n',without={mesh:1};
+    var s='[\n',without={mesh:1},bl;
     for (var i=0;i<bricks.length;i++) {
-      s+=JSON.stringify(cloneWithout(bricks[i],without))+((i<bricks.length-1)?',':'')+'\n';
+      var b=cloneWithout(bricks[i],without);
+      s+=JSON.stringify(bl?diff(bl,b):b)+((i<bricks.length-1)?',':'')+'\n';
+      bl=b;
     }
     s+=']';
     return s;
@@ -170,82 +280,144 @@ function lego1() {
     
     bricks=JSON.parse(d);
     
+    var bl;
     for (var i=0;i<bricks.length;i++) {
       var b=bricks[i];
+      if (bl) for (var k in bl) if (bl.hasOwnProperty(k)) 
+        if (b[k]===undefined) b[k]=bl[k];
+      if (!b.t) b.t='block';
       box0(b);//.x,b.y,b.z,b.w,b.h,b.b,ms[b.col]);
-      sel=b;
+      sel=b;bl=b;
     }
     Menu.ms(mmenu,bricks.length+' bricks');
   }
-  
-  Menu.init([mmenu={s:'Menu',ms:' ',msid:'mmenums',sub:[
-  
-  Conet.fileMenu({fn:'lego/files.txt',defFn:'lego/test0.txt',//noStartLoad:1,
-  loadf:function(v) {
-    Conet.download({fn:v,f:parseLoad});
-  }
-  ,savef:function(v) {
-    Conet.upload({fn:v,data:serialize(),f:function(d) {
-      Conet.log(d===''?'Conet.save error.':'Conet.saved: '+v+'.');
+  function menuInit() {
+    var url=Conet.parseUrl(document.URL);
+    
+    Menu.colBg='rgba(150,150,150,0.2)';
+    Menu.init([mmenu={s:'Menu',ms:' ',msid:'mmenums',sub:[
+    Conet.fileMenu({fn:'lego/files.txt',defFn:'lego/test0.txt',noStartLoad:url.data,
+    loadf:function(v) {
+      Conet.download({fn:v,f:parseLoad});
     }
-    });
+    ,savef:function(v) {
+      Conet.upload({fn:v,data:serialize(),f:function(d) {
+        Conet.log(d===''?'Conet.save error.':'Conet.saved: '+v+'.');
+      }
+      });
+    }
+    }),
+    {s:'Export',ms:'Import',doctrl:'Brick data',mcfs:0.07,okS:'Import',cancelS:'Close',ta:true,wrap:1,tacols:50,tarows:20,setfunc:function(v,initLoad) {
+      //tridata=v.length==0?undefined:JSON.parse(v);
+      parseLoad(v);
+    }
+    ,valuef:function() {
+      var r=btoa(serialize());
+      Conet.log('Data: '+r.length+' bytes');
+      return r;
+    }
+    },
+    
+    {s:'Export',ms:'to URL',actionf:function() {
+      var durl=document.URL,i=durl.indexOf('?');
+      if (i!=-1) durl=durl.substr(0,i+1); else durl+='?';
+      window.open(durl+'data='+btoa(serialize()),'Url Export');
+    }
+    },
+    
+    {s:'Color',r:1,actionf:function() {
+      sel.col=(sel.col+1)%ms.length;
+      scene.remove(sel.mesh);
+      box0(sel);
+    }
+    },
+    
+    mtype={s:'Type',ms:'block',msid:'mtype',r:1,autoval:2,sub:[{s:'block'},{s:'roof0'},{s:'roof1'},{s:'roof2'},{s:'roof3'},{s:'roofTop0'},{s:'roofTop1'}
+      ,{s:'roofCant0'},{s:'roofCant1'},{s:'roofCant2'},{s:'roofCant3'},{s:'roofNook0'},{s:'roofNook1'},{s:'roofNook2'},{s:'roofNook3'}
+      ,{s:'roofNookTop0'},{s:'roofNookTop1'},{s:'roofNookTop2'},{s:'roofNookTop3'},{s:'roofTopLean0'},{s:'roofTopLean1'},{s:'roofTopLean2'},{s:'roofTopLean3'}]
+    ,setfunc:function(a) {
+      sel.t=a;
+      scene.remove(sel.mesh);
+      box0(sel);
+    }
+    },
+    
+    
+    {s:'New Brick',r:1,actionf:function() {
+      //brickPos(sel,0);
+      var b=cloneWithout(sel,{mesh:1});//{x:sel.x,y:sel.y,z:sel.z,w:sel.w,h:sel.h,b:sel.b,col:sel.col};
+      box0(b);bricks.push(b);
+      select(b);
+      //sel=b;
+      Menu.ms(mmenu,bricks.length+' bricks');
+    }
+    },
+    
+    
+    {s:'Del Brick',actionf:function() {
+      if (bricks.length<2) return;
+      var i=bricks.indexOf(sel);
+      scene.remove(sel.mesh);
+      bricks.splice(i,1);
+      if (i==bricks.length) i--;
+      sel=bricks[i];
+      Menu.ms(mmenu,bricks.length+' bricks');
+    }
+    },
+    
+    mmultisel={s:Menu.soff,ms:'multi select',checkbox:1,r:1}
+    
+    ]},
+    
+    
+    
+    
+    //mmode={s:'Mode',ms:'Position',autoval:2,sub:[{s:'Position',r:1},{s:'Dimension',r:1},{s:'Select',r:1}]},
+    {s:'\u2190',px:0.02,py:0.02,pw:0.116,ph:0.116,ydown:true,fs:1.4,actionf:menuArrow},
+    {s:'\u2192',px:0.13,py:0.02,pw:0.116,ph:0.116,ydown:true,fs:1.4,actionf:menuArrow},
+    {s:'\u2191',px:0.13,py:0.13,pw:0.116,ph:0.116,ydown:true,fs:1.4,actionf:menuArrow},
+    {s:'\u2193',px:0.02,py:0.13,pw:0.116,ph:0.116,ydown:true,fs:1.4,actionf:menuArrow},
+    {s:'\u21d1',px:0.13,py:0.24,pw:0.116,ph:0.116,ydown:true,fs:1.4,actionf:menuArrow},
+    {s:'\u21d3',px:0.02,py:0.24,pw:0.116,ph:0.116,ydown:true,fs:1.4,actionf:menuArrow},
+    mdim={s:Menu.soff,px:0.13,py:0.35,pw:0.116,ph:0.116,ydown:true,fs:1.4,checkbox:1,ms:'Dimension',mfs:1.5,msCenter:1,mstop:4,
+    actionf:function() {
+      //onet.log('mdim.actionf');
+      Menu.setChecked(mpos,0);
+      Menu.setChecked(mdim,1);
+    }
+    },
+    mpos={s:Menu.son ,px:0.02,py:0.35,pw:0.116,ph:0.116,ydown:true,fs:1.4,checkbox:1,ms:'Position',checked:1,mfs:1.5,msCenter:1,mstop:4,
+    actionf:function() {
+      //onet.log('mpos.actionf');
+      Menu.setChecked(mdim,0);//...
+      Menu.setChecked(mpos,1);
+    }
+    }
+    ],{listen:1});
+    
+    if (url.data) parseLoad(atob(url.data));
+    //...
   }
-  }),
   
   
-  {s:'Export',ms:'Import',doctrl:'Brick data',mcfs:0.07,okS:'Import',cancelS:'Close',ta:true,wrap:1,tacols:50,tarows:20,setfunc:function(v,initLoad) {
-    //tridata=v.length==0?undefined:JSON.parse(v);
-    parseLoad(v);
-  }
-  ,valuef:function() {
-    return serialize();
-  }
-  },
+  menuInit();
   
-  
-  {s:'Color',r:1,actionf:function() {
-    sel.col=(sel.col+1)%ms.length;
-    scene.remove(sel.mesh);
-    box0(sel);
-  }
-  },
-  
-  
-  {s:'Del Brick',actionf:function() {
-    if (bricks.length<2) return;
-    var i=bricks.indexOf(sel);
-    scene.remove(sel.mesh);
-    bricks.splice(i,1);
-    if (i==bricks.length) i--;
-    sel=bricks[i];
-    Menu.ms(mmenu,bricks.length+' bricks');
-  }
-  }
-  ]},
-  
-  
-  
-  {s:'New Brick',actionf:function() {
-    brickPos(sel,0);
-    var b={x:sel.x,y:sel.y,z:sel.z,w:sel.w,h:sel.h,b:sel.b,col:sel.col};
-    box0(b);bricks.push(b);
-    sel=b;
-    Menu.ms(mmenu,bricks.length+' bricks');
-  }
-  },
-  
-  mmode={s:'Mode',ms:'Position',autoval:2,sub:[{s:'Position',r:1},{s:'Dimension',r:1},{s:'Select',r:1}]},
-  
-  {s:'\u2190',px:0.02,py:0.02,pw:0.116,ph:0.116,ydown:true,fs:1.4,actionf:menuArrow},
-  {s:'\u2192',px:0.13,py:0.02,pw:0.116,ph:0.116,ydown:true,fs:1.4,actionf:menuArrow},
-  {s:'\u2191',px:0.13,py:0.13,pw:0.116,ph:0.116,ydown:true,fs:1.4,actionf:menuArrow},
-  {s:'\u2193',px:0.02,py:0.13,pw:0.116,ph:0.116,ydown:true,fs:1.4,actionf:menuArrow},
-  {s:'\u21d1',px:0.13,py:0.24,pw:0.116,ph:0.116,ydown:true,fs:1.4,actionf:menuArrow},
-  {s:'\u21d3',px:0.02,py:0.24,pw:0.116,ph:0.116,ydown:true,fs:1.4,actionf:menuArrow}
-  
-  
-  ],{listen:1});
   onWindowResize();
+  
+  window.addEventListener('click',onClick,false);
+  
+  function select(b,multi) {
+    brickPos(sel,0);
+    sel=b;Menu.ms(mtype,sel.t);
+    
+    if (!multi) {
+      for (var i=sels.length-1;i>=0;i--) brickPos(sels[i],0);
+      sels.length=0;
+    } else if (sels.indexOf(b)!=-1) return;
+    sels.push(b);
+    
+    //...
+  }
   
   function animate() {
     
@@ -258,8 +430,30 @@ function lego1() {
     
   }
   function render() {
-    var b=sel;
-    if (b) brickPos(b,3);
+    //var b=sel;if (b) brickPos(b,3);
+    for (var i=sels.length-1;i>=0;i--) brickPos(sels[i],3);
+    
+    if (click) {
+      raycaster.setFromCamera(click,camera);
+      var intersects=raycaster.intersectObjects(scene.children);
+      click=undefined;
+      if (intersects.length>0) {
+        //Conet.log('render intersects='+intersects.length);
+        for (var j=0;j<(
+         //mmultisel.checked?intersects.length:
+         1);j++) {
+         var o=intersects[j].object;
+         for (var i=bricks.length-1;i>=0;i--) {
+          var b=bricks[i];
+          if (b.mesh!=o) continue;
+          select(b,mmultisel.checked);
+          //brickPos(sel,0);
+          //sel=b;Menu.ms(mtype,sel.t);
+          break;
+         }
+        }
+      }
+    }
     //---
     renderer.render( scene, camera );
     
@@ -281,8 +475,10 @@ function lego1() {
 lego1();
 </script></body></html><script>
 //fr o,17
-//fr o,17,73
-//fr o,17,78
-//fr o,17,92
-//fr o,17,98
-//fr p,37,143
+//fr o,17,80
+//fr o,17,80,5
+//fr o,17,80,9
+//fr o,17,80,12
+//fr o,17,80,47
+//fr o,17,80,50
+//fr p,40,171

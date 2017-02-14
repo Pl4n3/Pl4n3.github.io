@@ -1,1 +1,1 @@
-[{"fn":"lego/test.txt"}]
+[{"fn":"lego/roof0.txt"},{"fn":"lego/test.txt"}]

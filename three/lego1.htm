@@ -113,7 +113,8 @@ function lego1() {
   BrickGeometry.prototype.constructor=BrickGeometry;
   //--
   var camera,controls,scene,renderer,stats,sel,mmode,mmenu,mtype,mmultisel,
-      mpos,mdim,click,raycaster=new THREE.Raycaster(),sels=[];
+      mpos,mdim,click,raycaster=new THREE.Raycaster(),sels=[],
+      without={mesh:1,light:1};
   function rani(m) {
     return Math.floor(Math.random()*m);
   }
@@ -135,8 +136,9 @@ function lego1() {
   camera.position.z = 500;
   
   controls = new THREE.OrbitControls( camera, renderer.domElement );
+  //controls.autoRotate=true;
   controls.enableDamping=true;
-  controls.dampingFactor=0.25;
+  controls.dampingFactor=0.25;//0.25;
   controls.enableZoom=true;
   controls.enablePan=false;
   controls.maxDistance=600;
@@ -168,6 +170,16 @@ function lego1() {
     for (var xi=0;xi<b.w;xi++) for (var yi=0;yi<b.h;yi++) for (var zi=0;zi<b.b;zi++)
       grid[key(xi+b.x,yi+b.y,zi+b.z)]=1;
     b.mesh=mesh;
+    if (b.t=='light') {
+      var l=new THREE.PointLight(0xffaa00,2,300);//l.position.set(b.x*bw,b.y*bh,b.z*bw);
+      l.castShadow=true;
+    l.shadow.camera.near=100;
+    l.shadow.camera.far=1000;
+    l.shadow.mapSize.width=1024;//2048;
+    l.shadow.mapSize.height=1024;
+    l.shadow.bias=0.01;
+      scene.add(l);b.light=l;
+    }
     return mesh;
   }
   
@@ -178,12 +190,17 @@ function lego1() {
     return true;
   }
   function brickPos(b,rand) {
+    var xh,yh,zh;
     b.mesh.position.set(
-      (b.x-sw2+(b.w-1)/2)*bw+(Math.random()-0.5)*rand,
-      -150+(bw*3/4)+(b.y+(b.h-1)/2)*bh+(Math.random()-0.5)*rand,
-      (b.z-sw2+(b.b-1)/2)*bw+(Math.random()-0.5)*rand
+      xh=(b.x-sw2+(b.w-1)/2)*bw+(Math.random()-0.5)*rand,
+      yh=-150+(bw*3/4)+(b.y+(b.h-1)/2)*bh+(Math.random()-0.5)*rand,
+      zh=(b.z-sw2+(b.b-1)/2)*bw+(Math.random()-0.5)*rand
     );
     b.mesh.updateMatrix();
+    if (b.light) {
+      b.light.position.set(xh,yh,zh);
+      //Conet.log('set light pos '+xh+' '+yh+' '+zh);
+    }
     //...
   }
   //if (1) { box0(-1,0,-1,1,1,1,m2);box0(15,0,-1,1,1,1,m2);
@@ -214,6 +231,11 @@ function lego1() {
   
   window.addEventListener('resize',onWindowResize,false);
   
+  function brickRemove(b) {
+    scene.remove(b.mesh);
+    if (b.light) scene.remove(b.light);
+    //...
+  }
   function onClick(e) {
     click=new THREE.Vector2(2*e.clientX/window.innerWidth-1,-2*e.clientY/window.innerHeight+1);
     //console.log(click);
@@ -240,7 +262,9 @@ function lego1() {
       if (this.s=='\u2193') b.b++;
       if (this.s=='\u21d1') b.h++;
       if (this.s=='\u21d3') b.h--;
-      scene.remove(b.mesh);
+      //scene.remove(b.mesh);
+      //if (b.light) scene.remove(b.light);
+      brickRemove(b);
       box0(b);
       return;
     }
@@ -265,7 +289,7 @@ function lego1() {
     return r;
   }
   function serialize() {
-    var s='[\n',without={mesh:1},bl;
+    var s='[\n',bl;
     for (var i=0;i<bricks.length;i++) {
       var b=cloneWithout(bricks[i],without);
       s+=JSON.stringify(bl?diff(bl,b):b)+((i<bricks.length-1)?',':'')+'\n';
@@ -274,19 +298,23 @@ function lego1() {
     s+=']';
     return s;
   }
+  function clear() {
+    for (var i=0;i<bricks.length;i++) brickRemove(bricks[i]);
+    bricks.length=0;
+    //...
+  }
   function parseLoad(d) {
-    
-    for (var i=0;i<bricks.length;i++) scene.remove(bricks[i].mesh);
-    
+    clear();
     bricks=JSON.parse(d);
     
     var bl;
     for (var i=0;i<bricks.length;i++) {
       var b=bricks[i];
-      if (bl) for (var k in bl) if (bl.hasOwnProperty(k)) 
+      if (bl) for (var k in bl) if (bl.hasOwnProperty(k)) if (!without[k])
         if (b[k]===undefined) b[k]=bl[k];
       if (!b.t) b.t='block';
       box0(b);//.x,b.y,b.z,b.w,b.h,b.b,ms[b.col]);
+      brickPos(b,0);
       sel=b;bl=b;
     }
     Menu.ms(mmenu,bricks.length+' bricks');
@@ -327,14 +355,19 @@ function lego1() {
     
     {s:'Color',r:1,actionf:function() {
       sel.col=(sel.col+1)%ms.length;
-      scene.remove(sel.mesh);
+      brickRemove(sel);
       box0(sel);
     }
     },
     
-    mtype={s:'Type',ms:'block',msid:'mtype',r:1,autoval:2,sub:[{s:'block'},{s:'roof0'},{s:'roof1'},{s:'roof2'},{s:'roof3'},{s:'roofTop0'},{s:'roofTop1'}
-      ,{s:'roofCant0'},{s:'roofCant1'},{s:'roofCant2'},{s:'roofCant3'},{s:'roofNook0'},{s:'roofNook1'},{s:'roofNook2'},{s:'roofNook3'}
-      ,{s:'roofNookTop0'},{s:'roofNookTop1'},{s:'roofNookTop2'},{s:'roofNookTop3'},{s:'roofTopLean0'},{s:'roofTopLean1'},{s:'roofTopLean2'},{s:'roofTopLean3'}]
+    mtype={s:'Type',ms:'block',msid:'mtype',r:1,autoval:2,sub:[{s:'block'}
+      ,{s:'roof',sub:[{s:'0',a:'roof0'},{s:'1',a:'roof1'},{s:'2',a:'roof2'},{s:'3',a:'roof3'}]}
+      ,{s:'roofTop',sub:[{s:'0',a:'roofTop0'},{s:'1',a:'roofTop1'}]}
+      ,{s:'roofCant',sub:[{s:'0',a:'roofCant0'},{s:'1',a:'roofCant1'},{s:'2',a:'roofCant2'},{s:'3',a:'roofCant3'}]}
+      ,{s:'roofNook',sub:[{s:'0',a:'roofNook0'},{s:'1',a:'roofNook1'},{s:'2',a:'roofNook2'},{s:'3',a:'roofNook3'}]}
+      ,{s:'roofNookTop',sub:[{s:'0',a:'roofNookTop0'},{s:'1',a:'roofNookTop1'},{s:'2',a:'roofNookTop2'},{s:'3',a:'roofNookTop3'}]}
+      ,{s:'roofTopLean',sub:[{s:'0',a:'roofTopLean0'},{s:'1',a:'roofTopLean1'},{s:'2',a:'roofTopLean2'},{s:'3',a:'roofTopLean3'}]}
+      ,{s:'light'}]
     ,setfunc:function(a) {
       sel.t=a;
       scene.remove(sel.mesh);
@@ -345,7 +378,7 @@ function lego1() {
     
     {s:'New Brick',r:1,actionf:function() {
       //brickPos(sel,0);
-      var b=cloneWithout(sel,{mesh:1});//{x:sel.x,y:sel.y,z:sel.z,w:sel.w,h:sel.h,b:sel.b,col:sel.col};
+      var b=cloneWithout(sel,without);//{x:sel.x,y:sel.y,z:sel.z,w:sel.w,h:sel.h,b:sel.b,col:sel.col};
       box0(b);bricks.push(b);
       select(b);
       //sel=b;
@@ -365,7 +398,12 @@ function lego1() {
     }
     },
     
-    mmultisel={s:Menu.soff,ms:'multi select',checkbox:1,r:1}
+    mmultisel={s:Menu.soff,ms:'multi select',checkbox:1,r:1},
+    
+    {s:'Rotate',actionf:function() {
+      controls.autoRotate=!controls.autoRotate;//...
+    }
+    }
     
     ]},
     
@@ -475,10 +513,13 @@ function lego1() {
 lego1();
 </script></body></html><script>
 //fr o,17
-//fr o,17,80
-//fr o,17,80,5
-//fr o,17,80,9
-//fr o,17,80,12
-//fr o,17,80,47
-//fr o,17,80,50
-//fr p,17,111
+//fr o,17,76
+//fr o,17,84
+//fr o,17,84,5
+//fr o,17,84,9
+//fr o,17,84,12
+//fr o,17,84,30
+//fr o,17,84,39
+//fr o,17,84,55
+//fr o,17,84,58
+//fr p,2,45

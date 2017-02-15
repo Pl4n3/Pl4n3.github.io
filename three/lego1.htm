@@ -326,7 +326,7 @@ function lego1() {
     Menu.init([mmenu={s:'Menu',ms:' ',msid:'mmenums',sub:[
     Conet.fileMenu({fn:'lego/files.txt',defFn:'lego/test0.txt',noStartLoad:url.data,
     loadf:function(v) {
-      Conet.download({fn:v,f:parseLoad});
+      Conet.download({fn:v+'?1',f:parseLoad});
     }
     ,savef:function(v) {
       Conet.upload({fn:v,data:serialize(),f:function(d) {
@@ -522,4 +522,4 @@ lego1();
 //fr o,17,84,39
 //fr o,17,84,55
 //fr o,17,84,58
-//fr p,2,45
+//fr p,25,113

@@ -1,7 +1,7 @@
 var Conet={};
 (function(Conet) {
   Conet.offline=false;
-  Conet.version='v.1.210 ';//FOLDORUPDATEVERSION
+  Conet.version='v.1.228 ';//FOLDORUPDATEVERSION
   var uploads={},fns,logc,logs=[];//fn=>data,first
   function xhr(p) {
     var x=new XMLHttpRequest();
@@ -124,7 +124,7 @@ var Conet={};
     }
     function checkListFile(v) {
       m.curFn=v;
-      Menu.ms(m,m.curFn);
+      Menu.ms(p.loadMs?mload:m,m.curFn);
       var iv=-1;
       for (var i=m.files.length-1;i>=0;i--) if (m.files[i].fn==v) { iv=i;break; }
       if (iv==0) return;
@@ -140,8 +140,8 @@ var Conet={};
       //...
     }
     Conet.fileMenuCount=(Conet.fileMenuCount||0)+1;
-    var mload;
-    var m={s:'<span style="font-size:0.5em;">Conet</span>File',ms:'',msid:'conetFileMenu'+Conet.fileMenuCount,sub:[]};//ms:p.defFn||''
+    var mload,msid='conetFileMenu'+Conet.fileMenuCount,
+        m={s:'<span style="font-size:0.5em;">Conet</span>File',ms:'',msid:(p.loadMs?undefined:msid),sub:[]};//ms:p.defFn||''
     
     if (p.m) for (var k in p.m) if (p.m.hasOwnProperty(k)) m[k]=p.m[k];
     
@@ -160,13 +160,17 @@ var Conet={};
     
     }]});
     
+    if (p.loadMs) {
+      mload.ms='';mload.msid=msid;
+    }
+    
     if (p.savef) {
     m.sub.push(
     {s:'Save',a:'conetSave',keys:['83_c'],ms:'<span style="color:#00f">ctrl+s</span>',actionf:function() {
       p.savef(m.curFn);
     }
     });
-    m.sub.push({s:'Save as...',a:'conetSaveAs',doctrl:'Save as'
+    m.sub.push({s:'Save as&hellip;',a:'conetSaveAs',doctrl:'Save as'
     ,setfunc:function(v,initLoad) {
       if (initLoad) return;
       //m.curFn=v;
@@ -214,10 +218,14 @@ var Conet={};
     Conet.download({fn:p.fn,f:function(v) {
       //console.log('Conet.fileMenu '+p.fn+' '+v);
       if (v===undefined) {
-        m.files=[{fn:p.defFn}];
+        var hfn=p.defFn||p.curFn;
+        //onsole.log('conet.fileMenu no fn "'+p.fn+'", initing with "'+hfn+'"');
+        m.files=(hfn!==undefined?[{fn:hfn}]:[]);
         Conet.upload({fn:p.fn,data:JSON.stringify(m.files)});
-      } else
+      } else {
+        //onsole.log('conet.fileMenu found fn "'+p.fn+'": '+v);
         m.files=JSON.parse(v);
+      }
       
       Conet.fmFiles=m.files;//--- this is currently needed for cutouts app.js editmode
       
@@ -225,8 +233,9 @@ var Conet={};
       //onsole.log(Conet.fmFiles);
       mloadUpdate();
       if (p.noStartLoad) return;
-      m.curFn=p.curFn?p.curFn:m.files[0].fn;
-      Menu.ms(m,m.curFn);
+      //m.curFn=p.curFn?p.curFn:m.files[0].fn;
+      //Menu.ms(p.loadMs?mload:m,m.curFn);
+      checkListFile(p.curFn?p.curFn:m.files[0].fn);
       p.loadf(m.curFn,1);
     }
     });
@@ -309,12 +318,17 @@ var Conet={};
 console.log('Conet '+Conet.version);
 //fr o,1
 //fr o,1,4,17
-//fr o,1,7,2
+//fr o,1,7
 //fr o,1,7,3
+//fr o,1,7,4
 //fr o,1,7,15
-//fr o,1,7,22
-//fr o,1,7,53
+//fr o,1,7,16
+//fr o,1,7,26
+//fr o,1,7,29
+//fr o,1,7,30
+//fr o,1,7,54
+//fr o,1,7,57
 //fr o,1,8,1
 //fr o,1,10
 //fr o,1,11,4
-//fr p,29,14
+//fr p,22,67

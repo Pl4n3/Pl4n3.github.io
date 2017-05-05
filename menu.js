@@ -41,7 +41,7 @@ var Menu={};
         cw=Math.floor(Menu.pw*diw+0.5),
         ch=Math.floor(Menu.ph*diw+0.5),
         //mfs=Math.floor(ch*0.25);
-        padding=Math.floor(0.01*ccw+0.5);
+        padding=Math.floor(0.01*diw+0.5);//ccw
         
     if (ps.diw) { cx=ccw-cw-25;cy0=cy=10; }
         
@@ -151,10 +151,11 @@ var Menu={};
       //if (m.ph===undefined) m.ph=0.05;
       ////if (m.py===undefined) m.py=0.02+(m.ph+0.01)*i;
       //if (m.py===undefined) m.py=0.02+(m.ph)*i;
-        m.cx=Math.floor(m.px*ccw+0.5);
-        m.cw=Math.floor(m.pw*ccw+0.5)-(cos?0:padding*2);
-        m.ch=Math.floor(m.ph*(m.yvh?cch:ccw)+0.5)-(cos?0:padding*2);
-        m.cy=Math.floor(m.py*(m.yvh?cch:ccw)+0.5);if (m.ydown) m.cy=cch-m.cy-m.ch;
+        var ccw7=diw;
+        m.cx=Math.floor(m.px*ccw7+0.5);
+        m.cw=Math.floor(m.pw*ccw7+0.5)-(cos?0:padding*2);
+        m.ch=Math.floor(m.ph*(m.yvh?cch:ccw7)+0.5)-(cos?0:padding*2);
+        m.cy=Math.floor(m.py*(m.yvh?cch:ccw7)+0.5);if (m.ydown) m.cy=cch-m.cy-m.ch;
       } else {
         m.cx=cx-(m.pw?Math.floor(m.pw*diw+0.5)-cw:0);//ccw
         m.cy=cy;//+i*ch;
@@ -610,13 +611,14 @@ var Menu={};
     //onsole.log('Menu.keyDown '+kc);
     var m=keym[kc+(ev.ctrlKey?'_c':0)];
     if (m) { 
-      console.log('Menu.keyDown '+m);
+      //onsole.log(m);
       if (ev.ctrlKey) ev.preventDefault();
       m.on=true;
       if (m.c) {
-        m.c.style.backgroundColor=Menu.colOver;
+        //m.c.style.backgroundColor=Menu.colOver;
         Menu.cmenu=m;
         Menu.action();
+        m.c.style.backgroundColor=Menu.colOver;
       } else {
         if (m.actionf) { m.actionf();ret=1; }
         else {
@@ -808,8 +810,10 @@ var Menu={};
 //fr o,2
 //fr o,2,20
 //fr o,2,31
+//fr o,2,38
+//fr o,2,39
 //fr o,2,68
 //fr o,2,69
 //fr o,2,70
 //fr o,2,71
-//fr p,29,226
+//fr p,2,288

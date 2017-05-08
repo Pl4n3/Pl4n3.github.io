@@ -43,7 +43,11 @@ var Menu={};
         //mfs=Math.floor(ch*0.25);
         padding=Math.floor(0.01*diw+0.5);//ccw
         
-    if (ps.diw) { cx=ccw-cw-25;cy0=cy=10; }
+    if (ps.diw) {
+      //console.log('Menu.draw cont.style.overflow='+cont.style.overflow);
+      cx=ccw-cw-(cont.style.overflow=='hidden'?10:25);
+      cy0=cy=10; 
+    }
         
     sy=window.pageYOffset||document.scrollTop||0,
     sx=window.pageXOffset||document.scrollLeft||0;    
@@ -816,4 +820,4 @@ var Menu={};
 //fr o,2,69
 //fr o,2,70
 //fr o,2,71
-//fr p,2,288
+//fr p,50,45

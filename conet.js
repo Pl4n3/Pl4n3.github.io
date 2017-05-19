@@ -1,7 +1,8 @@
 var Conet={};
 (function(Conet) {
   Conet.offline=false;
-  Conet.version='v.1.228 ';//FOLDORUPDATEVERSION
+  Conet.version='v.1.257 ';//FOLDORUPDATEVERSION
+  Conet.files={};
   var uploads={},fns,logc,logs=[];//fn=>data,first
   function xhr(p) {
     var x=new XMLHttpRequest();
@@ -110,21 +111,34 @@ var Conet={};
   Conet.fileMenu=function(p) {
     //---m.a are set only for compatibility (e.g. in paint Load,Save else trigger localStorage io)
     //---
+    function setCurFn(v) {
+      m.curFn=v;
+      Menu.ms(p.loadMs?mload:m,m.curFn);
+      //...
+    }
     function mload1() {
-      //m.curFn=this.s;
-      //Menu.ms(m,m.curFn);
-      checkListFile(this.s);
-      p.loadf(this.s);
+      ////m.curFn=this.s;
+      ////Menu.ms(m,m.curFn);
+      var fn=this.a;//this.s;
+      setCurFn(fn);//checkListFile(fn);
+      p.loadf(fn);
     }
     function mloadUpdate() {
       mload.sub.splice(1,mload.sub.length-1);
+      console.log(m.files);
       for (var i=0;i<m.files.length;i++) {
-        mload.sub.push({s:m.files[i].fn,fs:0.5,actionf:mload1});
+        var fn=m.files[i].fn;
+        var i0=fn.lastIndexOf('/')+1;//if (i0==-1) i0=0;
+        var i1=fn.indexOf('.',2);//skip path dots
+        if (i1==-1) i1=fn.length;
+        mload.sub.push({s:fn.substr(i0,i1-i0),ms:fn.substr(0,i0)+'^'+fn.substr(i1)//,fs:0.5
+          ,a:fn,actionf:mload1});
       }
     }
     function checkListFile(v) {
-      m.curFn=v;
-      Menu.ms(p.loadMs?mload:m,m.curFn);
+      //m.curFn=v;
+      //Menu.ms(p.loadMs?mload:m,m.curFn);
+      setCurFn(v);
       var iv=-1;
       for (var i=m.files.length-1;i>=0;i--) if (m.files[i].fn==v) { iv=i;break; }
       if (iv==0) return;
@@ -141,7 +155,8 @@ var Conet={};
     }
     Conet.fileMenuCount=(Conet.fileMenuCount||0)+1;
     var mload,msid='conetFileMenu'+Conet.fileMenuCount,
-        m={s:'<span style="font-size:0.5em;">Conet</span>File',ms:'',msid:(p.loadMs?undefined:msid),sub:[]};//ms:p.defFn||''
+        m={s:'<span style="font-size:0.5em;">Conet</span>File',ms:'',msid:(p.loadMs?undefined:msid),sub:[],
+          checkListFile:checkListFile};//ms:p.defFn||''
     
     if (p.m) for (var k in p.m) if (p.m.hasOwnProperty(k)) m[k]=p.m[k];
     
@@ -227,7 +242,8 @@ var Conet={};
         m.files=JSON.parse(v);
       }
       
-      Conet.fmFiles=m.files;//--- this is currently needed for cutouts app.js editmode
+      //Conet.fmFiles=m.files;//--- this is currently needed for cutouts app.js editmode
+      if (p.filesRef) Conet.files[p.filesRef]=m.files;
       
       //onsole.log('Conet.fileMenu '+p.fn+' '+v);
       //onsole.log(Conet.fmFiles);
@@ -317,18 +333,20 @@ var Conet={};
 )(Conet);
 console.log('Conet '+Conet.version);
 //fr o,1
-//fr o,1,4,17
-//fr o,1,7
-//fr o,1,7,3
-//fr o,1,7,4
-//fr o,1,7,15
-//fr o,1,7,16
-//fr o,1,7,26
-//fr o,1,7,29
-//fr o,1,7,30
-//fr o,1,7,54
-//fr o,1,7,57
-//fr o,1,8,1
-//fr o,1,10
-//fr o,1,11,4
-//fr p,22,67
+//fr o,1,5,17
+//fr o,1,8
+//fr o,1,8,2
+//fr o,1,8,3
+//fr o,1,8,4
+//fr o,1,8,5
+//fr o,1,8,17
+//fr o,1,8,18
+//fr o,1,8,28
+//fr o,1,8,31
+//fr o,1,8,32
+//fr o,1,8,56
+//fr o,1,8,59
+//fr o,1,9,1
+//fr o,1,11
+//fr o,1,12,4
+//fr p,43,31

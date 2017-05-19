@@ -1,7 +1,7 @@
 //----
 var Deep=function(ps) {
   var rH=ps.rH?ps.rH:undefined,PI=Math.PI,
-      version='0.68 ',//FOLDORUPDATEVERSION
+      version='0.69 ',//FOLDORUPDATEVERSION
       newView=true,ovs=[],lastcurs=undefined,curso=undefined,
       self=this,dt=0;
   function dkey(x,y,z) {
@@ -293,13 +293,14 @@ var Deep=function(ps) {
     //o.a+=0.001*dt;
   }
   
-  
+  this.setRH=function(h) {
+    rH=h;newView=true;
+  }
   
   //----
   console.log('Deep v.'+version);//...
 }
 
 //fr o,1
-//fr o,1,17
-//fr o,1,20
-//fr p,31,139
+//fr o,1,28
+//fr p,18,31

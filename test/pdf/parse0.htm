@@ -1,0 +1,74 @@
+<!doctype html><html><head>
+<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+<meta name="viewport" content="width=device-width, user-scalable=yes, minimum-scale=1.0, maximum-scale=10.0">
+<script src="//mozilla.github.io/pdf.js/build/pdf.js"></script>
+</head>
+<body bgcolor="#aaaaaa">
+<script type="text/javascript">
+var fn='sdw.pdf',pnr=1;//58
+//---parse url
+var a0=document.URL.split('?');if (a0&&a0.length>1) { 
+  var a=a0[1].split('&'); 
+  for (var i=0;i<a.length;i++) {
+    var s=a[i],sh;
+    if (s.startsWith(sh='page=')) pnr=parseInt(s.substr(sh.length)); else
+    if (s.startsWith(sh='fn=')) fn=s.substr(sh.length); 
+}}
+PDFJS.getDocument(fn).then(function(pdf) {
+  //console.log(pdf);
+  var total=pdf.numPages;
+  for (var i=0;i<total;i++) pdf.getPage(i+1).then(function(page) {
+    var pn=page.pageNumber;
+    if (pn==pnr)
+    page.getTextContent().then(function(textContent) {
+      var pt='',lb=undefined;
+      for (var i=0;i<textContent.items.length;i++) {
+        var b=textContent.items[i];
+        b.x=b.transform[4];
+        b.y=b.transform[5];
+        pt+=(lb?(((lb.x<b.x)&&(lb.y!=b.y))||((lb.y-b.y)>15)?'\n':'')
+          //+'('+Math.floor(lb.y-b.y)+') '
+          :'')+b.str;
+        lb=b;
+      }
+      var ta=document.createElement('textarea'),s=ta.style;
+      ta.value='[page '+pnr+', '+pt.length+' chars] '+pt;s.width='300px';s.height='500px';
+      s.fontSize='10px';
+      document.body.appendChild(ta);
+      
+      try {
+      //---split text into blocks, phone doesnt synth long texts
+      var msg=new SpeechSynthesisUtterance(),
+          spsy=window.speechSynthesis,pos=0,len=1000;
+      function nextSynth() {
+        if (pos>=pt.length) {
+          if (pos==pt.length) //pageflip
+            self.location=a0[0]+'?page='+(pnr+1)+'&fn='+fn;
+          return;
+        }
+        var pn=pos+len;
+        if (pn>pt.length) pn=pt.length;
+        msg.text=pt.substr(pos,pn-pos);
+        spsy.speak(msg);
+        pos=pn;
+      }
+      msg.onend=nextSynth;
+      nextSynth();
+      window.onclick=function(e) {
+        pos=pt.length+1;
+        spsy.cancel();//...
+      }
+      } catch (err) { ta.value=err+'\n\n'+ta.value; }
+    }
+    );
+  }
+  );
+}
+);
+</script></body></html><script>
+//fr o,16
+//fr o,16,2
+//fr o,16,2,2
+//fr o,16,2,2,19
+//fr o,16,2,2,22
+//fr p,44,34

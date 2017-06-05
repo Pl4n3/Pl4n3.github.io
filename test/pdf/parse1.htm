@@ -1,0 +1,165 @@
+<!doctype html><html><head>
+<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+<meta name="viewport" content="width=device-width, user-scalable=yes, minimum-scale=1.0, maximum-scale=10.0">
+<script src="//mozilla.github.io/pdf.js/build/pdf.js"></script>
+</head>
+<body bgcolor="#aaaaaa">
+<script type="text/javascript">
+var fn='sdw.pdf',lskey='pdfspeak0pnr',pnr=1,//sdw 58
+    lspnr=localStorage[lskey];
+//---parse url
+var a0=document.URL.split('?');if (a0&&a0.length>1) { 
+  var a=a0[1].split('&'); 
+  for (var i=0;i<a.length;i++) {
+    var s=a[i],sh;
+    if (s.startsWith(sh='page=')) { 
+      pnr=parseInt(s.substr(sh.length));lspnr=undefined; } else
+    if (s.startsWith(sh='fn=')) fn=s.substr(sh.length); 
+}}
+PDFJS.getDocument(fn).then(function(pdf) {
+  function log(s) {
+    //onsole.log(s);//...
+  }
+  
+  //console.log(pdf);
+  var total=pdf.numPages,speaking=false;
+  if (lspnr!==undefined) {
+    var n=parseInt(lspnr);if ((n>=1)&&(n<=total)) pnr=n; }
+  var fs='30px',d=document,b=d.body,c,s;b.style.fontSize=fs;
+  
+  b.appendChild(d.createTextNode('Page'));
+  
+  c=d.createElement('button');c.style.fontSize=fs;
+  c.innerHTML='<';b.appendChild(c);
+  c.onclick=function() {
+    if (pnr==1) return;
+    pnr--;
+    setPage();
+  }
+  
+  var pinp=c=d.createElement('input');s=c.style;c.type='text';c.value=pnr;
+  s.fontSize=fs;s.width='40px';s.textAlign='right';b.appendChild(c);
+  c.oninput=function() {
+    var s=pinp.value;
+    if (s=='') return;
+    var n=parseInt(s);
+    if ((n<1)||(n>total)) return;
+    pnr=n;
+    setPage();
+    //console.log('onchange '+pinp.value);
+  }
+  
+  c=d.createElement('button');c.style.fontSize=fs;
+  c.innerHTML='>';b.appendChild(c);
+  c.onclick=function() {
+    if (pnr==total) return;
+    pnr++;
+    setPage();
+  }
+  
+  b.appendChild(d.createTextNode('/'+total));
+  
+  var sbut=c=d.createElement('button');c.style.fontSize=fs;
+  c.innerHTML=speaking?'Stop':'Speak';b.appendChild(c);
+  c.onclick=function() {
+    canceled=true;
+    if (!speaking) {
+      speaking=true;
+      this.innerHTML='Stop';
+      setPage();
+      return;
+    }
+    speaking=false;
+    pos=pt.length+1;
+    spsy.cancel();
+    this.innerHTML='Speak';
+  }
+  
+  b.appendChild(d.createElement('br'));
+  
+  var ta=d.createElement('textarea'),s=ta.style;
+  s.width='320px';s.height='500px';s.fontSize='10px';
+  b.appendChild(ta);
+  
+  var msg=new SpeechSynthesisUtterance(),
+      spsy=window.speechSynthesis,pos=0,len=1000,pt;
+  
+  setPage();
+  
+  function nextSynth() {
+    log('nextSynth pos='+pos+' pt.length='+pt.length);
+    if (pos>=pt.length) {
+      if (pos==pt.length) {//pageflip
+        //self.location=a0[0]+'?page='+(pnr+1)+'&fn='+fn;
+        if (pnr==total) { sbut.onclick();return; }
+        pnr++;
+        canceled=true;
+        setPage();
+      }
+      return;
+    }
+    var pn=pos+len;
+    if (pn>pt.length) pn=pt.length;
+    msg.text=pt.substr(pos,pn-pos);
+    log('nextSynth spsy.speak '+msg.text.length);
+    log(' ');
+    spsy.speak(msg);
+    pos=pn;
+  }
+  msg.onend=nextSynth;
+  var canceled=false;
+  
+  function setPage() {
+    log('setPage pnr='+pnr+' speaking='+speaking+' canceled='+canceled);
+    pinp.value=pnr;
+    localStorage[lskey]=pnr;
+    
+    if (speaking&&(pos>0)&&!canceled) {
+      log('setPage canceling.');
+      pos=pt.length+1;
+      canceled=true;
+      msg.onend=setPage;
+      spsy.cancel();
+      return;
+    }
+    canceled=false;
+    msg.onend=nextSynth;
+    
+    
+    pdf.getPage(pnr).then(function(page) {
+      //---
+      page.getTextContent().then(function(textContent) {
+        var lb=undefined;pt='';
+        for (var i=0;i<textContent.items.length;i++) {
+          var b=textContent.items[i];
+          b.x=b.transform[4];
+          b.y=b.transform[5];
+          pt+=(lb?(((lb.x<b.x)&&(lb.y!=b.y))||((lb.y-b.y)>15)?'\n':'')
+            //+'('+Math.floor(lb.y-b.y)+') '
+            :'')+b.str;
+          lb=b;
+        }
+        
+        ta.value='[page '+pnr+', '+pt.length+' chars] '+pt;
+        if (!speaking) return;
+        pos=0;//pt.length-100;//0
+        //try {
+        //---split text into blocks, phone doesnt synth long texts
+        nextSynth();
+        //} catch (err) { ta.value=err+'\n\n'+ta.value; }
+      }
+      );
+    }
+    );
+    
+    //...
+  }
+  
+  
+}
+);
+</script></body></html><script>
+//fr o,18
+//fr o,18,43,16
+//fr o,18,43,16,1
+//fr p,24,24

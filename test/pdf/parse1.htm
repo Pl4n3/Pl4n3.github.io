@@ -2,6 +2,8 @@
 <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
 <meta name="viewport" content="width=device-width, user-scalable=yes, minimum-scale=1.0, maximum-scale=10.0">
 <script src="//mozilla.github.io/pdf.js/build/pdf.js"></script>
+<script src="/conet.js"></script>
+<script src="/menu.js"></script>
 </head>
 <body bgcolor="#aaaaaa">
 <script type="text/javascript">
@@ -27,10 +29,21 @@ PDFJS.getDocument(fn).then(function(pdf) {
     var n=parseInt(lspnr);if ((n>=1)&&(n<=total)) pnr=n; }
   var fs='30px',d=document,b=d.body,c,s;b.style.fontSize=fs;
   
-  b.appendChild(d.createTextNode('Page'));
+  if (1) {
+  c=d.createElement('div');s=c.style;s.textAlign='center';
+  //s.backgroundColor='#ff0';
+  b.appendChild(c);
+  b=c;
+  }
+  
+  var tdiv=c=d.createElement('div');s=c.style;s.textAlign='left';
+  s.display='inline-block';s.width='325px';s.height='50px';
+  b.appendChild(c);
+  
+  tdiv.appendChild(d.createTextNode('Page'));
   
   c=d.createElement('button');c.style.fontSize=fs;
-  c.innerHTML='<';b.appendChild(c);
+  c.innerHTML='<';tdiv.appendChild(c);
   c.onclick=function() {
     if (pnr==1) return;
     pnr--;
@@ -38,7 +51,7 @@ PDFJS.getDocument(fn).then(function(pdf) {
   }
   
   var pinp=c=d.createElement('input');s=c.style;c.type='text';c.value=pnr;
-  s.fontSize=fs;s.width='40px';s.textAlign='right';b.appendChild(c);
+  s.fontSize=fs;s.width='40px';s.textAlign='right';tdiv.appendChild(c);
   c.oninput=function() {
     var s=pinp.value;
     if (s=='') return;
@@ -50,15 +63,16 @@ PDFJS.getDocument(fn).then(function(pdf) {
   }
   
   c=d.createElement('button');c.style.fontSize=fs;
-  c.innerHTML='>';b.appendChild(c);
+  c.innerHTML='>';tdiv.appendChild(c);
   c.onclick=function() {
     if (pnr==total) return;
     pnr++;
     setPage();
   }
   
-  b.appendChild(d.createTextNode('/'+total));
+  tdiv.appendChild(d.createTextNode('/'+total));
   
+  if (0) {
   var sbut=c=d.createElement('button');c.style.fontSize=fs;
   c.innerHTML=speaking?'Stop':'Speak';b.appendChild(c);
   c.onclick=function() {
@@ -74,11 +88,14 @@ PDFJS.getDocument(fn).then(function(pdf) {
     spsy.cancel();
     this.innerHTML='Speak';
   }
+  }
   
   b.appendChild(d.createElement('br'));
   
-  var ta=d.createElement('textarea'),s=ta.style;
-  s.width='320px';s.height='500px';s.fontSize='10px';
+  var ta=d.createElement('div'),s=ta.style;//textarea
+  s.width='324px';s.height='350px';s.fontSize='10px';
+  s.overflow='auto';s.backgroundColor='#fff';
+  s.display='inline-block';s.textAlign='left';
   b.appendChild(ta);
   
   var msg=new SpeechSynthesisUtterance(),
@@ -140,7 +157,8 @@ PDFJS.getDocument(fn).then(function(pdf) {
           lb=b;
         }
         
-        ta.value='[page '+pnr+', '+pt.length+' chars] '+pt;
+        var sh=pt.replace(/\n/g,'<br>');
+        ta.innerHTML='[page '+pnr+', '+pt.length+' chars] '+sh;
         if (!speaking) return;
         pos=0;//pt.length-100;//0
         //try {
@@ -155,11 +173,286 @@ PDFJS.getDocument(fn).then(function(pdf) {
     //...
   }
   
+  if (!navigator.geolocation) return;
   
+  var locpause=true,locc=0;
+  b.appendChild(d.createElement('br'));
+  var ldiv=c=d.createElement('span');c.innerHTML='Locations ';
+  b.appendChild(c);//d.createTextNode('Locations'));
+  if (0) {
+  var lbut=c=d.createElement('button');c.style.fontSize=fs;
+  c.innerHTML=locpause?'Start':'Stop';b.appendChild(c);
+  c.onclick=function() {
+    locpause=!locpause;
+    this.innerHTML=locpause?'Start':'Stop';
+  }
+  }
+  if (0) { //share button
+  c=d.createElement('button');c.style.fontSize=fs;
+  c.innerHTML='&middot;:';b.appendChild(c);
+  c.onclick=function() {
+    
+    function log(s) {
+      ta1.value=s;//...
+    }
+    
+    try {
+    navigator.share({
+        title: document.title,
+        text: "Hello World 12121",
+        url: window.location.href
+    }).then(() => log('Successful share'))
+    .catch(error => log('Error sharing:'+error));
+    } catch (e) {
+      log('share err: '+e);
+    }
+  }
+  }
+  
+  b.appendChild(d.createElement('br'));
+  
+  var bdiv=c=d.createElement('div');s=c.style;s.position='relative';
+  //s.backgroundColor='#444';//#444
+  //s.fontFamily='Arial';
+  var w0=324,h0=115;
+  s.width=w0+'px';s.height=(h0+20)+'px';s.overflow='auto';
+  s.marginLeft='auto';s.marginRight='auto';
+  b.appendChild(c);
+  
+  function bar(x,y,w,h,col,p) {
+    var c=d.createElement('div'),s=c.style;s.position='absolute';
+    s.left=x+'px';s.top=y+'px';s.width=w+'px';s.height=h+'px';
+    s.backgroundColor=col;p.appendChild(c);
+  }
+  function text(x,y,sh,size,col,p) {
+    
+    var c=document.createElement('div'),s=c.style;c.innerHTML=sh;
+    s.position='absolute';s.fontSize=size+'px';s.top=y+'px';s.left=x+'px';
+    s.color=col;p.appendChild(c);
+    return c;
+    //...
+  }
+  function smin(v0) {
+    var v1=Math.floor(v0),
+        v2=Math.floor(0.5+(v0-v1)*60);
+    return v1+(v2<10?':0':':')+v2;
+    //...
+  }
+  function dist(lat1,lon1,lat2,lon2) {
+    var R = 6371e3,PI=Math.PI; // metres
+    var f1 = lat1*PI/180;
+    var f2 = lat2*PI/180;
+    var df = (lat2-lat1)*PI/180;
+    var dl = (lon2-lon1)*PI/180;
+    
+    var a = Math.sin(df/2) * Math.sin(df/2) +
+            Math.cos(f1) * Math.cos(f2) *
+            Math.sin(dl/2) * Math.sin(dl/2);
+    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    
+    var d = R * c;//...
+    return d;
+  }
+  var d0=undefined,t=0,t0=0,a0,dg=0,mins=[],dmi=1000,dma=0;;
+  function render() {
+    while (bdiv.firstChild) bdiv.removeChild(bdiv.firstChild);
+    //onsole.log('locations t='+(t/60000)+' min, '+(dg/1000)+' km');
+    //text(0,0,Math.floor(0.5+dg/100)/10+'km',14,'#ff0',bdiv);
+    
+    var ds=0,x=20,lmin=0,minl=mins.length;
+    
+    var w00=Math.max(w0,x+minl*4);
+    bar(0,0,w00,h0,'#444',bdiv);
+    for (var i=1;i<=3;i++) {
+      var m=i*50,y=h0-m/2;
+      bar(0,y,w00,1,'#888',bdiv);
+      text(1,y+1,m+'m',8,'#ccc',bdiv);
+    }
+    
+    text(1,0,'min',10,'#aaa',bdiv);
+    text(1,10,'min/km',10,'#aaa',bdiv);
+    
+    for (var min=0;min<minl;min++) {
+      var d=mins[min];
+      ds+=d;
+      var lastmin=(min==minl-1);
+      if (((min+1)%10==0)||lastmin) {
+        var col='#ccc';
+        if (!lastmin) bar(x+3,0,1,h0,col,bdiv);//#aaa
+        
+        //var c=document.createElement('span'),s=c.style;c.innerHTML=(min+1);
+        //s.position='absolute';s.fontSize='10px';s.top=0+'px';s.left=x+4+'px';
+        //s.color=col;bdiv.appendChild(c);
+        if (lastmin||((minl-min)>6)) {
+          var s=text(x-18,0,(min+1),10,col,bdiv).style;s.textAlign='right';s.width='19px';
+          if (ds>0) { s=text(x-18,10,smin((min+1-lmin)*1000/ds),10,col,bdiv).style;
+            s.textAlign='right';s.width='19px'; }
+        }
+        //console.log(10000/ds);
+        ds=0;
+        lmin=min+1;
+      }
+      var f=(dma==dmi)?1:(d-dmi)/(dma-dmi),
+          //col='rgb('+Math.floor(0.5+255*(f<0.5?1:2*(1-f)))+','+Math.floor(0.5+255*(f>0.5?1:2*f))+',0)';
+          col='rgb('+Math.floor(0.5+255*(1-f))+','+Math.floor(0.5+255*f)+',0)';
+      //onsole.log(col+' f='+f+' d='+d+' dmi='+dmi+' dma='+dma);
+      bar(x,h0-d/2,3,d/2+1,col,bdiv);x+=4;
+    }
+    var c=text(45,h0-19,' ',16,'#eee',bdiv),s=c.style;
+    s.backgroundColor='rgba(0,0,0,0.5)';
+    //var v0=mins.length*1000/dg,v1=Math.floor(v0);
+    c.innerHTML=Math.floor(0.5+dg/100)/10+'<span style="font-size:0.7em;color:#aaa;">km</span> '+
+      (dg>0?smin(mins.length*1000/dg)+'<span style="font-size:0.7em;color:#aaa;">min/km</span>':'');
+    //s.fontWeight='bold';
+    
+    //...
+  }
+  function addData(d,norender) {
+    if (!d0) d0=d;
+    t+=d.dt;
+    t0+=d.dt;
+    //onsole.log('addData '+d.dt);
+    if (t0>60000) {
+      var di=Math.min(200,dist(d.lat,d.lon,d0.lat,d0.lon));
+      //onsole.log('addData di='+di);
+      mins.push(di);
+    
+      dg+=di;dmi=Math.min(di,dmi);dma=Math.max(di,dma);
+      //console.log(d);
+      //t0-=60000;
+      t0=t0%60000;
+      d0=d;
+      if (!norender) render();
+      //break;
+    }
+  }
+  function batchData(v) {
+    //--
+    var i=0,da=[];
+    while (true) {
+      var i0=v.indexOf('\n',i);
+      if (i0==-1) i0=v.length;
+      var s=v.substr(i,i0-i);
+      if (s.length>0) {
+        a=s.split(',');
+        if (a.length==3)
+        da.push({dt:parseInt(a[0]),lat:parseFloat(a[1]),lon:parseFloat(a[2])});
+      }
+      i=i0+1;
+      if (i>v.length) break;
+    }
+    //for (var i=0;i<da.length;i++) { addData(da[i]); }
+    d0=undefined;t=0;t0=0;dg=0;mins=[];dmi=1000;dma=0;
+    var ida=-1,all=false;
+    function nextData() {
+      for (var h=0;h<(all?da.length:10);h++) {//5
+        ida++;
+        if (ida>=da.length) return;
+        addData(da[ida],all);
+      }
+      setTimeout(nextData,1);
+    }
+    nextData();//setTimeout(nextData,2000);
+    
+    render();
+    
+  }
+  
+  render();
+  
+  b.appendChild(d.createElement('br'));
+  b.appendChild(d.createElement('br'));
+  
+  var ta1=c=d.createElement('textarea'),lsk0='pdfspeak0loc';s=c.style;
+  s.width='320px';s.height='100px';s.fontSize='10px';
+  b.appendChild(c);
+  
+  var s=localStorage[lsk0];if (s) { ta1.value=s;batchData(s); }
+  
+  ta1.value+=new Date()+'\n';
+  var ot=Date.now(),watch=true;
+  
+  function position(p) {
+    var t=Date.now();
+    if (!locpause) {
+      var dt=t-ot,lat=p.coords.latitude,lon=p.coords.longitude;
+      ta1.value+=dt+','+lat+','+lon+'\n';
+      localStorage[lsk0]=ta1.value;
+      locc++;
+      ldiv.innerHTML='Locations('+locc+') ';
+      addData({dt:dt,lat:lat,lon:lon});
+    }
+    ot=t;
+    if (!watch) setTimeout(getpos,1000);
+  }
+  function poserr() {
+    ta1.value='No position available.';//...
+  }
+  function getpos() {
+    navigator.geolocation.getCurrentPosition(position,poserr,posopt);
+  }
+  var posopt={enableHighAccuracy:true};
+  
+  if (!watch) getpos();//setInterval(getpos,1000);
+  else navigator.geolocation.watchPosition(position,poserr,posopt);
+  
+  var mdata;
+  Menu.init([{s:'&#9776;',noTri:true,pw:0.05,fs:1.4,sub:[
+  {s:'Speech',fs:1.4,ms:speaking?'Stop':'Start',actionf:function() {
+    //...
+    canceled=true;
+    if (!speaking) {
+      speaking=true;
+      this.ms='Stop';
+      setPage();
+      return;
+    }
+    speaking=false;
+    pos=pt.length+1;
+    spsy.cancel();
+    this.ms='Start';
+    //...
+  }
+  },{s:'Geoloc',fs:1.4,ms:locpause?'Start':'Stop',actionf:function() {
+    locpause=!locpause;
+    this.ms=locpause?'Start':'Stop';
+  }
+  },mdata={s:'Data',fs:1.4,sub:[
+  {s:'Reset',fs:1.4,actionf:function() {
+    ta1.value='';
+    d0=undefined;t=0;t0=0;dg=0;mins=[];dmi=1000;dma=0;
+    render();
+    //...
+  }
+  }]}]}],{listen:1,diw:850});
+  
+  if (navigator.share) mdata.sub.push({s:'Share',fs:1.4,actionf:function() {
+    //---
+    try {
+    navigator.share({
+        title: document.title,
+        text: ta1.value,
+        url: window.location.href
+    }).then(() => log('Successful share'))
+    .catch(error => log('Error sharing:'+error));
+    } catch (e) {
+      log('share err: '+e);
+    }
+    //...
+  }
+  });
+  
+  Menu.draw();
+  ////bar(0,0,10,10,'#f00',bdiv);bar(100,0,1,150,'#000',bdiv);
+  //if (1) Conet.download({fn:'.../.../.../.../test/locations.txt',f:batchData});
 }
 );
 </script></body></html><script>
-//fr o,18
-//fr o,18,43,16
-//fr o,18,43,16,1
-//fr p,24,24
+//fr o,20
+//fr o,20,38
+//fr o,20,69
+//fr o,20,74
+//fr o,20,94
+//fr o,20,94,17
+//fr o,20,126
+//fr p,20,211

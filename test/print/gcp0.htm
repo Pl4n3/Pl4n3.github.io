@@ -1,0 +1,155 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="robots" content="noindex,nofollow">
+    <title>Print Server API Simulation</title>
+    <script type="text/javascript" language="javascript">function addRepeatedParameterField(api, name) {var sentinelIndex = document.getElementById(api + '_' + name + '_sentinel_row_').rowIndex; document.getElementById(api + '_table_').insertRow(sentinelIndex).innerHTML = '<td width="20%" align="right" ' + 'style="font-family:courier new,monospace;font-size:small;">' + name + '</td>' + '<td><input type="text" name="' + name + '" /></td>';}function removeRepeatedParameterField(api, name) {var baseIndex = document.getElementById(api + '_' + name + '_base_row_').rowIndex; var lastIndex = document.getElementById(api + '_' + name + '_sentinel_row_').rowIndex - 1; if (baseIndex < lastIndex) {document.getElementById(api + '_table_').deleteRow(lastIndex);}}function prepareClearableTextFieldParameterForSubmit(api, name) {var textEl = document.getElementById(api + '_' + name); if (document.getElementById(api + '_clear_' + name).checked) {textEl.setAttribute('name', name); textEl.value = '';} else {if (textEl.value) {textEl.setAttribute('name', name);} else {textEl.removeAttribute('name');}}}function setPrinterExtraFields(api) {var s = ''; if (document.getElementById(api + '_connectionStatus_checkbox').checked) {s += 'connectionStatus,';}if (document.getElementById(api + '_semanticState_checkbox').checked) {s += 'semanticState,';}if (document.getElementById(api + '_uiState_checkbox').checked) {s += 'uiState,';}if (document.getElementById(api + '_queuedJobsCount_checkbox').checked) {s += 'queuedJobsCount,';}if (!document.getElementById(api + '_tags_checkbox').checked) {s += '-tags,';}if (s.length > 0 && s.charAt(s.length - 1) == ',') {s = s.substr(0, s.length - 1);}document.forms[api].extra_fields.value = s; document.getElementById(api + '_extra_fields').innerHTML = 'extra_fields=' + s;}</script>
+    <style>body {font-family: sans-serif;}.api-box {width: 50%; vertical-align: top;}</style>
+  </head>
+  <body onload="setPrinterExtraFields('search'); setPrinterExtraFields('list'); setPrinterExtraFields('printer');">
+    <h3 style="text-align:center;">Google Cloud Print API Simulation</h3>
+    <table width="100%" border="1" cellpadding="5">
+    <tr>
+      <td class="api-box">
+        <h4 style="text-align:center;">Printer Search API</h4>
+        <form action="https://www.google.com/cloudprint/search" method="POST" name="search">
+          <input type="hidden" name="use_cdd" value="true" /><input type="hidden" name="extra_fields" value="" />
+          <table width="100%" border="0" cellpadding="5">
+            <tr>
+              <th width="20%" align="right">Query</th>
+              <td><input type="text" name="q"  id="search_q" /></td>
+            </tr>
+            <tr>
+              <th width="20%" align="right">Printer Type</th>
+              <td><input type="text" name="type"  id="search_type" /></td>
+            </tr>
+            <tr>
+              <th width="20%" align="right">Connection Status</th>
+              <td><input type="text" name="connection_status"  id="search_connection_status" /></td>
+            </tr>
+            <tr>
+              <th width="20%" align="right">Use CDD</th>
+              <td><input type="checkbox" id="search_use_cdd" onclick="document.forms['search'].elements['use_cdd'].value = this.checked;"checked /></td>
+            </tr>
+            <tr>
+              <th width="20%" align="right">Extra Fields</th>
+              <td style="padding:2px;">
+                <div style="display:table-row;">
+                  <div style="display:table-cell;">
+                    <div style="display:table-row;">
+                      <div style="display:table-cell;text-align:right;white-space:nowrap;">Connection Status</div>
+                      <div style="display:table-cell;"><input type="checkbox" id="search_connectionStatus_checkbox" onclick="setPrinterExtraFields('search');" checked /></div>
+                    </div>
+                    <div style="display:table-row;">
+                      <div style="display:table-cell;text-align:right;white-space:nowrap;">Semantic State</div>
+                      <div style="display:table-cell;"><input type="checkbox" id="search_semanticState_checkbox" onclick="setPrinterExtraFields('search');"  /></div>
+                    </div>
+                    <div style="display:table-row;">
+                      <div style="display:table-cell;text-align:right;white-space:nowrap;">UI State</div>
+                      <div style="display:table-cell;"><input type="checkbox" id="search_uiState_checkbox" onclick="setPrinterExtraFields('search');"  /></div>
+                    </div>
+                    <div style="display:table-row;">
+                      <div style="display:table-cell;text-align:right;white-space:nowrap;">Queued Jobs Count</div>
+                      <div style="display:table-cell;"><input type="checkbox" id="search_queuedJobsCount_checkbox" onclick="setPrinterExtraFields('search');"  /></div>
+                    </div>
+                    <div style="display:table-row;">
+                      <div style="display:table-cell;text-align:right;white-space:nowrap;">Tags</div>
+                      <div style="display:table-cell;"><input type="checkbox" id="search_tags_checkbox" onclick="setPrinterExtraFields('search');" checked /></div>
+                    </div>
+                  </div>
+                  <div id="search_extra_fields" style="display:table-cell;vertical-align:middle;padding-left:12px;font-family:courier new,monospace;font-size:small;word-break:break-all;"></div>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td colspan="2" align="center"><input type="submit" value="Search" id="search_submit" /></td>
+            </tr>
+          </table>
+        </form>
+      </td>
+    </tr>
+   </table>
+<iframe style="width:200px;height:100px;" id="ifr">
+</iframe>
+<form action="https://www.google.com/cloudprint/search" method="POST"></form>
+<textarea id="ta0" cols=10 rows=3>
+test...
+</textarea>
+<script>
+var ta0=document.getElementById('ta0');
+ta0.value='click naoe!!1';
+function loadXhr() {
+  var x=new XMLHttpRequest();
+  x.overrideMimeType('text/plain');
+  x.open('POST','https://www.google.com/cloudprint/search',true);
+  x.onreadystatechange=function() {
+    if (x.readyState!=4) return;
+    ta0.value='Return: '+x.responseText;
+  }
+  try {
+    x.send(null);
+  } catch (e) {ta0.value=''+e;}
+} 
+function formSameWindow() {
+  //document.forms[1].submit();  
+  //console.log(document.forms.length);
+  var ifr=document.getElementById('ifr').contentWindow;
+  var doc=ifr.document;
+  doc.open();
+  doc.write('<!doctype html><html><body>form:<form action="https://www.google.com/cloudprint/search" method="POST"></form></body></html>');
+  doc.close();
+  doc.forms[0].submit();
+  ta0.value=doc.forms.length;
+}
+//ta0.onclick=
+function loadviascript(e0) {
+  //console.log(e0);return;
+  var sc=document.createElement('script');
+  sc.onerror=function(e) {
+    console.log('sc.onerror event:');
+    console.log(e);
+    for (var k in sc) if (sc.hasOwnProperty(k)) {
+      console.log(k);
+      console.log(sc[k]);
+    }
+    //console.log(sc.text);
+  };
+  sc.onload=function() {
+    console.log('sc.onload');
+  };
+  //sc.src='https://www.google.com/cloudprint/dialog.html';
+  sc.src=e0.target.scriptName;//'https://www.google.com/cloudprint/search';
+  document.body.appendChild(sc);
+  //onsole.log('nao');
+  return;
+}
+function formInNewWindow() {
+  var win=window.open('','','width=340,height=260');
+  if (!win) { alert('Popups must be allowed here.'); }
+  else {
+    var doc=win.document;
+    doc.open();
+    doc.write('<!doctype html><html><body>form:<form action="https://www.google.com/cloudprint/search" method="POST"></form></body></html>');
+    //doc.write('<!doctype html><html><body>form:<form action="http://localhost:800/cloudprint/search" method="POST"></form></body></html>');
+    doc.close();
+    doc.forms[0].submit();
+    ta0.value=doc.forms.length;
+    setTimeout(function() {
+      console.log('Trying to log win.document.');
+      console.log(win.document);
+    },3000);
+  }
+};
+var bu=document.createElement('button');bu.innerHTML='form in new window';bu.onclick=formInNewWindow;
+document.body.appendChild(bu);
+bu=document.createElement('button');bu.innerHTML='form in same window';bu.onclick=formSameWindow;
+document.body.appendChild(bu);
+bu=document.createElement('button');bu.innerHTML='load via script dialog.html';bu.onclick=loadviascript;bu.scriptName='https://www.google.com/cloudprint/dialog.html';
+document.body.appendChild(bu);
+bu=document.createElement('button');bu.innerHTML='load via script search';bu.onclick=loadviascript;bu.scriptName='https://www.google.com/cloudprint/search';
+document.body.appendChild(bu);
+bu=document.createElement('button');bu.innerHTML='load via xhr';bu.onclick=loadXhr;
+document.body.appendChild(bu);
+</script>
+</body></html>

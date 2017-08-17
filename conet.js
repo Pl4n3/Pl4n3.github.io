@@ -1,7 +1,7 @@
 var Conet={};
 (function(Conet) {
   Conet.offline=false;
-  Conet.version='v.1.257 ';//FOLDORUPDATEVERSION
+  Conet.version='v.1.268 ';//FOLDORUPDATEVERSION
   Conet.files={};
   var uploads={},fns,logc,logs=[];//fn=>data,first
   function xhr(p) {
@@ -120,17 +120,19 @@ var Conet={};
       ////m.curFn=this.s;
       ////Menu.ms(m,m.curFn);
       var fn=this.a;//this.s;
-      setCurFn(fn);//checkListFile(fn);
+      if (p.loadList||!p.savef) checkListFile(fn);//| if there is no save, filelist be updated on load
+      else setCurFn(fn);//checkListFile(fn);
       p.loadf(fn);
     }
     function mloadUpdate() {
       mload.sub.splice(1,mload.sub.length-1);
-      console.log(m.files);
+      //onsole.log(m.files);
       for (var i=0;i<m.files.length;i++) {
         var fn=m.files[i].fn;
         var i0=fn.lastIndexOf('/')+1;//if (i0==-1) i0=0;
         var i1=fn.indexOf('.',2);//skip path dots
         if (i1==-1) i1=fn.length;
+        if (i1-i0>10) i0=i1-10;
         mload.sub.push({s:fn.substr(i0,i1-i0),ms:fn.substr(0,i0)+'^'+fn.substr(i1)//,fs:0.5
           ,a:fn,actionf:mload1});
       }
@@ -182,6 +184,7 @@ var Conet={};
     if (p.savef) {
     m.sub.push(
     {s:'Save',a:'conetSave',keys:['83_c'],ms:'<span style="color:#00f">ctrl+s</span>',actionf:function() {
+      checkListFile(m.curFn);
       p.savef(m.curFn);
     }
     });
@@ -264,6 +267,7 @@ var Conet={};
       p.loadf(s);
       
     }
+    m.checkListFile=checkListFile;
     return m;
   }
   Conet.initEditHistory=function(pf) {
@@ -286,6 +290,7 @@ var Conet={};
     logc.innerHTML='<b>Logs:</b> '+logs.join('<br>');
   }
   Conet.parseUrl=function(s) {
+    if (s===undefined) s=document.URL;
     var i0=s.indexOf('?');
     s=(i0==-1?'':s.substr(i0+1));
     var a=s.split('&'),h={};
@@ -322,7 +327,7 @@ var Conet={};
       }
     }
     if (!found) fns.splice(0,0,[fn,1,ds]);
-    upload({fn:'/util/edit.txt',data:JSON.stringify(fns)});
+    upload({fn:'/util/edit.txt',data:JSON.stringify(fns,undefined,' ')});
     fns=undefined;
     console.log('conet.updateEditHistory');
   }
@@ -341,12 +346,11 @@ console.log('Conet '+Conet.version);
 //fr o,1,8,5
 //fr o,1,8,17
 //fr o,1,8,18
-//fr o,1,8,28
 //fr o,1,8,31
 //fr o,1,8,32
 //fr o,1,8,56
-//fr o,1,8,59
 //fr o,1,9,1
 //fr o,1,11
+//fr o,1,12
 //fr o,1,12,4
-//fr p,43,31
+//fr p,25,34

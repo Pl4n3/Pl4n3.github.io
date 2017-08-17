@@ -2,12 +2,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 <style>
-body {
-  color: #000;
-  background-color: #fff;
-  margin: 0px;
-  overflow: hidden;
-}
+body { color: #000;background-color: #fff;margin: 0px;overflow: hidden; }
 </style>
 <script src="https://threejs.org/build/three.min.js"></script>
 <script src="https://threejs.org/examples/js/libs/stats.min.js"></script>
@@ -17,6 +12,45 @@ body {
 </head><body><div id="container"></div><script>
 function lego1() {
   //---
+  function animate() {
+    
+    requestAnimationFrame( animate );
+    
+    controls.update(); // required if controls.enableDamping = true, or if controls.autoRotate = true
+    stats.update();
+    
+    render();
+    
+  }
+  function box(x,y,z,w,h,b,m,brick) {
+    mesh=new THREE.Mesh(new BrickGeometry(w,h,b,brick?brick.t:undefined),m);
+    mesh.position.set(x,y,z);
+    mesh.updateMatrix();
+    mesh.matrixAutoUpdate = false;
+    mesh.castShadow=true;
+    mesh.receiveShadow=true;
+    scene.add(mesh);
+    return mesh;
+  }
+  function box0(b) {
+    var bo=1;//0.5;
+    var mesh=box((b.x-sw2+(b.w-1)/2)*bw,-150+(bw*3/4)+(b.y+(b.h-1)/2)*bh,(b.z-sw2+(b.b-1)/2)*bw,b.w*bw-bo,b.h*bh-bo,b.b*bw-bo,ms[b.col],b);
+    for (var xi=0;xi<b.w;xi++) for (var yi=0;yi<b.h;yi++) for (var zi=0;zi<b.b;zi++)
+      grid[key(xi+b.x,yi+b.y,zi+b.z)]=1;
+    b.mesh=mesh;
+    if (b.t=='light') {
+      mesh.castShadow=false;
+      var l=new THREE.PointLight(0xffaa00,2,300);//l.position.set(b.x*bw,b.y*bh,b.z*bw);
+      l.castShadow=true;
+    l.shadow.camera.near=100;
+    l.shadow.camera.far=1000;
+    l.shadow.mapSize.width=1024;//2048;
+    l.shadow.mapSize.height=1024;
+    l.shadow.bias=0.01;
+      scene.add(l);b.light=l;
+    }
+    return mesh;
+  }
   function BrickGeometry(width,height,depth,t) {
     
     THREE.BufferGeometry.call( this );
@@ -57,7 +91,9 @@ function lego1() {
         roofNookTop=[[[-100,-60,100,0.27,0.4381],[-100,-100,100,0.27,0.4688],[100,-60,100,0.4688,0.4108],[-20,70,100,0.4688,0.3801],[-100,-60,-100,0.1563,0.3676],[-100,70,-20,0.1563,0.2142],[100,-60,-100,0.355,0.3096],[20,70,-20,0.355,0.1563],[20,70,100,0.4119,0.2068],[-100,70,20,0.2131,0.2648],[20,70,-20,0.355,0.1563],[-100,70,-20,0.1563,0.2142],[-100,70,20,0.2131,0.2648],[-20,70,20,0.4119,0.2068],[-100,-60,100,0.27,0.4381],[-20,70,100,0.4688,0.3801],[-100,-100,100,0.27,0.4688],[100,-100,100,0.4688,0.4108],[-100,-100,-100,0.1563,0.3676],[100,-100,-100,0.355,0.3096],[20,70,100,0.4119,0.2068],[20,70,-20,0.355,0.1563],[100,-60,100,0.4688,0.3801],[100,-60,-100,0.355,0.3096],[-100,70,-20,0.1563,0.2142],[-100,70,20,0.2131,0.2648],[-100,-60,100,0.27,0.4381],[-100,-100,100,0.27,0.4688],[-100,-60,-100,0.1563,0.3676],[-100,-60,100,0.5,0.5],[-20,70,20,0.5,0.5],[20,70,100,0.5,0.5],[-20,70,20,0.5,0.5],[-20,70,100,0.5,0.5],[100,-100,100,0.5,0.5],[-100,-100,-100,0.5,0.5],[100,-60,100,0.5,0.5],[100,-60,-100,0.5,0.5],[100,-100,100,0.5,0.5],[100,-100,-100,0.5,0.5],[100,-60,-100,0.5,0.5],[-100,-60,-100,0.5,0.5],[100,-100,-100,0.5,0.5],[-100,-100,-100,0.5,0.5]],
                [[0,2,1],[2,0,3],[7,4,6],[4,7,5],[16,19,18],[19,16,17],[23,22,20],[21,23,20],[26,28,25],[28,26,27],[24,25,28],[12,13,14],[30,15,29],[3,31,2],[32,8,33],[8,32,10],[32,11,10],[11,32,9],[1,2,34],[28,27,35],[36,39,38],[39,36,37],[40,43,42],[43,40,41]]],
         roofTopLean=[[[-100,-60,100,0.27,0.4381],[-100,-100,100,0.27,0.4688],[0,-100,100,0.4688,0.4108],[0,-60,100,0.4688,0.3801],[-100,-60,-100,0.1563,0.2142],[0,-60,-100,0.355,0.1563],[83,70,-20,0.4119,0.2068],[-100,70,-20,0.2131,0.2648],[0,-60,-100,0.355,0.1563],[-100,-60,-100,0.1563,0.2142],[-100,70,20,0.2131,0.2648],[83,70,20,0.4119,0.2068],[-100,-60,100,0.27,0.4381],[0,-60,100,0.4688,0.3801],[-100,-100,100,0.27,0.4688],[0,-100,100,0.4688,0.4108],[83,70,-20,0.4119,0.2068],[0,-100,-100,0.355,0.1563],[0,-60,100,0.4688,0.3801],[0,-100,100,0.4688,0.4108],[-100,-100,-100,0.1563,0.2142],[-100,70,-20,0.2131,0.2648],[-100,-60,100,0.27,0.4381],[-100,-100,100,0.27,0.4688],[83,70,20,0.5,0.5],[-100,70,20,0.5,0.5],[0,-100,-100,0.5,0.5],[-100,-100,-100,0.5,0.5],[-100,-60,-100,0.5,0.5],[-100,-100,-100,0.5,0.5],[-100,70,-20,0.5,0.5],[-100,70,20,0.5,0.5],[83,70,20,0.5,0.5],[83,70,-20,0.5,0.5],[0,-60,-100,0.5,0.5],[0,-100,-100,0.5,0.5],[0,-60,100,0.5,0.5],[0,-60,-100,0.5,0.5]],
-               [[0,2,1],[2,0,3],[9,6,7],[6,9,8],[10,13,12],[13,10,11],[5,20,17],[20,5,4],[16,25,21],[25,16,24],[27,19,26],[19,27,23],[30,22,28],[22,30,31],[28,14,29],[14,28,22],[32,34,18],[34,32,33],[36,35,15],[35,36,37]]];
+               [[0,2,1],[2,0,3],[9,6,7],[6,9,8],[10,13,12],[13,10,11],[5,20,17],[20,5,4],[16,25,21],[25,16,24],[27,19,26],[19,27,23],[30,22,28],[22,30,31],[28,14,29],[14,28,22],[32,34,18],[34,32,33],[36,35,15],[35,36,37]]],
+        ramp=[[[-100,-80,120,0.27,0.4381],[-100,-120,80,0.27,0.4688],[100,-120,80,0.4688,0.4108],[100,-80,120,0.4688,0.3801],[-100,-20,-20,0.1563,0.3676],[-100,80,-120,0.1563,0.2142],[100,-20,-20,0.355,0.3096],[100,80,-120,0.355,0.1563],[100,120,-80,0.4119,0.2068],[-100,120,-80,0.2131,0.2648],[100,80,-120,0.355,0.1563],[-100,80,-120,0.1563,0.2142],[-100,120,-80,0.2131,0.2648],[100,120,-80,0.4119,0.2068],[-100,-80,120,0.27,0.4381],[100,-80,120,0.4688,0.3801],[-100,-120,80,0.27,0.4688],[100,-120,80,0.4688,0.4108],[-100,-20,-20,0.1563,0.3676],[100,-20,-20,0.355,0.3096],[100,120,-80,0.4119,0.2068],[100,80,-120,0.355,0.1563],[100,-80,120,0.4688,0.3801],[100,-120,80,0.4688,0.4108],[100,-20,-20,0.355,0.3096],[-100,80,-120,0.1563,0.2142],[-100,120,-80,0.2131,0.2648],[-100,-80,120,0.27,0.4381],[-100,-120,80,0.27,0.4688],[-100,-20,-20,0.1563,0.3676]],
+               [[0,2,1],[2,0,3],[7,4,6],[4,7,5],[11,8,9],[8,11,10],[12,15,14],[15,12,13],[16,19,18],[19,16,17],[22,24,23],[24,22,20],[21,24,20],[27,29,26],[29,27,28],[25,26,29]]];
     
                 
     
@@ -83,6 +119,10 @@ function lego1() {
     if (t=='roofTopLean1') { a=roofTopLean;mz=true; } else 
     if (t=='roofTopLean2') { a=roofTopLean;xz=true; } else 
     if (t=='roofTopLean3') { a=roofTopLean;xz=true;mz=true; } else 
+    if (t=='ramp0') { a=ramp; } else 
+    if (t=='ramp1') { a=ramp;mz=true; } else 
+    if (t=='ramp2') { a=ramp;xz=true; } else 
+    if (t=='ramp3') { a=ramp;xz=true;mx=true; } else 
     {
       a=[[[-100,100,100,0.27,0.4381],[-100,-100,100,0.27,0.4688],[100,-100,100,0.4688,0.4108],[100,100,100,0.4688,0.3801],[-100,-100,-100,0.1563,0.3676],[-100,100,-100,0.1563,0.2142],[100,-100,-100,0.355,0.3096],[100,100,-100,0.355,0.1563],[100,100,-100,0.355,0.1563],[-100,100,-100,0.1563,0.2142],[-100,100,100,0.27,0.4381],[100,100,100,0.4688,0.3801],[-100,-100,100,0.27,0.4688],[100,-100,100,0.4688,0.4108],[-100,-100,-100,0.1563,0.3676],[100,-100,-100,0.355,0.3096],[100,100,-100,0.355,0.1563],[100,100,100,0.4688,0.3801],[100,-100,100,0.4688,0.4108],[100,-100,-100,0.355,0.3096],[-100,100,-100,0.1563,0.2142],[-100,100,100,0.27,0.4381],[-100,-100,100,0.27,0.4688],[-100,-100,-100,0.1563,0.3676]],
          [[0,2,1],[2,0,3],[7,4,6],[4,7,5],[12,15,14],[15,12,13],[17,19,18],[23,21,22],[10,16,11],[16,10,20],[17,8,19],[9,21,23]]];
@@ -109,86 +149,6 @@ function lego1() {
     
     
   }
-  BrickGeometry.prototype=Object.create( THREE.BufferGeometry.prototype );
-  BrickGeometry.prototype.constructor=BrickGeometry;
-  //--
-  var camera,controls,scene,renderer,stats,sel,mmode,mmenu,mtype,mmultisel,
-      mpos,mdim,click,raycaster=new THREE.Raycaster(),sels=[],
-      without={mesh:1,light:1};
-  function rani(m) {
-    return Math.floor(Math.random()*m);
-  }
-  scene = new THREE.Scene();
-  renderer = new THREE.WebGLRenderer({antialias:true});
-  renderer.setClearColor( 0x888888 );
-  renderer.shadowMap.enabled=true;
-  renderer.shadowMap.type=THREE.BasicShadowMap;
-  //				renderer.shadowMapEnabled=true;
-  //				renderer.shadowMapType=THREE.PCFShadowMap;//PCFShadowMap;
-  
-  renderer.setPixelRatio( window.devicePixelRatio );
-  renderer.setSize( window.innerWidth, window.innerHeight );
-  
-  var container = document.getElementById('container'),ms=[];
-  container.appendChild( renderer.domElement );
-  
-  camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 1000 );
-  camera.position.z = 500;
-  
-  controls = new THREE.OrbitControls( camera, renderer.domElement );
-  //controls.autoRotate=true;
-  controls.enableDamping=true;
-  controls.dampingFactor=0.25;//0.25;
-  controls.enableZoom=true;
-  controls.enablePan=false;
-  controls.maxDistance=600;
-  
-  var ca=[0x666666,0x333333,0xf0f000,0x90f000,0x00f000,0x009090,0x0030d0];
-  for (var i=0;i<ca.length;i++) {
-    var m=new THREE.MeshPhongMaterial({color:ca[i],shading:THREE.FlatShading});
-    ms.push(m);
-  }
-  
-  var bw=20,sw=15,sw2=(sw-1)/2,bh=bw/2,grid={};//20,15
-  
-  function box(x,y,z,w,h,b,m,brick) {
-    mesh=new THREE.Mesh(new BrickGeometry(w,h,b,brick?brick.t:undefined),m);
-    mesh.position.set(x,y,z);
-    mesh.updateMatrix();
-    mesh.matrixAutoUpdate = false;
-    mesh.castShadow=true;
-    mesh.receiveShadow=true;
-    scene.add(mesh);
-    return mesh;
-  }
-  function key(x,y,z) {
-    return x+'_'+y+'_'+z;
-  }
-  function box0(b) {
-    var bo=1;//0.5;
-    var mesh=box((b.x-sw2+(b.w-1)/2)*bw,-150+(bw*3/4)+(b.y+(b.h-1)/2)*bh,(b.z-sw2+(b.b-1)/2)*bw,b.w*bw-bo,b.h*bh-bo,b.b*bw-bo,ms[b.col],b);
-    for (var xi=0;xi<b.w;xi++) for (var yi=0;yi<b.h;yi++) for (var zi=0;zi<b.b;zi++)
-      grid[key(xi+b.x,yi+b.y,zi+b.z)]=1;
-    b.mesh=mesh;
-    if (b.t=='light') {
-      var l=new THREE.PointLight(0xffaa00,2,300);//l.position.set(b.x*bw,b.y*bh,b.z*bw);
-      l.castShadow=true;
-    l.shadow.camera.near=100;
-    l.shadow.camera.far=1000;
-    l.shadow.mapSize.width=1024;//2048;
-    l.shadow.mapSize.height=1024;
-    l.shadow.bias=0.01;
-      scene.add(l);b.light=l;
-    }
-    return mesh;
-  }
-  
-  function isfree(x,y,z,w,h,b) {
-    if (y<0) return false;
-    for (var xi=0;xi<w;xi++) for (var yi=0;yi<h;yi++) for (var zi=0;zi<b;zi++)
-      if (grid[key(xi+x,yi+y,zi+z)]) return false;
-    return true;
-  }
   function brickPos(b,rand) {
     var xh,yh,zh;
     b.mesh.position.set(
@@ -203,42 +163,223 @@ function lego1() {
     }
     //...
   }
-  //if (1) { box0(-1,0,-1,1,1,1,m2);box0(15,0,-1,1,1,1,m2);
-  //         box0(-1,0,15,1,1,1,m2);box0(15,0,15,1,1,1,m2); }
-  
-  var bricks=[];
-  
-  box(0,-150,0,600,bw,600,ms[1]).castShadow=false;
-  
-  var l=new THREE.AmbientLight(0x555555),f=3;scene.add(l);
-  l=new THREE.PointLight(0xffffff,1,0);l.position.set(-100*f,200*f,100*f);scene.add(l);
-  l=new THREE.PointLight(0xffffaa,1,0);l.position.set(100*f,100*f,100*f);
-  l.castShadow=true;
-  l.shadow.camera.near=100;
-  l.shadow.camera.far=1000;
-  l.shadow.mapSize.width=1024;//2048;
-  l.shadow.mapSize.height=1024;
-  l.shadow.bias=0.01;
-  scene.add(l);
-  l=new THREE.PointLight(0xaaffff,1,0);l.position.set(100*f,-200*f,-100*f);scene.add(l);
-  
-  
-  stats = new Stats();
-  stats.domElement.style.position = 'absolute';
-  stats.domElement.style.top = '0px';
-  stats.domElement.style.zIndex = 100;
-  container.appendChild( stats.domElement );
-  
-  window.addEventListener('resize',onWindowResize,false);
-  
   function brickRemove(b) {
     scene.remove(b.mesh);
     if (b.light) scene.remove(b.light);
     //...
   }
-  function onClick(e) {
-    click=new THREE.Vector2(2*e.clientX/window.innerWidth-1,-2*e.clientY/window.innerHeight+1);
-    //console.log(click);
+  function clear() {
+    for (var i=0;i<bricks.length;i++) brickRemove(bricks[i]);
+    bricks.length=0;
+    //...
+  }
+  function cloneWithout(o,h) {
+    var n={};
+    for (var k in o) if (o.hasOwnProperty(k)) if (!h[k]) n[k]=o[k];
+    return n;
+  }
+  function diff(o0,o1) {
+    //returns all fields from o1, that are different in o0
+    var r={}
+    for (var k in o1) if (o1.hasOwnProperty(k)&&(o1[k]!=o0[k])) r[k]=o1[k];
+    return r;
+  }
+  function genMaze() {
+    clear();bricks=[];
+    if (0) 
+    for (var z=0;z<5;z++) for (var y=0;y<5;y++) for (var x=0;x<5;x++) {
+      var r=rani(5),b;
+      box0(b={"x":x*2+2,"y":y*3,t:r==4?'box':'ramp'+r,"z":8+z*2-5,"w":2,"b":2,"h":3,"col":0});
+      bricks.push(b);brickPos(b,0);sel=b;
+    }
+    //var b;
+    //box0(b={"x":8,"y":0,"t":"block","z":8,"w":2,"b":2,"h":3,"col":0});bricks.push(b);brickPos(b,0);sel=b;
+    //box0(b={"x":6,"y":0,"t":"block","z":8,"w":2,"b":2,"h":3,"col":0});bricks.push(b);brickPos(b,0);sel=b;
+    
+    var newworlds=[],world,gw=3;
+    var worlds=[{map:{'0_0_0':1},ways:[{x:0,y:0,z:0,l:0,gl:0}]}];//,m=world.map;
+    
+    function et(x,y,z) {
+      return world.map[x+'_'+y+'_'+z];
+    }
+    function wayBlock(x,y,z) {
+      return (et(x,y,z)==1)&&!et(x,y+1,z);
+    }
+    function cloneWorld(w0,x,y,z,type,wayi,l,wi2) {
+      var w1={map:{},ways:[]};
+      for (var k in w0.map) if (w0.map.hasOwnProperty(k)) w1.map[k]=w0.map[k];
+      for (var i=0;i<w0.ways.length;i++) w1.ways.push(w0.ways[i]);
+      w1.map[x+'_'+y+'_'+z]=type;
+      var wi=w1.ways[wayi];
+      w1.ways[wayi]={x:x,y:y,z:z,l:l,gl:wi?wi.gl:0};
+      if (wi2!==undefined) {
+        w1.ways[wi2].gl+=w1.ways[wi2].l;
+        w1.ways[wayi].gl=w1.ways[wi2].gl;
+        w1.ways[wi2].l=0;
+        //onsole.log(w1.ways);
+      }
+      return w1;
+    }
+    function noconsWorld(x,y,z,t,nws,wi,l,wi2) {
+      var n=0,w=gw,w2=w*2;
+      if ((x>=w)||(x<=-w)||(z>=w)||(z<=-w)||(y>=w2)||(y<0)||et(x,y,z)||et(x,y+1,z)||et(x,y-1,z)) return false;//| no place -> pretend connections
+      if (t==1) {
+        if (wayBlock(x-1,y,z)) n++;
+        if (wayBlock(x+1,y,z)) n++;
+        if (wayBlock(x,y,z-1)) n++;
+        if (wayBlock(x,y,z+1)) n++;
+        if (et(x-1,y,z)==5) n++;
+        if (et(x+1,y,z)==4) n++;
+        if (et(x,y,z-1)==2) n++;
+        if (et(x,y,z+1)==3) n++;
+        if (et(x-1,y+1,z)==4) n++;
+        if (et(x+1,y+1,z)==5) n++;
+        if (et(x,y+1,z-1)==3) n++;
+        if (et(x,y+1,z+1)==2) n++;
+      }
+      if (t==5) {
+        //n++;//connection to previous way-segment
+        if (wayBlock(x+1,y,z)) n++;
+        if (wayBlock(x-1,y-1,z)) n++;
+        if (et(x+1,y+1,z)==5) n++;
+        if (et(x-1,y-1,z)==5) n++;
+        if (et(x,y,z-1)==5) n++;//
+        if (et(x,y,z+1)==5) n++;
+      }
+      if (t==4) {
+        //n++;
+        if (wayBlock(x-1,y,z)) n++;
+        if (wayBlock(x+1,y-1,z)) n++;
+        if (et(x-1,y+1,z)==4) n++;
+        if (et(x+1,y-1,z)==4) n++;
+        if (et(x,y,z-1)==4) n++;
+        if (et(x,y,z+1)==4) n++;
+      }
+      if (t==3) {
+        //n++;
+        if (wayBlock(x,y,z+1)) n++;
+        if (wayBlock(x,y-1,z-1)) n++;
+        if (et(x,y+1,z+1)==3) n++;
+        if (et(x,y-1,z-1)==3) n++;
+        if (et(x-1,y,z)==3) n++;
+        if (et(x+1,y,z)==3) n++;
+      }
+      if (t==2) {
+        //n++;
+        if (wayBlock(x,y,z-1)) n++;
+        if (wayBlock(x,y-1,z+1)) n++;
+        if (et(x,y+1,z-1)==2) n++;
+        if (et(x,y-1,z+1)==2) n++;
+        if (et(x-1,y,z)==2) n++;
+        if (et(x+1,y,z)==2) n++;
+      }
+      if (n>=2) return false;
+      //return n<2;//(wi2!==undefined)?n<3:n<2;
+      nws.push(cloneWorld(world,x,y,z,t,wi,l,wi2));
+      return true;
+      //...
+    }
+    function extendWay(nws,x,y,z,wi,l,wi2) {
+      var w=gw,w2=w*2,t=et(x,y,z);//w=3
+      //if (((t==1)||(t==5))&&(x<w) &&!et(x+1,y,z)&&!et(x+1,y+1,z)&&!et(x+1,y-1,z)&&!wayBlock(x+2,y,z)&&!wayBlock(x+1,y,z-1)&&!wayBlock(x+1,y,z+1)
+        ////&&(et(x+1,y,z-1)!=2)&&(et(x+1,y,z+1)!=3)&&(et(x+1,y+1,z-1)!=3)&&(et(x+1,y+1,z+1)!=2)
+      //if (((t==1))        &&(x>-w)&&!et(x-1,y,z)&&!et(x-1,y+1,z)&&!et(x-1,y-1,z)&&!wayBlock(x-2,y,z)&&!wayBlock(x-1,y,z-1)&&!wayBlock(x-1,y,z+1)) nws.push(cloneWorld(world,x-1,y,z,1,wi,l,wi2));
+      //if (((t==1))        &&(z<w) &&!et(x,y,z+1)&&!et(x,y+1,z+1)&&!et(x,y-1,z+1)&&!wayBlock(x,y,z+2)&&!wayBlock(x+1,y,z+1)&&!wayBlock(x-1,y,z+1)) nws.push(cloneWorld(world,x,y,z+1,1,wi,l,wi2));
+      //if (((t==1))        &&(z>-w)&&!et(x,y,z-1)&&!et(x,y+1,z-1)&&!et(x,y-1,z-1)&&!wayBlock(x,y,z-2)&&!wayBlock(x+1,y,z-1)&&!wayBlock(x-1,y,z-1)) nws.push(cloneWorld(world,x,y,z-1,1,wi,l,wi2));
+      //if (((t==1)||(t==5))&&(x<w)&&(y<w2)&&!et(x+1,y,z)&&!et(x+1,y+1,z)&&!et(x+1,y+2,z)&&(et(x+1,y+1,z-1)!=4)&&(et(x+1,y+1,z+1)!=4)&&!wayBlock(x+2,y+1,z)) 
+      
+      //if (((t==1)||(t==5))&&nocons(x+1,y,z,1)) nws.push(cloneWorld(world,x+1,y,z,1,wi,l,wi2));
+      //if (((t==1))        &&nocons(x-1,y,z,1)) nws.push(cloneWorld(world,x-1,y,z,1,wi,l,wi2));
+      //if (((t==1))        &&nocons(x,y,z+1,1)) nws.push(cloneWorld(world,x,y,z+1,1,wi,l,wi2));
+      //if (((t==1))        &&nocons(x,y,z-1,1)) nws.push(cloneWorld(world,x,y,z-1,1,wi,l,wi2));
+      //if (((t==1)||(t==5))&&nocons(x+1,y+1,z,5)) nws.push(cloneWorld(world,x+1,y+1,z,5,wi,l,wi2));
+      //if (((t==1)||(t==4))&&nocons(x-1,y+1,z,4)) nws.push(cloneWorld(world,x-1,y+1,z,4,wi,l,wi2));
+      
+      if ((t==1)||(t==5)) noconsWorld(x+1,y,z,1,nws,wi,l,wi2);
+      if ((t==1)||(t==4)) noconsWorld(x-1,y,z,1,nws,wi,l,wi2);
+      if ((t==1)||(t==3)) noconsWorld(x,y,z+1,1,nws,wi,l,wi2);
+      if ((t==1)||(t==2)) noconsWorld(x,y,z-1,1,nws,wi,l,wi2);
+      //if (1) return;
+      //| ramps up
+      if ((t==1)||(t==5)) noconsWorld(x+1,y+1,z,5,nws,wi,l,wi2);
+      if ((t==1)||(t==4)) noconsWorld(x-1,y+1,z,4,nws,wi,l,wi2);
+      if ((t==1)||(t==3)) noconsWorld(x,y+1,z+1,3,nws,wi,l,wi2);
+      if ((t==1)||(t==2)) noconsWorld(x,y+1,z-1,2,nws,wi,l,wi2);
+      //| ramps down
+      if (t==5) noconsWorld(x-1,y-1,z,5,nws,wi,l,wi2);if (t==5) noconsWorld(x-1,y-1,z,1,nws,wi,l,wi2);if (t==1) noconsWorld(x-1,y  ,z,5,nws,wi,l,wi2);
+      if (t==4) noconsWorld(x+1,y-1,z,4,nws,wi,l,wi2);if (t==4) noconsWorld(x+1,y-1,z,1,nws,wi,l,wi2);if (t==1) noconsWorld(x+1,y  ,z,4,nws,wi,l,wi2);
+      if (t==3) noconsWorld(x,y-1,z-1,3,nws,wi,l,wi2);if (t==3) noconsWorld(x,y-1,z-1,1,nws,wi,l,wi2);if (t==1) noconsWorld(x,y  ,z-1,3,nws,wi,l,wi2);
+      if (t==2) noconsWorld(x,y-1,z+1,2,nws,wi,l,wi2);if (t==2) noconsWorld(x,y-1,z+1,1,nws,wi,l,wi2);if (t==1) noconsWorld(x,y  ,z+1,2,nws,wi,l,wi2);
+      
+      //...
+    }
+    for (var i=0;i<100;i++) {
+      for (var worldi=0;worldi<worlds.length;worldi++) {
+        world=worlds[worldi];
+        for (var wi=0;wi<world.ways.length;wi++) { 
+          var w=world.ways[wi],x=w.x,y=w.y,z=w.z,l=w.l,nws=[];
+          extendWay(nws,x,y,z,wi,l+1);
+          //if ((x<5) &&!et(x+1,y,z)&&!et(x+1,y+1,z)&&!wayBlock(x+2,y,z)&&!wayBlock(x+1,y,z-1)&&!wayBlock(x+1,y,z+1)) nws.push(cloneWorld(world,x+1,y,z,1,wi,l+1));
+          //if ((x>-5)&&!et(x-1,y,z)&&!et(x-1,y+1,z)&&!wayBlock(x-2,y,z)&&!wayBlock(x-1,y,z-1)&&!wayBlock(x-1,y,z+1)) nws.push(cloneWorld(world,x-1,y,z,1,wi,l+1));
+          //if ((z<5) &&!et(x,y,z+1)&&!et(x,y+1,z+1)&&!wayBlock(x,y,z+2)&&!wayBlock(x+1,y,z+1)&&!wayBlock(x-1,y,z+1)) nws.push(cloneWorld(world,x,y,z+1,1,wi,l+1));
+          //if ((z>-5)&&!et(x,y,z-1)&&!et(x,y+1,z-1)&&!wayBlock(x,y,z-2)&&!wayBlock(x+1,y,z-1)&&!wayBlock(x-1,y,z-1)) nws.push(cloneWorld(world,x,y,z-1,1,wi,l+1));
+          //if (1) {//l<5) {
+          //  for (var j=0;j<nws.length;j++) newworlds.push(nws[j]);continue:
+          //}
+          if (l>3) {
+            var nws2=[];
+            for (var j=0;j<nws.length;j++) {
+              world=nws[j];var ww=world.ways,w;
+              extendWay(nws2,x,y,z,ww.length,0,wi);
+              //if ((x<5) &&!et(x+1,y,z)&&!et(x+1,y+1,z)&&!wayBlock(x+2,y,z)&&!wayBlock(x+1,y,z-1)&&!wayBlock(x+1,y,z+1)) { nws2.push(w=cloneWorld(world,x+1,y,z,1,ww.length,0));w.ways[wi].l=0; }
+              //if ((x>-5)&&!et(x-1,y,z)&&!et(x-1,y+1,z)&&!wayBlock(x-2,y,z)&&!wayBlock(x-1,y,z-1)&&!wayBlock(x-1,y,z+1)) { nws2.push(w=cloneWorld(world,x-1,y,z,1,ww.length,0));w.ways[wi].l=0; }
+              //if ((z<5) &&!et(x,y,z+1)&&!et(x,y+1,z+1)&&!wayBlock(x,y,z+2)&&!wayBlock(x+1,y,z+1)&&!wayBlock(x-1,y,z+1)) { nws2.push(w=cloneWorld(world,x,y,z+1,1,ww.length,0));w.ways[wi].l=0; }
+              //if ((z>-5)&&!et(x,y,z-1)&&!et(x,y+1,z-1)&&!wayBlock(x,y,z-2)&&!wayBlock(x+1,y,z-1)&&!wayBlock(x-1,y,z-1)) { nws2.push(w=cloneWorld(world,x,y,z-1,1,ww.length,0));w.ways[wi].l=0; }
+            }
+            //console.log('wi='+wi+' nws2[0].ways.length='+nws2[0].ways.length);
+            //console.log(nws2);
+            world=worlds[worldi];
+            if (nws2.length>0) nws=nws2;
+          }
+          for (var j=0;j<nws.length;j++) newworlds.push(nws[j]);
+        }
+      }
+      if (newworlds.length==0) {
+        console.log('no new worlds '+i);break;
+      }
+      worlds=[];
+      for (var j=Math.min(newworlds.length,50)-1;j>=0;j--) {
+        var nwi=rani(newworlds.length);
+        worlds.push(newworlds[nwi]);newworlds.splice(nwi,1);
+      }
+      newworlds=[];
+    }
+    console.log('worlds.length='+worlds.length);
+    //console.log(worlds[rani(worlds.length)]);
+    world=worlds[rani(worlds.length)];
+    //console.log('world.ways.len='+world.ways.length);
+    //console.log(world.ways);
+    for (var z=-10;z<10;z++) for (var y=0;y<10;y++) for (var x=-10;x<10;x++) {
+      var t=et(x,y,z);if (!t) continue;
+      var light=(x==0)&&(y==0)&&(z==0);
+      var isway=false;for (i=world.ways.length-1;i>=0;i--) {
+        var w=world.ways[i];if ((x==w.x)&&(y==w.y)&&(z==w.z)) { isway=true;break; }
+      }
+      box0(b={"x":x*2+6,"y":y*3+(((t==1))?2:0),t:light?'light':(t==1?'box':'ramp'+(t-2)),"z":z*2+6,"w":2,"b":2,"h":t==1?1:3,"col":light?2:(isway?4:0)});
+      bricks.push(b);brickPos(b,0);sel=b;
+    }
+    
+    
+    //...
+  }
+  function isfree(x,y,z,w,h,b) {
+    if (y<0) return false;
+    for (var xi=0;xi<w;xi++) for (var yi=0;yi<h;yi++) for (var zi=0;zi<b;zi++)
+      if (grid[key(xi+x,yi+y,zi+z)]) return false;
+    return true;
+  }
+  function key(x,y,z) {
+    return x+'_'+y+'_'+z;
   }
   function menuArrow() {
     //if (mmode.ms=='Select') {
@@ -277,54 +418,16 @@ function lego1() {
     if (this.s=='\u21d3') b.y--;
     }
   }
-  function cloneWithout(o,h) {
-    var n={};
-    for (var k in o) if (o.hasOwnProperty(k)) if (!h[k]) n[k]=o[k];
-    return n;
-  }
-  function diff(o0,o1) {
-    //returns all fields from o1, that are different in o0
-    var r={}
-    for (var k in o1) if (o1.hasOwnProperty(k)&&(o1[k]!=o0[k])) r[k]=o1[k];
-    return r;
-  }
-  function serialize() {
-    var s='[\n',bl;
-    for (var i=0;i<bricks.length;i++) {
-      var b=cloneWithout(bricks[i],without);
-      s+=JSON.stringify(bl?diff(bl,b):b)+((i<bricks.length-1)?',':'')+'\n';
-      bl=b;
-    }
-    s+=']';
-    return s;
-  }
-  function clear() {
-    for (var i=0;i<bricks.length;i++) brickRemove(bricks[i]);
-    bricks.length=0;
-    //...
-  }
-  function parseLoad(d) {
-    clear();
-    bricks=JSON.parse(d);
-    
-    var bl;
-    for (var i=0;i<bricks.length;i++) {
-      var b=bricks[i];
-      if (bl) for (var k in bl) if (bl.hasOwnProperty(k)) if (!without[k])
-        if (b[k]===undefined) b[k]=bl[k];
-      if (!b.t) b.t='block';
-      box0(b);//.x,b.y,b.z,b.w,b.h,b.b,ms[b.col]);
-      brickPos(b,0);
-      sel=b;bl=b;
-    }
-    Menu.ms(mmenu,bricks.length+' bricks');
-  }
   function menuInit() {
     var url=Conet.parseUrl(document.URL);
     
-    Menu.colBg='rgba(150,150,150,0.2)';
-    Menu.init([mmenu={s:'Menu',ms:' ',msid:'mmenums',sub:[
-    Conet.fileMenu({fn:'lego/files.txt',defFn:'lego/test0.txt',noStartLoad:url.data,
+    if (url.gen) setTimeout(genMaze,500);
+    
+    
+    //Menu.colBg='rgba(150,150,150,0.2)';
+    
+    var loadMs=1;
+    var cfm=Conet.fileMenu({fn:'lego/files.txt',defFn:'lego/test0.txt',noStartLoad:url.data||url.gen,loadMs:loadMs,
     loadf:function(v) {
       Conet.download({fn:v+'?1',f:parseLoad});
     }
@@ -334,7 +437,10 @@ function lego1() {
       }
       });
     }
-    }),
+    });
+    
+    Menu.init([mmenu={s:'Menu',ms:' ',msid:'mmenums',sub:(loadMs?cfm.sub:[cfm]).concat([
+    
     {s:'Export',ms:'Import',doctrl:'Brick data',mcfs:0.07,okS:'Import',cancelS:'Close',ta:true,wrap:1,tacols:50,tarows:20,setfunc:function(v,initLoad) {
       //tridata=v.length==0?undefined:JSON.parse(v);
       parseLoad(v);
@@ -367,7 +473,9 @@ function lego1() {
       ,{s:'roofNook',sub:[{s:'0',a:'roofNook0'},{s:'1',a:'roofNook1'},{s:'2',a:'roofNook2'},{s:'3',a:'roofNook3'}]}
       ,{s:'roofNookTop',sub:[{s:'0',a:'roofNookTop0'},{s:'1',a:'roofNookTop1'},{s:'2',a:'roofNookTop2'},{s:'3',a:'roofNookTop3'}]}
       ,{s:'roofTopLean',sub:[{s:'0',a:'roofTopLean0'},{s:'1',a:'roofTopLean1'},{s:'2',a:'roofTopLean2'},{s:'3',a:'roofTopLean3'}]}
-      ,{s:'light'}]
+      ,{s:'light'}
+      ,{s:'ramp',sub:[{s:'0',a:'ramp0'},{s:'1',a:'ramp1'},{s:'2',a:'ramp2'},{s:'3',a:'ramp3'}]}
+      ]
     ,setfunc:function(a) {
       sel.t=a;
       scene.remove(sel.mesh);
@@ -405,9 +513,9 @@ function lego1() {
     }
     },
     
-    {s:'Clear',actionf:clear}
-    
-    ]},
+    {s:'Clear',actionf:clear},
+    {s:'Generate',ms:'amazing maze',r:1,actionf:genMaze}
+    ])},
     
     
     
@@ -438,36 +546,37 @@ function lego1() {
     if (url.data) parseLoad(atob(url.data));
     //...
   }
-  
-  
-  menuInit();
-  
-  onWindowResize();
-  
-  window.addEventListener('click',onClick,false);
-  
-  function select(b,multi) {
-    brickPos(sel,0);
-    sel=b;Menu.ms(mtype,sel.t);
-    
-    if (!multi) {
-      for (var i=sels.length-1;i>=0;i--) brickPos(sels[i],0);
-      sels.length=0;
-    } else if (sels.indexOf(b)!=-1) return;
-    sels.push(b);
-    
-    //...
+  function onClick(e) {
+    click=new THREE.Vector2(2*e.clientX/window.innerWidth-1,-2*e.clientY/window.innerHeight+1);
+    //console.log(click);
   }
-  
-  function animate() {
+  function onWindowResize() {
     
-    requestAnimationFrame( animate );
+    Menu.draw();
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
     
-    controls.update(); // required if controls.enableDamping = true, or if controls.autoRotate = true
-    stats.update();
+    renderer.setSize( window.innerWidth, window.innerHeight );
     
-    render();
+  }
+  function parseLoad(d) {
+    clear();
+    bricks=JSON.parse(d);
     
+    var bl;
+    for (var i=0;i<bricks.length;i++) {
+      var b=bricks[i];
+      if (bl) for (var k in bl) if (bl.hasOwnProperty(k)) if (!without[k])
+        if (b[k]===undefined) b[k]=bl[k];
+      if (!b.t) b.t='block';
+      box0(b);//.x,b.y,b.z,b.w,b.h,b.b,ms[b.col]);
+      brickPos(b,0);
+      sel=b;bl=b;
+    }
+    Menu.ms(mmenu,bricks.length+' bricks');
+  }
+  function rani(m) {
+    return Math.floor(Math.random()*m);
   }
   function render() {
     //var b=sel;if (b) brickPos(b,3);
@@ -498,30 +607,102 @@ function lego1() {
     renderer.render( scene, camera );
     
   }
-  
-  function onWindowResize() {
+  function select(b,multi) {
+    brickPos(sel,0);
+    sel=b;Menu.ms(mtype,sel.t);
     
-    Menu.draw();
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
+    if (!multi) {
+      for (var i=sels.length-1;i>=0;i--) brickPos(sels[i],0);
+      sels.length=0;
+    } else if (sels.indexOf(b)!=-1) return;
+    sels.push(b);
     
-    renderer.setSize( window.innerWidth, window.innerHeight );
-    
+    //...
+  }
+  function serialize() {
+    var s='[\n',bl;
+    for (var i=0;i<bricks.length;i++) {
+      var b=cloneWithout(bricks[i],without);
+      s+=JSON.stringify(bl?diff(bl,b):b)+((i<bricks.length-1)?',':'')+'\n';
+      bl=b;
+    }
+    s+=']';
+    return s;
   }
   
+  BrickGeometry.prototype=Object.create( THREE.BufferGeometry.prototype );
+  BrickGeometry.prototype.constructor=BrickGeometry;
+  //--
+  var camera,controls,scene,renderer,stats,sel,mmode,mmenu,mtype,mmultisel,
+      mpos,mdim,click,raycaster=new THREE.Raycaster(),sels=[],
+      without={mesh:1,light:1};
+  scene = new THREE.Scene();
+  renderer = new THREE.WebGLRenderer({antialias:true});
+  renderer.setClearColor( 0x888888 );
+  renderer.shadowMap.enabled=true;
+  renderer.shadowMap.type=THREE.BasicShadowMap;
+  //				renderer.shadowMapEnabled=true;
+  //				renderer.shadowMapType=THREE.PCFShadowMap;//PCFShadowMap;
   
+  renderer.setPixelRatio( window.devicePixelRatio );
+  renderer.setSize( window.innerWidth, window.innerHeight );
+  var container = document.getElementById('container'),ms=[];
+  container.appendChild( renderer.domElement );
+  camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 2000 );
+  camera.position.z = 500;
+  controls = new THREE.OrbitControls( camera, renderer.domElement );
+  //controls.autoRotate=true;
+  controls.enableDamping=true;
+  controls.dampingFactor=0.25;//0.25;
+  controls.enableZoom=true;
+  controls.enablePan=true;
+  controls.maxDistance=1000;
+  controls.rotateSpeed=0.4;
+  
+  var ca=[0x666666,0x333333,0xf0f000,0x90f000,0x00f000,0x009090,0x0030d0];
+  for (var i=0;i<ca.length;i++) {
+    var m=new THREE.MeshPhongMaterial({color:ca[i],shading:THREE.FlatShading});
+    ms.push(m);
+  }
+  var bw=20,sw=15,sw2=(sw-1)/2,bh=bw/2,grid={};//20,15
+  //if (1) { box0(-1,0,-1,1,1,1,m2);box0(15,0,-1,1,1,1,m2);
+  //         box0(-1,0,15,1,1,1,m2);box0(15,0,15,1,1,1,m2); }
+  var bricks=[];
+  box(0,-150,0,600,bw,600,ms[1]).castShadow=false;
+  
+  var l=new THREE.AmbientLight(0x555555),f=3;scene.add(l);
+  l=new THREE.PointLight(0xffffff,1,0);l.position.set(-100*f,200*f,100*f);scene.add(l);
+  l=new THREE.PointLight(0xffffaa,1,0);l.position.set(100*f,100*f,100*f);
+  l.castShadow=true;
+  l.shadow.camera.near=100;
+  l.shadow.camera.far=1000;
+  l.shadow.mapSize.width=1024;//2048;
+  l.shadow.mapSize.height=1024;
+  l.shadow.bias=0.01;
+  scene.add(l);
+  l=new THREE.PointLight(0xaaffff,1,0);l.position.set(100*f,-200*f,-100*f);scene.add(l);
+  
+  stats = new Stats();
+  stats.domElement.style.position = 'absolute';
+  stats.domElement.style.top = '0px';
+  stats.domElement.style.zIndex = 100;
+  container.appendChild( stats.domElement );
+  
+  window.addEventListener('resize',onWindowResize,false);
+  menuInit();
+  onWindowResize();
+  window.addEventListener('click',onClick,false);
   animate();
 }
 lego1();
 </script></body></html><script>
-//fr o,17
-//fr o,17,76
-//fr o,17,84
-//fr o,17,84,5
-//fr o,17,84,9
-//fr o,17,84,12
-//fr o,17,84,30
-//fr o,17,84,39
-//fr o,17,84,57
-//fr o,17,84,60
-//fr p,25,168
+//fr o,12
+//fr o,12,10,16
+//fr o,12,10,18
+//fr o,12,14
+//fr o,12,14,19
+//fr o,12,14,39
+//fr o,12,14,48
+//fr o,12,14,66
+//fr o,12,14,69
+//fr p,33,30

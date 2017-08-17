@@ -11,7 +11,7 @@ body { color: #000;background-color: #fff;margin: 0px;overflow: hidden; }
 <script src="../conet.js"></script>
 </head><body><div id="container"></div><script>
 function lego1() {
-  var version='1.6 ';//FOLDORUPDATEVERSION
+  var version='1.7 ';//FOLDORUPDATEVERSION
   //onsole.log('Brick Construction Tool, Version '+version);
   //---
   function animate() {
@@ -367,7 +367,7 @@ function lego1() {
       var isway=false;for (i=world.ways.length-1;i>=0;i--) {
         var w=world.ways[i];if ((x==w.x)&&(y==w.y)&&(z==w.z)) { isway=true;break; }
       }
-      box0(b={"x":x*2+6.5,"y":y*3+(((t==1))?2:0),t:light?'light':(t==1?'box':'ramp'+(t-2)),"z":z*2+6.5,"w":2,"b":2,"h":t==1?1:3,"col":light?2:(isway?4:0)});
+      box0(b={"x":x*2+6.5,"y":y*3+(((t==1))?2:0),t:light?'light':(t==1?'box':'ramp'+(t-2)),"z":z*2+6.5,"w":2,"b":2,"h":t==1?1:3,"col":light?2:(isway?1:0)});
       bricks.push(b);brickPos(b,0);sel=b;
     }
     
@@ -699,6 +699,7 @@ function lego1() {
 lego1();
 </script></body></html><script>
 //fr o,12
+//fr o,12,12
 //fr o,12,12,16
 //fr o,12,12,18
 //fr o,12,16
@@ -706,4 +707,4 @@ lego1();
 //fr o,12,16,39
 //fr o,12,16,48
 //fr o,12,16,66
-//fr p,32,43
+//fr p,146,144

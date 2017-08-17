@@ -11,6 +11,8 @@ body { color: #000;background-color: #fff;margin: 0px;overflow: hidden; }
 <script src="../conet.js"></script>
 </head><body><div id="container"></div><script>
 function lego1() {
+  var version='1.6 ';//FOLDORUPDATEVERSION
+  //onsole.log('Brick Construction Tool, Version '+version);
   //---
   function animate() {
     
@@ -365,7 +367,7 @@ function lego1() {
       var isway=false;for (i=world.ways.length-1;i>=0;i--) {
         var w=world.ways[i];if ((x==w.x)&&(y==w.y)&&(z==w.z)) { isway=true;break; }
       }
-      box0(b={"x":x*2+6,"y":y*3+(((t==1))?2:0),t:light?'light':(t==1?'box':'ramp'+(t-2)),"z":z*2+6,"w":2,"b":2,"h":t==1?1:3,"col":light?2:(isway?4:0)});
+      box0(b={"x":x*2+6.5,"y":y*3+(((t==1))?2:0),t:light?'light':(t==1?'box':'ramp'+(t-2)),"z":z*2+6.5,"w":2,"b":2,"h":t==1?1:3,"col":light?2:(isway?4:0)});
       bricks.push(b);brickPos(b,0);sel=b;
     }
     
@@ -439,7 +441,7 @@ function lego1() {
     }
     });
     
-    Menu.init([mmenu={s:'Menu',ms:' ',msid:'mmenums',sub:(loadMs?cfm.sub:[cfm]).concat([
+    Menu.init([mmenu={s:'Menu',ms:'Version '+version,msid:'mmenums',sub:(loadMs?cfm.sub:[cfm]).concat([
     
     {s:'Export',ms:'Import',doctrl:'Brick data',mcfs:0.07,okS:'Import',cancelS:'Close',ta:true,wrap:1,tacols:50,tarows:20,setfunc:function(v,initLoad) {
       //tridata=v.length==0?undefined:JSON.parse(v);
@@ -697,12 +699,11 @@ function lego1() {
 lego1();
 </script></body></html><script>
 //fr o,12
-//fr o,12,10,16
-//fr o,12,10,18
-//fr o,12,14
-//fr o,12,14,19
-//fr o,12,14,39
-//fr o,12,14,48
-//fr o,12,14,66
-//fr o,12,14,69
-//fr p,33,30
+//fr o,12,12,16
+//fr o,12,12,18
+//fr o,12,16
+//fr o,12,16,19
+//fr o,12,16,39
+//fr o,12,16,48
+//fr o,12,16,66
+//fr p,32,43

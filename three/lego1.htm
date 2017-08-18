@@ -11,7 +11,7 @@ body { color: #000;background-color: #fff;margin: 0px;overflow: hidden; }
 <script src="../conet.js"></script>
 </head><body><div id="container"></div><script>
 function lego1() {
-  var version='1.7 ';//FOLDORUPDATEVERSION
+  var version='1.10 ';//FOLDORUPDATEVERSION
   //onsole.log('Brick Construction Tool, Version '+version);
   //---
   function animate() {
@@ -680,7 +680,7 @@ function lego1() {
   l.shadow.camera.far=1000;
   l.shadow.mapSize.width=1024;//2048;
   l.shadow.mapSize.height=1024;
-  l.shadow.bias=0.01;
+  //l.shadow.bias=0.01;
   scene.add(l);
   l=new THREE.PointLight(0xaaffff,1,0);l.position.set(100*f,-200*f,-100*f);scene.add(l);
   
@@ -707,4 +707,4 @@ lego1();
 //fr o,12,16,39
 //fr o,12,16,48
 //fr o,12,16,66
-//fr p,146,144
+//fr p,2,304

@@ -37,6 +37,10 @@ var Vecmath={};
   Vecmath.stacktrace=stacktrace;
   Vecmath.fs=fs;
   //---todo: remove w3ditInTri
+  Vecmath.dist2=function(v0,v1) {
+    var dx=v0.x-v1.x,dy=v0.y-v1.y,dz=v0.z-v1.z;
+    return dx*dx+dy*dy+dz*dz;
+  }
   Vecmath.inTri=function(x0,y0,x1,y1,x2,y2,xp,yp) {
     //return false;
     /*
@@ -658,6 +662,5 @@ var Vecmath={};
 
 
 //fr o,24
-//fr o,24,16
-//fr o,24,25
-//fr p,0,56
+//fr o,24,6
+//fr p,25,33

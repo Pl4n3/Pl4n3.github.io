@@ -36,6 +36,145 @@ var Pd5={};
     var du=v0.u-v1.u,dv=v0.v-v1.v;
     return du*du+dv*dv;
   }
+  function boneNew(h,ps) {
+    if (!h) h={};
+    if (!ps) ps={};
+    var mat=new Vecmath.Mat4();mat.setIdentity();
+    Pd5.hcopy({ws:[],mat:mat,q:new Vecmath.Vec3(),t:new Vecmath.Vec3(ps.x||0,0,0),
+      p0:{p0:new Vecmath.Vec3(//ps.x||
+      0,0,0),p1:new Vecmath.Vec3(0,0,0),p2:new Vecmath.Vec3(0,0,0)}},
+      h,undefined,undefined,1);
+    return h;
+    //...
+  }
+  function weightNew(x,y,z,w) {
+    var we={p0:new Vecmath.Vec3(x,y,z),p1:new Vecmath.Vec3(0,0,0),w:w};
+    //...
+    return we;
+  }
+  function rigVerts(lo) {
+    
+    //first pass: determine bones
+    lo.bones=[boneNew({name:'base'})];
+    var boneh={},spheres={};//bone-name->array of spheres
+    for (var h=0;h<lo.verts.length;h++) {
+      var v=lo.verts[h],mo=v.marko;
+      v.ws=[];
+      if (!v.marko) continue;
+      var boneName=v.marko.bone;
+      if (boneName) { 
+        //onsole.log(v.marko);
+        var b=boneNew({name:boneName,up:v.marko.up,_v:v});  
+        lo.bones.push(b);
+        boneh[boneName]=b;
+      }
+      var name=mo.bone||mo.bonr;
+      if (!name) continue;
+      if (mo.radius) {
+        //var name=mo.bone||mo.bonr;
+        //if (name) {
+          var sa=spheres[name];
+          if (!sa) { sa=[];spheres[name]=sa; }
+          sa.push({p:v.p0,r:mo.radius,mo:mo});
+        //}
+      }
+    }
+    //second pass: determine properties (yup,..) of bones
+    for (var h=0;h<lo.verts.length;h++) {
+      var v=lo.verts[h],mo=v.marko;
+      if (!mo) continue;
+      var name=mo.bone||mo.bonr;
+      if (!name) continue;
+      var b=boneh[name];
+      if (mo.yup) { console.log('YUP!');b._yup=v; }
+      if (mo.ydn) b._ydn=v; 
+    }
+    //onsole.log(spheres);
+    for (var h=1;h<lo.bones.length;h++) {
+      var b=lo.bones[h],p=b._v.p0;
+      if (b.up) {
+        b.up=boneh[b.up];var pu=b.up._v.p0;
+        b.t.sub2(p,pu);
+      } else {
+        b.up=lo.bones[0];
+        b.t.set1(p);
+      }
+    }
+    //yup param auf aeste kopieren, ggf hier auch bones sortieren
+    var change=1;
+    while (change) { 
+      change=0;
+      for (var h=1;h<lo.bones.length;h++) {
+        var b=lo.bones[h];
+        //console.log(b.up);
+        //if (b._yup) { console.log('b._yup');console.log(b); }
+        if (b.up._yup&&!b._yup) { console.log('upyup');b._yup=b.up._yup;change=1; }
+        if (b.up._ydn&&!b._ydn) { b._ydn=b.up._ydn;change=1; }
+      }
+    }
+    //|bones are there, now generate weights, alogrithm:
+    //| -for each vert add a weight if it is in a bone sphere
+    //| -for each bone only nearest sphere (-> only 1 weight)
+    //| -if vert is in no sphere it gets a weight for the nearest sphere
+    //| -for cones/legs etc. add temp spheres 
+    //| -weight function in a sphere quadratic, but never 0
+    //| -> loop over verts, then bones, then spheres in a bone..
+    
+    //if (0)
+    for (var h=0;h<lo.verts.length;h++) {
+      var v=lo.verts[h],mb=undefined,md=Number.MAX_VALUE,vp0=v.p0;
+      for (var i=1;i<lo.bones.length;i++) {
+        var b=lo.bones[i],vh=b._yup;
+        if (vh) { if (v.p0.y<vh.p0.y) { //console.log('yup');
+            continue; }}
+        vh=b._ydn;if (vh) if (v.p0.y>vh.p0.y) continue;
+        var sa=spheres[b.name],msd=Number.MAX_VALUE,ms=undefined,bp=b._v.p0;
+        if (sa) for (var j=0;j<sa.length;j++) {
+          var s=sa[j],d=Math.sqrt(dist(s.p,v.p0));
+          if (d<md) { md=d;mb=b; }
+          if (d>s.r) continue;
+          if (d<msd) { msd=d;ms=s; }
+        }
+        if (!ms) continue;
+        //var vh=b._yup;if (vh) {
+        //  if (v.y<vh.y) continue;
+        //}
+        var wp0=new Vecmath.Vec3();wp0.sub2(vp0,bp);
+        //onsole.log(wp0);
+        var f=(1-msd/ms.r);f*=f;//*f;
+        //var w={p0:wp0,p1:new Vecmath.Vec3(0,0,0),w:0.01+(0.99*f)*(ms.mo.spheref||1)};
+        var w={p0:wp0,p1:new Vecmath.Vec3(0,0,0),w:ms.mo.fixweight||(0.01+(0.99*f))};
+        b.ws.push(w);v.ws.push(w);
+        //v.mark=(v.mark||'')+b.name;
+      }
+      if (v.ws.length>0) continue;
+      var wp0=new Vecmath.Vec3();wp0.sub2(vp0,mb._v.p0);
+      var w={p0:wp0,p1:new Vecmath.Vec3(0,0,0),w:1};
+      mb.ws.push(w);v.ws.push(w);
+    }
+    
+    
+    //var b={name:'base',ws:[],mat:new Vecmath.Mat4(),
+    //  p0:{p0:new Vecmath.Vec3(0,0,0),p1:new Vecmath.Vec3(0,0,0),p2:new Vecmath.Vec3(0,0,0)}},w;
+    if (0) {
+    var b=lo.bones[0];//b.mat.setIdentity();
+    for (var h=0;h<lo.verts.length;h++) {
+      var v=lo.verts[h],p0=v.p0;
+      b.ws.push(w=weightNew(p0.x,p0.y,p0.z,1));
+      v.ws.push(w);
+    }}
+    //var b0=boneNew({name:'2nd',up:b},{x:50});
+    //lo.bones=[b,b0];
+    //lo.anims=[];
+    var ak;lo.anim=[ak={t:1,bs:[]}];
+    lo.anims=[{name:'idle',a:lo.anim}];
+    for (var h=0;h<lo.bones.length;h++) {
+      var b=lo.bones[h];
+      ak.bs.push({q:new Vecmath.Vec3(b.q.x,b.q.y,b.q.z),t:new Vecmath.Vec3(b.t.x,b.t.y,b.t.z)});
+    }
+    //onsole.log(lo);
+    //...
+  }
   Pd5.vertNew=function(x,y,z,u,v) {
     return {p0:new Vecmath.Vec4(x,y,z,1),p1:new Vecmath.Vec4(0,0,0,1),ts:[],vis:false,u:u,v:v};
   }
@@ -57,6 +196,7 @@ var Pd5={};
         return Pd5.loadh(h);
       } catch (re) {
         console.warn('Pd5.load runtime error: '+re);
+        console.log(re);
       }
     //} catch (se) {  console.warn('Pd5.load syntax error: '+se); }
   }
@@ -147,14 +287,21 @@ var Pd5={};
     //lert(2);
     
     } else {
-    if (!lo.verts) lo.verts=[];
-    for (var h=0;h<pa.length;h++) {
-      var p=pa[h],v;
-      //p[0]*=10;
-      //va.push({p0:new Vecmath.Vec4(p[0],p[1],p[2],1),p1:new Vecmath.Vec4(0,0,0,1),ts:[],vis:false});
-      lo.verts.push(v=Pd5.vertNew(p[0],p[1],p[2],p.length>3?p[3]:0,p.length>4?p[4]:0));
-      if (p.length>5) v.mark=p[5];
-    }
+      if (!lo.verts) lo.verts=[];
+      for (var h=0;h<pa.length;h++) {
+        var p=pa[h],v;
+        //p[0]*=10;
+        //va.push({p0:new Vecmath.Vec4(p[0],p[1],p[2],1),p1:new Vecmath.Vec4(0,0,0,1),ts:[],vis:false});
+        lo.verts.push(v=Pd5.vertNew(p[0],p[1],p[2],p.length>3?p[3]:0,p.length>4?p[4]:0));
+        if (p.length>5) {
+          v.mark=p[5]; 
+          if (v.mark.startsWith('{')) {
+            v.marko=JSON.parse(v.mark);
+            //onsole.log(v.marko);
+          }
+        }
+      }
+      if (document.URL.indexOf('rigVerts')!=-1) rigVerts(lo);
     }
     //lert(3);
     if (!lo.meshes) lo.meshes=[];
@@ -809,7 +956,7 @@ var Pd5={};
     
   }
   Pd5.animText=function(o,st) {
-    //onsole.log('Pd5.animText '+s);
+    console.log('Pd5.animText '+st);
     //var matChange=false;
     var a=st.split('\n');
     for (var i=a.length-1;i>=0;i--) {
@@ -1108,14 +1255,19 @@ var Pd5={};
     //o.animStop=false;
   }
   //---
-  Pd5.hcopy=function(from,to,ka) {
+  Pd5.hcopy=function(from,to,ka,woh,keep) {
     if (ka===undefined) {
-      for (var k in from) if (from.hasOwnProperty(k)) to[k]=from[k];
+      for (var k in from) if (from.hasOwnProperty(k)) {
+        if (keep) if (to[k]!==undefined) continue;
+        if (!(woh&&woh[k])) to[k]=from[k];
+      }
       return;
     }
     for (var ki=0;ki<ka.length;ki++) {
       var k=ka[ki],v=from[k];
-      if (v!==undefined) to[k]=v;
+      if (v===undefined) continue;
+      if (keep) if (to[k]!==undefined) continue;
+      to[k]=v;
     }
   }
   Pd5.modAnims=function(bi,ph) {
@@ -1829,11 +1981,14 @@ var Pd5={};
 
 //---
 //fr o,2
-//fr o,2,37,75
-//fr o,2,39
-//fr o,2,43,44
-//fr o,2,44,1
-//fr o,2,44,2
-//fr o,2,44,2,3
-//fr o,2,46
-//fr p,36,5
+//fr o,2,26
+//fr o,2,27
+//fr o,2,30
+//fr o,2,31
+//fr o,2,40,75
+//fr o,2,42
+//fr o,2,46,44
+//fr o,2,47,1
+//fr o,2,47,2
+//fr o,2,47,2,3
+//fr p,12,111

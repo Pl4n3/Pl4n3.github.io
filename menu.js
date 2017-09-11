@@ -670,7 +670,8 @@ var Menu={};
     if (!menus) return;
     for (var h=0;h<menus.length;h++) {
       var mh=menus[h],c=mh.c;
-      document.body.removeChild(c);
+      //console.log('Menu.remove '+
+      document.body.removeChild(c);//);
       mh.shown=false; 
     }
   }
@@ -906,5 +907,8 @@ var Menu={};
 
 //--
 //fr o,2
+//fr o,2,38
 //fr o,2,39
-//fr p,13,47
+//fr o,2,46
+//fr o,2,48
+//fr p,4,75

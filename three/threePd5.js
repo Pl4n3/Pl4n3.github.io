@@ -1,12 +1,12 @@
 var threeEnv={
   //camera,scene,renderer,
   //lightMesh,reflectionCube
-  scale:1,
+  scale:1,dtscale:1,
   r:2.5,
   ot:new Date().getTime(),
   os:[],
   rotLightV:0.05,ps:[],ps2:[],path:'',camFar:10000
-},isVr=false,onlyThree=false,threeTexH={},threeTL=THREE.TextureLoader?new THREE.TextureLoader():undefined;
+},isVr=false,onlyThree=false,threeTexH={},threeTL=window.THREE&&THREE.TextureLoader?new THREE.TextureLoader():undefined;
 function threeParticles(geometry,x,y,z,wh,c) {
   				for ( i = 0; i < c; i ++ ) {
     					var vertex = new THREE.Vector3();
@@ -452,8 +452,8 @@ function threeRender() {
   //if (Math.abs(r-10)<0.0001) threeAddObj(10,2,0,30);
   
   
-  				var ry=0,rx=0.4;
-  				var t=new Date().getTime(),dt=Math.floor((t-threeEnv.ot)*0.7+0.5);threeEnv.ot=t;
+  var ry=0,rx=0.4;
+  var t=new Date().getTime(),dt=Math.floor((t-threeEnv.ot)*threeEnv.dtscale+0.5);threeEnv.ot=t;
   
   for (var obi=threeEnv.os.length-1;obi>=0;obi--) {
     var lo=threeEnv.os[obi];
@@ -602,7 +602,4 @@ function threeMeshUpdate(lo,dy) {
   //threeRender();
 }
 
-//fr o,12
-//fr o,14
-//fr o,17
-//fr p,17,92
+//fr p,57,8

@@ -1,0 +1,160 @@
+<!doctype html><html><head>
+<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=10.0">
+<script src="/menu.js"></script>
+<script src="/conet.js"></script>
+</head>
+<body bgcolor="#aaaaaa" style="font-family:Arial;overflow:hidden;">
+
+<script type="text/javascript">
+function init() {
+  var cols=[[0xff,0,0],[0xff,0x99,0x33],[0xff,0xff,0],[0xff,0x33,0xff],
+    [0x99,0,0x99],[0,0,0xff],[0,0xcc,0xff],[0x33,0xff,0],[0,0x99,0],
+    [0x99,0x66,0],[255,255,255],[175,175,175],[0,0,0]],selcol=cols.length-1,
+    ma=[{s:'&#9776;',noTri:true//,sub:[{s:'iuiuzh'}]
+    ,fs:1.4,pw:0.05}],dpr=window.devicePixelRatio||1,
+    c=document.createElement('canvas'),canv=c,s=c.style,
+    w=window.innerWidth,h=window.innerHeight,md=false,ct,bra=5,
+    lx,ly,change=false,lskey='simplepaint',
+    version='1.7 ';//FOLDORUPDATEVERSION
+    
+  //---
+  function brush(x,y) {
+    if (ct===undefined) ct=canv.getContext('2d');
+    ct.beginPath();
+    var c=cols[selcol];
+    ct.fillStyle=c.bgcol;
+    ct.arc(x*dpr,y*dpr,bra*dpr,0,Math.PI*2);
+    ct.fill();
+    change=true;
+    //...
+  }
+  function brushline(x0,y0,x1,y1) {
+    var dx=x1-x0,dy=y1-y0,d=Math.sqrt(dx*dx+dy*dy);
+    for (var h=0;h<d;h+=Math.floor(bra/3+0.5)+1) 
+      brush(Math.floor(x0+dx*h/d+0.5),Math.floor(y0+dy*h/d+0.5));
+    //...
+  }
+  function colAction() {
+    var m=cols[selcol];
+    delete(m.bowi);delete(m.bost);delete(m.bocol);
+    m=this;
+    selcol=cols.indexOf(m);
+    m.bowi=0.1;m.bost='dashed';
+    if (selcol==12) m.bocol='#fff';
+  }
+  //---
+    
+  c.width=w*dpr;c.height=h*dpr;
+  s.position='absolute';s.top='0px';s.left='0px';
+  s.width=w+'px';s.height=h+'px';
+  //var ct=c.getContext('2d');ct.strokeStyle='#0f0';ct.strokeRect(0,0,w*dpr,h*dpr);
+  var s=localStorage[lskey];
+  if (s) {
+    var i=new Image(),ct=c.getContext('2d');i.src=s;
+  i.onload=function() {
+    ct.drawImage(this,0,0);
+    console.log('loading');
+  }
+  }
+  document.body.appendChild(c);
+  
+  var ma=[{s:'&#9776;',noTri:true,sub:[
+  
+  {s:'Clear',fs:1.4,actionf:function() {
+    var ct=canv.getContext('2d');
+    ct.clearRect(0,0,canv.width,canv.height);
+  }
+  },
+  
+  {s:'Export',fs:1.4,actionf:function() {
+    
+    var w=window.open('','Png Export');//'JpegExport');
+    var img=new Image(),s=img.style;img.src=canv.toDataURL('image/png');
+    s.position='absolute';s.left='0px';s.top='0px';
+    w.document.body.appendChild(img);
+    
+    //alert(32);
+  }
+  }
+  
+  ,{s:'Version '+version,fs:1.2,vertCenter:1,ph:0.02,noinp:1}
+  
+  ],fs:1.4,pw:0.05}];
+  
+  for (var i=0;i<cols.length;i++) {
+    var c=cols[i];
+    var m={s:'',bgcol:'rgb('+c[0]+','+c[1]+','+c[2]+')',pw:0.05,actionf:colAction};
+    if (i==selcol) { m.bowi=0.1;m.bost='dashed';if (i==12) m.bocol='#fff'; }
+    ma.push(m);
+    cols[i]=m;
+  }
+  Menu.px=0.001;
+  Menu.init(ma,{listen:1});
+  
+  c=window;
+  c.addEventListener('resize',function(e) {
+    var w=window.innerWidth,h=window.innerHeight,c=canv,s=c.style,
+        ct=canv.getContext('2d'),id=ct.getImageData(0,0,c.width,c.height);
+    c.width=w*dpr;c.height=h*dpr;
+    s.width=w+'px';s.height=h+'px';
+    ct=c.getContext('2d');
+    ct.putImageData(id,0,0);
+  }
+  );c=canv;
+  c.addEventListener('mousedown',function(e) {
+    ct=undefined;
+    lx=e.pageX;ly=e.pageY;
+    md=true;brush(lx,ly);
+  }
+  );c.addEventListener('mousemove',function(e) {
+    if (!md) return;
+    var x=e.pageX,y=e.pageY;
+    brushline(lx,ly,x,y);
+    lx=x;ly=y;
+    //...
+  }
+  );c.addEventListener('mouseup',function(e) {
+    md=false;//...
+  }
+  );
+  c.addEventListener('touchstart',function(e) {
+    //onsole.log('touchStart');
+    var t=e.touches[0];
+    lx=t.pageX;ly=t.pageY;
+    brush(lx,ly);
+  }
+  ,{passive:false});
+  c.addEventListener('touchmove',function(e) {
+    var t=e.touches[0],x=t.pageX,y=t.pageY;
+    //onsole.log('touchMove '+lx+' '+ly+' '+x+' '+y);
+    brushline(lx,ly,x,y);
+    lx=x;ly=y;
+    //...
+  }
+  ,{passive:false});
+  c.addEventListener('touchend',function(e) {
+    //...
+  }
+  ,{passive:false});
+  
+  setInterval(function() {
+    if (!change) return;
+    localStorage[lskey]=canv.toDataURL('image/png');
+    change=false;
+    //onsole.log('saved');
+  }
+  ,10000);
+}
+
+init();
+</script>
+
+</body>
+</html><script>
+//fr o,9
+//fr o,9,23
+//fr o,9,29
+//fr o,9,32
+//fr o,9,63
+//fr p,2,91

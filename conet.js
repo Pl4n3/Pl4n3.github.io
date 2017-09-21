@@ -1,7 +1,7 @@
 var Conet={};
 (function(Conet) {
   Conet.offline=false;
-  Conet.version='v.1.268 ';//FOLDORUPDATEVERSION
+  Conet.version='v.1.270 ';//FOLDORUPDATEVERSION
   Conet.files={};
   var uploads={},fns,logc,logs=[];//fn=>data,first
   function xhr(p) {
@@ -44,7 +44,7 @@ var Conet={};
         //setTimeout(function() { xhr({url:fn+'?CONETFC',f:function (s) {alert(s);}}); },1000);
         delete(uploads[fn]);
         if (p.f) p.f(responseText);
-        if (p.log) p.log(responseText===''?'Conet-save error.':'Conet-saved: '+p.fn+'.');
+        if (p.log) p.log(responseText===''?'Conet-save error.':'Conet-saved: '+p.fn+' '+p.data.length);
         return;
       }
       console.log('conet-sendChunk '+uh.data.length);
@@ -338,14 +338,15 @@ var Conet={};
 )(Conet);
 console.log('Conet '+Conet.version);
 //fr o,1
+//fr o,1,5
 //fr o,1,5,17
-//fr o,1,8
 //fr o,1,8,2
 //fr o,1,8,3
 //fr o,1,8,4
 //fr o,1,8,5
 //fr o,1,8,17
 //fr o,1,8,18
+//fr o,1,8,28
 //fr o,1,8,31
 //fr o,1,8,32
 //fr o,1,8,56
@@ -353,4 +354,4 @@ console.log('Conet '+Conet.version);
 //fr o,1,11
 //fr o,1,12
 //fr o,1,12,4
-//fr p,25,34
+//fr p,95,32

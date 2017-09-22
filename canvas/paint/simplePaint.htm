@@ -4,8 +4,9 @@
 <meta name="mobile-web-app-capable" content="yes">
 <script src="/menu.js"></script>
 <script src="/conet.js"></script>
+<style>html { background-color:#aaa; }</style>
 </head>
-<body bgcolor="#aaaaaa" style="font-family:Arial;overflow:hidden;">
+<body bgcolor="#000" style="font-family:Arial;overflow:hidden;background-color:#aaa;">
 
 <script type="text/javascript">
 function init() {
@@ -17,7 +18,7 @@ function init() {
     c=document.createElement('canvas'),canv=c,s=c.style,
     w=window.innerWidth,h=window.innerHeight,md=false,ct,bra=5,
     lx,ly,change=false,lskey='simplepaint',
-    version='1.8 ';//FOLDORUPDATEVERSION
+    version='1.28 ';//FOLDORUPDATEVERSION
     
   //---
   function brush(x,y) {
@@ -55,16 +56,33 @@ function init() {
     var i=new Image(),ct=c.getContext('2d');i.src=s;
   i.onload=function() {
     ct.drawImage(this,0,0);
-    console.log('loading');
+    //onsole.log('loading');
   }
   }
   document.body.appendChild(c);
   
   var ma=[{s:'&#9776;',noTri:true,sub:[
   
+  {s:''+bra,ms:'brush radius',fs:1.4,autoval:true,setfunc:function(v) {
+    bra=parseInt(v);this.s=v;//...
+  }
+  ,sub:[{s:'1'},{s:'2'},{s:'3'},{s:'5'},{s:'10'},{s:'20'},{s:'30'},{s:'50'},{s:'100'}]},
+  
+  
   {s:'Clear',fs:1.4,actionf:function() {
     var ct=canv.getContext('2d');
     ct.clearRect(0,0,canv.width,canv.height);
+  }
+  },
+  
+  {s:'Fullscreen',vertCenter:1,actionf:function() {
+    var c=document.documentElement;//body;//window;
+    if (c.requestFullscreen) c.requestFullscreen();
+    else if (c.mozRequestFullScreen) c.mozRequestFullScreen();
+    else if (c.webkitRequestFullScreen) c.webkitRequestFullscreen();
+    //try {
+    screen.orientation.lock('portrait');
+    //} catch (e) { console.log(e); }
   }
   },
   
@@ -141,7 +159,9 @@ function init() {
   
   setInterval(function() {
     if (!change) return;
-    localStorage[lskey]=canv.toDataURL('image/png');
+    var s=canv.toDataURL('image/png');
+    console.log('Saving to localStorage '+s.length+' bytes.');
+    localStorage[lskey]=s;
     change=false;
     //onsole.log('saved');
   }
@@ -153,9 +173,11 @@ init();
 
 </body>
 </html><script>
-//fr o,10
-//fr o,10,23
-//fr o,10,29
-//fr o,10,32
-//fr o,10,63
-//fr p,50,3
+//fr o,11
+//fr o,11,23
+//fr o,11,29
+//fr o,11,33
+//fr o,11,36
+//fr o,11,39
+//fr o,11,70
+//fr p,46,109

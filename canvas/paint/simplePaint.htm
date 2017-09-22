@@ -18,7 +18,7 @@ function init() {
     c=document.createElement('canvas'),canv=c,s=c.style,
     w=window.innerWidth,h=window.innerHeight,md=false,ct,bra=5,
     lx,ly,change=false,lskey='simplepaint',
-    version='1.28 ';//FOLDORUPDATEVERSION
+    fsportrait=(localStorage['fsportrait']=='0'?false:true),version='1.33 ';//FOLDORUPDATEVERSION
     
   //---
   function brush(x,y) {
@@ -75,13 +75,16 @@ function init() {
   }
   },
   
-  {s:'Fullscreen',vertCenter:1,actionf:function() {
+  {s:'Fullscreen',vertCenter:1,ms:fsportrait?'Portrait':'Landscape',actionf:function() {
     var c=document.documentElement;//body;//window;
     if (c.requestFullscreen) c.requestFullscreen();
     else if (c.mozRequestFullScreen) c.mozRequestFullScreen();
     else if (c.webkitRequestFullScreen) c.webkitRequestFullscreen();
     //try {
-    screen.orientation.lock('portrait');
+    localStorage['fsportrait']=fsportrait?'1':'0';
+    screen.orientation.lock(fsportrait?'portrait':'landscape');
+    fsportrait=!fsportrait;
+    this.ms=fsportrait?'Portrait':'Landscape';
     //} catch (e) { console.log(e); }
   }
   },
@@ -180,4 +183,4 @@ init();
 //fr o,11,36
 //fr o,11,39
 //fr o,11,70
-//fr p,46,109
+//fr p,65,56

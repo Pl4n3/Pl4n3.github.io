@@ -1,0 +1,83 @@
+<!doctype html><html><head>
+<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+<meta name="viewport" content="width=device-width, user-scalable=yes, minimum-scale=1.0, maximum-scale=10.0">
+</head>
+<body bgcolor="#aaaaaa">
+<script type="text/javascript">
+function init() {
+  var ta;
+  
+  function run() {
+    var c=document.createElement('canvas'),s=c.style,
+        w=350,h=500;
+    c.width=w;c.height=h;
+    var ct=c.getContext('2d');
+    ct.fillStyle='#ccc';
+    ct.fillRect(0,0,w,h);
+    document.body.appendChild(c);
+    
+    var ra=JSON.parse(ta.value).program,rs={};
+    for (var i=0;i<ra.length;i++) {
+      var r=ra[i];
+      rs[r[0]+'_'+r[1]]=r;
+    }
+    var state=1,band=[0,0,0,0,0],bpos=4,bofs=0,y=1,
+        scols=['#000','#0f0','#00f','#f00'],wh=10,
+        count=0;
+    
+    while (true) {
+      ct.fillStyle=scols[state];
+      ct.fillRect(1,y,wh,wh);
+      for (var i=0;i<band.length;i++) {
+        ct.fillStyle=band[i]==0?'#fff':'#000';
+        if (i+bofs==bpos) ct.fillRect((i+2)*wh,y,wh,wh);
+        else ct.fillRect((i+2)*wh+1,y+1,wh-2,wh-2);
+      }
+      
+      var r=rs[state+'_'+band[bpos-bofs]];
+      if (!r) break;
+      band[bpos-bofs]=r[2];
+      if (r[3]==1) bpos++; else bpos--;
+      if (bpos<bofs) { bofs=bpos;band.splice(0,0,0); }
+      if ((bpos-bofs)==band.length) band.push(0);
+      state=r[4];y+=wh+1;count++;
+      if (count==40) break;
+      //break;
+    }
+    console.log(count+' steps');
+    //...
+  }
+  
+  var c,c0=document.body,s;
+  //    c0=document.createElement('div'),s=c0.style;
+  //s.clear='left';s.display='block';
+  //document.body.appendChild(c0);
+  
+  c=document.createElement('textarea');s=c.style;
+  c.rows=10;c.cols=30;s.float='left';ta=c;
+  c.value='{"i":"turing machine s(3)",\n'
+    +'"program":[\n'
+    +' [1,0,1,1,2],\n'
+    +' [1,1,1,1,0],\n'
+    +' [2,0,1,0,2],\n'
+    +' [2,1,0,1,3],\n'
+    +' [3,0,1,0,3],\n'
+    +' [3,1,1,0,1]\n'
+    +']}';
+  c0.appendChild(c);
+  
+  c=document.createElement('button');s=c.style;
+  c.innerHTML='Run';s.fontSize='2.5em';//s.clear='left';
+  c.onclick=run;c0.appendChild(c);
+  
+  document.body.appendChild(
+    c=document.createElement('br'));
+  c.style.clear='left';
+  //...
+}
+init();
+</script></body>
+</html><script>
+//fr o,6
+//fr o,6,2
+//fr p,14,43

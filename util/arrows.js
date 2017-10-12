@@ -275,6 +275,11 @@ var Arrows=function(gps) {
     //...
   }
   function menuInit() {
+    if (gps.menu) {
+      Menu.init(gps.menu,{listen:1,diw:750});
+      return;
+    }
+    
     
     var cfm=Conet.fileMenu({fn:'/test/divScaleFiles.json.txt',defFn:'/test/divScale0.json.txt',noStartLoad:gps.noStartLoad,
     loadf:function(v) {
@@ -303,7 +308,7 @@ var Arrows=function(gps) {
     });
     
     
-    Menu.init(gps.menu?gps.menu:[{s:'Menu',sub:[cfm,
+    Menu.init([{s:'Menu',sub:[cfm,
     
     {s:'Add',ms:'Node',actionf:function() {
       div({x:10+'px',y:10+'px',s:'Node'+cont.childNodes.length,c:'#fff'});
@@ -496,9 +501,6 @@ var Arrows=function(gps) {
 //---
 
 //fr o,1
-//fr o,1,3
 //fr o,1,3,33
-//fr o,1,7
-//fr o,1,13
-//fr o,1,17
-//fr p,26,131
+//fr o,1,16
+//fr p,10,33

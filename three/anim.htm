@@ -1,0 +1,261 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+<style>
+body { color: #000;background-color: #aaa;margin: 0px;overflow: hidden; }
+</style>
+<script src="https://threejs.org/build/three.min.js"></script>
+<script src="https://threejs.org/examples/js/libs/stats.min.js"></script>
+<script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
+<script src="/conet.js"></script>
+<script src="../vecmath.js"></script>
+<script src="../canvas/pd5.js"></script>
+<script src="threePd5.js"></script>
+</head><body>
+<div id="container"></div>
+<script>
+function init() {
+  var scene,stats,views=[],oh={},ot=Date.now(),scra,scri=0,scrt=0,loopAfterLoaded;
+  
+  function addView(v) {
+    var camera,controls,renderer;
+    renderer = new THREE.WebGLRenderer({antialias:true});
+    renderer.setClearColor(v.bgcol||0x888888);
+    renderer.shadowMap.enabled=true;
+    renderer.shadowMap.type=THREE.BasicShadowMap;
+    //				renderer.shadowMapEnabled=true;
+    //				renderer.shadowMapType=THREE.PCFShadowMap;//PCFShadowMap;
+    
+    //renderer.setPixelRatio(window.devicePixelRatio);
+    //renderer.setSize( window.innerWidth, window.innerHeight );
+    
+    var container = document.getElementById('container'),ms=[];
+    var c=renderer.domElement,s=c.style;//s.textAlign='center';
+    if (v.bw) {
+      s.borderStyle='solid';s.borderWidth=v.bw;
+    }
+    container.appendChild(c);
+    
+    camera=new THREE.PerspectiveCamera(v.fov||60,window.innerWidth/window.innerHeight,1,1000);
+    //camera.position.z=v.camz||500;
+    //camera.position.x=v.camx||0;
+    if (v.cam) camera.position.copy(v.cam);
+    //camera.position.set(v.camx||0,v.camy||0,v.camz||500);
+    //camera.rotation.y=0.5;
+    
+    if (1) {
+    controls=new THREE.OrbitControls(camera,renderer.domElement);
+    controls.enableDamping=true;
+    controls.dampingFactor=0.25;
+    controls.enableZoom=true;
+    controls.enablePan=true;
+    controls.maxDistance=600;
+    controls.rotateSpeed=0.4;
+    if (v.target) controls.target.copy(v.target);
+    }
+    //controls.rotateLeft(0.5);
+    v.renderer=renderer;v.camera=camera;v.controls=controls;
+    
+    if (!v.bg) {
+      var c=document.createElement('div'),s=c.style;
+      s.backgroundColor='rgba(255,255,255,0.8)';s.zIndex=100;s.position='absolute';s.textAlign='center';s.padding='2px';
+      c.innerHTML='Hello World.';s.fontFamily='Arial';s.borderStyle='solid';s.display='none';
+      v.textc=c;
+      container.appendChild(c);
+    }
+    
+    views.push(v);
+  }
+  function box(x,y,z,w,h,b,m) {
+    mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,b),m);
+    mesh.position.set(x,y,z);
+    mesh.updateMatrix();
+    mesh.matrixAutoUpdate = false;
+    mesh.castShadow=true;
+    mesh.receiveShadow=true;
+    scene.add(mesh);
+    return mesh;
+  }
+  function resize() {
+    var gw=window.innerWidth,gh=window.innerHeight,gmin=Math.min(gw,gh),w,h,
+        maxa=1.5,gmax=Math.max(gw,gh),ah=1.75//1.75
+        ,f=Math.min(ah,gmax/gmin),minf=0.5;//0.5
+    
+    //f=(1-(ah-f));
+    //gmin*=minf+f*(1-minf);
+    if (views.length==0) return;
+    
+    var v0=views[0],mih,mah;//ah=gw/gh;
+    //viewText(2,
+    if (gw>gh) { mih=1.5;mah=2; } else { mih=1.5,mah=1.8; }
+    var f0=Math.max(mih,Math.min(mah,gmax/gmin));f0=(f0-mih)/(mah-mih);
+    //viewText(2,''+f0);
+    var z=80*(1-f0)-30;//((ah>2)||(ah<0.5))?-20:50;
+    v0.controls.target.z=z;//50*(1-f);
+    v0.camera.position.z=z;//50*(1-f);
+    
+    f=(1-(ah-f));
+    gmin*=minf+f*(1-minf);
+    
+    
+    for (var i=views.length-1;i>=0;i--) {
+      var v=views[i],camera=v.camera,renderer=v.renderer,
+          s=renderer.domElement.style;
+      if (v.bg) {
+        w=gw*v.w,h=gh*v.h;
+        if (w/h<1) {
+          s.top=(h-w)*1+'px';//0.8
+          h=w;
+        } else s.top='0px';
+        if (w/h>maxa) {
+          s.left=(w-maxa*h)+'px';
+          w=maxa*h;
+        } else s.left='0px';
+      } else {
+        w=gmin*v.w,h=gmin*v.h
+      }
+      camera.aspect=w/h;//window.innerWidth/window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w,h);//window.innerWidth,window.innerHeight);
+      v.wh=w;v.hh=h;
+      //var s=renderer.domElement.style;
+      s.position='absolute';
+      if (!v.bg) {
+        var x0=gmin*v.x,y0=gmin*v.y;v.xh=x0;v.yh=y0;
+        s.left=x0+'px';s.top=y0+'px';
+        s=v.textc.style;
+        s.fontSize=(gmin*0.06)+'px';;
+        var r=v.textc.getBoundingClientRect();
+        //onsole.log(r);
+        s.left=(x0+(w-r.width)/2)+'px';
+        s.top=(y0+h-r.height)+'px';
+      }
+    }
+  }
+  function animate() {
+    requestAnimationFrame(animate);
+    //controls.update(); // required if controls.enableDamping = true, or if controls.autoRotate = true
+    stats.update();
+    //if (threeEnv.os.length>0) threeEnv.os[0].meshes[0].tmesh.rotation.y+=0.01;
+    threeRender();
+    for (var i=views.length-1;i>=0;i--) {
+      var view=views[i];
+      if (view.controls) view.controls.update();
+      view.renderer.render(scene,view.camera);
+    }
+  }
+  function oonload(v) {
+    var ps=this;//console.log(this);
+    var o=Pd5.load(v);
+    //console.log(o);//Object.assign({},o));
+    Pd5.animStart(o,o.animh[ps.anim]);
+    //o.scale*=0.7;//o.x=-0.1;o.y=-0.7;o.z=-0.5;
+    //o.scale*=1;o.x=-0.1;o.y=-0.5;o.z=-0.3;
+    Pd5.calc(o,0,0.0,0,1,{x:0,y:0,z:0},0,0,true);
+    threeAddObj(o,0,0,0,ps.scale);
+    var m=o.meshes[0].tmesh;
+    m.position.copy(ps.pos);//set(-30,-140,-80);
+    if (ps.ohkey) oh[ps.ohkey]=o;
+    //m.rotation.y=-1;
+    //onsole.log(o);
+    //threeRender();
+    //...
+    loopAfterLoaded--;
+    if (loopAfterLoaded==0) calc();
+  }
+  function calc() {
+    var t=Date.now(),dt=t-ot;ot=t;
+    //onsole.log(dt);
+    scrt=Math.min(2500,scrt+dt);
+    while (true) {
+      var scr=scra[scri];
+      if (scrt<scr.t) break;
+      scr.f();
+      scrt-=scr.t;
+      scri=(scri+1)%scra.length;
+    }
+    
+    //console.log('anim.calc '+(oh.templar?'1':'0'));
+    //var ot=oh.templar,ob=oh.bot;
+    //if (ot&&ob) {
+    //  var a0=ot.animh.disagree;
+    //  if (ot.anim===a0) {
+    //    Pd5.animStart(ot,ot.animh.speak);
+    //    Pd5.animStart(ob,ob.animh.disagree);
+    //  } else {
+    //    Pd5.animStart(ot,a0);
+    //    Pd5.animStart(ob,ob.animh.speak);
+    //  }
+    //  //Pd5.animStart(o,o.anim===a0?o.animh.speak:a0);
+    //}
+    setTimeout(calc,20);
+  }
+  function viewText(i,sh) {
+    var v=views[i],c=v.textc,s=c.style;
+    if (sh.length==0) { s.display='none';return; }
+    c.innerHTML=sh;s.display='';
+    var r=c.getBoundingClientRect();//,s=v.textc.style;
+    s.left=(v.xh+(v.wh-r.width)/2)+'px';
+    s.top=(v.yh+v.hh-r.height)+'px';
+    //...
+  }
+  function anim(os,as) {
+    var o=oh[os];Pd5.animStart(o,o.animh[as]);
+    //...
+  }
+  
+  scene = new THREE.Scene();
+  var m0=new THREE.MeshPhongMaterial( { color:0x666666,flatShading:true } ),
+      m1=new THREE.MeshPhongMaterial({color:0x77dd77,flatShading:true,
+      transparent:true,opacity:0.7});
+  
+  box(40,-80,0,-50,-100,-50,m1);
+  box(40+60,-80,30,-50,-50,-50,m1);
+  box(40,-80,60,-50,-100,-50,m1);
+  box(0,-150,0,600,20,600,m0).castShadow=false;
+  
+  var l=new THREE.AmbientLight(0x555555),f=3;scene.add(l);
+  l=new THREE.PointLight(0xffffff,1,0);l.position.set(-100*f,200*f,100*f);scene.add(l);
+  l=new THREE.PointLight(0xffffaa,1,0);l.position.set(100*f,100*f,100*f);
+  l.castShadow=true;
+  l.shadow.camera.near=100;
+  l.shadow.camera.far=1000;
+  l.shadow.mapSize.width=1024;//2048;
+  l.shadow.mapSize.height=1024;
+  scene.add(l);
+  l=new THREE.PointLight(0xaaffff,1,0);l.position.set(100*f,-200*f,-100*f);scene.add(l);
+  
+  stats=new Stats();var c=stats.domElement,s=c.style;
+  s.position='absolute';s.top='0px';s.zIndex=100;s.opacity=0.3;
+  container.appendChild(c);
+  
+  window.addEventListener('resize',resize,false);
+  animate();
+  
+  //threeEnv.renderer=renderer;
+  Pd5.animText=function(o,s) {
+    //...
+  }
+  threeEnv.base=scene;
+  threeEnv.scene=scene;
+  //threeEnv.camera=views[0].camera;
+  threeEnv.path='../shooter/';
+  //threeEnv.dtscale=0.5;
+  
+  //var sc=document.createElement('script');
+  //sc.src='anim/dialogJavaJavascript.js';
+  //document.body.appendChild(sc);
+  Conet.download({fn:'anim/dialogJavaJavascript.js',f:function(v) {
+    eval(v);//...
+    //(new Function(v))();
+  }
+  });
+  //calc();
+}
+init();
+</script></body>
+</html><script>
+//fr o,16
+//fr o,16,7
+//fr o,16,50
+//fr p,15,27

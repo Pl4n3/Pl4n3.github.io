@@ -458,8 +458,8 @@ function threeRender() {
   for (var obi=threeEnv.os.length-1;obi>=0;obi--) {
     var lo=threeEnv.os[obi];
   
-    if (!threeEnv.nocalc) Pd5.calc(lo,dt,0,lo.ay||0,lo.scale||1,{x:0,y:0,z:0},0,0,true);
-  		  		Pd5.calcNormals(lo,true);
+    if (!threeEnv.nocalc) Pd5.calc(lo,dt,0,lo.ay||0,lo.scale||1,{x:lo.x||0,y:lo.y||0,z:lo.z||0},0,0,true);
+    Pd5.calcNormals(lo,true);
   
     for (var mi=lo.meshes.length-1;mi>=0;mi--) {
       var m=lo.meshes[mi];
@@ -496,7 +496,7 @@ function threeRender() {
   if (!threeEnv.noRotLight) threeEnv.				r+=threeEnv.rotLightV*dt;
   //console.log(threeEnv.				r);
   
-  				threeEnv.renderer.render(threeEnv.scene,threeEnv.camera);
+  if (threeEnv.renderer) threeEnv.renderer.render(threeEnv.scene,threeEnv.camera);
 }
 function threeAnimate() {
   threeRender();
@@ -602,4 +602,8 @@ function threeMeshUpdate(lo,dy) {
   //threeRender();
 }
 
-//fr p,57,8
+//fr o,14
+//fr o,16
+//fr o,17
+//fr o,18
+//fr p,20,82

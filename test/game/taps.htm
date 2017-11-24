@@ -1,0 +1,179 @@
+<!doctype html><html><head>
+<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+<meta name="viewport" content="width=device-width, user-scalable=yes, minimum-scale=1.0, maximum-scale=10.0">
+</head>
+<body bgcolor="#aaaaaa">
+<script type="text/javascript">
+function taps() {
+  var bar0,bar1,bar2,bar3,bar4,ot=Date.now(),
+      tap0t=0,tap0mt=700,tapScore=0.1,tap0wt=0,tap0mwt=tap0mt,
+      tap1t=0,tap1mt=700,tap1wt=0,tap1mwt=tap1mt,bar1s=0.5,
+      scoreD=0.2,logc,touched=false,running=false;
+      version='0.21 ';//FOLDORUPDATEVERSION
+  //...
+  function animate() {
+    var t=Date.now(),dt=Math.min(100,t-ot);ot=t;
+    
+    if (running) {
+    if (tap0wt<tap0mwt) {
+      tap0wt+=dt;
+      if (tap0wt>=tap0mwt) {
+        tap0t=0;
+      }
+    } else {
+      tap0t+=dt;
+      if (tap0t>=tap0mt) {
+        //tap0t=tap0mt;
+        tap0t=0;
+        tap0wt=0;
+        log('Miss.');
+      }
+      //tap0t=(tap0t+dt)%tap0mt;
+      //bar2.style.transform='scale('+(tap0t/tap0mt)+',1)';
+    }
+    
+    if (bar4) {
+      if (tap1wt<tap1mwt) {
+        tap1wt+=dt;
+        if (tap1wt>=tap1mwt) {
+          tap1t=0;
+        }
+      } else {
+        tap1t+=dt;
+        if (tap1t>=tap1mt) {
+          tap1t=tap1mt;
+          bar1s=Math.max(0,bar1s-scoreD);
+          tap1wt=0;
+        }
+        bar4.style.transform='scale('+(tap1t/tap1mt)+',1)';
+      }
+    } else {
+      bar1s=Math.max(0,bar1s-dt*0.00015);
+      if (bar1s==0) {
+        running=false;
+        log('Game lost, tap to restart.<br>');
+      }  
+    }
+    }
+    bar2.style.transform='scale('+(tap0t/tap0mt)+',1)';
+    bar1.style.transform='scale('+bar1s+',1)';
+    
+    
+    setTimeout(animate,10);
+  }
+  function init() {
+    var cont=document.body,c=document.createElement('div'),s=c.style;
+    s.position='absolute';s.backgroundColor='#33e';
+    cont.appendChild(c);bar0=c;
+    
+    c=document.createElement('div');s=c.style;
+    s.position='absolute';s.backgroundColor='#090';
+    s.transformOrigin='top left';
+    cont.appendChild(c);bar1=c;
+    
+    c=document.createElement('div');s=c.style;
+    s.position='absolute';s.backgroundColor='#eee';
+    cont.appendChild(c);bar3=c;
+    
+    c=document.createElement('div');s=c.style;
+    s.position='absolute';s.backgroundColor='#ccc';
+    s.transformOrigin='top left';
+    cont.appendChild(c);bar2=c;
+    
+    if (0) {
+    c=document.createElement('div');s=c.style;
+    s.position='absolute';s.backgroundColor='#ccc';
+    s.transformOrigin='top right';
+    cont.appendChild(c);bar4=c;
+    }
+    
+    c=document.createElement('div'),s=c.style;
+    s.position='absolute';s.backgroundColor='#888';
+    s.overflow='hidden';s.fontFamily='Arial';
+    cont.appendChild(c);logc=c;
+    
+    window.addEventListener('resize',resize);
+    window.addEventListener('mousedown',mouseDown);
+    window.addEventListener('touchstart',touchStart,{passive:false});
+    resize();
+    log('Tap to start game! Version '+version);
+    animate();
+  }
+  function log(s) {
+    logc.innerHTML=s+' '+logc.innerHTML;
+  }
+  function mouseDown(e) {
+    if (!touched) tap();
+  }
+  function resize(e) {
+    var w=window.innerWidth,h=window.innerHeight,
+        c=bar0,s=c.style,bw=w*0.75,bh=bw*0.17,bo=bh*0.1;
+    
+    s.left=(w-bw)/2+'px';s.top=(h-bh)/2+'px';
+    s.width=bw+'px';s.height=bh+'px';
+    
+    c=bar1;s=c.style;
+    s.left=(w-bw)/2+'px';s.top=(h-bh)/2+'px';
+    s.width=bw+'px';s.height=bh+'px';
+    
+    var wh=bw/3,boh=bo/2;
+    c=bar3;s=c.style;
+    s.left=(w-bw)/2+wh*(1-tapScore)+'px';s.top=((h-bh)/2-bh-bo-boh)+'px';
+    s.width=wh*tapScore+'px';s.height=bh+boh*2+'px';
+    
+    c=bar2;s=c.style;
+    s.left=(w-bw)/2+'px';s.top=((h-bh)/2-bh-bo)+'px';
+    s.width=wh+'px';s.height=bh+'px';
+    
+    if (bar4) {
+    c=bar4;s=c.style;
+    s.left=(w-bw)/2+bw-wh+'px';s.top=((h-bh)/2-bh-bo)+'px';
+    s.width=wh+'px';s.height=bh+'px';
+    }
+    
+    c=logc;s=c.style;
+    s.left=(w-bw)/2+'px';s.top=(h-bh)/2+bh+bo+'px';
+    s.width=bw+'px';s.height=bh+'px';
+    s.fontSize=(bh/4)+'px';
+    //...
+  }
+  function tap() {
+    if (!running) {
+      bar1s=0.5;tap0t=0;tap0wt=tap0mwt;
+      running=true;
+      return;
+    }
+    //log('mouseDown');
+    if (tap0wt>=tap0mwt) {
+      tap0wt=0;
+      var s=tap0t/tap0mt;
+      //console.log(s);
+      if ((1-s)<tapScore) {
+        log('Great!');
+        s*=2.5;//2.5;
+      } else log('Ok.')
+      bar1s=Math.min(1,bar1s+s*(scoreD*0.75));
+      if (bar1s==1) {
+        running=false;
+        log('Game won, tap to restart!<br>');
+      }
+    }
+  }
+  function touchStart(e) {
+    touched=true;
+    tap();
+  }
+  init();
+  //....
+}
+taps();
+</script>
+</body>
+</html><script>
+//fr o,6
+//fr o,6,6
+//fr o,6,7
+//fr o,6,10
+//fr o,6,11
+//fr o,6,12
+//fr p,10,148

@@ -1,12 +1,13 @@
 var Conet={};
 (function(Conet) {
   Conet.offline=false;
-  Conet.version='v.1.270 ';//FOLDORUPDATEVERSION
+  Conet.version='v.1.275 ';//FOLDORUPDATEVERSION
   Conet.files={};
   var uploads={},fns,logc,logs=[];//fn=>data,first
   function xhr(p) {
-    var x=new XMLHttpRequest();
-    x.overrideMimeType('text/plain');
+    var x=new XMLHttpRequest(),ps=p.ps||{},omt;
+    x.overrideMimeType(omt=(ps.overrideMimeType||'text/plain'));
+    //onsole.log('conet.xhr omt='+omt);
     x.open('GET',p.url,true);
     x.onreadystatechange=function() {
       //onsole.log('Conet.xhr '+x.readyState);
@@ -69,7 +70,7 @@ var Conet={};
   }
   function download(p) {
     var noResponseTimer;
-    var x=xhr({url:p.fn,f:function(s) {
+    var x=xhr({url:p.fn,ps:p,f:function(s) {
       clearTimeout(noResponseTimer);
       if (x.status!=200) {
         console.log('conet.download '+p.fn+': offline (status!=200) '+noResponseTimer);
@@ -338,8 +339,12 @@ var Conet={};
 )(Conet);
 console.log('Conet '+Conet.version);
 //fr o,1
+//fr o,1,4
+//fr o,1,4,4
 //fr o,1,5
 //fr o,1,5,17
+//fr o,1,6
+//fr o,1,6,1
 //fr o,1,8,2
 //fr o,1,8,3
 //fr o,1,8,4
@@ -351,7 +356,5 @@ console.log('Conet '+Conet.version);
 //fr o,1,8,32
 //fr o,1,8,56
 //fr o,1,9,1
-//fr o,1,11
-//fr o,1,12
 //fr o,1,12,4
-//fr p,95,32
+//fr p,2,9

@@ -5,6 +5,7 @@
 body { color: #000;background-color: #aaa;margin: 0px;overflow: hidden; }
 </style>
 <script src="https://threejs.org/build/three.min.js"></script>
+<script src="https://threejs.org/examples/js/vr/WebVR.js"></script>
 <script src="https://threejs.org/examples/js/libs/stats.min.js"></script>
 <script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
 <script src="/conet.js"></script>
@@ -14,10 +15,30 @@ body { color: #000;background-color: #aaa;margin: 0px;overflow: hidden; }
 </head><body>
 <div id="container"></div>
 <script>
-function init() {
-  var scene,stats,views=[],oh={},ot=Date.now(),scra,scri=0,scrt=0,loopAfterLoaded;
-  
+function anim() {
+  var scene,stats,views=[],oh={},ot=Date.now(),scra,scri=0,scrt=0,loopAfterLoaded,
+      base,debug='',version='1.97 ',//FOLDORUPDATEVERSION
+      m0=new THREE.MeshPhongMaterial( { color:0x666666,flatShading:true } ),
+      m1=new THREE.MeshPhongMaterial({color:0x77dd77,flatShading:true,
+      transparent:true,opacity:0.7}),keys=[],vrkeys=true;
+  function updateHud(view) {
+    var hud=view.hud,c=hud.c,ct=c.getContext('2d'),w=c.width,h=c.height;
+    ct.clearRect(0,0,w,h);
+    ct.fillStyle='rgba(150,150,150,0.3)';ct.fillRect(0,0,w,h);
+    ct.fillStyle='#000';ct.font='10px sans-serif';ct.textBaseline='top';
+    if (view.hudRender) 
+      view.hudRender(ct);
+    else 
+      ct.fillText('v.'+version+debug,2,2);
+    hud.t.needsUpdate=true;
+    //...
+  }
   function addView(v) {
+    if (0) if (v.vr) 
+    WEBVR.checkAvailability().catch( function( message ) {
+      document.body.appendChild( WEBVR.getMessageContainer( message ) );
+    }
+    );
     var camera,controls,renderer;
     renderer = new THREE.WebGLRenderer({antialias:true});
     renderer.setClearColor(v.bgcol||0x888888);
@@ -29,6 +50,7 @@ function init() {
     //renderer.setPixelRatio(window.devicePixelRatio);
     //renderer.setSize( window.innerWidth, window.innerHeight );
     
+    
     var container = document.getElementById('container'),ms=[];
     var c=renderer.domElement,s=c.style;//s.textAlign='center';
     if (v.bw) {
@@ -36,21 +58,25 @@ function init() {
     }
     container.appendChild(c);
     
-    camera=new THREE.PerspectiveCamera(v.fov||60,window.innerWidth/window.innerHeight,1,1000);
+    camera=new THREE.PerspectiveCamera(v.fov||60,window.innerWidth/window.innerHeight,0.1,100);//1,1000
     //camera.position.z=v.camz||500;
     //camera.position.x=v.camx||0;
-    if (v.cam) camera.position.copy(v.cam);
+    if (v.cam&&!v.vr) camera.position.copy(v.cam);
     //camera.position.set(v.camx||0,v.camy||0,v.camz||500);
     //camera.rotation.y=0.5;
+    camera.rotation.order='YXZ';
+    scene.add(camera);
     
-    if (1) {
+    if (!v.vr) {
     controls=new THREE.OrbitControls(camera,renderer.domElement);
     controls.enableDamping=true;
     controls.dampingFactor=0.25;
+    if (v.autoRotate) controls.autoRotate=true;
     controls.enableZoom=true;
     controls.enablePan=true;
     controls.maxDistance=600;
     controls.rotateSpeed=0.4;
+    controls.enableKeys=false;
     if (v.target) controls.target.copy(v.target);
     }
     //controls.rotateLeft(0.5);
@@ -64,7 +90,58 @@ function init() {
       container.appendChild(c);
     }
     
+    if (v.vr) {
+      renderer.vr.enabled=true;
+      if (0)
+    WEBVR.getVRDisplay( function ( display ) {
+      renderer.vr.setDevice( display );
+      document.body.appendChild(WEBVR.getButton(display,renderer.domElement));
+    }
+      );
+    
+      var c=document.createElement('canvas'),w=v.hudres||128,
+          h=w;c.width=w;c.height=h;
+      var t=new THREE.Texture(c);v.hud={c:c,t:t};
+      
+      //var ct=c.getContext('2d');ct.fillStyle='rgba(150,150,150,0.3)';ct.fillRect(0,0,w,h);
+      //ct.fillStyle='#000';ct.font='10px sans-serif';ct.textBaseline='top';ct.fillText('v.'+version,2,2);
+      //t.needsUpdate=true;
+      updateHud(v);
+    
+      var ar=v.hudar||0.11,g=new THREE.PlaneGeometry(0.1,0.1*ar);
+      g.faceVertexUvs=[[[{x:0,y:1},{x:0,y:1-ar},{x:1,y:1}],[{x:0,y:1-ar},{x:1,y:1-ar},{x:1,y:1}]]];
+      var crosshair = new THREE.Mesh(g,
+        new THREE.MeshBasicMaterial({color:0xffffff,
+          map:t,
+          opacity:1,transparent:true}));
+      //crosshair.position.z=-0.3;
+      crosshair.position.set(v.hudx||0.05,v.hudy||-0.05,-0.3);
+      camera.add(crosshair);
+    
+    window.addEventListener('vrdisplaypointerrestricted',function() {
+      var pointerLockElement=renderer.domElement;
+      if (pointerLockElement&&typeof(pointerLockElement.requestPointerLock)==='function' ) {
+        pointerLockElement.requestPointerLock();
+      }
+    }
+    ,false);
+    window.addEventListener('vrdisplaypointerunrestricted',function() {
+      var currentPointerLockElement=document.pointerLockElement;
+      var expectedPointerLockElement=renderer.domElement;
+      if (currentPointerLockElement&&currentPointerLockElement===expectedPointerLockElement&&typeof(document.exitPointerLock)==='function' ) {
+        document.exitPointerLock();
+      }
+    }
+    ,false);
+    
+      
+      document.body.appendChild( WEBVR.createButton( renderer ) );
+    }
+    
+    
     views.push(v);
+    
+    if (v.bg) renderer.animate(animate);
   }
   function box(x,y,z,w,h,b,m) {
     mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,b),m);
@@ -73,7 +150,7 @@ function init() {
     mesh.matrixAutoUpdate = false;
     mesh.castShadow=true;
     mesh.receiveShadow=true;
-    scene.add(mesh);
+    base.add(mesh);
     return mesh;
   }
   function resize() {
@@ -85,14 +162,16 @@ function init() {
     //gmin*=minf+f*(1-minf);
     if (views.length==0) return;
     
-    var v0=views[0],mih,mah;//ah=gw/gh;
-    //viewText(2,
-    if (gw>gh) { mih=1.5;mah=2; } else { mih=1.5,mah=1.8; }
-    var f0=Math.max(mih,Math.min(mah,gmax/gmin));f0=(f0-mih)/(mah-mih);
-    //viewText(2,''+f0);
-    var z=80*(1-f0)-30;//((ah>2)||(ah<0.5))?-20:50;
-    v0.controls.target.z=z;//50*(1-f);
-    v0.camera.position.z=z;//50*(1-f);
+    if (views.length==3) {
+      var v0=views[0],mih,mah;//ah=gw/gh;
+      //viewText(2,
+      if (gw>gh) { mih=1.5;mah=2; } else { mih=1.5,mah=1.8; }
+      var f0=Math.max(mih,Math.min(mah,gmax/gmin));f0=(f0-mih)/(mah-mih);
+      //viewText(2,''+f0);
+      var z=0.80*(1-f0)-0.30;//((ah>2)||(ah<0.5))?-20:50;
+      v0.controls.target.z=z;//50*(1-f);
+      v0.camera.position.z=z;//50*(1-f);
+    }
     
     f=(1-(ah-f));
     gmin*=minf+f*(1-minf);
@@ -103,14 +182,16 @@ function init() {
           s=renderer.domElement.style;
       if (v.bg) {
         w=gw*v.w,h=gh*v.h;
-        if (w/h<1) {
-          s.top=(h-w)*1+'px';//0.8
-          h=w;
-        } else s.top='0px';
-        if (w/h>maxa) {
-          s.left=(w-maxa*h)+'px';
-          w=maxa*h;
-        } else s.left='0px';
+        if (views.length==3) {
+          if (w/h<1) {
+            s.top=(h-w)*1+'px';//0.8
+            h=w;
+          } else s.top='0px';
+          if (w/h>maxa) {
+            s.left=(w-maxa*h)+'px';
+            w=maxa*h;
+          } else s.left='0px';
+        }
       } else {
         w=gmin*v.w,h=gmin*v.h
       }
@@ -133,7 +214,7 @@ function init() {
     }
   }
   function animate() {
-    requestAnimationFrame(animate);
+    //requestAnimationFrame(animate);
     //controls.update(); // required if controls.enableDamping = true, or if controls.autoRotate = true
     stats.update();
     //if (threeEnv.os.length>0) threeEnv.os[0].meshes[0].tmesh.rotation.y+=0.01;
@@ -148,22 +229,27 @@ function init() {
     var ps=this;//console.log(this);
     var o=Pd5.load(v);
     //console.log(o);//Object.assign({},o));
-    Pd5.animStart(o,o.animh[ps.anim]);
+    Pd5.animStart(o,o.animh[ps.animIdle||ps.anim]);
     //o.scale*=0.7;//o.x=-0.1;o.y=-0.7;o.z=-0.5;
     //o.scale*=1;o.x=-0.1;o.y=-0.5;o.z=-0.3;
     Pd5.calc(o,0,0.0,0,1,{x:0,y:0,z:0},0,0,true);
+    
+    ps.o=o;
+    o.ps=ps;//o.o={pos:ps.pos,roty:ps.roty||0};
+    
     threeAddObj(o,0,0,0,ps.scale);
-    var m=o.meshes[0].tmesh;
-    m.position.copy(ps.pos);//set(-30,-140,-80);
+    //o.o={pos:ps.pos,roty:ps.roty||0};
+    //var m=o.meshes[0].tmesh;
+    //m.position.copy(ps.pos);//set(-30,-140,-80);
     if (ps.ohkey) oh[ps.ohkey]=o;
-    //m.rotation.y=-1;
+    //if (ps.roty!==undefined) m.rotation.y=ps.roty;
     //onsole.log(o);
     //threeRender();
     //...
     loopAfterLoaded--;
-    if (loopAfterLoaded==0) calc();
+    if (loopAfterLoaded==0) if (scra) calcScra();
   }
-  function calc() {
+  function calcScra() {
     var t=Date.now(),dt=t-ot;ot=t;
     //onsole.log(dt);
     scrt=Math.min(2500,scrt+dt);
@@ -188,7 +274,7 @@ function init() {
     //  }
     //  //Pd5.animStart(o,o.anim===a0?o.animh.speak:a0);
     //}
-    setTimeout(calc,20);
+    setTimeout(calcScra,20);
   }
   function viewText(i,sh) {
     var v=views[i],c=v.textc,s=c.style;
@@ -203,59 +289,136 @@ function init() {
     var o=oh[os];Pd5.animStart(o,o.animh[as]);
     //...
   }
-  
-  scene = new THREE.Scene();
-  var m0=new THREE.MeshPhongMaterial( { color:0x666666,flatShading:true } ),
-      m1=new THREE.MeshPhongMaterial({color:0x77dd77,flatShading:true,
-      transparent:true,opacity:0.7});
-  
-  box(40,-80,0,-50,-100,-50,m1);
-  box(40+60,-80,30,-50,-50,-50,m1);
-  box(40,-80,60,-50,-100,-50,m1);
-  box(0,-150,0,600,20,600,m0).castShadow=false;
-  
-  var l=new THREE.AmbientLight(0x555555),f=3;scene.add(l);
-  l=new THREE.PointLight(0xffffff,1,0);l.position.set(-100*f,200*f,100*f);scene.add(l);
-  l=new THREE.PointLight(0xffffaa,1,0);l.position.set(100*f,100*f,100*f);
-  l.castShadow=true;
-  l.shadow.camera.near=100;
-  l.shadow.camera.far=1000;
-  l.shadow.mapSize.width=1024;//2048;
-  l.shadow.mapSize.height=1024;
-  scene.add(l);
-  l=new THREE.PointLight(0xaaffff,1,0);l.position.set(100*f,-200*f,-100*f);scene.add(l);
-  
-  stats=new Stats();var c=stats.domElement,s=c.style;
-  s.position='absolute';s.top='0px';s.zIndex=100;s.opacity=0.3;
-  container.appendChild(c);
-  
-  window.addEventListener('resize',resize,false);
-  animate();
-  
-  //threeEnv.renderer=renderer;
-  Pd5.animText=function(o,s) {
+  function loadObjsThenLoop(a) {
+    loopAfterLoaded=a.length;
+    for (var i=0;i<a.length;i++) {
+      var o=a[i];o.f=oonload;
+      Conet.download(o);
+    }
     //...
   }
-  threeEnv.base=scene;
-  threeEnv.scene=scene;
-  //threeEnv.camera=views[0].camera;
-  threeEnv.path='../shooter/';
-  //threeEnv.dtscale=0.5;
-  
-  //var sc=document.createElement('script');
-  //sc.src='anim/dialogJavaJavascript.js';
-  //document.body.appendChild(sc);
-  Conet.download({fn:'anim/dialogJavaJavascript.js',f:function(v) {
-    eval(v);//...
-    //(new Function(v))();
+  function keyDown(e) {
+    var kc=e.keyCode;
+    keys[kc]=true;
+    console.log(kc);
+    if (views[0].vr) {
+      debug=' kc='+kc;updateHud(views[0]);
+    }
+    
+    if ((kc>=48)&&(kc<=57)) {
+    var c=kc-48;
+    var vh;
+    switch (c) {
+    case 0:vh=0;break;
+    case 1:vh=0.01;break;
+    case 2:vh=0.1;break;
+    case 3:vh=0.2;break;
+    case 4:vh=0.5;break;
+    case 5:vh=1;break;
+    case 6:vh=2;break;
+    case 7:vh=5;break;
+    case 8:vh=10;break;
+    case 9:vh=20;break;
+    }
+    threeEnv.dtscale=vh;//gamespeed=vh;
+    }
+    
+    
+    //console.log('kc='+kc);//...
+    if (vrkeys) {
+    var camera=views[0].camera;
+    if (kc==38) camera.rotation.x+=0.1;
+    if (kc==40) camera.rotation.x-=0.1;
+    if (kc==37) camera.rotation.y+=0.1;
+    if (kc==39) camera.rotation.y-=0.1;
+    //console.log(camera.quaternion);
+    var v=new THREE.Vector3();
+    if ((kc==65)) v.x+=0.1;
+    else if ((kc==68)) v.x-=0.1;
+    else if ((kc==87)) v.z+=0.1;
+    else if ((kc==83)) v.z-=0.1;
+    v.applyQuaternion(camera.quaternion);
+    base.position.add(v);
+    //onsole.log(base.position);
+    base.updateMatrix();
+    }
+    //...
   }
-  });
-  //calc();
+  function keyUp(e) {
+    var kc=e.keyCode;
+    keys[kc]=false;
+  }
+  function rani(n) {
+    return Math.floor(Math.random()*n);
+  }
+  function init() {
+    
+    scene = new THREE.Scene();
+    
+    base=new THREE.Group();scene.add(base);
+    
+    //box(40,-80,0,-50,-100,-50,m1);
+    //box(40+60,-80,30,-50,-50,-50,m1);
+    //box(40,-80,60,-50,-100,-50,m1);
+    //box(0,-150,0,600,20,600,m0).castShadow=false;
+    
+    var l=new THREE.AmbientLight(0x555555),f=0.03;scene.add(l);
+    l=new THREE.PointLight(0xffffff,1,0);l.position.set(-100*f,200*f,100*f);scene.add(l);
+    l=new THREE.PointLight(0xffffaa,1,0);l.position.set(100*f,100*f,100*f);
+    l.castShadow=true;
+    l.shadow.camera.near=0.1;//100;
+    l.shadow.camera.far=10;//1000;
+    l.shadow.mapSize.width=1024;//2048;
+    l.shadow.mapSize.height=1024;
+    base.add(l);
+    l=new THREE.PointLight(0xaaffff,1,0);l.position.set(100*f,-200*f,-100*f);base.add(l);
+    
+    stats=new Stats();var c=stats.domElement,s=c.style;
+    s.position='absolute';s.top='0px';s.zIndex=100;s.opacity=0.3;
+    container.appendChild(c);
+    
+    window.addEventListener('resize',resize,false);
+    window.addEventListener('keydown',keyDown);
+    window.addEventListener('keyup',keyUp);
+    // animate();
+    
+    //threeEnv.renderer=renderer;
+    Pd5.animText=function(o,s) {
+      //...
+    }
+    threeEnv.base=base;//scene;
+    threeEnv.scene=scene;
+    //threeEnv.camera=views[0].camera;
+    threeEnv.path='../shooter/';
+    threeEnv.aipos=1;
+    //threeEnv.dtscale=0.5;
+    
+    //var sc=document.createElement('script');
+    //sc.src='anim/dialogJavaJavascript.js';
+    //document.body.appendChild(sc);
+    var fn=Conet.parseUrl().fn
+      //||'anim/dialogJavaJavascript.js';
+      //||'anim/base.js';
+      //||'anim/tiles.js';
+      ||'anim/static.js';
+    //var fn='anim/base.js';
+    
+    Conet.download({fn:fn,f:function(v) {
+      eval(v);//...
+      //(new Function(v))();
+    }
+    });
+    //calc();
+    
+    //...
+  }
+  init();
 }
-init();
+anim();
 </script></body>
 </html><script>
-//fr o,16
-//fr o,16,7
-//fr o,16,50
-//fr p,15,27
+//fr o,17
+//fr o,17,6,81,2
+//fr o,17,15
+//fr o,17,18
+//fr p,0,36

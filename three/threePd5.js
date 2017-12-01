@@ -49,8 +49,9 @@ function threeTexture(ts,o5,tlOnload) {
     if (text) return text;
     //onsole.log('threeTexture load '+(threeEnv.path+ts)+' threeTL='+threeTL);
     //onsole.log(threeEnv);
-    text=(threeTL&&!threeEnv.noThreeTL)?threeTL.load(threeEnv.path+ts,tlOnload||threeEnv.texLoaded):
-      THREE.ImageUtils.loadTexture(threeEnv.path+ts,undefined,threeEnv.texLoaded);
+    var fn=ts.startsWith('/')?ts:threeEnv.path+ts;
+    text=(threeTL&&!threeEnv.noThreeTL)?threeTL.load(fn,tlOnload||threeEnv.texLoaded):
+      THREE.ImageUtils.loadTexture(fn,undefined,threeEnv.texLoaded);
     threeTexH[ts]=text;
   }
   if (text) {
@@ -453,10 +454,19 @@ function threeRender() {
   
   
   var ry=0,rx=0.4;
-  var t=new Date().getTime(),dt=Math.floor((t-threeEnv.ot)*threeEnv.dtscale+0.5);threeEnv.ot=t;
+  var t=new Date().getTime(),
+      //dt=Math.floor((t-threeEnv.ot)*threeEnv.dtscale+0.5);
+      dt=(t-threeEnv.ot)*threeEnv.dtscale;
+      
+  threeEnv.ot=t;
   
   for (var obi=threeEnv.os.length-1;obi>=0;obi--) {
     var lo=threeEnv.os[obi];
+    
+    if (threeEnv.aipos) {
+      if (lo.ps.ai) lo.ps.ai(dt);
+      lo.ay=lo.ps.roty+(lo.ps.rotofs||0);
+    }
   
     if (!threeEnv.nocalc) Pd5.calc(lo,dt,0,lo.ay||0,lo.scale||1,{x:lo.x||0,y:lo.y||0,z:lo.z||0},0,0,true);
     Pd5.calcNormals(lo,true);
@@ -483,14 +493,19 @@ function threeRender() {
       			  			tf.normal.set(t.nx,t.ny,t.nz);
       					}
       mesh1.geometry.computeVertexNormals();
-      					mesh1.geometry.verticesNeedUpdate = true;
-      					mesh1.geometry.normalsNeedUpdate = true;
+      mesh1.geometry.verticesNeedUpdate = true;
+      mesh1.geometry.normalsNeedUpdate = true;
+      
+      if (threeEnv.aipos) {
+        mesh1.position.copy(lo.ps.pos);
+        //mesh1.rotation.y=lo.ps.roty+(lo.ps.rotofs||0);
+      }
     }
   }
   
   if (threeEnv.lightMesh) {
-    threeEnv.				lightMesh.position.x = 2500 * Math.cos( threeEnv.r );
-    threeEnv.				lightMesh.position.z = 2500 * Math.sin( threeEnv.r );
+    threeEnv.lightMesh.position.x = 2500 * Math.cos( threeEnv.r );
+    threeEnv.lightMesh.position.z = 2500 * Math.sin( threeEnv.r );
   }
   
   if (!threeEnv.noRotLight) threeEnv.				r+=threeEnv.rotLightV*dt;
@@ -602,8 +617,7 @@ function threeMeshUpdate(lo,dy) {
   //threeRender();
 }
 
-//fr o,14
-//fr o,16
+//fr o,11
 //fr o,17
 //fr o,18
-//fr p,20,82
+//fr p,39,75

@@ -1,1 +1,210 @@
-123
+<!doctype html><html><head>
+<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+<meta name="viewport" content="width=device-width, user-scalable=yes, minimum-scale=1.0, maximum-scale=10.0">
+<script src="https://cdn.rawgit.com/ethereum/web3.js/develop/dist/web3.js"></script>
+<script src="/conet.js"></script>
+</head><body bgcolor="#aaa">
+<script type="text/javascript">
+function test0() {
+  var cont,head,inp,ci,clast,
+      msgs=[];//{i:index,c:div} ordered
+  function insertAfter(newNode,referenceNode) {
+    referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
+    //...
+  }
+  function log(sh,insBef) {
+    var c=document.createElement('div'),s=c.style;
+    s.margin='2px';s.padding='2px';s.overflow='hidden';
+    c.innerHTML=sh;s.backgroundColor='#ddd';
+    //cont.appendChild(c);
+    if (insBef) 
+      insBef.parentNode.insertBefore(c,insBef);
+    else 
+      insertAfter(c,inp||head);
+    //cont.innerHTML+='<br>'+s;
+    //...
+    return c;
+  }
+  function showMessages() {
+    if (msgs.length>0) {
+      for (var i=msgs.length-1;i>=0;i--) {
+        var m=msgs[i];
+        m.c.parentNode.removeChild(m.c);
+      }
+      msgs=[];
+    }
+    
+    //---
+    ci.elogc(function (e,r) {
+      //log('elogc '+r);
+      if (r)
+      for (var i=parseInt(''+r)-1;i>=0;i--) (function() {
+        var ti=i;
+        ci.elogs(i,function(e,r) {
+          var m,mi=-1;
+          for (var i=0;i<msgs.length;i++) {
+            m=msgs[i];
+            if (m.i>ti) continue;
+            mi=i;
+            break;
+          }
+          
+          var c=log(ti+' '+r,mi==-1?clast:m.c);
+          
+          if (mi!=-1) msgs.splice(mi,0,{i:ti,c:c})
+          else msgs.push({i:ti,c:c});
+          
+          //...
+        }
+        );
+        //...
+      }
+      )();  
+        
+      //ci.elogs(i,res)
+    }
+    );
+    //...
+  }
+  function init() {
+    var c=document.createElement('div'),s=c.style;cont=c,
+        version='v.0.143 ';//FOLDORUPDATEVERSION
+    s.position='absolute';s.width='200px';s.backgroundColor='#888';//s.overflow='auto';s.height='auto';
+    s.fontFamily='Sans-serif';
+    //c.innerHTML='Blockchain Messageboard';
+    document.body.appendChild(c);
+    
+    c=document.createElement('div'),s=c.style;s.margin='2px';
+    c.innerHTML='Blockchain Messageboard<span style="font-size:0.3em;">'+version+'</span>';s.backgroundColor='#eec';
+    s.fontWeight='bold';s.paddingLeft='2px';
+    cont.appendChild(c);head=c;
+    
+    inp=log(
+    '<table cellpadding=0 cellspacing=0 style="float:left;margin-right:3px;"><tr><td style="font-size:0.4em;width:150px;">'
+      +'<span style="font-size:2em">Add new short message</span>'
+      +'<br><span style="font-size:1.5em;">Max 32 chars. Stays forever.</span>'
+      +'</td><td style=""><input id="msg" maxlength=32 size=20 placeholder="New message"\>'
+      +'</td></tr></table>'
+    +'<table cellpadding=0 cellspacing=0 style="float:left;margin-right:3px;"><tr><td nowrap style="font-size:0.4em;width:150px;">'
+      +'<span style="font-size:1.5em">Optionally spare some change</span>'
+      +'<br><span style="font-size:1.5em;">to the contract creator</span>'
+      +'</td><td><input id="eth" maxlength=32 size=10 placeholder="Ether"\>'
+      +'</td></tr></table>'
+    +'<button id="btn" style="font-size:1.1em;font-weight:bold;background-color:#ae8;border-radius:3px;border-style:solid;border-width:0.5px;border-color:#000;">Transmit</button>'
+    );
+    
+    document.getElementById('btn').onclick=function() {
+      
+      var cmsg=document.getElementById('msg'),msg=cmsg.value,
+          ceth=document.getElementById('eth'),eth=ceth.value;
+      
+      if ((msg.length==0)&&(eth.length==0)) {
+        showMessages();
+        return;
+      }
+      //}
+      if (web3.eth.accounts[0])
+      ci.addElog(msg,{value:eth?web3.toWei(parseFloat(eth),'ether'):undefined,from: web3.eth.accounts[0]},function()  {
+        //alert('done');
+        showMessages();
+      }
+      ); else {
+        alert('No address found, possibly unlock MetaMask.');
+        return;
+      }
+      cmsg.value='';ceth.value='';
+      //alert('32 '+msg+' '+eth);//...
+    }
+    
+    window.addEventListener('resize',resize);
+    resize();
+    
+    if (//0&&
+      (typeof web3 !== 'undefined')) {
+      console.log("Using web3 detected from external source like Metamask")
+      window.web3 = new Web3(web3.currentProvider);
+    } else {
+      log('No web3 detected. Falling back to localhost:8545.');
+      window.web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
+    }
+    //console.log(web3);
+    //log('web3.eth.accounts[0] '+web3.eth.accounts[0]);
+    Conet.download({fn:'Voting.json',f:function(v) {
+      var art=JSON.parse(v),adr=art.networks['3'].address;//voting_artifacts
+      
+      clast=log('Contract address <a href="https://ropsten.etherscan.io/address/'+adr+'">'+adr+'</a>');
+      clast.style.fontSize='0.7em';
+      
+      if (!web3) {
+        clast=log('No provider found, get MetaMask or geth at localhost:8545.');
+        return;
+      }
+      
+      
+      //console.log(art);
+      var contract=web3.eth.contract(art.abi);
+      //log('Contract address <a href="https://ropsten.etherscan.io/address/'+adr+'">'+adr+'</a>');
+      ci=contract.at(adr);//'0xad080c81763037f929e7206d505e6373bb3a42d1');//contractinstance
+      //setTimeout(function() {
+      //log('web3.eth.accounts[0] '+web3.eth.accounts[0]);
+      //log('Rama '+ci.totalVotesFor.call('Rama').toString());
+      //log('Nick '+ci.totalVotesFor.call('Nick').toString());
+      //log('Pl4n3 '+ci.totalVotesFor.call('Pl4n3').toString());
+      //},10000);
+      
+      if (0)
+      -setTimeout(function() {
+        log('web3.eth.accounts[0] '+web3.eth.accounts[0]);
+      }
+      ,1000);
+      
+      showMessages();
+      
+      if (0) {
+      ci.elogs(0,function (e,r) {
+        log('0: '+r);
+      }
+      );
+      ci.elogs(1,function (e,r) {
+        log('1: '+r);
+      }
+      );
+      }
+      //console.log(ci);
+      //console.log(ci._eth.getTransactionCount());
+      //console.log(ci._eth.getTransactionCount(art.networks['3'].adress));
+    }
+    });
+    
+    //...
+  }
+  function resize() {
+    var w=document.body.clientWidth,//window.innerWidth,
+        s=cont.style;//,h=window.innerHeight;
+    
+    var mw=500,cw=(w<mw?w:w-(w-mw)*0.1);
+    
+    s.width=(cw+4)+'px';s.left=((w-cw)/2)+5+'px';//...
+    
+    s=head.style;s.fontSize=Math.min(100,(w/15))+'px';//head.innerHTML=w;
+  }
+  init();
+  //...
+}
+test0();
+</script>
+</body>
+</html><script>
+//fr o,7
+//fr o,7,4
+//fr o,7,4,9
+//fr o,7,4,9,2
+//fr o,7,4,9,2,1
+//fr o,7,5
+//fr o,7,5,26
+//fr o,7,5,26,10
+//fr o,7,5,41
+//fr o,7,5,41,23
+//fr o,7,5,41,31
+//fr o,7,6
+//fr p,9,97

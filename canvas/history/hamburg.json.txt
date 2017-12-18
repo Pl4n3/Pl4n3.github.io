@@ -1,1 +1,55 @@
-123
+{
+
+"about":"Hamburg","tmin":1000,"tmax":2000,"elStick":1,
+
+"os":[
+
+{"src":"https://i.pinimg.com/736x/83/50/e2/8350e21891293ef96d278797fb7e7f2b--cartography-atlas.jpg"
+   ,"img":1,"x":"1747.636px","y":"2079.067px","opacity":0.5,"t":"rotate(0deg) scale(0.38)",
+"keyframes":[{"time":1000,"opacity":1},{"time":1400,"opacity":0.0}]
+}
+
+
+
+,{"src":"https://upload.wikimedia.org/wikipedia/commons/thumb/9/9d/Hamburg.Karte1320.rekonstruiert.Gaedechen.jpg/1280px-Hamburg.Karte1320.rekonstruiert.Gaedechen.jpg"
+   ,"img":1,"x":"1763.894px","y":"2111.386px","opacity":0.5,"t":"rotate(0deg) scale(0.22)",
+"keyframes":[{"time":1000,"opacity":0},{"time":1400,"opacity":1},{"time":1650,"opacity":0}]
+}
+
+
+,{"src":"https://upload.wikimedia.org/wikipedia/commons/c/c5/Map_hamburg_1800.png"
+  ,"img":1,"x":"1502px","y":"1728px","opacity":0.5,"t":"rotate(0deg) scale(1)",
+"keyframes":[{"time":1650,"opacity":0},{"time":1800,"opacity":1},{"time":1950,"opacity":1}]
+}
+
+
+
+,{"src":"https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/Hamburg_Subdivisions.svg/1713px-Hamburg_Subdivisions.svg.png"
+  ,"img":1,"x":"0px","y":"0px","opacity":0.5,"t":"rotate(0deg) scale(2.5)",
+"keyframes":[{"time":1800,"opacity":0},{"time":1950,"opacity":1}]
+}
+
+
+
+,{"src":"https://upload.wikimedia.org/wikipedia/commons/thumb/e/e4/Grundtri%C3%9F_der_edlen_weitberumbte_Statt_Hamburg_Anno_1651.jpg/1280px-Grundtri%C3%9F_der_edlen_weitberumbte_Statt_Hamburg_Anno_1651.jpg"
+   ,"img":1,"x":"1677.18px","y":"2054.95px","opacity":0.5,"t":"rotate(0deg) scale(0.35)",
+"keyframes":[{"time":1400,"opacity":0},{"time":1650,"opacity":1},{"time":1800,"opacity":0.0}]
+}
+
+
+],
+"views":[
+{"x":4394.66650390625,"y":5172.66650390625,"s":2.4414062500000018,"dt":1000,"linear":1,"t":1000}
+,{"x":4394.66650390625,"y":5172.66650390625,"s":2.4414062500000018,"dt":5000,"linear":1,"t":1000}
+,{"x":34.66666793823242,"y":146.6666717529297,"s":0.16777216000000023,"dt":1000,"linear":1,"t":2000}
+,{"x":34.66666793823242,"y":146.6666717529297,"s":0.16777216000000023,"dt":10,"linear":1,"t":2000}
+],
+
+"commentedout":[
+
+{"src":"https://geschichtsbuch.hamburg.de/wp-content/uploads/sites/255/2016/03/03-epochenübersicht-hohes-mittelalter.jpg"
+   ,"img":1,"x":"0px","y":"0px","opacity":0.5,"t":"rotate(0deg) scale(0.25)"}
+
+
+]
+}

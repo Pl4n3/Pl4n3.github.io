@@ -512,6 +512,7 @@ function threeRender() {
   //console.log(threeEnv.				r);
   
   if (threeEnv.renderer) threeEnv.renderer.render(threeEnv.scene,threeEnv.camera);
+  return dt;
 }
 function threeAnimate() {
   threeRender();
@@ -620,4 +621,4 @@ function threeMeshUpdate(lo,dy) {
 //fr o,11
 //fr o,17
 //fr o,18
-//fr p,39,75
+//fr p,10,122

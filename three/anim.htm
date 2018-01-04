@@ -17,13 +17,13 @@ body { color: #000;background-color: #aaa;margin: 0px;overflow: hidden; }
 <script>
 function anim() {
   var scene,stats,views=[],oh={},ot=Date.now(),scra,scri=0,scrt=0,loopAfterLoaded,
-      base,debug='',version='1.209 ',//FOLDORUPDATEVERSION
+      base,debug='',version='1.261 ',//FOLDORUPDATEVERSION
       m0=new THREE.MeshPhongMaterial( { color:0x666666,flatShading:true } ),
       m1=new THREE.MeshPhongMaterial({color:0x77dd77,flatShading:true,
       transparent:true,opacity:0.5}),keys=[],vrkeys=true,url,click=undefined,
       raycaster=new THREE.Raycaster(),anchors={},canch,aa={c0:new THREE.Vector3(),
       c1:new THREE.Vector3(),t0:new THREE.Vector3(),t1:new THREE.Vector3()},taa=0,
-      tam=500;
+      tam=500,eclick,game={},PI=Math.PI;
   function updateHud(view) {
     var hud=view.hud,c=hud.c,ct=c.getContext('2d'),w=c.width,h=c.height;
     ct.clearRect(0,0,w,h);
@@ -80,6 +80,7 @@ function anim() {
     controls.maxDistance=600;
     controls.rotateSpeed=0.4;
     controls.enableKeys=false;
+    controls.zoomSpeed=0.5;
     if (v.target) controls.target.copy(v.target);
     }
     //controls.rotateLeft(0.5);
@@ -223,6 +224,21 @@ function anim() {
       }
     }
   }
+  function setTargetCampos(tx,ty,tz,cx,cy,cz) {
+    var v=views[0];
+    aa.c0.copy(v.camera.position);
+    aa.t0.copy(v.controls.target);
+    aa.c1.x=cx;aa.c1.y=cy;aa.c1.z=cz;
+    aa.t1.x=tx;aa.t1.y=ty;aa.t1.z=tz;
+    
+    //aa.c1.x=a.cx;aa.c1.y=a.cy;aa.c1.z=a.cz;
+    //aa.t1.x=a.tx;aa.t1.y=a.ty;aa.t1.z=a.tz;
+    taa=tam;
+    //v.camera.position.set(a.cx,a.cy,a.cz);
+    //v.controls.target.set(a.tx,a.ty,a.tz);
+    
+    //...
+  }
   function viewAnchor(a) {
     //
     var v=views[0];
@@ -233,14 +249,23 @@ function anim() {
         }
       }
     }
-    if (a.cx!==undefined) {
+    if (a.campos!==undefined) {
+      var ca=a.campos,ta=a.target;
+      setTargetCampos(ta[0],ta[1],ta[2],ca[0],ca[1],ca[2]);
+      /*
       aa.c0.copy(v.camera.position);
       aa.t0.copy(v.controls.target);
-      aa.c1.x=a.cx;aa.c1.y=a.cy;aa.c1.z=a.cz;
-      aa.t1.x=a.tx;aa.t1.y=a.ty;aa.t1.z=a.tz;
+      var ah=a.campos;
+      aa.c1.x=ah[0];aa.c1.y=ah[1];aa.c1.z=ah[2];
+      ah=a.target;
+      aa.t1.x=ah[0];aa.t1.y=ah[1];aa.t1.z=ah[2];
+      
+      //aa.c1.x=a.cx;aa.c1.y=a.cy;aa.c1.z=a.cz;
+      //aa.t1.x=a.tx;aa.t1.y=a.ty;aa.t1.z=a.tz;
       taa=tam;
       //v.camera.position.set(a.cx,a.cy,a.cz);
       //v.controls.target.set(a.tx,a.ty,a.tz);
+      */
     }
     if (a.next) {
       for (var i=0;i<a.next.length;i++) {
@@ -272,11 +297,22 @@ function anim() {
       //onsole.log('animate intersects.len='+intersects.length);
       click=undefined;
       if (intersects.length>0) {
-        //Conet.log('render intersects='+intersects.length);
+        ////onet.log('render intersects='+intersects.length);
+        //var os=[];
+        //for (var j=0;j<intersects.length;j++) {
+        //  var o=intersects[j].object;//,found=false;
+        //  //for (var i=os.length-1;i>=0;i--) if (os[i]=
+        //  if (os.indexOf(o)) os.push(o);
+        //}
+        ////onet.log('os.len='+os.length);
         for (var j=0;j<(
-         //mmultisel.checked?intersects.length:
+        ////mmultisel.checked?intersects.length:
          1);j++) {
-         var o=intersects[j].object,marko=o.userData.marko;
+         var o=intersects[j].object;
+        //for (var j=0;j<os.length;j++) {
+         //var o=os[j]; 
+         var marko=o.userData.marko;
+         //console.log(o.userData.o);
          if (marko) {
            //var v=views[0];
            //v.camera.position.set(-0.1542,-1.5406,0.8371);
@@ -286,6 +322,11 @@ function anim() {
            //console.log(v.controls);
            viewAnchor(marko);
          }
+         if (o.userData.onclick) o.userData.onclick(eclick);//,o);
+         o=o.userData.o;
+         //onsole.log(o);
+         if (!o) continue;
+         if (o.ps.onclick) o.ps.onclick(eclick);
     //     for (var i=bricks.length-1;i>=0;i--) {
     //      var b=bricks[i];
     //      if (b.mesh!=o) continue;
@@ -298,6 +339,7 @@ function anim() {
       }
     }
     
+    if (game.calc) game.calc(dt);
     
     for (var i=views.length-1;i>=0;i--) {
       var view=views[i];
@@ -318,13 +360,15 @@ function anim() {
     o.ps=ps;//o.o={pos:ps.pos,roty:ps.roty||0};
     
     threeAddObj(o,0,0,0,ps.scale);
+    var m=o.meshes[0].tmesh;
+    m.userData.o=o;
     //o.o={pos:ps.pos,roty:ps.roty||0};
     //var m=o.meshes[0].tmesh;
     //m.position.copy(ps.pos);//set(-30,-140,-80);
     if (ps.ohkey) oh[ps.ohkey]=o;
     //if (ps.roty!==undefined) m.rotation.y=ps.roty;
     //console.log(o);
-    var ac=0;
+    var ac=0,startAnchor=undefined;
     for (var i=0;i<o.verts.length;i++) {
       var v=o.verts[i],w=0.15;
       if (!v.marko) continue;
@@ -340,41 +384,12 @@ function anim() {
       v.marko.mesh=b;
       b.userData.marko=v.marko;
       anchors[v.marko.k]=v.marko;
+      if (v.marko.start) startAnchor=v.marko;
       ac++;
       //console.log(v);
     }
-    if (ac==5) { //todo: config from file
-    var a=anchors[1];
-    a.cx=-0.1542;a.cy=-1.5406;a.cz=0.8371;
-    a.tx=-0.1654;a.ty=-1.5466;a.tz=0.6055;
-    a.next=[3,4];
     
-    a=anchors[2];
-    a.cx=0.7245;a.cy=-1.5634;a.cz=0.2470;
-    a.tx=0.5625;a.ty=-1.5069;a.tz=0.1677;
-    a.next=[3,4];
-    
-    a=anchors[3];
-    //a.cx=0.2670;a.cy=-0.4389;a.cz=1.8301;
-    a.cx=0.2175;a.cy=-0.5801;a.cz=1.4906;
-    a.tx=0;a.ty=-1.2;a.tz=0;
-    a.next=[1,2];
-    
-    a=anchors[4];
-    a.cx=-0.2192;a.cy=-1.6307;a.cz=0.2595;
-    a.tx=-0.1274;a.ty=-1.6462;a.tz=0.1756;
-    a.next=[1,2,5];
-    
-    a=anchors[5];
-    a.cx=-0.0872;a.cy=-1.7096;a.cz=-0.3222;
-    a.tx=-0.0882;a.ty=-1.6800;a.tz=-0.2445;
-    //a.cx=-0.1268;a.cy=-1.7776;a.cz=-0.2939;
-    //a.tx=-0.1014;a.ty=-1.7170;a.tz=-0.2430;
-    a.next=[4];
-    
-    
-    viewAnchor(anchors[3]);
-    }
+    if (startAnchor) viewAnchor(startAnchor);
     //v.camera.position.set(0.2670,-0.4389,1.8301);
     //v.controls.target.set(0,-1.2,0);
     //threeRender();
@@ -492,8 +507,17 @@ function anim() {
     return Math.floor(Math.random()*n);
   }
   function onClick(e) {
+    eclick=e;
+    //onsole.log(e);
+    //if (e.detail<2) return;
     click=new THREE.Vector2(2*e.clientX/window.innerWidth-1,-2*e.clientY/window.innerHeight+1);
     //onsole.log(click);
+  }
+  function dAng(a0,a1) {
+    var da=a0-a1;
+    while (da>PI) da-=PI*2;
+    while (da<-PI) da+=PI*2;
+    return da;
   }
   function init() {
     
@@ -564,8 +588,7 @@ anim();
 </script></body>
 </html><script>
 //fr o,17
-//fr o,17,9
-//fr o,17,9,81,2
-//fr o,17,11
+//fr o,17,9,82,2
+//fr o,17,12
 //fr o,17,14
-//fr p,37,229
+//fr p,58,91

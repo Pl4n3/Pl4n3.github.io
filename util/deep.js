@@ -1,14 +1,23 @@
 //----
 var Deep=function(ps) {
   var rH=ps.rH?ps.rH:undefined,PI=Math.PI,
-      version='0.69 ',//FOLDORUPDATEVERSION
+      version='0.162 ',//FOLDORUPDATEVERSION
       newView=true,ovs=[],lastcurs=undefined,curso=undefined,
       self=this,dt=0;
   function dkey(x,y,z) {
     return z+' '+y+' '+x;//...
   }
-  function getR(z,y,x) {
-    return rH[dkey(x,y,z)];
+  function initR(x,y,z) {
+    var g={x:x,y:y,z:z};
+    rH[dkey(x,y,z)]=g;
+    return g;
+  }
+  function getR(z,y,x,create) {
+    var ret=rH[dkey(x,y,z)];
+    if (create&&!ret) {
+      ret=initR(x,y,z);
+    }
+    return ret;
   }
   function round(v) {
     return Math.floor(v+0.5);
@@ -22,6 +31,117 @@ var Deep=function(ps) {
     }
     return true;
   }
+  
+  function freeFor(g,o) {
+    if (!g) return 1;
+    if (g.block) return 0;
+    if (!g.os) return 1;
+    if (g.os.length==0) return 1;
+    if (g.os[0]!=o) return 0;
+    return 1;
+  }
+  
+  this.maxlen=2;
+  
+  this.pathStart=function(g,o) {
+    if (g.gpos) if (!g.len||(g.gpos.len<g.len)) g=g.gpos;
+    
+    var path=[g],g0=g,g1;
+    while (true) {
+      var gs=[],x=g0.x,y=g0.y,z=g0.z;
+      //console.log(g0);
+      g1=getR(z-1,y,x);if (g1&&(g1.len!==undefined)&&(g1.len<g0.len)) gs.push(g1); 
+      //console.log(g1);console.log(gs.length);
+      g1=getR(z,y,x-1);if (g1&&(g1.len!==undefined)&&(g1.len<g0.len)) gs.push(g1); 
+      //console.log(g1);console.log(gs.length);
+      g1=getR(z+1,y,x);if (g1&&(g1.len!==undefined)&&(g1.len<g0.len)) gs.push(g1); 
+      //console.log(g1);console.log(gs.length);
+      g1=getR(z,y,x+1);if (g1&&(g1.len!==undefined)&&(g1.len<g0.len)) gs.push(g1); 
+      //console.log(g1);console.log(gs.length);
+      if (gs.length==0) break;
+      g0=gs[Math.floor(Math.random()*gs.length)];
+      path.splice(0,0,//g0.gpos||
+        g0);
+      //path.push(g0.gpos||g0);
+    }
+    
+    this.lenInit();
+    
+    for (var i=0;i<path.length;i++) {
+      var g=path[i];//,x=g.x,y=g.y;
+      //g.len=1;
+      var y=0;
+      for (var z=g.z;z<g.z+o.zw;z++) for (var x=g.x;x<g.x+o.xw;x++)
+        getR(z,y,x,1).len=1;
+    }
+    
+    
+    return path;
+    //...
+  }
+  
+  this.lenInit=function() {
+    for (var k in rH) {
+      var g=rH[k];
+      delete(g.len);
+      delete(g.gpos);
+    }
+    //...
+  }
+  
+  this.calcLen=function(x,y,z,len,o) {
+    var g=getR(z,y,x);
+    
+    
+    if (g&&(g.len!=-1)&&(g.len<len)) return 0;
+    
+    //onsole.log('calcLen 1');
+    for (var zh=z;zh<(z+o.zw);zh++)
+    for (var yh=y;yh<(y+o.yw);yh++) 
+    for (var xh=x;xh<(x+o.xw);xh++) {
+      if (!freeFor(getR(zh,yh,xh),o)) return 0;
+    }
+    
+    if (!g) { g=initR(x,y,z); }
+    g.len=len;
+    
+    var yh=y;
+    for (var zh=z;zh<(z+o.zw);zh++) 
+    for (var xh=x;xh<(x+o.xw);xh++) {
+      var g0=getR(zh,yh,xh,1);
+      if ((zh==z)&&(yh==y)&&(xh==x)) continue;
+      if (g0.gpos) if (g0.gpos.len<len) continue;
+      g0.gpos=g;
+    }
+    
+    len++;
+    var ret=1;
+    if (len>=this.maxlen) return ret;
+    
+    ret+=this.calcLen(x-1,y,z,len,o);
+    ret+=this.calcLen(x,y,z-1,len,o);
+    ret+=this.calcLen(x+1,y,z,len,o);
+    ret+=this.calcLen(x,y,z+1,len,o);
+    return ret;
+  }
+  
+  
+  this.placeGrid=function(o,yes) {
+    for (var z=o.z+o.zw-1;z>=o.z;z--) 
+    for (var y=o.y+o.yw-1;y>=o.y;y--) 
+    for (var x=o.x+o.xw-1;x>=o.x;x--) {
+      var g=getR(z,y,x);if (!g) { g=initR(x,y,z); }
+      var os=g.os;if (!os) { os=[];g.os=os; }
+      if (yes) {
+        os.splice(0,0,o);
+      } else {
+        var i=os.indexOf(o);
+        if (i!=-1) os.splice(i,1);
+      }
+    }
+    //...
+  }
+  
   
   function place(o,dx,dy,dz) {
     for (var z=o.xw-1;z>=0;z--)
@@ -39,6 +159,7 @@ var Deep=function(ps) {
   }
   
   this.sees=function(o0,o1) {
+    if (o0.hito==o1) return true;
     //first rough distance check
     var d=dist(o0,o1);
     //onsole.log('deep.sees d='+d);
@@ -120,7 +241,7 @@ var Deep=function(ps) {
       o.yw=2;
       if (!place(o,0,0,0)) {
         o.yw=1;
-        return;
+        return false;
       }
       o.eyeh=1;
     } else {
@@ -130,6 +251,7 @@ var Deep=function(ps) {
     o.crouch=!o.crouch;
     //onsole.log('toggleCrouch '+o.crouch);
     newView=true;
+    return true;
   }
   this.calc=function(os,curs,newView0,dtp,viewall,retNewView) {
     dt=dtp;
@@ -144,12 +266,31 @@ var Deep=function(ps) {
       var o=os[i];
       o.running=false;
       o.moving=false;
+      //if (o.health>0) {
       if (o.tick) o.tick();
+      if (o.health>0) {
+      if (o.pdest!==undefined) {
+        var p=o.pdest,dx=p.x-o.x,dy=p.y-o.y,dz=p.z-o.z;
+        if ((dx*dx+dy*dy+dz*dz)<0.3) {
+          delete(o.pdest);delete(o.adest);
+        } else {
+        var a=Math.atan2(dz,dx);
+        //onsole.log(o.pdest);
+        //onsole.log(o);
+        //onsole.log('deep.calc pdest a='+a);
+        o.adest=a;//-PI/2;
+        //delete(o.pdest);
+        if (dy>0) o.jumpt=1;
+        }
+      }
       if (o.adest!==undefined) {
         dda=o.adest-o.a;
         while (dda>=PI) dda-=2*PI;
         while (dda<-PI) dda+=2*PI;
+        var adda=Math.abs(dda);
+        //if (adda<0.1) delete(o.adest);
         if (dda>0) o.da=1; else o.da=-1;
+        if (o.pdest) if (adda<0.5) o.d=o.v;
       }
       if (o.da!=0) {
         var da=o.da*dt*0.005;//*0.5;
@@ -197,6 +338,7 @@ var Deep=function(ps) {
       } else if (o.jumpt>0) o.jumpt=0;
       o.jumpt=Math.max(0,o.jumpt-dt);
       //if o.notvisible continue;
+      }
       var r=getR(round(o.z),round(o.y),round(o.x));
       
       if (o.running) o.moving=true;
@@ -253,25 +395,34 @@ var Deep=function(ps) {
     
     o.da=0;
     o.d=0;
+    o.attack=false;
     
     if (!curso) return;
     var curs=curso;
-    var see=self.sees(o,curs);
+    
     
     o.alwaysShow=dist(o,curs)<4;
+    if (o.health<=0) return;
+    
+    if (curs.health==0) return;
+    var see=//(o.hito==curs)||
+      self.sees(o,curs);
+    
+    //o.alwaysShow=dist(o,curs)<4;
     
     if (see) {
       //o.running=1;
       //o.aim={x:curs.x+0.5,y:curs.y+0.5,z:curs.z+0.5};
       o.aim={x:curs.x,y:curs.y,z:curs.z};
       o.tsee=0;
+      delete(o.hito);
     } 
     
     
     if (!o.aim) return;
     
-    
-    if (view)  da=dAngle(o,o.aim,PI); else 
+    var flee=view&&!curs.crouch;
+    if (flee) da=dAngle(o,o.aim,PI); else 
     da=dAngle(o,o.aim);
     
     //console.log(da);
@@ -279,9 +430,15 @@ var Deep=function(ps) {
     
     if (da<0.2) {
       var d=dist(o,o.aim);
-      if (view||
-        (d>(see?2:0))) o.d=o.v;//0.005;//025;
-        
+      if (flee||
+        (d>((see&&!flee)?(o.xw+curs.xw)/2+1:0))) {
+        //if (!view) delete(o.hito);
+        //onsole.log('deep.tickBane '+(o.xw+curs.xw)+' '+o.hito);
+        o.d=o.v;//0.005;//025;
+      } else if (see) { 
+        //console.log('tickBane attack');
+        o.attack=true; 
+      } 
       if ((d<0.5)&&!see) {
         o.tsee+=dt;
         if (o.tsee>500) delete(o.aim);
@@ -296,11 +453,22 @@ var Deep=function(ps) {
   this.setRH=function(h) {
     rH=h;newView=true;
   }
-  
+  this.dist=dist;
+  this.dAngle=dAngle;
+  this.rH=rH;
+  this.getR=getR;
   //----
-  console.log('Deep v.'+version);//...
+  console.log('Deep v.'+version);//+' '+dist);//...
 }
 
 //fr o,1
-//fr o,1,28
-//fr p,18,31
+//fr o,1,5
+//fr o,1,6
+//fr o,1,10
+//fr o,1,14
+//fr o,1,16
+//fr o,1,18
+//fr o,1,21
+//fr o,1,24
+//fr o,1,43
+//fr p,15,165

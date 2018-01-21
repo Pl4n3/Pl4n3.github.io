@@ -18,7 +18,7 @@ body { color:#000;background-color:#aaa;margin:0px;overflow:hidden;font-family:S
 <script>
 function anim() {
   var scene,stats,views=[],oh={},ot=Date.now(),scra,scri=0,scrt=0,loopAfterLoaded,
-      base,debug='',version='1.308 ',//FOLDORUPDATEVERSION
+      base,debug='',version='1.317 ',//FOLDORUPDATEVERSION
       m0=new THREE.MeshPhongMaterial( { color:0x666666,flatShading:true } ),
       m1=new THREE.MeshPhongMaterial({color:0x77dd77,flatShading:true,
       transparent:true,opacity:0.5}),keys=[],vrkeys=true,url,click=undefined,
@@ -544,6 +544,17 @@ function anim() {
     while (da<-PI) da+=PI*2;
     return da;
   }
+  function pointLight(ps) {
+    //--
+    var dist=ps.dist,l=new THREE.PointLight(ps.col,ps.int,dist);l.position.set(ps.x,ps.y,ps.z);
+    l.castShadow=true;
+    l.shadow.camera.near=0.1;//100;
+    l.shadow.camera.far=dist;//1000;
+    l.shadow.mapSize.width=1024;//2048;
+    l.shadow.mapSize.height=1024;
+    base.add(l);
+    //...
+  }
   function init() {
     
     scene = new THREE.Scene();
@@ -555,16 +566,17 @@ function anim() {
     //box(40,-80,60,-50,-100,-50,m1);
     //box(0,-150,0,600,20,600,m0).castShadow=false;
     
-    var l=new THREE.AmbientLight(0x999999),f=0.03;base.add(l);//0x555555
+    //var l=new THREE.AmbientLight(0x999999),f=0.03;base.add(l);//0x555555
     //l=new THREE.PointLight(0xffffaa,1,0);l.position.set(-100*f,200*f,100*f);base.add(l);
-    l=new THREE.PointLight(0xffffff,1,0);l.position.set(100*f,100*f,100*f);
-    l.castShadow=true;
-    l.shadow.camera.near=0.1;//100;
-    l.shadow.camera.far=10;//1000;
-    l.shadow.mapSize.width=1024;//2048;
-    l.shadow.mapSize.height=1024;
-    base.add(l);
-    l=new THREE.PointLight(0xaaffff,1,0);l.position.set(100*f,-200*f,-100*f);base.add(l);
+    ////pointLight({x:3,y:3,z:3,col:0xffffff,dist:10,int:2});
+    //var l=new THREE.PointLight(0xffffff,1,0);l.position.set(100*f,100*f,100*f);
+    //l.castShadow=true;
+    //l.shadow.camera.near=0.1;//100;
+    //l.shadow.camera.far=10;//1000;
+    //l.shadow.mapSize.width=1024;//2048;
+    //l.shadow.mapSize.height=1024;
+    //base.add(l);
+    //l=new THREE.PointLight(0xaaffff,1,0);l.position.set(3,-6,-3);base.add(l);
     
     stats=new Stats();var c=stats.domElement,s=c.style;
     s.position='absolute';s.top='0px';s.zIndex=100;s.opacity=0.3;
@@ -593,6 +605,7 @@ function anim() {
     // animate();
     
     //threeEnv.renderer=renderer;
+    if (0)
     Pd5.animText=function(o,s) {
       //...
     }
@@ -635,6 +648,9 @@ anim();
 //fr o,18
 //fr o,18,9,82,2
 //fr o,18,14
-//fr o,18,25,32
-//fr o,18,25,34
-//fr p,0,98
+//fr o,18,25
+//fr o,18,26
+//fr o,18,26,33
+//fr o,18,26,35
+//fr o,18,26,44
+//fr p,2,140

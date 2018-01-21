@@ -56,10 +56,20 @@ game.init=function() {
   calcPartyCount();
   //onsole.log(parties);
   updateViews();
+  
+  base.add(new THREE.AmbientLight(0xffffff,0.3));
+  pointLight({x:1,y:1,z:1,col:0xffffaa,dist:5,int:2});
+  pointLight({x:-5.5,y:0,z:-1,col:0x2222ff,dist:7,int:2});
+  //box(1,1,1,0.1,0.1,0.1,m1);
+  //box(-5.5,0,-1,0.1,0.1,0.1,m1);
+  
+  //l=new THREE.PointLight(0xaaffff,1,0);l.position.set(3,-6,-3);base.add(l);
+  l=new THREE.DirectionalLight(0xaaffff,0.7);l.position.set(0.2,-1,0.2);base.add(l);
+  
   //| How to win? Move 2 guys together into the center, wait for the big one to approach, sth you have the first attacks, continue
   //| to attack with both, in the end one of them prevails
 }
 //---
 //fr o,1
 //fr o,1,35
-//fr p,14,57
+//fr p,0,59

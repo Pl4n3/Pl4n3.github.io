@@ -899,6 +899,10 @@ var Pd5={};
       x1=-(y0*z2-z0*y2);//with p0: +
       y1=(z0*x2-x0*z2);
       z1=-(x0*y2-y0*x2);//with p0: +
+      //if (norm) {
+      //  var l=Math.sqrt(x1*x1+y1*y1+z1*z1);
+      //  x1/=l;y1/=l;z1/=l;
+      //}
       t.nx=x1;t.ny=y1;t.nz=z1;
       if (!noVerts) {
         if (v0.nv) v0=v0.nv;
@@ -962,8 +966,11 @@ var Pd5={};
     for (var i=a.length-1;i>=0;i--) {
       var s=a[i],sa=s.split(' '),sa0=sa[0];
       if (sa0=='diff') { var m=o.meshes[sa.length>2?parseInt(sa[2]):0];if (m) { m.diff=sa[1];m.matChange=true; }}
-      if (sa0=='norm') { var m=o.meshes[sa.length>2?parseInt(sa[2]):0];if (m) { m.norm=sa[1];m.matChange=true; }}
-      if (sa0=='spec') { var m=o.meshes[sa.length>2?parseInt(sa[2]):0];if (m) { m.spec=sa[1];m.matChange=true; }}
+      else if (sa0=='norm') { var m=o.meshes[sa.length>2?parseInt(sa[2]):0];if (m) { m.norm=sa[1];m.matChange=true; }}
+      else if (sa0=='spec') { var m=o.meshes[sa.length>2?parseInt(sa[2]):0];if (m) { m.spec=sa[1];m.matChange=true; }}
+      else if (sa0=='osc') {
+        if (window.Sound) Sound.oscs(s.substr(sa0.length+1));
+      }
     }
     for (var i=o.meshes.length-1;i>=0;i--) {
       var m=o.meshes[i];
@@ -1981,14 +1988,12 @@ var Pd5={};
 
 //---
 //fr o,2
-//fr o,2,26
-//fr o,2,27
-//fr o,2,30
-//fr o,2,31
+//fr o,2,37
+//fr o,2,38
 //fr o,2,40,75
 //fr o,2,42
 //fr o,2,46,44
 //fr o,2,47,1
 //fr o,2,47,2
 //fr o,2,47,2,3
-//fr p,12,111
+//fr p,2,130

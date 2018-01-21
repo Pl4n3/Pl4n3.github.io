@@ -2,13 +2,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 <style>
-body { color: #000;background-color: #aaa;margin: 0px;overflow: hidden; }
+body { color:#000;background-color:#aaa;margin:0px;overflow:hidden;font-family:Sans-serif; }
 </style>
 <script src="https://threejs.org/build/three.min.js"></script>
 <script src="https://threejs.org/examples/js/vr/WebVR.js"></script>
 <script src="https://threejs.org/examples/js/libs/stats.min.js"></script>
 <script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
 <script src="/conet.js"></script>
+<script src="/sound.js"></script>
 <script src="../vecmath.js"></script>
 <script src="../canvas/pd5.js"></script>
 <script src="threePd5.js"></script>
@@ -17,13 +18,13 @@ body { color: #000;background-color: #aaa;margin: 0px;overflow: hidden; }
 <script>
 function anim() {
   var scene,stats,views=[],oh={},ot=Date.now(),scra,scri=0,scrt=0,loopAfterLoaded,
-      base,debug='',version='1.261 ',//FOLDORUPDATEVERSION
+      base,debug='',version='1.308 ',//FOLDORUPDATEVERSION
       m0=new THREE.MeshPhongMaterial( { color:0x666666,flatShading:true } ),
       m1=new THREE.MeshPhongMaterial({color:0x77dd77,flatShading:true,
       transparent:true,opacity:0.5}),keys=[],vrkeys=true,url,click=undefined,
       raycaster=new THREE.Raycaster(),anchors={},canch,aa={c0:new THREE.Vector3(),
       c1:new THREE.Vector3(),t0:new THREE.Vector3(),t1:new THREE.Vector3()},taa=0,
-      tam=500,eclick,game={},PI=Math.PI;
+      tam=500,eclick,game={},PI=Math.PI,skipClick=false;
   function updateHud(view) {
     var hud=view.hud,c=hud.c,ct=c.getContext('2d'),w=c.width,h=c.height;
     ct.clearRect(0,0,w,h);
@@ -145,10 +146,13 @@ function anim() {
     
     views.push(v);
     
-    if (v.bg) renderer.animate(animate);
+    if (v.bg) {
+      threeEnv.camera=camera;
+      renderer.animate(animate);
+    }
   }
   function box(x,y,z,w,h,b,m) {
-    mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,b),m);
+    mesh=new THREE.Mesh(new THREE.BoxBufferGeometry(w,h,b),m);
     mesh.position.set(x,y,z);
     mesh.updateMatrix();
     mesh.matrixAutoUpdate=false;
@@ -306,8 +310,10 @@ function anim() {
         //}
         ////onet.log('os.len='+os.length);
         for (var j=0;j<(
-        ////mmultisel.checked?intersects.length:
-         1);j++) {
+         ////mmultisel.checked?
+         intersects.length//:
+         //1
+         );j++) {
          var o=intersects[j].object;
         //for (var j=0;j<os.length;j++) {
          //var o=os[j]; 
@@ -321,12 +327,13 @@ function anim() {
            //v.controls.target.set(0,-1.2,0);
            //console.log(v.controls);
            viewAnchor(marko);
+           break;
          }
-         if (o.userData.onclick) o.userData.onclick(eclick);//,o);
+         if (o.userData.onclick) { o.userData.onclick(eclick);break; }//,o);
          o=o.userData.o;
          //onsole.log(o);
          if (!o) continue;
-         if (o.ps.onclick) o.ps.onclick(eclick);
+         if (o.ps.onclick) { o.ps.onclick(eclick);break; }
     //     for (var i=bricks.length-1;i>=0;i--) {
     //      var b=bricks[i];
     //      if (b.mesh!=o) continue;
@@ -367,6 +374,19 @@ function anim() {
     //m.position.copy(ps.pos);//set(-30,-140,-80);
     if (ps.ohkey) oh[ps.ohkey]=o;
     //if (ps.roty!==undefined) m.rotation.y=ps.roty;
+    
+    if (ps.bb) {
+      var oyw=1;
+      o.bb=threeBillboardAdd({x:0,y:0,z:0,ar:0.1/oyw,s:0.01*(1+(oyw-1)*2),transparent:false});//,cw:o.bbcw});
+      o.bb.o=o.ps;
+      
+      //console.log(o);
+      //o.ps.health=3;o.ps.mhealth=5;
+      //o.bb.update=1;
+    }
+    
+    
+    
     //console.log(o);
     var ac=0,startAnchor=undefined;
     for (var i=0;i<o.verts.length;i++) {
@@ -507,6 +527,11 @@ function anim() {
     return Math.floor(Math.random()*n);
   }
   function onClick(e) {
+    if (skipClick) {
+      skipClick=false;
+      return;
+    }
+    //onsole.log('anim.onClick');
     eclick=e;
     //onsole.log(e);
     //if (e.detail<2) return;
@@ -530,9 +555,9 @@ function anim() {
     //box(40,-80,60,-50,-100,-50,m1);
     //box(0,-150,0,600,20,600,m0).castShadow=false;
     
-    var l=new THREE.AmbientLight(0x555555),f=0.03;scene.add(l);
-    l=new THREE.PointLight(0xffffff,1,0);l.position.set(-100*f,200*f,100*f);scene.add(l);
-    l=new THREE.PointLight(0xffffaa,1,0);l.position.set(100*f,100*f,100*f);
+    var l=new THREE.AmbientLight(0x999999),f=0.03;base.add(l);//0x555555
+    //l=new THREE.PointLight(0xffffaa,1,0);l.position.set(-100*f,200*f,100*f);base.add(l);
+    l=new THREE.PointLight(0xffffff,1,0);l.position.set(100*f,100*f,100*f);
     l.castShadow=true;
     l.shadow.camera.near=0.1;//100;
     l.shadow.camera.far=10;//1000;
@@ -549,6 +574,22 @@ function anim() {
     window.addEventListener('keydown',keyDown);
     window.addEventListener('keyup',keyUp);
     window.addEventListener('click',onClick,false);
+    
+    //| following to avoid click event after viewchange (long mousdown/touch)
+    var tapstart=0;
+    window.addEventListener('mousedown',function(e) {
+      //onsole.log('anim.mousedown');
+      tapstart=Date.now();
+    }
+    ,false);
+    window.addEventListener('mouseup',function(e) {
+      //onsole.log('anim.mouseup '+(Date.now()-tapstart));
+      if (Date.now()-tapstart>300) skipClick=true;
+    }
+    ,false);
+    //| ---
+    
+    
     // animate();
     
     //threeEnv.renderer=renderer;
@@ -580,6 +621,10 @@ function anim() {
     });
     //calc();
     
+    var sh='Anim '+version;
+    console.log(sh);
+    //onet.log(sh);
+    
     //...
   }
   init();
@@ -587,8 +632,9 @@ function anim() {
 anim();
 </script></body>
 </html><script>
-//fr o,17
-//fr o,17,9,82,2
-//fr o,17,12
-//fr o,17,14
-//fr p,58,91
+//fr o,18
+//fr o,18,9,82,2
+//fr o,18,14
+//fr o,18,25,32
+//fr o,18,25,34
+//fr p,0,98

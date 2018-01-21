@@ -2,7 +2,7 @@
 function initAnimScript() {
   //...
   var sc=0.01,y0=-180,vr=url.vr!=0,rot=true;
-  console.log('Anim v.'+version+'static 0.79 ');//FOLDORUPDATEVERSION
+  console.log('Anim v.'+version+'static 0.85 ');//FOLDORUPDATEVERSION
   version='Fly around with\nwasd/cursorkeys.';
   var vh={w:1,h:1,x:0,y:0,bg:1,autoRotate:1,fov:60,bgcol:0x666666,vr:1,
     hudar:0.16,hudx:0.1,hudy:-0.1,hudres:256,fovportrait:1,
@@ -20,6 +20,11 @@ function initAnimScript() {
   }
   addView(vh);
   resize();
+  
+  base.add(new THREE.AmbientLight(0x999999));
+  pointLight({x:3,y:3,z:3,col:0xffffff,dist:10,int:2.5});
+  var l=new THREE.PointLight(0xaaffff,1,0);l.position.set(3,-6,-3);base.add(l);
+  
   //if (0) {
     box(0,-1.9,0,6,0.2,6,m0).castShadow=false;
   if (0) {
@@ -30,7 +35,7 @@ function initAnimScript() {
     }
   }
   loadObjsThenLoop([
-  {fn:'/canvas/w3dit/churchJpg.txt',pos:new THREE.Vector3(0,-1.8+0.01,0),scale:0.004,ai:function(dt) {
+  {fn:'/canvas/w3dit/churchJpg.txt',pos:new THREE.Vector3(0,-1.8+0.001,0),scale:0.004,ai:function(dt) {
     if (keys[82]) {
       rot=!rot;
       keys[82]=false;
@@ -49,5 +54,5 @@ initAnimScript();
 //console.log('YOIUOkokooko');
 //fr o,1
 //fr o,1,6
-//fr o,1,26
-//fr p,46,7
+//fr o,1,31
+//fr p,52,24

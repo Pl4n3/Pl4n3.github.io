@@ -405,7 +405,7 @@ function initAnimScript() {
     
     [{s:'&#9776;',noTri:true,fs:1.4,pw:0.05,sub:[
     {s:'Restart',fs:1.4,vertCenter:1,actionf:restart},
-    {s:'Version 0.538 '//FOLDORUPDATEVERSION
+    {s:'Version 0.539 '//FOLDORUPDATEVERSION
       ,fs:1.2,vertCenter:1,ph:0.02,noinp:1}]},
       mturn={s:'Turn',msid:'mturn',ms:'',
       fs:1.4,vertCenter:1,bgcol:parties[party].col,actionf:turn
@@ -585,8 +585,8 @@ function initAnimScript() {
   //box(0,-1.9,0,5.2,0.2,5.2,m0).castShadow=false;
   
   dum0=box(0,-1.8,0,1,1,1,new THREE.MeshPhongMaterial({color:0x888888,flatShading:true,
-    transparent:true,opacity:0.5}));dum0.castShadow=false;
-  dum1=box(0,-1.8,0,1,1,1,mesh.material);dum1.castShadow=false;
+    transparent:true,opacity:0.5}));//dum0.castShadow=false;
+  dum1=box(0,-1.8,0,1,1,1,mesh.material);//dum1.castShadow=false;
   
   var s=document.createElement('script');s.src='/util/deep.js';
   s.onload=checkGameInit;document.body.appendChild(s);
@@ -613,4 +613,4 @@ initAnimScript();
 //fr o,1,29
 //fr o,1,30
 //fr o,1,31
-//fr p,26,22
+//fr p,36,246

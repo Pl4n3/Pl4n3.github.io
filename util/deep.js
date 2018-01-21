@@ -1,7 +1,7 @@
 //----
 var Deep=function(ps) {
   var rH=ps.rH?ps.rH:undefined,PI=Math.PI,
-      version='0.207 ',//FOLDORUPDATEVERSION
+      version='0.210 ',//FOLDORUPDATEVERSION
       newView=true,ovs=[],lastcurs=undefined,curso=undefined,
       self=this,dt=0;
   function dkey(x,y,z) {
@@ -254,7 +254,7 @@ var Deep=function(ps) {
     //img=null;
   }
   function setView(o) {
-    setViews([o]);
+    return setViews([o]);
   }
   this.toggleCrouch=function(o) {
     if (o.crouch) {
@@ -490,5 +490,7 @@ var Deep=function(ps) {
 }
 
 //fr o,1
+//fr o,1,20
+//fr o,1,21
 //fr o,1,29
-//fr p,25,31
+//fr p,7,80

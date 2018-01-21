@@ -1,11 +1,9 @@
 var threeEnv={
   //camera,scene,renderer,
   //lightMesh,reflectionCube
-  scale:1,dtscale:1,
-  r:2.5,
-  ot:new Date().getTime(),
-  os:[],
-  rotLightV:0.05,ps:[],ps2:[],path:'',camFar:10000
+  scale:1,dtscale:1,r:2.5,
+  ot:new Date().getTime(),os:[],rotLightV:0.05,ps:[],ps2:[],path:'',camFar:10000,
+  billboards:[]
 },isVr=false,onlyThree=false,threeTexH={},threeTL=window.THREE&&THREE.TextureLoader?new THREE.TextureLoader():undefined;
 function threeParticles(geometry,x,y,z,wh,c) {
   				for ( i = 0; i < c; i ++ ) {
@@ -232,6 +230,27 @@ function threeAddObj(lo,px,py,pz,scale) {
   threeCreateMesh(lo,true,px,py,pz,scale);
   if (!lo.noOsAdd) threeEnv.os.push(lo);
 }
+function threeReaddObj(o) {
+  //...
+  if (o.bb) {
+    threeEnv.base.add(o.bb.threeMesh);
+    threeEnv.billboards.push(o.bb);//splice(threeEnv.billboards.indexOf(o.bb),1);
+  }
+  for (var mi=o.meshes.length-1;mi>=0;mi--) 
+    threeEnv.base.add(o.meshes[mi].tmesh);
+  threeEnv.os.push(o);//splice(threeEnv.os.indexOf(o),1);
+  //...
+}
+function threeRemoveObj(o) {
+  if (o.bb) {
+    threeEnv.base.remove(o.bb.threeMesh);
+    threeEnv.billboards.splice(threeEnv.billboards.indexOf(o.bb),1);
+  }
+  for (var mi=o.meshes.length-1;mi>=0;mi--) 
+    threeEnv.base.remove(o.meshes[mi].tmesh);
+  threeEnv.os.splice(threeEnv.os.indexOf(o),1);
+  //...
+}
 function threeInit(ps) {
   if (!ps.scf) ps.scf=1;
   //console.log('threeInit '+ps.scf);
@@ -412,6 +431,39 @@ function threeInit(ps) {
   threeEnv.c=renderer.domElement;
   return renderer.domElement;
 }
+function threeBillboardAdd(p) {
+  if (!p.ar) p.ar=0.5;
+  
+  if (!p.c) {
+    var cw=p.cw||128;//Math.floor(1024*(p.s||1)+0.5);
+    var c=document.createElement('canvas');c.width=cw;c.height=cw;
+    var ct=c.getContext('2d');ct.fillStyle='rgba(0,0,0,0.5)';ct.fillRect(0,0,c.width,c.height);p.c=c;p.ct=ct;
+    ct.font='20px sans-serif';ct.textBaseline='top';ct.fillStyle='#ff0';ct.fillText('n/i',2,2);
+  }
+  
+  //p.drawBb();
+  p.update=true;
+  
+    var t1=new THREE.Texture(p.c);
+    t1.needsUpdate=true;
+    //if (!mipmap) t1.minFilter=THREE.LinearFilter;
+    //Nearest
+    var planeMaterial=new THREE.MeshBasicMaterial({map:t1,opacity:1,transparent:((p.transparent!==undefined)?p.transparent:true)});
+    var g=new THREE.PlaneGeometry(80,80*p.ar);
+    
+    g.faceVertexUvs=[[[{x:0,y:1},{x:0,y:1-p.ar},{x:1,y:1}],[{x:0,y:1-p.ar},{x:1,y:1-p.ar},{x:1,y:1}]]];//[0][0][0].y*=p.ar;
+    //onsole.log(g);
+    var o=new THREE.Mesh(g,planeMaterial);
+    o.position.set(p.x,p.y,p.z);
+    var sc=p.s||1;
+    o.scale.set(sc,sc,sc);
+    threeEnv.base.add(o);//scene
+    p.threeTex=t1;
+    p.threeMesh=o;
+  
+  threeEnv.billboards.push(p);
+  return p;
+}
 function threeBane(noSceneAdd) {
   var lo=Pd5.loadh({
   bones:[
@@ -460,12 +512,18 @@ function threeRender() {
       
   threeEnv.ot=t;
   
+  
   for (var obi=threeEnv.os.length-1;obi>=0;obi--) {
     var lo=threeEnv.os[obi];
     
     if (threeEnv.aipos) {
       if (lo.ps.ai) lo.ps.ai(dt);
       lo.ay=lo.ps.roty+(lo.ps.rotofs||0);
+      var bb=lo.bb;
+      if (bb) {
+        var p=lo.ps.pos;
+        bb.x=p.x;bb.y=p.y+(lo.ps.bby||0);bb.z=p.z;
+      }
     }
   
     if (!threeEnv.nocalc) Pd5.calc(lo,dt,0,lo.ay||0,lo.scale||1,{x:lo.x||0,y:lo.y||0,z:lo.z||0},0,0,true);
@@ -502,6 +560,34 @@ function threeRender() {
       }
     }
   }
+  
+  
+  for (var i=threeEnv.billboards.length-1;i>=0;i--) {
+    var bb=threeEnv.billboards[i];
+    if (bb.update) {
+      bb.update=false;
+      if (bb.o.bbdraw) bb.o.bbdraw(bb); else {
+      var c=bb.c,w=c.width,h=c.height*bb.ar,ct=bb.ct;//c.getContext('2d');
+      ct.clearRect(0,0,w,h);
+      ct.fillStyle='rgba(0,0,0,0.5)';ct.fillRect(0,0,w,h);//p.c=c;p.ct=ct;
+      //ct.font='20px sans-serif';ct.textBaseline='top';ct.fillStyle='#ff0';
+      //ct.fillText('-> '+Math.random(),2,2);
+      var o=bb.o,f=o.health/o.mhealth;
+      //console.log(o);
+      //ct.fillStyle='rgba(255,0,0,0.5)';
+      var wb=o.bbwb||2,w0=(w-wb*2)*f;
+      ct.fillStyle='rgba(0,255,0,1)';ct.fillRect(wb,wb,w0,h-wb*2);
+      ct.fillStyle='rgba(255,0,0,1)';ct.fillRect(wb+w0,wb,(w-wb*2)-w0,h-wb*2);
+      }
+      //bb.threeTex.needsUpdate=1;
+      bb.threeTex.needsUpdate=true;
+      //onsole.log(' '+bb.threeTex.needsUpdate);
+    }
+    bb.threeMesh.position.set(bb.x,bb.y,bb.z);
+    bb.threeMesh.quaternion.copy(threeEnv.camera.quaternion);
+  }
+  
+  
   
   if (threeEnv.lightMesh) {
     threeEnv.lightMesh.position.x = 2500 * Math.cos( threeEnv.r );
@@ -617,8 +703,131 @@ function threeMeshUpdate(lo,dy) {
   //drawNew=true;
   //threeRender();
 }
-
-//fr o,11
-//fr o,17
-//fr o,18
-//fr p,10,122
+//-----------
+function DungeonGeometry(ps,view) {
+  
+  //console.log('DungeonGeometry d=');
+  //console.log(p);
+  THREE.BufferGeometry.call( this );
+  var width=50,height=50,depth=50,t='roofCant0';
+  this.type='DungeonGeometry';
+  this.parameters = {
+    width: width,
+    height: height,
+    depth: depth,
+  };
+  
+  var scope = this;
+  
+  // buffers
+  
+  var indices = [];
+  var vertices = [];
+  var normals = [];
+  var uvs = [];
+  
+  // helper variables
+  
+  var numberOfVertices = 0;
+  var groupStart = 0;
+  
+  // build each side of the box geometry
+  var w=width,h=height,d=depth,a,mx,mz,xz,
+  
+    a=[[[-100,100,100,0.27,0.4381],[-100,-100,100,0.27,0.4688],[100,-100,100,0.4688,0.4108],[100,100,100,0.4688,0.3801]
+       ,[-100,-100,-100,0.1563,0.3676],[-100,100,-100,0.1563,0.2142],[100,-100,-100,0.355,0.3096],[100,100,-100,0.355,0.1563]
+       ,[100,100,-100,0.355,0.1563],[-100,100,-100,0.1563,0.2142],[-100,100,100,0.27,0.4381],[100,100,100,0.4688,0.3801],[-100,-100,100,0.27,0.4688],[100,-100,100,0.4688,0.4108],[-100,-100,-100,0.1563,0.3676],[100,-100,-100,0.355,0.3096],[100,100,-100,0.355,0.1563],[100,100,100,0.4688,0.3801],[100,-100,100,0.4688,0.4108],[100,-100,-100,0.355,0.3096],[-100,100,-100,0.1563,0.2142],[-100,100,100,0.27,0.4381],[-100,-100,100,0.27,0.4688],[-100,-100,-100,0.1563,0.3676]],
+       [
+       [2,0,1],[0,2,3]
+       ,[4,7,6],[7,4,5]
+       ,[2,1,4],[4,6,2]
+       //,[15,12,14],[12,15,13]
+       //,[17,19,18],[23,21,22],[10,16,11],[16,10,20],[17,8,19],[9,21,23]
+       ]];
+  
+  if (0) {
+  var pa=a[0],fa=a[1];
+  for (var i=0;i<pa.length;i++) { var p=pa[i];
+    var x=(mx?-1:1)*(xz?p[2]:p[0]),
+        y=p[1],
+        z=(mz?-1:1)*(xz?p[0]:p[2]);
+    vertices.push(x*w/200,y*h/200,z*d/200);normals.push(0,0,1);uvs.push(p[3],p[4]); }
+  for (var i=0;i<fa.length;i++) { var f=fa[i];
+    if ((mz&&!xz)||(xz&&!mx&&!mz)||(mx&&!xz)) indices.push(f[0],f[1],f[2]); else indices.push(f[0],f[2],f[1]); 
+  }
+  } 
+  function key(x,y,z) {
+    return z+' '+y+' '+x;
+  }
+  function vert(x,y,z,u,v) {
+    x+=b*ps.dx;//-=b*(ps.xmax+ps.xmin)/2;
+    z+=b*ps.dz;//-=b*(ps.zmax+ps.zmin)/2;
+    y+=b*ps.dy;//-=b*ps.ymin;
+    u*=0.5;
+    v*=0.5;
+    vertices.push(x,y,z);normals.push(u,v,0);uvs.push(u||0,v||0);
+    return vertices.length/3-1;
+  }
+  var rH=ps.rH,b=ps.blockw||10;  
+  for (var k in rH) if (rH.hasOwnProperty(k)) {
+    var a=rH[k],x,y,z;
+    if (a.x!==undefined) {
+      x=a.x;y=a.y;z=a.z;
+    } else {
+      x=a[0];y=a[1];z=a[2];
+    }
+    //if (a.view^view) continue;
+    if (view&&!a.view) continue;
+    if (!view&&(a.view||!a.wview
+      )) continue;
+    if (!rH[key(x,y-1,z)]) {
+      var i0=vert(x*b,y*b,z*b,0,0),i1=vert((x+1)*b,y*b,z*b,1,0),i2=vert(x*b,y*b,(z+1)*b,0,1),i3=vert((x+1)*b,y*b,(z+1)*b,1,1);
+      indices.push(i0,i3,i1);indices.push(i0,i2,i3);
+    }
+    if (!rH[key(x,y+1,z)]) {
+      var i0=vert(x*b,(y+1)*b,z*b,0,0),i1=vert((x+1)*b,(y+1)*b,z*b,1,0),i2=vert(x*b,(y+1)*b,(z+1)*b,0,1),i3=vert((x+1)*b,(y+1)*b,(z+1)*b,1,1);
+      indices.push(i0,i1,i3);indices.push(i0,i3,i2);
+    }
+    if (!rH[key(x-1,y,z)]) {
+      var i0=vert(x*b,y*b,z*b,0,0),i1=vert(x*b,(y+1)*b,z*b,1,0),i2=vert(x*b,(y+1)*b,(z+1)*b,1,1),i3=vert(x*b,y*b,(z+1)*b,0,1);
+      indices.push(i0,i1,i2);indices.push(i0,i2,i3);
+    }
+    if (!rH[key(x+1,y,z)]) {
+      var i0=vert((x+1)*b,y*b,z*b,0,0),i1=vert((x+1)*b,(y+1)*b,z*b,1,0),i2=vert((x+1)*b,(y+1)*b,(z+1)*b,1,1),i3=vert((x+1)*b,y*b,(z+1)*b,0,1);
+      indices.push(i0,i2,i1);indices.push(i0,i3,i2);
+    }
+    if (!rH[key(x,y,z-1)]) {
+      var i0=vert(x*b,y*b,z*b,0,0),i1=vert((x+1)*b,y*b,z*b,1,0),i2=vert((x+1)*b,(y+1)*b,z*b,1,1),i3=vert(x*b,(y+1)*b,z*b,0,1);
+      indices.push(i0,i1,i2);indices.push(i0,i2,i3);
+    }
+    if (!rH[key(x,y,z+1)]) {
+      var i0=vert(x*b,y*b,(z+1)*b,0,0),i1=vert((x+1)*b,y*b,(z+1)*b,1,0),i2=vert((x+1)*b,(y+1)*b,(z+1)*b,1,1),i3=vert(x*b,(y+1)*b,(z+1)*b,0,1);
+      indices.push(i0,i2,i1);indices.push(i0,i3,i2);
+    }
+  }
+  groupCount=indices.length;
+  scope.addGroup( groupStart, groupCount, 0 );
+  groupStart += groupCount;
+  
+  
+  this.setIndex( indices );
+  this.addAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 ) );
+  this.addAttribute( 'normal', new THREE.Float32BufferAttribute( normals, 3 ) );
+  this.addAttribute( 'uv', new THREE.Float32BufferAttribute( uvs, 2 ) );
+  
+  if (view) {//view) {
+    this.computeFaceNormals();
+    this.computeVertexNormals();
+  }
+}
+if (window.THREE) {
+  DungeonGeometry.prototype=Object.create( THREE.BufferGeometry.prototype );
+  DungeonGeometry.prototype.constructor=DungeonGeometry;
+  //onsole.log('threePd5: DungeonGeometry inited.');
+}
+//fr o,13
+//fr o,14
+//fr o,16
+//fr o,24
+//fr o,24,52
+//fr p,26,17

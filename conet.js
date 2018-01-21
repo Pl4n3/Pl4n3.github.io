@@ -1,7 +1,7 @@
 var Conet={};
 (function(Conet) {
   Conet.offline=false;
-  Conet.version='v.1.275 ';//FOLDORUPDATEVERSION
+  Conet.version='1.287 ';//FOLDORUPDATEVERSION
   Conet.files={};
   var uploads={},fns,logc,logs=[];//fn=>data,first
   function xhr(p) {
@@ -108,6 +108,32 @@ var Conet={};
   }
   function lz(n) {
     return n<10?'0'+n:n;
+  }
+  function dir(p) {
+    //--
+    download({fn:p.fn,f:function (v) {
+      var a=v.split('\n'),ra=[];
+      for (var i=0;i<a.length;i++) {
+        var s=a[i];
+        //if (!s.startsWith('<tr><td nowrap><a')) continue;
+        var i0=-1;
+        //onsole.log(s);
+        while (1) {
+          i0=s.indexOf('">',i0+1);
+          if (i0==-1) { break; }
+          var i1=s.indexOf('</a>',i0);
+          if (i1==-1) { break; }
+          var sh=s.substr(i0+2,i1-i0-2);
+          ra.push(sh);//onsole.log(s+' '+i0+' '+i1)
+          i0=i1;
+        }
+      }
+      p.f(ra);
+      //onsole.log('conet.dir');
+      //onsole.log(ra);
+    }
+    });
+    //...
   }
   Conet.fileMenu=function(p) {
     //---m.a are set only for compatibility (e.g. in paint Load,Save else trigger localStorage io)
@@ -335,26 +361,24 @@ var Conet={};
   Conet.xhr=xhr;
   Conet.upload=upload;
   Conet.download=download;
+  Conet.dir=dir;
 }
 )(Conet);
 console.log('Conet '+Conet.version);
 //fr o,1
-//fr o,1,4
-//fr o,1,4,4
-//fr o,1,5
 //fr o,1,5,17
-//fr o,1,6
-//fr o,1,6,1
-//fr o,1,8,2
-//fr o,1,8,3
-//fr o,1,8,4
-//fr o,1,8,5
-//fr o,1,8,17
-//fr o,1,8,18
-//fr o,1,8,28
-//fr o,1,8,31
-//fr o,1,8,32
-//fr o,1,8,56
-//fr o,1,9,1
-//fr o,1,12,4
-//fr p,2,9
+//fr o,1,8
+//fr o,1,8,1
+//fr o,1,9,2
+//fr o,1,9,3
+//fr o,1,9,4
+//fr o,1,9,5
+//fr o,1,9,17
+//fr o,1,9,18
+//fr o,1,9,28
+//fr o,1,9,31
+//fr o,1,9,32
+//fr o,1,9,56
+//fr o,1,10,1
+//fr o,1,13,4
+//fr p,15,3

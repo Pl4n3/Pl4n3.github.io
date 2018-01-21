@@ -1,7 +1,7 @@
 //----
 var Deep=function(ps) {
   var rH=ps.rH?ps.rH:undefined,PI=Math.PI,
-      version='0.162 ',//FOLDORUPDATEVERSION
+      version='0.207 ',//FOLDORUPDATEVERSION
       newView=true,ovs=[],lastcurs=undefined,curso=undefined,
       self=this,dt=0;
   function dkey(x,y,z) {
@@ -31,18 +31,15 @@ var Deep=function(ps) {
     }
     return true;
   }
-  
   function freeFor(g,o) {
-    if (!g) return 1;
+    if (!g) return 0;
     if (g.block) return 0;
     if (!g.os) return 1;
     if (g.os.length==0) return 1;
     if (g.os[0]!=o) return 0;
     return 1;
   }
-  
   this.maxlen=2;
-  
   this.pathStart=function(g,o) {
     if (g.gpos) if (!g.len||(g.gpos.len<g.len)) g=g.gpos;
     
@@ -79,16 +76,15 @@ var Deep=function(ps) {
     return path;
     //...
   }
-  
   this.lenInit=function() {
     for (var k in rH) {
       var g=rH[k];
       delete(g.len);
       delete(g.gpos);
+      delete(g.mark);
     }
     //...
   }
-  
   this.calcLen=function(x,y,z,len,o) {
     var g=getR(z,y,x);
     
@@ -124,8 +120,29 @@ var Deep=function(ps) {
     ret+=this.calcLen(x,y,z+1,len,o);
     return ret;
   }
-  
-  
+  this.checkMarkAttack=function(o,retArray) {
+    
+    var ar=o.ar||1,y=o.y,a=retArray?[]:undefined;//,ow=o.w||1;
+    for (var z=o.z-ar;z<o.z+o.zw+ar;z++) for (var x=o.x-ar;x<o.x+o.xw+ar;x++) {
+      //if ((x<0)||(y<0)||(x>=gw)||(y>=gw)) continue;
+      var dx=x<o.x?x-o.x:(x>o.x+o.xw-1?x-o.x-o.xw+1:0),
+          dz=z<o.z?z-o.z:(z>o.z+o.zw-1?z-o.z-o.zw+1:0);
+      if ((dx==0)&&(dz==0)) continue;
+      //console.log(dx+' '+dy+' sum '+(Math.abs(dx)+Math.abs(dy)));
+      if ((Math.abs(dx)+Math.abs(dz))>ar) continue;
+      var g=getR(z,y,x);//,1);
+      if (!g) continue;
+      if (g.os) if (g.os.length>0) {
+        var o0=g.os[0];
+        if (o0.party===o.party) continue;//no friendly fire
+      }
+      if (g.block) continue;
+      if (retArray) a.push(g); else g.mark=1;
+    }
+    
+    return a;
+    //...
+  }
   this.placeGrid=function(o,yes) {
     for (var z=o.z+o.zw-1;z>=o.z;z--) 
     for (var y=o.y+o.yw-1;y>=o.y;y--) 
@@ -141,8 +158,6 @@ var Deep=function(ps) {
     }
     //...
   }
-  
-  
   function place(o,dx,dy,dz) {
     for (var z=o.xw-1;z>=0;z--)
     for (var y=o.yw-1;y>=0;y--)
@@ -151,13 +166,11 @@ var Deep=function(ps) {
       if (!getR(round(o.z+dz+z),round(o.y+dy+y),round(o.x+dx+x))) return false; 
     return true;
   }
-  
   this.place=place;//wahrscheinlich nur vorläufig public
   this.isNewView=function() {
     var r=newView;newView=false;
     return r;
   }
-  
   this.sees=function(o0,o1) {
     if (o0.hito==o1) return true;
     //first rough distance check
@@ -183,17 +196,19 @@ var Deep=function(ps) {
     
     return false;
   }
-  
-  
-  function setView(o) {
+  function setViews(oaa) {
     for (var k in rH) if (rH.hasOwnProperty(k)) delete(rH[k].view);
     //getR(curs.z,curs.y,curs.x).view=true;
     var vs=[];
     //var o=curs;
+    for (var oi=oaa.length-1;oi>=0;oi--) {
+    var o=oaa[oi];
     if (o) {
-    var rad=o.viewlen,rad2=rad*rad,c=0,
-        x0=round(o.x),y0=round(o.y+o.eyeh),z0=round(o.z);//Math.floor(o.x+0.5),y0=Math.floor(o.y+0.5),z0=Math.floor(o.z+0.5);
+    var rad=o.viewlen||7,rad2=rad*rad,c=0,
+        x0=round(o.x),y0=round(o.y+(o.eyeh||1)),z0=round(o.z);//Math.floor(o.x+0.5),y0=Math.floor(o.y+0.5),z0=Math.floor(o.z+0.5);
     //onsole.log('deep.setView '+x0+' '+y0+' '+z0);
+    var oa=o.a;
+    if (o.roty!==undefined) oa=-o.roty+PI/2;
     for (var zh=-rad;zh<=rad;zh++) for (var yh=-rad;yh<=rad;yh++) for (var xh=-rad;xh<=rad;xh++) {
       var l=zh*zh+xh*xh+yh*yh;
       if (l>rad2) continue;
@@ -204,10 +219,10 @@ var Deep=function(ps) {
       if (l>0) {
         if ((zh!=0)||(xh!=0)) {
           var a=Math.atan2(zh,xh);
-          var da=o.a-a;
+          var da=oa-a;
           if (da>PI) da-=2*PI;
           if (da<-PI) da+=2*PI;
-          if (Math.abs(da)>o.viewa) continue;
+          if (Math.abs(da)>(o.viewa||1.57)) continue;
         }
         //check view line
         if (!viewline(x0,y0,z0,xh,yh,zh,l)) continue;
@@ -226,7 +241,10 @@ var Deep=function(ps) {
       vs.push(r);
     }
     }
-    
+    //onsole.log('deep.setViews '+c);
+    //onsole.log(o);
+    }
+    //onsole.log(oa);
     var change=false;
     if (vs.length!=ovs.length) change=true; else 
     for (var i=0;i<ovs.length;i++) if (!ovs[i].view) { change=true;break; }
@@ -235,7 +253,9 @@ var Deep=function(ps) {
     //console.log('Deep.setView c='+c);
     //img=null;
   }
-  
+  function setView(o) {
+    setViews([o]);
+  }
   this.toggleCrouch=function(o) {
     if (o.crouch) {
       o.yw=2;
@@ -363,7 +383,6 @@ var Deep=function(ps) {
     return 0;
     //...
   }
-  
   function dist(o0,o1) {
     var dx=o0.x-o1.x;
     var dy=o0.y-o1.y;
@@ -383,7 +402,6 @@ var Deep=function(ps) {
     var a=Math.atan2(dx,dz)-PI/2+(dea===undefined?0:dea);
     return dAnglea(o,a);
   }
-  
   this.tickBane=function() {
     var o=this,r=getR(round(o.z),round(o.y),round(o.x)),
         view=r?r.view:false,
@@ -449,26 +467,28 @@ var Deep=function(ps) {
     //if (o.t>500) { o.da=o.da==1?-1:1;o.t=0; }
     //o.a+=0.001*dt;
   }
-  
   this.setRH=function(h) {
     rH=h;newView=true;
+    this.rH=rH;
+  }
+  this.checkObjVis=function(o) {
+    //...
+    for (var z=o.z+o.zw-1;z>=o.z;z--)
+    for (var y=o.y+o.yw-1;y>=o.y;y--)
+    for (var x=o.x+o.xw-1;x>=o.x;x--)
+      if (getR(z,y,x).view) return true;
+    return false;
+    //...
   }
   this.dist=dist;
   this.dAngle=dAngle;
   this.rH=rH;
   this.getR=getR;
+  this.setViews=setViews;
   //----
-  console.log('Deep v.'+version);//+' '+dist);//...
+  console.log('Deep '+version);//+' '+dist);//...
 }
 
 //fr o,1
-//fr o,1,5
-//fr o,1,6
-//fr o,1,10
-//fr o,1,14
-//fr o,1,16
-//fr o,1,18
-//fr o,1,21
-//fr o,1,24
-//fr o,1,43
-//fr p,15,165
+//fr o,1,29
+//fr p,25,31

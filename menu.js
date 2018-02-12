@@ -107,8 +107,9 @@ var Menu={};
       var am=m.autovalm;
       //am.s=a;
       if (am.lskey) localStorage[am.lskey]=a;
-      if (am.setfunc) am.setfunc(a);
       if (am.autoval==2) { am.ms=m.a||m.s; }
+      if (am.setfunc) am.setfunc(a);
+      //if (am.autoval==2) { am.ms=m.a||m.s; }
       if (am.autovala) { am.a=m.a; }
     } 
     
@@ -910,9 +911,11 @@ var Menu={};
 
 //--
 //fr o,2
+//fr o,2,27
+//fr o,2,29
 //fr o,2,36
 //fr o,2,38
 //fr o,2,39
 //fr o,2,46
 //fr o,2,48
-//fr p,44,154
+//fr p,4,74

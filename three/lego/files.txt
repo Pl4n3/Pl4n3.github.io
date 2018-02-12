@@ -1,1 +1,1 @@
-[{"fn":"lego/roof0.txt"},{"fn":"lego/test.txt"}]
+[{"fn":"lego/marble0.txt"},{"fn":"lego/extfmt.txt"},{"fn":"lego/roof0.txt"},{"fn":"lego/onebrick.txt"},{"fn":"lego/smallestRooms.txt"},{"fn":"lego/ramp1.txt"},{"fn":"lego/ramp0.txt"},{"fn":"lego/boot.txt"},{"fn":"lego/smallRooms.txt"},{"fn":"lego/test.txt"}]

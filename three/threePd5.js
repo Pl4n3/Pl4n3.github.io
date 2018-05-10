@@ -48,9 +48,23 @@ function threeTexture(ts,o5,tlOnload) {
     //onsole.log('threeTexture load '+(threeEnv.path+ts)+' threeTL='+threeTL);
     //onsole.log(threeEnv);
     var fn=ts.startsWith('/')?ts:threeEnv.path+ts;
-    text=(threeTL&&!threeEnv.noThreeTL)?threeTL.load(fn,tlOnload||threeEnv.texLoaded):
-      THREE.ImageUtils.loadTexture(fn,undefined,threeEnv.texLoaded);
-    threeTexH[ts]=text;
+    console.log('threeTexture '+fn);
+    if (fn.endsWith('.json')) {
+      var img=document.createElement('img');
+      text=new THREE.Texture(img);
+  Conet.download({fn:fn,f:function(v) {
+    var o=JSON.parse(v);
+    img.text=text;
+    img.o5=o5;
+    img.onload=threeImgOnload;
+    img.src=o.data;
+  }
+      });
+    } else {
+      text=(threeTL&&!threeEnv.noThreeTL)?threeTL.load(fn,tlOnload||threeEnv.texLoaded):
+        THREE.ImageUtils.loadTexture(fn,undefined,threeEnv.texLoaded);
+      threeTexH[ts]=text;
+    }
   }
   if (text) {
   text.wrapS=THREE.RepeatWrapping;
@@ -151,14 +165,24 @@ function threeSetMeshMaterial(m,lo) {
   var shader=THREE.ShaderLib["normalmap"];
   if (!shader) {
     //onsole.log('threeSetMeshMaterial: no shaderlib normalmap');
-    m.material=new THREE.MeshPhongMaterial({
+    //console.log(JSON.stringify(lo,undefined,' '));
+    var ph={
       //color:0x777777
-      color:ambient,
+      color:ambient,//ambient,
+      //color:0x000000,
       specular:specular,
       shininess:shininess,
       map:diff,specularMap:spec,normalMap:norm,
       reflectivity:0.2,
-    });//wireframe:true});
+    };
+  
+    
+    if (lo.ps) {
+      if (lo.ps.color!==undefined) ph.color=lo.ps.color;
+      if (lo.ps.shininess!==undefined) ph.shininess=lo.ps.shininess;
+    }
+    //onsole.log('threeSetMeshMaterial '+(lo.ps?'ps':'-'));
+    m.material=new THREE.MeshPhongMaterial(ph);
     return;
   }
   				var uniforms=THREE.UniformsUtils.clone( shader.uniforms );
@@ -267,9 +291,9 @@ function threeInit(ps) {
   
   				// LIGHTS
   
-  
-  				var ambientLight = new THREE.AmbientLight(0x555555);//111
-  				scene.add( ambientLight );
+  var ambientLight = new THREE.AmbientLight(0x555555);//111
+  scene.add( ambientLight );
+  threeEnv.ambientLight=ambientLight;
   
   				
   var 				pointLight = new THREE.PointLight( 0xff9900 );
@@ -500,17 +524,18 @@ function threeBane(noSceneAdd) {
   //threeAddObj(10,2,0,30);
   return lo;
 }
-function threeRender() {
+function threeRender(dt) {
   //				requestAnimationFrame( animate );
   //if (Math.abs(r-10)<0.0001) threeAddObj(10,2,0,30);
   
   
   var ry=0,rx=0.4;
-  var t=new Date().getTime(),
-      //dt=Math.floor((t-threeEnv.ot)*threeEnv.dtscale+0.5);
-      dt=(t-threeEnv.ot)*threeEnv.dtscale;
-      
-  threeEnv.ot=t;
+  if (dt===undefined) {
+    var t=new Date().getTime();
+    //dt=Math.floor((t-threeEnv.ot)*threeEnv.dtscale+0.5);
+    dt=(t-threeEnv.ot)*threeEnv.dtscale;
+    threeEnv.ot=t;
+  }    
   
   
   for (var obi=threeEnv.os.length-1;obi>=0;obi--) {
@@ -809,6 +834,7 @@ function DungeonGeometry(ps,view) {
   scope.addGroup( groupStart, groupCount, 0 );
   groupStart += groupCount;
   
+  //onsole.log('DungeonGeometry indices.len='+indices.length);
   
   this.setIndex( indices );
   this.addAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 ) );
@@ -825,9 +851,8 @@ if (window.THREE) {
   DungeonGeometry.prototype.constructor=DungeonGeometry;
   //onsole.log('threePd5: DungeonGeometry inited.');
 }
-//fr o,13
-//fr o,14
-//fr o,16
-//fr o,24
+//fr o,9,33
+//fr o,10
+//fr o,22
 //fr o,24,52
-//fr p,26,17
+//fr p,18,90

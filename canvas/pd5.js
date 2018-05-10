@@ -186,19 +186,23 @@ var Pd5={};
     return t;
   }
   Pd5.load=function(s) {
-    //console.log('Pd5.load '+s.length);
-    
-    //try {
-      var fh=new Function('','return {'+s+'};');
-      //console.log('Pd5.load parsed.');
-      try {
-        var h=fh();
-        return Pd5.loadh(h);
-      } catch (re) {
-        console.warn('Pd5.load runtime error: '+re);
-        console.log(re);
+    try {
+      var h;
+      if (s.startsWith('{')) h=JSON.parse(s); else {
+        var fh=new Function('','return {'+s+'};');
+        h=fh();
       }
-    //} catch (se) {  console.warn('Pd5.load syntax error: '+se); }
+      return Pd5.loadh(h);
+    } catch (re) {
+      //console.warn('Pd5.load error: '+re);
+      console.log(re);
+      var sh=''+re,i=sh.indexOf('at position');
+      if (i!=-1) {
+        sh=sh.substr(i+12);
+        i=parseInt(sh);
+        console.log('Bad json: '+s.substr(Math.max(0,i-10),20));
+      }
+    }
   }
   Pd5.loadh=function(h) {
     
@@ -960,7 +964,7 @@ var Pd5={};
     
   }
   Pd5.animText=function(o,st) {
-    console.log('Pd5.animText '+st);
+    //onsole.log('Pd5.animText '+st);
     //var matChange=false;
     var a=st.split('\n');
     for (var i=a.length-1;i>=0;i--) {
@@ -1268,7 +1272,7 @@ var Pd5={};
         if (keep) if (to[k]!==undefined) continue;
         if (!(woh&&woh[k])) to[k]=from[k];
       }
-      return;
+      return to;
     }
     for (var ki=0;ki<ka.length;ki++) {
       var k=ka[ki],v=from[k];
@@ -1276,6 +1280,7 @@ var Pd5={};
       if (keep) if (to[k]!==undefined) continue;
       to[k]=v;
     }
+    return to;
   }
   Pd5.modAnims=function(bi,ph) {
     var o=ph.o;
@@ -1515,7 +1520,7 @@ var Pd5={};
       if (cv&&(cv!=1)) cvh[cv]=v;
     }
     //console.log(cvh);
-    c=0;
+    c=0;var normalc=0;
     //if (false) 
     for (var h=o0.verts.length-1;h>=0;h--) {
       var v=o0.verts[h];
@@ -1526,7 +1531,7 @@ var Pd5={};
         if (ih==-1) v[s]=1; else v[s.substr(0,ih)]=s.substr(ih+1);
       }
       //if (v.mark!='pant0r') continue;
-      var cv=v[key+'r'];
+      var cv=v[key+'r']||v[key+'n'];
       if (!cv) continue;
       var vnn=undefined,vnc=0;
       if (cv!=1) {
@@ -1565,6 +1570,14 @@ var Pd5={};
           vnc++;
         }
       }
+      
+      if (v[key+'n']) {
+        if (v.nv) { vnn.nv=v.nv; } else { vnn.nv=v; } normalc++;
+        ////console.log('Pd5.combine vnn.nvi='+vnn.nvi);
+        continue;
+      }
+      
+      
       //---now all tris of v must be reconnected to vnn, then remove v ((((and if vnc==1 remove its weights)))
       for (var mi=o0.meshes.length-1;mi>=0;mi--) {
         var m=o0.meshes[mi];
@@ -1582,11 +1595,19 @@ var Pd5={};
       //v.ws=[];
     }
     console.log('Pd5.combine replaced '+c+' verts.');
+    if (normalc>0) console.log('Pd5.combine normal-set '+normalc+' verts.');
     }
     
     //if (false) 
     {
     o0.verts=o0.verts.concat(o1.verts);
+    //---
+    for (var i=o0.verts.length-1;i>=0;i--) {
+      var v=o0.verts[i];
+      if (!v.nv) continue;
+      v.nvi=o0.verts.indexOf(v.nv);
+    }
+    
     //console.log(m1.fa[0].v0.ws[0]);
     
     //var mn={fa:[]}
@@ -1988,12 +2009,12 @@ var Pd5={};
 
 //---
 //fr o,2
+//fr o,2,31
 //fr o,2,37
-//fr o,2,38
 //fr o,2,40,75
-//fr o,2,42
+//fr o,2,46
 //fr o,2,46,44
 //fr o,2,47,1
 //fr o,2,47,2
 //fr o,2,47,2,3
-//fr p,2,130
+//fr p,60,508

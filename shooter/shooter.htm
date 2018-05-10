@@ -183,7 +183,7 @@ var params={};
 var isGlge=false;
 var isMagic3d=false;
 var camdr=0;
-var wloomVersion='Wloom 0.16.1810 ';//FOLDORUPDATEVERSION;
+var wloomVersion='Wloom 0.16.1870 ';//FOLDORUPDATEVERSION;
 var loadC=0;
 var iso=false;
 var doPhysicsBeam=true,doPhysicsCalc=true;
@@ -249,7 +249,7 @@ var vr=false;//if script vr, remove this declaration
 var loadPd5A=[],loadIndex=0,loadPd5Start=1,scanv,beamdebug='',physClusters,camSmooth=1,loadGets={},
     onFullscreenPointerLock=true,vrstate,vrquat,screenDumps=[],makeScreenDump=false,screenshotTimer,gvol=1,touches={},mtouch={ml:0},
     escale=1,billboards=[],mipmap=true,vrInput,resChanged=false,phoneVr=undefined,bbcam=[],useEyewb=false,noAnims=false,physDampE=0.005,
-    mresolution,mfullscreen,mrenderer,capturer,gtime=0,mCrouch,twinstick=false,noGamepad=false,twinstickDefviewa=undefined;
+    mresolution,mfullscreen,mrenderer,capturer,gtime=0,mCrouch,twinstick=false,noGamepad=false,twinstickDefviewa=undefined,gamepad;
     
 function physClusterInit(p) {
   if ((!physClusters)||physTris.length==0) return;
@@ -1514,8 +1514,10 @@ function finishPhysTris(o) {
     }
     
     if (!o5.fa) o5.fa=o5.meshes[0].fa;
-    for (var h=o5.fa.length-1;h>=0;h--) {
-      var t=o5.fa[h];
+    for (var mi=o5.meshes.length-1;mi>=0;mi--) {
+      var fa=o5.meshes[mi].fa;
+    for (var h=fa.length-1;h>=0;h--) {
+      var t=fa[h];
       if (t.p) if (t.p.coll=='v') continue;
       var p0=t.v0.p1;
       var p1=t.v2.p1;
@@ -1528,7 +1530,7 @@ function finishPhysTris(o) {
       physTriAdd(t={p0:new Vecmath.Vec3(x0,y0,z0),
                     p1:new Vecmath.Vec3(x1,y1,z1),
                     p2:new Vecmath.Vec3(x2,y2,z2)});
-    }
+    }}
     
     
     if (o.rot) for (var h=o5.verts.length-1;h>=0;h--) {
@@ -1687,11 +1689,11 @@ function camStuff(moreEye) {
   if (o&&twinstick&&!fixCam) {
     camo.x=o.x;camo.y=o.y;camo.z=o.z;camo.dox=o.dox;camo.doz=o.doz;
     if (twinstick==2) {
-      if (!moused[1]&&!moused[2]&&!moused[3]&&!game.viewdef) {
-      var da=dAng(o.rot,camdr),md=dt*0.002;
-      if (Math.abs(da)<=md) camdr=o.rot; else 
-        //camdr=o.rot-da+md*(da<0?-1:1);//
-        camdr+=md*(da<0?-1:1);
+      if (!moused[1]&&!moused[2]&&!moused[3]&&!game.viewdef&&game.camRotBack) {
+        var da=dAng(o.rot,camdr),md=dt*0.002;
+        if (Math.abs(da)<=md) camdr=o.rot; else 
+          //camdr=o.rot-da+md*(da<0?-1:1);//
+          camdr+=md*(da<0?-1:1);
       }
     }
   } else if (o&&!fixCam) {
@@ -1789,24 +1791,39 @@ function stick0(dx,dy) {
   //...
 }
 function stick1(dx,dy,stayView) {
-  var on,gmi=0.3;
+  var on,gmi=gamepad?0.2:0.1,setcamdr=false,setcamax=false;
+  
+  //now setting absolute camAx,camdr, works better than 
+  //continously inc-/decreasing value, now gmi=0.1 before it was 0.3
+  
+  var gpf=gamepad?2:1;
   
   if (twinstick==2) {
     //game.viewdef=0;
     //if (1) {
-    var changeView=Math.abs(dx)>gmi;
+    var changeView=(Math.abs(dx)>gmi);//||(Math.abs(camdr-(game.ocamdr||camdr))>0.05);
     if (stayView||changeView) { 
       if (changeView) {
-        var speed=Math.min(1,(Math.abs(dx)-gmi)/(1-gmi));speed*=speed;
-        camdr=camdr-0.005*dt*speed*(dx<0?-1:1);
+        //var speed=Math.min(1,(Math.abs(dx)-gmi)/(1-gmi));speed*=speed;
+        //camdr=camdr-0.005*dt*speed*(dx<0?-1:1);
+        var ncamdr=(gamepad?ego.rot:game.ocamdr)
+          -dx*PI/2*gpf;
+        if (gamepad) {
+          //camdr=camdr*0.95+ncamdr*0.05;
+          var d=ncamdr-camdr;
+          camdr+=(d<0?-1:1)*Math.min(Math.abs(d),dt*0.003);
+        } else 
+          camdr=ncamdr;
+        setcamdr=true;
       }
       game.viewdef=1;
-      game.viewdeft=1000;
+      game.viewdeft=stayView?0:1000;
       //og('camAx='+camAx);
     } else if (game.viewdef) {//&&!stayView) {
       game.viewdeft-=dt;
       if (game.viewdeft<=0) game.viewdef=0;
     }
+    //game.ccamdr=changeView;
     //}
   } else {
     on=dx<-gmi;if (mtLeft.on!=on) {mtLeft.on=on;ch=true;};//sometimes doesnt happens...log('left'+on);}
@@ -1814,11 +1831,18 @@ function stick1(dx,dy,stayView) {
   }
   //var dy=gp.axes[3];
   if (Math.abs(dy)>gmi) { 
-    var speed=Math.min(1,(Math.abs(dy)-gmi)/(1-gmi));speed*=speed;
-    camAx=Math.max(-1,Math.min(1.5,camAx+0.005*dt*speed*(dy<0?-1:1)));
-    //og('camAx='+camAx);
+    ////var speed=Math.min(1,(Math.abs(dy)-gmi)/(1-gmi));speed*=speed;
+    ////camAx=Math.max(-1,Math.min(1.5,camAx+0.005*dt*speed*(dy<0?-1:1)));
+    var ncamAx=(gamepad?0:game.ocamax)
+      +dy*PI/4*gpf;setcamax=true;
+    if (gamepad) {
+      var d=ncamAx-camAx;
+      camAx+=(d<0?-1:1)*Math.min(Math.abs(d),dt*0.003);
+    } else camAx=ncamAx;
+    ////og('camAx='+camAx);
   }
-  
+  if (!setcamdr) game.ocamdr=camdr;
+  if (!setcamax) game.ocamax=camAx;
   //...
 }
 function gamepadDo(gp) {
@@ -1938,7 +1962,7 @@ function draw() {
   
   var gamepads=navigator.webkitGetGamepads&&navigator.webkitGetGamepads();
   if (!gamepads) gamepads=navigator.getGamepads&&navigator.getGamepads();
-  var gamepad=gamepads?gamepads[0]:undefined;
+  gamepad=gamepads?gamepads[0]:undefined;
   //onsole.log(gamepads.length+' gamepads');
   //for (var h=0;h<gamepads.length;h++) console.log(gamepads[h].buttons.length);
   //if (gamepad) 
@@ -2435,7 +2459,9 @@ function draw() {
       pha[5]=(vz*Math.cos(o.rot)+vx*Math.sin(o.rot))*v;
       walk=true;
       //og('walk '+vh);
-    } 
+    } else {
+      if (game.physnoslide) { o.vx=0;o.vy=0;o.vz=0;o.physt=0;pha[3]=0;pha[5]=0; }
+    }
     
     //var phdt=10;//10
   
@@ -3826,7 +3852,8 @@ function keyDown(ev) {
     log('{camo.x:'+toS(camo.x,2)+',camo.y:'+toS(camo.y,2)+',camo.z:'+toS(camo.z,2)
     +',camdr:'+toS(camdr,2)+',camAx:'+toS(camAx,2)+',eyemd:'+toS(eyemd,2)
     +',fov:'+toS(threeEnv.camera.fov,2)+',eyeh:'+toS(eyeh,2)+'}');//p objsReset
-    
+    var o=ego;
+    o.vx=0;o.vy=0;o.vz=0;o.physt=0;
     //log('ego x:'+toS(ego.x/gscale,2)+',y:'+toS(ego.y/gscale,2)+',z:'+toS(ego.z/gscale,2)
     //+',rot:'+toS(ego.rot,2)+',camAx='+toS(camAx,2));//p objsReset
     
@@ -4689,8 +4716,7 @@ function loadTypObj(o) {
 <div id="fps" style="position:absolute;top:2px;left:4px;font-size:1.5em;user-select:none;-moz-user-select:none;-webkit-user-select:none;">Initializing...</div>
 <div id="log" style="position:absolute;top:27px;left:4px;font-size:0.7em;user-select:none;-moz-user-select:none;-webkit-user-select:none;"></div>
 </body></html><script>
-//fr o,283
+//fr o,294
 //fr o,311,294
 //fr o,329,19
-//fr o,335
-//fr p,0,75
+//fr p,74,328

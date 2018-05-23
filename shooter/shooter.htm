@@ -183,7 +183,7 @@ var params={};
 var isGlge=false;
 var isMagic3d=false;
 var camdr=0;
-var wloomVersion='Wloom 0.16.1870 ';//FOLDORUPDATEVERSION;
+var wloomVersion='Wloom 0.16.1874 ';//FOLDORUPDATEVERSION;
 var loadC=0;
 var iso=false;
 var doPhysicsBeam=true,doPhysicsCalc=true;
@@ -3684,7 +3684,12 @@ function loaded() {
   
   log('loading data '+(loadC++)+'.');
   game.dataLoading=0;
-  for (var k in params) if (params.hasOwnProperty(k)) if (k.startsWith('data_')) {
+  for (var k in params) if (params.hasOwnProperty(k)) {
+    if (k.startsWith('script_')) {
+      loadScript(params[k]); 
+      game.scriptsLoading--;
+    } else
+    if (k.startsWith('data_')) {
     game.dataLoading++;
   Conet.download({fn:params[k],k:k,f:function(v) {
     game.dataLoading--;
@@ -3694,7 +3699,7 @@ function loaded() {
     if ((game.scriptsLoading==0)&&(game.dataLoading==0)) startDraw();
   }
     });
-  }
+  }}
   loadScript('maps/'+s+'.js');
   
   
@@ -4716,7 +4721,9 @@ function loadTypObj(o) {
 <div id="fps" style="position:absolute;top:2px;left:4px;font-size:1.5em;user-select:none;-moz-user-select:none;-webkit-user-select:none;">Initializing...</div>
 <div id="log" style="position:absolute;top:27px;left:4px;font-size:0.7em;user-select:none;-moz-user-select:none;-webkit-user-select:none;"></div>
 </body></html><script>
-//fr o,294
-//fr o,311,294
+//fr o,291
+//fr o,308
+//fr o,311
+//fr o,311,299
 //fr o,329,19
-//fr p,74,328
+//fr p,16,662

@@ -1,12 +1,13 @@
 var Paint={};
 (function(Paint) {
   var canvas,ix,iy,id,iw,ih,oix,oiy,scale,oscale;
-  var version='0.1.3063 ';//FOLDORUPDATEVERSION
+  var version='0.1.3508 ';//FOLDORUPDATEVERSION
   var md=false,imx,imy,mx,my,omx,omy,moused=new Array(4),br=0,bg=0,bb=250,bp=0.1,bra=10;
   var touches={},TM_DRAW=1,TM_IMG=2,touchMode=TM_DRAW,touchlast;
   //var menuroots,menus;
-  var pickm,merase,mroots,mcolor,munerase,mcanvas,mpr,mbp,mbra,mrect,mmenu,mpage,mgif,mpat,mnorm,msetcol,mscript,mnormblend;
-  var mcut,mgiflb,mgiftr,mbrushnorm,mcolors,mcopybrush,mcutout,mcomain,mtexify,mvertsel,mpolygon,mselmv;
+  var pickm,merase,mroots,mcolor,munerase,mcanvas,mpr,mbp,mbra,mrect,mmenu,mpage,mgif,mpat,mnorm,msetcol,
+      mcut,mgiflb,mgiftr,mbrushnorm,mcolors,mcopybrush,mcutout,mcomain,mtexify,mvertsel,mpolygon,mselmv,
+      mbackground,mscript,mnormblend,mstayselv,mrload;
   var replay=false;//var erase=false,unerase=false,replay=false;
   var pra=[],pri=0,prr=-1,prg=-1,prb=-1,prp=-1,prra=-1,priw,prih,prmode,prgif=false,egif;//,skipDemo=true;,prer,pruner
   var sr={x:10,y:10,w:20,h:20};//{x:170,y:110,w:10,h:20};
@@ -19,7 +20,8 @@ var Paint={};
   var light={x:-10,y:-10,z:10};keyd=[],nbm=0;//normalblendmode
   var sal=true,medit3d;//meve=false;//menues and events?//standalone
   var lo,tccanvas,selv=[],wasTcDrag=false,isTouch=false,isInvertgreen=true;//w3dit object
-  var oda,pali={},trai=1,addPageAfterLoad=false,loadScale=1,lastBrush={x:0,y:0},copybrush,mtools,getva=[];
+  var oda,pali={},trai=1,addPageAfterLoad=false,loadScale=1,lastBrush={x:0,y:0},copybrush,mtools,getva=[],
+      mprocesscs,idimda,idima,adata=[],clearCanv=true;
   var pal=[
   {r:119,g:17,b:18},//0
   {r:4,g:119,b:242},
@@ -120,7 +122,7 @@ var Paint={};
     */
     ]
   },cutoutP;
-  var canvlo,wasBrush,acoH={},canvm,cfmenu,tridata=undefined,canvDraw=true,ctdraw;
+  var canvlo,wasBrush,acoH={},canvm,cfmenu,tridata=undefined,canvDraw=true,ctdraw,changec=0;
   //{verts:[[0,0],[1,0],[0.5,0.5]],tris:[[0,1,2]]};
   //seg0=cut(0,0,677,1024,338,0,0,0);
   //seg0.segs=[];var s1,s2;
@@ -161,7 +163,7 @@ var Paint={};
       //  window.open(c.toDataURL("image/png"),'PngExport'); 
       //} else 
       //  window.open(canvas.toDataURL("image/png"),'PngExport');
-      window.open(Paint.saveCanvas().toDataURL('image/png'),'PngExport');
+      windowDataUrl(Paint.saveCanvas().toDataURL('image/png'),'PngExport');
     } else if (a=='Info') {
       log('Draw: left mouse drag/1 touch drag<br>Position image: right mouse drag, mousewheel/2 touch drag, distance<br>Pick an other color: click/touch color menu, then image');
     } else if (m==merase) {
@@ -276,6 +278,8 @@ var Paint={};
       }
       //draw();
     } else if (a=='Move') {
+    //  mrect.s='RScale';
+    //} else if (a=='RScale') {
       var ctx=canvas.getContext('2d');
       if (nbm>0) {
         for (var i=0;i<pages.length;i++) {
@@ -347,7 +351,7 @@ var Paint={};
        buf=buf.slice(0, gf.end());
        for(var i = 0, chr = {}; i < 256; i++) chr[i] = String.fromCharCode(i);
        for (var v = '', l = buf.length, i = 0; i < l; i++) v += chr[buf[i]];
-       window.open('data:image/gif;base64,'+encode64(v),'Gif');
+       windowDataUrl('data:image/gif;base64,'+encode64(v),'Gif');
        
        
        //alert(gf);
@@ -467,8 +471,8 @@ var Paint={};
       //m.ms=nbm==0?'off':(nbm==1?'on':'on *');
       light.x=-10;light.y=-10;
       draw();
-    } else if (a=='exportpage') window.open(Paint.saveCanvas(false,true).toDataURL("image/png"),'PngExport');
-    else if (a=='exportpagejpeg') window.open(Paint.saveCanvas(false,true).toDataURL("image/jpeg"),'JpegExport');
+    } else if (a=='exportpage') windowDataUrl(Paint.saveCanvas(false,true).toDataURL("image/png"),'PngExport');
+    else if (a=='exportpagejpeg') windowDataUrl(Paint.saveCanvas(false,true).toDataURL("image/jpeg"),'JpegExport');
     else if (a=='norminvertgreen') { var d=id.data; for (var i=0;i<d.length;i+=4) d[i+1]=(128-d[i+1])+127; draw(); }
     else if (a=='norminvertred')   { var d=id.data; for (var i=0;i<d.length;i+=4) d[i]=(128-d[i])+127; draw(); }
     else if (startsWith(a,'col_')) {
@@ -622,23 +626,45 @@ var Paint={};
     //  mroots.splice(0,mroots.length,{s:'Ok'},{s:'Cancel'},{s:'Canvas Dimension',px:0.32,py:0.02,pw:1-0.49,ph:0.14,tf:1,fs:0.75});
     //}
   }
-  Paint.saveCanvas=function (half,onlyCanvas) {
+  Paint.saveCanvas=function (half,onlyCanvas,ps) {
+    if (!ps) ps={};
     if ((!pages)||onlyCanvas) {
       if (!half) {
         //if (lo) { //so that texture coords dont get exported
-        if (true) {//so that texture coords,brush,cutouts dont get exported
+        if (false) {
+          //so that texture coords,brush,cutouts dont get exported.
+          //with canvdraw obsolete and there was an android chrome bug
           var c=document.createElement('canvas');
           c.width=iw;c.height=ih;
           var ct=c.getContext('2d');
-          ct.putImageData(normalBlend?nbid:getId(),0,0);
+          var id0=normalBlend?nbid:getId();
+          var d=id0.data;
+          log('saveCanvas 1.0 '+d[0]+' '+d[1]+' '+d[2]+' '+d[3]); //---g=125
+          ct.putImageData(id0,0,0);
+          
+          id0=ct.getImageData(0,0,iw,ih);d=id0.data;
+          log('saveCanvas 1.1 '+d[0]+' '+d[1]+' '+d[2]+' '+d[3]); //---g=52
+                
           return c;
         }
+        if (canvm&&!ps.nocanvm) {
+          var c=document.createElement('canvas');
+          c.width=iw;c.height=ih;
+          var ct=c.getContext('2d');
+          ct.drawImage(canvas,0,0,iw,ih);
+          ct.globalAlpha=canvm.style.opacity;
+          ct.drawImage(canvm,0,0,iw,ih);
+          //og('saveCanvas 2');
+          return c;
+        }
+        //og('saveCanvas 3');
         return canvas;
       }
       var c=document.createElement('canvas');
       c.width=iw/2;c.height=ih/2;
       var ct=c.getContext('2d');
       ct.drawImage(canvas,0,0,iw/2,ih/2);
+      //og('saveCanvas 4');
       return c;
     }
     var c=document.createElement('canvas');
@@ -649,6 +675,7 @@ var Paint={};
     //ct.fillRect(0,0,10,10);
     for (var i=0;i<pages.length;i++) 
       ct.putImageData(pages[i].id,i*iw,0);
+    //og('saveCanvas 3');
     return c;
   }
   Paint.getPages=function () {
@@ -678,11 +705,15 @@ var Paint={};
     //}
     var a;
     switch (m) {
-      case MCOPYBRUSH:a=[mtools,mbp,mbra,mcopybrush];break;//mpr,
-      case MDRAW:   a=[mtools,mbp,mbra,mcolors,mcolor];break;//mpr,merase
-      case MERASE:  a=[mtools,mbp,mbra,mcolor,merase];break;//mpr,
-      case MUNERASE:a=[mtools,mbp,mbra,munerase];break;//mpr,
-      case MSELR:   a=[mtools,mrect,mcut,mtexify,mvertsel,mpolygon,mselmv];break;
+    //case MCOPYBRUSH:a=[mtools,mbp,mbra,mcopybrush];break;//mpr,
+    //case MDRAW:   a=[mtools,mbp,mbra,mcolors,mcolor];break;//mpr,merase
+    //case MERASE:  a=[mtools,mbp,mbra,mcolor,merase];break;//mpr,
+    //case MUNERASE:a=[mtools,mbp,mbra,munerase];break;//mpr,
+      case MCOPYBRUSH:a=[mtools,mcopybrush];break;//mpr,
+      case MDRAW:   a=[mtools,mcolors];break;//mcolor//mpr,merase
+      case MERASE:  a=[mtools,mcolor,merase];break;//mpr,
+      case MUNERASE:a=[mtools,munerase];break;//mpr,
+      case MSELR:   a=[mtools,mrect,mrscale,mrload,mcut,mtexify,mvertsel,mpolygon,mselmv,mstayselv];break;
       case MCUTOUT: a=[mtools,mcomain];break;
     }
     //alert(stacktrace());
@@ -721,7 +752,8 @@ var Paint={};
     );
   }
   function prSet(s) {
-    pra=s.split('\n');pri=0;mprMs(pra.length);;
+    pra=s.split('\n');pri=0;mprMs(pra.length);
+    pri=pra.length;
   }
   function round(v) {
     return Math.floor(0.5+v);
@@ -792,7 +824,7 @@ var Paint={};
       }
       if (prGifAlpha) { r=0;g=255;b=0;var c=(r<<16)|(g<<8)|b;egif.setTransparent(c); } else egif.setTransparent(null);
       var ct=canvas.getContext('2d');
-      var id1=gifId(id,ct,r,g,b);
+      var id1=gifId(getId(),ct,r,g,b);
       ct.putImageData(id1,0,0);
       egif.addFrame(ct);
       ct.putImageData(id,0,0);
@@ -807,7 +839,7 @@ var Paint={};
       egif.setDelay(2000);
       if (prGifAlpha) { r=0;g=255;b=0;var c=(r<<16)|(g<<8)|b;egif.setTransparent(c); } else egif.setTransparent(null);
       var ct=canvas.getContext('2d');
-      var id1=gifId(id,ct,r,g,b);
+      var id1=gifId(getId(),ct,r,g,b);//id
       ct.putImageData(id1,0,0);
       egif.addFrame(ct);
       ct.putImageData(id,0,0);
@@ -816,7 +848,7 @@ var Paint={};
       var durl='data:image/gif;base64,'+encode64(b);
       prgif=false;
       console.log('Exporting gif.');
-      window.open(durl,'Gif');
+      windowDataUrl(durl,'Gif');
       egif=undefined;
       return;
     }
@@ -825,6 +857,13 @@ var Paint={};
     //else window.open(canvas.toDataURL("image/png"),'PngExport'+pri);
   }
   function clearFill(r,g,b,a) {
+    if (!id) {
+      var ct=canvas.getContext('2d');
+      ct.clearRect(0,0,iw,ih);
+      ct.fillStyle='rgba('+r+','+g+','+b+','+(a/255)+')';
+      ct.fillRect(0,0,iw,ih);
+      return;
+    }
     var d=id.data;
     for (var h=d.length/4-1;h>=0;h--) {
       var i=h*4;
@@ -833,7 +872,7 @@ var Paint={};
     
   }
   function clear(allPages) {
-    var d=id.data;
+    //var d=id.data;
     if (normal) clearFill(128,128,255,255); else clearFill(0,0,0,0);
     //if (sal) clearFill(0,0,0,0); else clearFill(100,100,100,255);
     
@@ -851,7 +890,7 @@ var Paint={};
     */
     
     
-    if (allPages&&pages) {
+    if (id) if (allPages&&pages) {
       var ctx = canvas.getContext('2d');
       pagei=0;
       pages[pagei]={id:id,pra:pra};
@@ -901,7 +940,8 @@ var Paint={};
         try {
         cutout=JSON.parse(this.responseText);
         if (mode==MCUTOUT) draw();
-        log('Cutout loaded from url: '+cutout.rects.length+' rects.');
+        log('Cutout loaded from url: '+(cutout&&cutout.rects?cutout.rects.length:0)+' rects.');
+        //alert(this.responseText);
         } catch (e) { log('Error while loading cutout: '+e); }
       }
     }
@@ -915,7 +955,7 @@ var Paint={};
     var img=new Image();
     img.onload=function() {
       nbid=undefined;
-      //onsole.log('loadDataUrl.onload 0');
+      console.log('loadDataUrl.onload 0');
       if ((loadpagec>1)||addPages) {
         //alert('whee');
         var pc=loadpagec;
@@ -926,7 +966,10 @@ var Paint={};
         iw=this.width/pc;ih=this.height/pcy;
         canvas.width=iw;canvas.height=ih;
         canvas.style.width=iw*scale;canvas.style.height=ih*scale;
-        canvm.width=iw;canvm.height=ih;
+        if ((canvm.width!=iw)||(canvm.height!=ih)) { 
+          //onsole.log('loadDataUrl.onload resizing canvm');
+          canvm.width=iw;canvm.height=ih; 
+        }
         canvm.style.width=iw*scale;canvm.style.height=ih*scale;
         
         var pageoffs=0;
@@ -964,7 +1007,7 @@ var Paint={};
           iw=this.width*loadScale;ih=this.height*loadScale;
           canvas.width=iw;canvas.height=ih;
           canvas.style.width=iw*scale;canvas.style.height=ih*scale;
-          canvm.width=iw;canvm.height=ih;
+          if ((canvm.width!=iw)||(canvm.height!=ih)) { canvm.width=iw;canvm.height=ih; }
           canvm.style.width=iw*scale;canvm.style.height=ih*scale;
           //var cm=canvm.getContext('2d');
           //cm.strokeStyle='#f00';
@@ -1019,7 +1062,7 @@ var Paint={};
               page.color=[128,128,255];
             }
             if (ihh==0) normal=true;
-            nbm=2;
+            nbm=2;//2;
           }
           //log('---'+sh);
         }
@@ -1135,7 +1178,8 @@ var Paint={};
     var ba=255;
     
     var iscp=((mode==MCOPYBRUSH)&&copybrush);
-    if (canvDraw&&(mode==MDRAW)) {
+    var normalud=normal&&(normalMode!=NMCOL);
+    if (canvDraw&&(mode==MDRAW)&&!normalud) {
       //onsole.log('brush '+nopr);
       if (!nopr||!ctdraw) {
         var ct=canvas.getContext('2d');
@@ -1187,7 +1231,7 @@ var Paint={};
         var or=d[di],og=d[di+1],ob=d[di+2],oa=d[di+3];
         
         //var keyU=false,keyD=true;
-        if (normal&&(normalMode!=NMCOL)) {
+        if (normalud) {
           var n0x=or*2/255-1,n0y=og*2/255-1,n0z=ob*2/255-1,n0l=Math.sqrt(n0x*n0x+n0y*n0y+n0z*n0z);
           n0x/=n0l;n0y/=n0l;n0z/=n0l;
           
@@ -1258,15 +1302,17 @@ var Paint={};
       }
     }
     if (pages) pages[pagei].change=true;
-    wasBrush=true;
+    wasBrush=true;changec++;
   }
   function mcolorCol() {
-    mcolor.bgcol='rgb('+br+','+bg+','+bb+')';
-    //mcolor.ms=br+'\u00b7'+bg+'\u00b7'+bb;
-    if (mcolor.c) {
-      mcolor.c.style.backgroundColor=mcolor.bgcol;
-      mcolor.c.style.color=br+bg+bb<100?'rgb(250,250,250)':'rgb(0,0,0)';
-    }
+    mcolors.bgcol='rgb('+br+','+bg+','+bb+')';
+    //mcolor.bgcol='rgb('+br+','+bg+','+bb+')';
+    ////mcolor.ms=br+'\u00b7'+bg+'\u00b7'+bb;
+    if (mcolors.c) mcolors.c.style.backgroundColor=mcolors.bgcol;
+    //if (mcolor.c) {
+    //  mcolor.c.style.backgroundColor=mcolor.bgcol;
+    //  //mcolor.c.style.color=(br+bg+bb)<100?'rgb(250,250,250)':'rgb(0,0,0)';
+    //}
   }
   function getId() {
     if (!id) id=canvas.getContext('2d').getImageData(0,0,iw,ih);
@@ -1437,7 +1483,10 @@ var Paint={};
     if (!pages) return;
     var page=pages[pagei];
     //if (!page) 
-    if (page) page.color=[br,bg,bb];
+    if (page) {
+      page.color=[br,bg,bb];
+      page.id=getId();
+    }
     
     pagei=i;//(pagei+1)%pages.length;
     
@@ -1467,7 +1516,7 @@ var Paint={};
   }
   function arc(x,y,r) {
     var ctx=canvas.getContext('2d');
-    ctx.putImageData(id,0,0)
+    ctx.putImageData(getId(),0,0)
     ctx.strokeStyle='rgb('+br+','+bg+','+bb+')';
     //ctx.fillText(s,x,y);
     ctx.beginPath();
@@ -1507,7 +1556,7 @@ var Paint={};
     var done=false;
        var mav=getv(x*scale,y*scale,false,isTouch?2000:undefined,true);
        if (mav) {
-         if (wasTcDrag) selv.splice(0,selv.length);
+         if (wasTcDrag&&!mstayselv.checked) selv.splice(0,selv.length);
          wasTcDrag=false;
          //if (selv.indexOf(mav)==-1) selv.push(mav);
          for (var h=getva.length-1;h>=0;h--) {
@@ -1518,7 +1567,7 @@ var Paint={};
          if (!isTouch) { imx=omx;imy=omy; }
          draw(true);
          done=true;
-       } else {
+       } else if (!mstayselv.checked) {
          if (selv.length>0) {
            selv.splice(0,selv.length);
            draw(true);
@@ -1601,6 +1650,7 @@ var Paint={};
   function cutoutGet(x,y) {
     //--
     var mad=500,mav=undefined;
+    if (cutout&&cutout.rects)
     for (var h=cutout.rects.length-1;h>=0;h--) {
       var r=cutout.rects[h];
       var dx=x-r.cx*scale,dy=y-r.cy*scale,d=dx*dx+dy*dy;if (d<mad) { mad=d;mav={x:r.cx,y:r.cy,r:r,ri:h,c:true}; }
@@ -1631,7 +1681,34 @@ var Paint={};
     r.send(null)
     } catch (e) { alert(e); }
   }
-  
+  function windowDataUrl(url,s) {
+    var img=new Image();img.src=url;
+    if (1) {
+      var w=window.open();//'','test');//'',s);//'JpegExport');
+      //var s=img.style;s.width='100px';s.height='100px';
+      var body=w.document.body;
+      body.style.backgroundColor='#440';
+      body.appendChild(img);
+      //w.document.write('Hello World.');
+    } else { //tried this since window.open doesnt work with mobile webapp
+      var c=document.createElement('div'),s=c.style;
+      s.position='absolute';s.left='50px';s.top='50px';
+      s.userSelect='auto';s.MozUserSelect='auto';s.WebkitUserSelect='auto';//doesnt work (button not clickable and image not saveable on mobile)
+      var b=document.createElement('button');b.innerHTML='close';
+    b.onclick=function() {
+      document.body.removeChild(c);
+    }
+      c.appendChild(b);c.appendChild(document.createElement('br'));
+      //following oncontextmenu doesnt work, tried to make image saveable
+    c.appendChild(img);img.oncontextmenu=function() {
+      return true;
+    }
+      document.body.appendChild(c); 
+    }
+    //w.document.location='#';//'#'+Math.random();
+    //console.log(w.document.location);
+    //...
+  }
   //---
   function cDown(x,y) {
     if (mode==MMOVE) {
@@ -1729,13 +1806,18 @@ var Paint={};
         canvlo=c;
       }
       var ct=c.getContext('2d');
-      ct.putImageData(id,0,0);
-      console.log('paint.cUp');
-      console.log(m);
+      ct.putImageData(getId(),0,0);//id
+      pages[pagei].id=id;
+      //onsole.log('paint.cUp');
+      //onsole.log(m);
+      //nbid=undefined;
       var text=pagei==0?m.tdiff:(pagei==1?m.tnorm:m.tspec);
       text.image.src=c.toDataURL('image/jpeg');
       //m.tdiff.needsUpdate=true;
       //lo.drawNew=true;
+      
+      draw();
+      setPage(pagei);//| this is needed for normalBlendMode to update
     }
     wasBrush=false;
     
@@ -1861,15 +1943,14 @@ var Paint={};
     var scale0=scale;
     scale*=(up?1.2:1/1.2);
     
-    canvas.style.width=iw*scale;
-    canvas.style.height=ih*scale;
+    //canvas.style.width=iw*scale;canvas.style.height=ih*scale;
     ix=Math.floor(mx-(mx-ix)*scale/scale0+0.5);
     iy=Math.floor(my-(my-iy)*scale/scale0+0.5);
-    canvas.style.top=iy;
-    canvas.style.left=ix;
-    
-    canvm.style.left=ix+1;canvm.style.top=iy+1;
-    canvm.style.width=iw*scale;canvm.style.height=ih*scale;
+    isize();
+    //canvas.style.top=iy;canvas.style.left=ix;
+    //canvas.style.width=iw*scale;canvas.style.height=ih*scale;
+    //canvm.style.left=ix+1;canvm.style.top=iy+1;
+    //canvm.style.width=iw*scale;canvm.style.height=ih*scale;
     
     //bra=Math.floor(10/scale+0.5);
     
@@ -1988,9 +2069,10 @@ var Paint={};
       //mousep=c;
       //odx=dx;ody=dy;vx=0;vy=0;
     }
-    
-    if (e.preventDefault) e.preventDefault();
-    if (e.stopPropagation) e.stopPropagation();
+    if (!Menu.mcontrol) {
+      if (e.preventDefault) e.preventDefault();
+      if (e.stopPropagation) e.stopPropagation();
+    }
   }
   function touchEnd(e) {
     if (!Menu.touchEnd()&&!replay&&(touchMode==TM_DRAW)) {
@@ -2043,7 +2125,71 @@ var Paint={};
     
     if (lo) W3dit.shortKeys(kc);
   }
-  
+  function isize() {
+    //onsole.log('isize '+ix+' '+iy);
+    canvas.style.top=iy;canvas.style.left=ix;
+    canvas.style.width=iw*scale;canvas.style.height=ih*scale;
+    
+    canvm.style.left=ix+1;canvm.style.top=iy+1;
+    canvm.style.width=iw*scale;canvm.style.height=ih*scale;
+    
+    //...
+  }
+  function conetLoad(v,atStart,callback,ps) {
+    if (!ps) ps={};
+    cutout=undefined;
+    Conet.download({fn:v,f:function(v0) {
+      if (!ps.dataUrlF) adata={};
+      var s;
+      Menu.setChecked(mprocesscs,false);
+      //if (v.endsWith('.json.txt')) {
+      if (v.indexOf('.json')!=-1) {
+        var d=JSON.parse(v0);
+        if (ps.dataUrlF) { ps.dataUrlF(d.data);return; }
+        loadDataUrl(d.data,undefined,callback);
+        if (d.cutout) cutout=d.cutout;
+        tridata=d.tridata;
+        if (s=d.background) mbackground.setfunc(s);
+        if (s=d.bp) mbp.setfunc(''+s);
+        if (s=d.bra) mbra.setfunc(''+s);
+        if (s=d.col) msetcol.setfunc(s[0]+','+s[1]+','+s[2]); 
+        if (s=d.process) { prSet(s);Menu.setChecked(mprocesscs,true); }
+        if (s=d.scale) scale=parseFloat(s);
+        if (s=d.ix) { ix=parseInt(s);isize(); }
+        if (s=d.iy) { iy=parseInt(s);isize(); }
+        if (s=d.layerDraw) 
+      conetLoad(s,undefined,undefined,{dataUrlF:function(v) {
+        //onsole.log('conetLoad.download.layerDraw='+s);
+        var img=new Image();
+        img.src=v;
+        img.onload=function() {
+          var ct=canvm.getContext('2d');
+          ct.drawImage(img,0,0);
+          clearCanv=false;
+          //...
+        }
+        //...
+      }
+      });  
+        
+        draw();
+        if (d.cutout) if (cutout.carves||(cutout.rects&&(cutout.rects.length>0))) cfmenu.checkListFile(v);
+        var sh={data:1,bp:1,bra:1,col:1,background:1,scale:1,ix:1,iy:1};
+        for (var k in d) if (d.hasOwnProperty(k)) if (!sh[k]) adata[k]=d[k];
+        //onsole.log('conetLoad adata=');onsole.log(adata);
+        //---sth cutout edit loads last loaded cutout on restart
+      } else {
+        //var i=v0.indexOf(',');
+        //console.log('paint.conetLoad '+v0.substr(0,i+1));
+        //console.log(atob(v0.substr(i+1)));
+        if (ps.dataUrlF) { ps.dataUrlF(v0);return; }
+        loadDataUrl(v0,undefined,callback);
+      }
+    }
+    });
+    
+    //...
+  }
   
   Paint.stacktrace=function() {
     function st2(f) {
@@ -2065,14 +2211,27 @@ var Paint={};
     c.addEventListener('resize',resize,false);
     c.addEventListener('keydown',keyDown,false);
     c.addEventListener('keyup',keyUp,false);
-    Menu.colBg='rgba(100,100,100,0.4)';
-    Menu.init(mroots,{diw:850});
+    //Menu.colBg='rgba(100,100,100,0.4)';
+    Menu.init(mroots,{diw:750});
     mrectMs();
     mcolorCol();
     //log('mode='+mode);
     if (mode==-1) mode=MDRAW;//mode was -1 via w3dit, but now no more
+    
+    //if (idima) {
+    if (!idima) { idima={ix:10,iy:10,scale:1}; }
+      ix=idima.ix;iy=idima.iy;scale=idima.scale;
+      isize();
+    //} else idima={ix:ix,iy:iy,scale:scale};
   }
   Paint.deactivate=function() {
+    //if (!idimda) idimda={ix:ix,iy:iy,scale:scale};else 
+    {
+      idima={ix:ix,iy:iy,scale:scale};
+      //ix=idimda.ix;iy=idimda.iy;scale=idimda.scale;
+      ix=0;iy=100;scale=50/iw;
+      isize();
+    }
     var c=window;//canvas;//window
     c.removeEventListener('mousemove',mouseMove,false);
     c.removeEventListener('mousedown',mouseDown,false);
@@ -2109,9 +2268,9 @@ var Paint={};
   Paint.loaded=function(aco,acoH_) {
     if (acoH_) acoH=acoH_;
     sal=!aco;//stand alone=!as component
-    var title='WePaint '+version;
+    var title='Wepaint '+version;
     if (sal) {
-      document.title=title;
+      document.title='Wepaint';//title; //better not version in title, else mobile webapp might show old version on startup
       
       /*
       var v0,v1,v2;
@@ -2127,6 +2286,7 @@ var Paint={};
     } 
     //alert(-105%100);
     log(title);
+    //log('Conet '+Conet.version);
     canvas=document.getElementById('pcanvas');
     //if (!canvas) {
     //  canvas=document.createElement('pcanvas');
@@ -2148,7 +2308,7 @@ var Paint={};
     iw=512;ih=512; 
     //iw=256;ih=256; 
     } else { iw=64;ih=64; }
-    scale=acoH.scale?acoH.scale:(sal?1:0.5);
+    scale=acoH.scale?acoH.scale:(sal?1:0.5);//1
     canvas.width=iw;canvas.height=ih;
     canvas.style.width=iw*scale;canvas.style.height=ih*scale;
     canvas.style.left=ix;canvas.style.top=iy;
@@ -2163,15 +2323,18 @@ var Paint={};
     canvm=document.createElement('canvas');
     canvm.width=iw;canvm.height=ih;
     canvm.style.cssText='position:absolute;top:'+(iy+1)+'px;left:'+(ix+1)+'px;width:'+canvm.width+'px;height:'+canvm.height+'px;';
+    
     //var cm=canvm.getContext('2d');
     //cm.strokeStyle='#f00';
-    //cm.strokeRect(0,0,canvm.width,canvm.height);
+    //cm.strokeRect(0,0,iw,ih);
+    //cm.strokeRect(iw/4,ih/4,iw/2,ih/2);
+    
     document.body.appendChild(canvm);
     
     
     
     //demo();
-    var script0='clearFill(0,0,0,0);\n'+
+    var mview,script0='clearFill(0,0,0,0);\n'+
     'brush(10,10);\n'+
     'draw();\n'+
     '//loadScale=0.5;\n';
@@ -2193,6 +2356,8 @@ var Paint={};
       var a=[
         //['rects',['x','y','w','h','cx','cy',['ps',['x','y']]],1],
         //['bones',['i','p','pp','z'],1],
+        //'carves',
+        ['carves',['p0','p1','bo','dabs','bbo'],1],
         ['rects',['x','y','w','h','cx','cy'],1],
         ['bones',['i','p','z','a','x','y','xs','ys','u','v'],1],
         ['tris',['p0','p1','p2','z']],
@@ -2227,7 +2392,6 @@ var Paint={};
       
     }
     
-    
     mcanvas=
     {s:'Dimension',doctrl:'Canvas Dimension',setfunc:function(v) {
       //alert('canvassetfunc '+v);
@@ -2252,10 +2416,7 @@ var Paint={};
     }
     };
     mcanvas.msf=mcanvas.valuef;
-    
-    
-    mtools={s:'Tools',sub:[mcolor=pickm={s:'Brush'},mrect={s:'Rect',ms:'-',msid:'mrectms'},merase={s:'Eraser'},munerase={s:'Uneraser'},mcopybrush={s:'Copy Brush'},mcutout={s:'Cutout'}]};
-    
+    mtools={s:'Tools',sub:[mcolor=pickm={s:'Brush',t_extShadow:'1px 1px 2px rgb(230,230,230)',r:1},mrect={s:'Rect',ms:'-',msid:'mrectms'},merase={s:'Eraser'},munerase={s:'Uneraser'},mcopybrush={s:'Copy Brush'},mcutout={s:'Cutout'}]};
     mscript={s:'Edit&middot;Run',doctrl:'Run script',cstay:true,lskey_:'paintscript0',mcfs:0.07,ta:true,tacols:50,tarows:20,ms:script0.length,value:script0,setfunc:function(v,initLoad) {
       this.value=v;
       this.ms=v.length;
@@ -2266,31 +2427,40 @@ var Paint={};
       } catch (e) { log(e); }
     }
     }
-    
-    
-    mroots=[mmenu={s:'Menu',sub:[
-    cfmenu=Conet.fileMenu({fn:'paint/files.txt',defFn:'test.png.txt',noStartLoad:1,
-    loadf:function(v) {
-      //--
-      Conet.download({fn:v,f:function(v0) {
-        if (v.endsWith('.json.txt')) {
-          var d=JSON.parse(v0);
-          loadDataUrl(d.data);
-          cutout=d.cutout;
-          tridata=d.tridata;
-          draw();
-        } else loadDataUrl(v0);
-      }
-      });
+    mcolors={s:'Color...',textShadow:'1px 1px 2px rgb(230,230,230)',sub:[]
+    ,actionf:function() {
+      this.bgcol='';
     }
+    };
+    var ca=[[0xff,0,0],[0xff,0x99,0x33],[0xff,0xff,0],[0xff,0x33,0xff],
+      [0x99,0,0x99],[0,0,0xff],[0,0xcc,0xff],[0x33,0xff,0],[0,0x99,0],
+      [0x99,0x66,0],[255,255,255],[175,175,175],[0,0,0]];
+    for (var i=0;i<ca.length;i++) {
+      var a=ca[i],sh=a[0]+','+a[1]+','+a[2];mcolors.sub.push({s:'',bgcol:'rgb('+sh+')',a:'col_'+sh,pw:0.05});
+    }
+    
+    cfmenu=Conet.fileMenu({fn:'paint/files.txt',defFn:'test.png.txt',filesRef:'paint',noStartLoad:sal?0:1,loadf:conetLoad
     ,savef:function(v) {
-      var data=Paint.saveCanvas().toDataURL('image/png');
-      if (v.endsWith('.json.txt')) {
+      var data=Paint.saveCanvas(undefined,undefined,{nocanvm:1}).toDataURL('image/'+(adata.saveJpg||v.endsWith('.jpeg.json.txt')?'jpeg':'png'));
+      //if (v.endsWith('.json.txt')) {
+      if (v.indexOf('.json')!=-1) {
         data='{'
-          +(cutout?'"cutout":'+cutoutStr()+',':'')
+          +(cutout&&((cutout.rects&&(cutout.rects.length>0))||cutout.carves)?'"cutout":'+cutoutStr()+',':'')
           +(tridata?'"tridata":'+JSON.stringify(tridata)+',':'')
-          +'"data":"'+data+'"}';
+          +(mbackground.ms!='checker'?'"background":"'+mbackground.ms+'",':'')
+          +'"bp":'+(drawConf.bp||bp)+','
+          +'"bra":'+(drawConf.bra||bra)+','
+          +'"col":['+br+','+bg+','+bb+'],'
+          +'"scale":'+scale+','
+          +'"ix":'+ix+','
+          +'"iy":'+iy+','
+          +(mprocesscs.checked?'"process":'+JSON.stringify(pra.join('\n'))+',':'')
+          +'"data":"'+data+'"';
+        //console.log('loaded.savef adata=');console.log(adata);
+        for (var k in adata) if (adata.hasOwnProperty(k)) data+='\n,"'+k+'":'+JSON.stringify(adata[k]);
+        data+='}';
       }
+      //if (1) console.log(data); else 
       Conet.upload({fn:v,data:data,f:function(d) {
         //onsole.log('paint.save 0');
         //onsole.log('paint.save d="'+d+'"');
@@ -2299,9 +2469,10 @@ var Paint={};
       });
       
     }
-    })
+    });
+    cfmenu.sub.push(
     
-    ,{s:'More IO',sub:[
+    {s:'More IO',sub:[
     //{s:'Load',ms:'file',a:'loadfile',doctrl:'Load file',file:1},
     {s:'Load',ms:'localStorage'},{s:'Save',ms:'localStorage'},
     {s:'Import',doctrl:'(Data)Url',lskey:'paintimport',ta:true,setfunc:function(v,initLoad) {
@@ -2323,21 +2494,36 @@ var Paint={};
       } catch (e) { log('Palette edit: '+e); }
     }
     },{s:'Set Palette',ms:'via NeuQuant.js'}]}
-    ]},{s:'Process',sub:[
-    mpr={s:'Process \u25ba',msid:'mprms',ms:pra.length},
-    {s:'Compress',ms:'Not lossless'},
-    {s:'Import',a:'primport',doctrl:'Process import',ms:'text',ta:true,value:'...',setfunc:function(v) {
-      prSet(v);//pra=v.split('\n');pri=0;
-      log('Process imported ('+pra.length+').');
+    ]}
+    
+    );
+    //------------
+    mroots=[mmenu={s:'Menu',sub:[
+    
+    mbp={s:'0.1',ms:'brush pressure',autoval:true,lskey:'wepaintbp',setfunc:function(v) {
+      bp=parseFloat(v);this.s=v;
+      if (mode==MERASE) eraseConf.bp=bp;
+      if (mode==MDRAW) drawConf.bp=bp;
     }
-    },{s:'Export',a:'prexport',ms:'text',doctrl:'Process export',valuef:function() {
-      return pra.join('\n');
+    ,sub:[{s:'0.01'},{s:'0.03'},{s:'0.05'},{s:'0.075'},{s:'0.1'},{s:'0.2'},{s:'0.3'},{s:'1'}]},
+    
+    mbra={s:'10',ms:'brush radius',autoval:true,lskey:'wepaintbra',setfunc:function(v) {
+      bra=parseInt(v);this.s=v;
+      if (mode==MERASE) eraseConf.bra=bra;
+      if (mode==MDRAW) drawConf.bra=bra;
     }
-    ,ta:true,close:true},{s:'Export',a:'prgif',ms:'process gif'}]}
+    ,sub:[{s:'1'},{s:'2'},{s:'3'},{s:'5'},{s:'10'},{s:'20'},{s:'30'},{s:'50'},{s:'100'}]}//3
+    ,mcolor,//mcolors,
+    
+    //{s:'Version '+version,fs:1.4,ph:0.02,noinp:1},
+    
+    cfmenu,
+    
+    
     //]},
-    ,{s:'Edit',sub:[mcanvas
+    {s:'Edit',sub:[mcanvas
       ,{s:'Clear',ms:'Bitmap & Process-list'}
-    ,{s:'Background',fs:0.75,ms:'checker',autoval:true,setfunc:function(v) {
+    ,mbackground={s:'Background',fs:0.75,ms:'checker',autoval:true,lskey:'wepaintbg',setfunc:function(v) {
       this.ms=v;
       if (v=='checker') {
         canvas.style.backgroundImage='url(paintbg.png)';
@@ -2364,6 +2550,7 @@ var Paint={};
        
        
     {s:'Scale',doctrl:'Scale page(s) to',setfunc:function(v) {
+      getId();
       var a=v.split('x');
       var w=a[0],h=a[1];
       var c=document.createElement('canvas');
@@ -2373,15 +2560,27 @@ var Paint={};
       canvas.style.width=w*scale;canvas.style.height=h*scale;
       var ctx=canvas.getContext('2d');
       
+      ////id=undefined;getId();
+      //var ch=document.createElement('canvas');ch.width=iw;ch.height=ih;var cht=ch.getContext('2d');
+      //cht.fillStyle='#0f0';cht.fillRect(0,0,ch.width,ch.height);cht.putImageData(id,0,0);
+      //document.body.appendChild(ch);
+      
+      
+      
+      //onsole.log('scale.setfunc pages:'+(pages?pages.length:'undef'));
+      //onsole.log('id='+id+' getid='+getId());
       for (var i=0;i<(pages?pages.length:1);i++) {
         var page=pages?pages[i]:undefined;
         var idh=page?page.id:id;
+        if (!idh) { console.log('no idh continueing');continue; }
         ct.putImageData(idh,0,0);
         ctx.drawImage(c,0,0,w,h);
         idh=ctx.getImageData(0,0,w,h);
         if (page) { page.id=idh;page.change=true; }
         if (i==0) { id=idh;if (lo) lo.id=id; }
       }
+      
+      
       nbid=undefined;
       
       var xf=w/iw,yf=h/ih;
@@ -2397,6 +2596,7 @@ var Paint={};
       iw=w;ih=h;
       Menu.ms(mcanvas,iw+'x'+ih+'x'+(pages?pages.length:1));
       draw();
+      isize();
       log('Scaled to '+v+(cutout.rects.length>0?' (also '+cutout.rects.length+' cutout-rects)':'')+'.');
     }
     ,valuef:function() {
@@ -2407,27 +2607,43 @@ var Paint={};
     {s:'Tridata',doctrl:'Tridata e.g. {"verts":[[0,0],[0.5,0.5],[1,0]],"tris":[[0,1,2]]}',cstay:true,r:true,mcfs:0.07,ta:true,wrap:1,tacols:50,tarows:20,setfunc:function(v,initLoad) {
       tridata=v.length==0?undefined:JSON.parse(v);
     }
-    
     ,valuef:function() {
       return tridata?JSON.stringify(tridata):'';
     }
-    
     },
+    
+    {s:'Add.Data',doctrl:'Additional data',mcfs:0.07,ta:true,wrap:1,tacols:50,tarows:20,setfunc:function(v,initLoad) {
+      adata=JSON.parse(v);
+      //tridata=v.length==0?undefined:JSON.parse(v);
+    }
+    ,valuef:function() {
+      //var s='';
+      //for (var k in adata) if (adata.hasOwnProperty(k)) s+='\n,"'+k+'":'+JSON.stringify(adata[k]);
+      //return s;
+      return JSON.stringify(adata,undefined,' ');
+      //return tridata?JSON.stringify(tridata):'';
+    }
+    },
+    
           
-       mcolors={s:'Color...',sub:[
-         {s:'Red',bgcol:'rgb(255,0,0)',a:'col_255,0,0'},
-         {s:'Green',bgcol:'rgb(0,255,0)',a:'col_0,255,0'},
-         {s:'Blue',bgcol:'rgb(0,0,255)',a:'col_0,0,255'},
-         {s:'White',bgcol:'rgb(255,255,255)',a:'col_255,255,255'},
-         {s:'Black',bgcol:'rgb(50,50,50)',a:'col_0,0,0'},
-         {s:'Gray',bgcol:'rgb(125,125,125)',a:'col_125,125,125'},
-         {s:'Cyan',bgcol:'rgb(0,125,255)',a:'col_0,125,255'},
-         {s:'Yellow',bgcol:'rgb(255,255,0)',a:'col_255,255,0'},
-         {s:'Orange',bgcol:'rgb(255,125,0)',a:'col_255,125,0'},
-       ]},
-       
+    //mcolors,   
        
        ]},
+    
+    mview={s:'View',sub:[
+    
+    {s:'Process',sub:[
+    mpr={s:'Process \u25ba',msid:'mprms',ms:pra.length},
+    {s:'Compress',ms:'Not lossless'},
+    {s:'Import',a:'primport',doctrl:'Process import',ms:'text',ta:true,value:'...',setfunc:function(v) {
+      prSet(v);//pra=v.split('\n');pri=0;
+      log('Process imported ('+pra.length+').');
+    }
+    },{s:'Export',a:'prexport',ms:'text',doctrl:'Process export',valuef:function() {
+      return pra.join('\n');
+    }
+    ,ta:true,close:true},{s:'Export',a:'prgif',ms:'process gif'},mprocesscs={ms:'Add to conetSave',checkbox:1}]},
+    
        
       {s:'Normals',sub:[
        {s:'Init Pages',a:'initnorm',ms:'diffuse,normal,spec.'},
@@ -2435,7 +2651,70 @@ var Paint={};
        {s:'Normals:<br>Invert green',fs:0.8,a:'norminvertgreen'}
       ]},
     
-    Conet.fileMenu({fn:'paint/script/files.txt',defFn:'asciiAnim.txt',noStartLoad_:1,m:{r:1,s:'Script',sub:[mscript]},
+    {s:'Layer',r:1,ms:'opacity 1',autoval:true,lskey:'layropac',setfunc:function(v) {
+      v=parseFloat(v);this.ms='opacity '+v;
+      canvm.style.opacity=v;
+    }
+    ,sub:[{s:'0'},{s:'0.25'},{s:'0.5'},{s:'1'}]}
+     
+      
+    ,{s:'ASCII',ms:'Converter',actionf:function() {
+      //var i=mview.sub.indexOf(this);if (i!=-1) mview.sub.splice(i,1);
+      //alert(23);
+      var win=window.open('','Test','left=300,top=50,width=340,height=260,toolbar=no,menubar=no,location=no'),
+          doc=win.document,body=doc.body,cc=-1,c,w=15,h=15,ta;
+      
+      
+      function update() {
+        if (cc!=changec) {
+        console.log('update ascii');
+        cc=changec;
+        var ct=c.getContext('2d');
+        ct.clearRect(0,0,w,h);
+        ct.drawImage(canvas,0,0,w,h);
+        var id=ct.getImageData(0,0,w,h);
+        var s='';
+        for (var y=0;y<h/2;y++) {
+          for (var x=0;x<w;x++) {
+            var i0=(y*2*w+x)*4,r0=id.data[i0]/128,
+                i1=((y*2+1)*w+x)*4,r1=id.data[i1]/128;
+            s+=(r0<1&&r1<1) ?'\u2588':
+              ((r0<1&&r1>=1)?'\u2580':
+              ((r0>=1&&r1<1)?'\u2584':'\u2591'));
+          }
+          s+='\n';
+        }
+        ta.value=s;
+        }
+        
+        setTimeout(update,100);
+      }
+      
+      
+      doc.title='Paint '+this.s+' '+this.ms;
+      body.style.backgroundColor='#aaa';
+      //#body.innerHTML='djk<b>fsdlf</b>jdlk';
+      c=doc.createElement('canvas');c.width=w;c.height=h;c.style.backgroundColor='#0f0';
+      c.style.width=(w*5)+'px';c.style.height=(h*5)+'px';
+      //body.appendChild(c);
+      ta=doc.createElement('textarea');ta.rows=h/2+2;ta.cols=w+2;ta.value='Test';
+      ta.style.fontFamily='Courier';ta.style.fontSize='30px';
+      body.appendChild(ta);
+      
+      
+      update();
+    }
+    } 
+    
+    ,{s:'Help',a:'Helps',sub:[
+      {s:'Demos',sub:[{s:'Whale'},{s:'Js Knight'}]},
+      {s:'Info',ms:'Help'}]}
+    
+      
+    ]},  
+      
+    
+    Conet.fileMenu({fn:'paint/script/files.txt',defFn:'asciiAnim.txt',noStartLoad_:1,m:{r_:1,s:'Script',sub:[mscript]},
     loadf:function(v,atStart) {
       //log('script loading '+v);
       Conet.download({fn:'paint/script/'+v,f:function(v) {
@@ -2444,7 +2723,7 @@ var Paint={};
         if (!atStart)
         try {
           eval(v);
-        } catch (e) { log(e); }
+        } catch (e) { log(e);console.log(e); }
       }
       });
     }
@@ -2452,12 +2731,9 @@ var Paint={};
       if (v===undefined) { log('Script.save: no filename.');return; }
       Conet.upload({fn:'paint/script/'+v,data:mscript.value,log:log});
     }
-    }),
+    })
     
-      {s:'Help',a:'Helps',sub:[
-        {s:'Demos',sub:[{s:'Whale'},{s:'Js Knight'}]},
-        {s:'Info',ms:'Help'}
-      ]}
+      
     ]},
     
     //mpage={s:'Page',ms:(pagei+1)+'/'+(pages?pages.length:1)},
@@ -2465,6 +2741,7 @@ var Paint={};
     //mpr={s:'Process \u25ba',msid:'mprms',ms:pra.length},
     mtools,
     
+    /*
     mbp={s:'0.1',ms:'brush pressure',autoval:true,lskey:'wepaintbp',setfunc:function(v) {
       bp=parseFloat(v);this.s=v;
       if (mode==MERASE) eraseConf.bp=bp;
@@ -2477,7 +2754,10 @@ var Paint={};
       if (mode==MDRAW) drawConf.bra=bra;
     }
     ,sub:[{s:'1'},{s:'2'},{s:'3'},{s:'5'},{s:'10'},{s:'20'},{s:'30'},{s:'50'},{s:'100'}]}//3
-    ,mcolors,mcolor//,merase//,mscript
+    ,mcolors,
+    */
+    
+    mcolor//,merase//,mscript
     
     //,{s:'Edit 3D'}
     
@@ -2502,6 +2782,38 @@ var Paint={};
     mvertsel={s:'Select verts<br>in rectangle',fs:0.8};
     mpolygon={s:'Polygon'};
     mselmv={s:Menu.son,ms:'Select multiple',fs:1.2,stay:true,check:true};
+    mstayselv={s:Menu.soff,ms:'Stay selected',fs:1.2,checkbox:1};
+    mrscale={s:'RScale...',doctrl:'Rect Scale',value:1,setfunc:function(v) {
+      if (!srid) { alert('First make rect move.');return; }
+      //onsole.log('RScale');onsole.log(sr);onsole.log(srid);
+      var d=document,c=d.createElement('canvas');c.width=sr.w;c.height=sr.h;
+      var ct=c.getContext('2d'),c0=c;ct.putImageData(srid,0,0);
+      
+      var v=parseFloat(v),w=Math.floor(0.5+sr.w*v),h=Math.floor(0.5+sr.h*v);
+      //onsole.log('rscale -> '+w+' '+h);
+      c=d.createElement('canvas');c.width=w;c.height=h;ct=c.getContext('2d');
+      ct.drawImage(c0,0,0,w,h);srid=ct.getImageData(0,0,w,h);sr.w=w;sr.h=h;
+      draw();
+      //alert(v);
+    }
+    };
+    
+    mrload={s:'RLoad...',doctrl:'Rect load',value:'',setfunc:function(v) {
+      if (!srid) { alert('First make rect move.');return; }
+      var img=new Image();
+      img.onload=function() {
+        var w=img.width,h=img.height,c=document.createElement('canvas');c.width=w;c.height=h;
+        var ct=c.getContext('2d');ct.drawImage(img,0,0);
+        srid=ct.getImageData(0,0,w,h);sr.w=w;sr.h=h;
+        draw();
+        //...
+      }
+      
+      img.src=v;
+      //alert('Loading '+v);
+      //...
+    }
+    };
     
     mcomain={s:'Cutout',sub:[
       {s:'Rect add'},
@@ -2599,18 +2911,23 @@ var Paint={};
       if (Menu.mcontrol) return;
       var items = event.clipboardData.items;
       //og(JSON.stringify(items)); // will give you the mime types
-      var i0=items[0];
       if (items.length==0) { log('Paint.onpaste: items.length==0');return; }
+      for (var il=0;il<items.length;il++) {
+      var i0=items[il];
       if (i0.type.indexOf('image')===0) {
       var blob=i0.getAsFile();
       var reader=new FileReader();
       reader.onload = function(event2) {
+        log('Paint.onpaste data url len: '+event2.target.result.length);
         loadDataUrl(event2.target.result);
         addPageAfterLoad=(pagei==(pages?pages.length-1:0));
       }
       ; 
       reader.readAsDataURL(blob);
-      } else log('Paint.onpaste: no image.');
+      } else {
+        console.log('Paint.onpaste: no image.'+il+'/'+items.length);
+        //console.log(i0);
+      }}
     }
     
     
@@ -2646,7 +2963,7 @@ var Paint={};
   function drawCutouts(ct,dx,dy) {
     var c=cutout;
     
-    if (c.bones) for (var h=c.bones.length-1;h>=0;h--) {
+    if (c.bones&&c.rects) for (var h=c.bones.length-1;h>=0;h--) {
       var b=c.bones[h];
       if (b.p==-1) continue;
       //if (b.i==-1) continue;
@@ -2658,7 +2975,7 @@ var Paint={};
       ct.beginPath();ct.moveTo(r.cx,r.cy);ct.lineTo(pp.x,pp.y);ct.closePath();ct.stroke();
     }
     
-    for (var h=cutout.rects.length-1;h>=0;h--) {
+    if (c.rects) for (var h=cutout.rects.length-1;h>=0;h--) {
       var r=cutout.rects[h];
       if (dx==0) {
         if (cutoutP&&(r==cutoutP.r)) 
@@ -2688,15 +3005,42 @@ var Paint={};
       ct.lineTo(b0.u*iw,b0.v*ih);
       ct.stroke();
     }
+    var s=iw;//512;
+    if (cutout.carves) for (var i=0;i<cutout.carves.length;i++) {
+      var c=cutout.carves[i];
+      //ct.strokeStyle=selp==c.p0?'#ff0':'#fff';
+      ct.beginPath();
+      ct.arc((c.p0.x)*s,(c.p0.y)*s,c.p0.r*s,0,360);
+      ct.stroke();
+      //ct.strokeStyle=selp==c.p1?'#ff0':'#fff';
+      ct.beginPath();
+      ct.arc((c.p1.x)*s,(c.p1.y)*s,c.p1.r*s,0,360);
+      ct.stroke();
+      //ct.strokeStyle=selc==c?'#ff0':'#fff';
+      ct.beginPath();
+      ct.moveTo((c.p0.x)*s,(c.p0.y)*s);
+      ct.lineTo((c.p1.x)*s,(c.p1.y)*s);
+      ct.stroke();
+      ct.fillStyle=ct.strokeStyle;
+      ct.fillText(''+i,(c.p0.x)*s,(c.p0.y)*s-2);
+    }
+    
+    
   }
   Paint.drawNewtc=function() {
     draw(true);
   }
   function draw(tcnew) {
+    if (!canvas) return;
     if (!canvas.getContext) return;
     var ctx = canvas.getContext('2d');
     
     //console.log('paint.draw');console.trace();
+    
+    if (clearCanv) {
+      var cm=canvm?canvm.getContext('2d'):undefined;
+      if (cm) cm.clearRect(0,0,iw,ih);
+    }
     
     //og('draw');
     
@@ -2718,19 +3062,23 @@ var Paint={};
     
     //var isDa=drawArea;
     //if (!drawArea) drawArea={x0:0,y0:0,x1:iw-1,y1:ih-1};
+    //onsole.log('draw normalBlend='+normalBlend);
     if (normalBlend) {
         if (!nbid) nbid=ctx.createImageData(id);
         var dn=pages[npi].id.data;
         var dd=pages[dpi].id.data;
         var ds=spi!=-1?pages[spi].id.data:undefined;
         var d=nbid.data;
-        var lx=light.x,ly=light.y,lz=light.z,ll=Math.sqrt(lx*lx+ly*ly+lz*lz);//java: lz=20, but with ambient 10 is ok and better for specular blend
+        var lx=light.x,ly=light.y,lz=light.z,ll=Math.sqrt(lx*lx+ly*ly+lz*lz);
+        //java: lz=20, but with ambient 10 is ok and better for specular blend
         lx/=ll;ly/=ll;lz/=ll;
         var dl=d.length;
         if (!drawArea) drawArea={x0:0,y0:0,x1:iw-1,y1:ih-1};
-        //onsole.log('draw normalblend npi='+npi+' dnv='+dn[((ih-1)*iw+iw-1)*4]+' dn.len='+dn.length);
+        //onsole.log('draw normalblend npi='+npi
+        //+' dnv='+dn[((ih-1)*iw+iw-1)*4]+' dn.len='+dn.length);
         //console.log(drawArea);
-        //else if (drawArea.x1!=-1) log('drawArea '+drawArea.x0+','+drawArea.y0+'  '+drawArea.x1+','+drawArea.y1);
+        //else if (drawArea.x1!=-1) log('drawArea '+drawArea.x0
+        //+','+drawArea.y0+'  '+drawArea.x1+','+drawArea.y1);
         
         //for (var i=0;i<dl;i+=4) {
         for (var y=drawArea.y0;y<=drawArea.y1;y++) 
@@ -2782,22 +3130,27 @@ var Paint={};
           //}
           d[i]=r;d[i+1]=g;d[i+2]=b;d[i+3]=a;
         }
-        ctx.putImageData(nbid,0,0);
+        cm.putImageData(nbid,0,0);//ctx
         if (lo) lo.id=nbid;
     }
     //}
     
     
-    if (!normalBlend) ctx.putImageData(getId(),0,0);
+    //if (!normalBlend) 
+    ctx.putImageData(getId(),0,0);
     
     
+    //var cm=canvm?canvm.getContext('2d'):undefined;
+    //if (cm) cm.clearRect(0,0,iw,ih);
     
-    if (mode==MSELR) {
-      ctx.lineWidth=1;
-      ctx.strokeStyle='#000000';
-      ctx.strokeRect(sr.x+1,sr.y+1,sr.w,sr.h);
-      ctx.strokeStyle='#ffffff';
-      ctx.strokeRect(sr.x,sr.y,sr.w,sr.h);
+    if ((mode==MSELR)&&cm) {
+      //var ctr=ctx;
+      //cm.clearRect(0,0,iw,ih);
+      cm.lineWidth=1;
+      cm.strokeStyle='#000000';
+      cm.strokeRect(sr.x+1,sr.y+1,sr.w,sr.h);
+      cm.strokeStyle='#ffffff';
+      cm.strokeRect(sr.x,sr.y,sr.w,sr.h);
     }
     
     if (tridata) {
@@ -2826,9 +3179,9 @@ var Paint={};
     
     if (acoH.ondraw) acoH.ondraw(canvas);
     
-    if ((cutout.rects.length>0)) {//&&(mode==MCUTOUT)) {
-      var cm=canvm.getContext('2d');
-      cm.clearRect(0,0,iw,ih);
+    if (cutout&&((cutout.carves&&(cutout.carves.length>0))||(cutout.rects&&(cutout.rects.length>0)))) {//&&(mode==MCUTOUT)) {
+      //var cm=canvm.getContext('2d');
+      //cm.clearRect(0,0,iw,ih);
       cm.lineWidth=1;
       cm.strokeStyle='#000000';
       cm.fillStyle='#000000';
@@ -2884,7 +3237,8 @@ var Paint={};
         }
     
       }
-      ctx.drawImage(tccanvas,0,0);
+      //ctx.drawImage(tccanvas,0,0);
+      cm.drawImage(tccanvas,0,0);
       //}
       
     }
@@ -2899,12 +3253,14 @@ var Paint={};
       ctx.beginPath();ctx.arc(x,y,bra,0,Math.PI*2);ctx.closePath();ctx.stroke();
     }
     
-    //if (!canvDraw) {
+    if (!(canvDraw)) //&&(mode==MDRAW))) 
+    //---without this, after loading image with canvas under load-menu, a brush is drawn there
+    {
       ctx.strokeStyle='#ffffff';
       ctx.beginPath();ctx.arc(imx-0.5,imy-0.5,bra,0,Math.PI*2);ctx.closePath();ctx.stroke();
       ctx.strokeStyle='#000000';
       ctx.beginPath();ctx.arc(imx,imy,bra,0,Math.PI*2);ctx.closePath();ctx.stroke();
-    //}
+    }
   }
   Paint.loadDataUrl=loadDataUrl;
   Paint.cfmLoad=function(s) {
@@ -2921,8 +3277,15 @@ var Paint={};
 )(Paint);
 
 //fr o,1
-//fr o,1,138
-//fr o,1,173,3
-//fr o,1,197,80,11
-//fr o,1,197,213,5
-//fr p,49,158
+//fr o,1,175,3
+//fr o,1,193,2,19,3
+//fr o,1,200
+//fr o,1,200,95
+//fr o,1,200,105
+//fr o,1,200,248
+//fr o,1,200,256
+//fr o,1,200,259
+//fr o,1,200,259,2
+//fr o,1,200,314
+//fr o,1,200,314,9
+//fr p,62,582

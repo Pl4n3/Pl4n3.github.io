@@ -6,13 +6,13 @@ body { font-family:sans-serif;color:#000;background-color:#fff;margin:0px;overfl
 </style>
 <script src="https://threejs.org/build/three.min.js"></script>
 <script src="https://threejs.org/examples/js/libs/stats.min.js"></script>
-<script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
+<script src="/three/v81/OrbitControls.js"></script>
 <script src="../menu.js"></script>
 <script src="../conet.js"></script>
 <script src="../util/rare/genMaze.js"></script>
 </head><body><div id="container"></div><script>
 function lego1() {
-  var version='1.77 ',stats,//FOLDORUPDATEVERSION
+  var version='1.103 ',stats,//FOLDORUPDATEVERSION
       brickts={},bricktc=0;
   //onsole.log('Brick Construction Tool, Version '+version);
   //---
@@ -106,7 +106,8 @@ function lego1() {
         a=th.a;//brickts[tr]; 
         //if (a) {
         var c=parseInt(t.substr(t.length-1,1));
-        if (c==1) mz=true; else if (c==2) xz=true; else if (c==3) { xz=true;mx=true; } 
+        if (c==1) mz=true; else if (c==2) { xz=true; } else if (c==3) { xz=true;mx=true; } 
+        else if (c==4) { xz=true;mz=true;mx=true; }
       }
     }           
     if (a) {} else
@@ -148,7 +149,7 @@ function lego1() {
           z=(mz?-1:1)*(xz?p[0]:p[2]);
       vertices.push(x*w/200,y*h/200,z*d/200);normals.push(0,0,1);uvs.push(p[3],p[4]); }
     for (var i=0;i<fa.length;i++) { var f=fa[i];
-      if ((mz&&!xz)||(xz&&!mx&&!mz)||(mx&&!xz)) indices.push(f[0],f[1],f[2]); else indices.push(f[0],f[2],f[1]); 
+      if ((mz&&!xz)||(xz&&!mx&&!mz)||(mx&&!xz)||(xz&&mx&&mz)) indices.push(f[0],f[1],f[2]); else indices.push(f[0],f[2],f[1]); 
     }
     groupCount=indices.length;
     scope.addGroup( groupStart, groupCount, 0 );
@@ -186,6 +187,7 @@ function lego1() {
   function clear() {
     for (var i=0;i<bricks.length;i++) brickRemove(bricks[i]);
     bricks.length=0;
+    brickts={};bricktc=0;
     //...
   }
   function cloneWithout(o,h) {
@@ -337,7 +339,7 @@ function lego1() {
       if (a=='rotate') {
         var t=sel.t,tr=t.substr(0,t.length-1),
             n=parseInt(t.substr(t.length-1));
-        sel.t=tr+(n+1)%4;
+        sel.t=tr+(n+1)%5;
         //Menu.ms(mtype,sel.t);
         mtype.ms=sel.t;
       } else
@@ -455,9 +457,17 @@ function lego1() {
       bricks=o;
     else {
       bricks=o.bricks;
-      for (var k in o.bricktypes) if (o.bricktypes.hasOwnProperty(k)) {
+      if (o.bricktypes) for (var k in o.bricktypes) if (o.bricktypes.hasOwnProperty(k)) {
         bricktc++;
         Conet.download({bt:k,fn:o.bricktypes[k],f:brickLoaded});
+      }
+      if (o.colors) {
+        ms=[];ms.own=1;
+        for (var i=0;i<o.colors.length;i++) {
+          var m=new THREE.MeshPhongMaterial({color:parseInt(o.colors[i]),flatShading:true});
+          m.userData.scol=o.colors[i];
+          ms.push(m);
+        }
       }
     }
     
@@ -518,13 +528,23 @@ function lego1() {
   }
   function serialize() {
     var s='{\n',bl;
-    s+='"bricktypes":{\n';
     var a=[];
     for (var k in brickts) if (brickts.hasOwnProperty(k)) a.push(k);
-    for (var i=0;i<a.length;i++) {
-      s+='  "'+a[i]+'":"'+brickts[a[i]].fn+'"'+(i<a.length-1?',':'')+'\n';
+    if (a.length>0) {
+      s+='"bricktypes":{\n';
+      for (var i=0;i<a.length;i++) {
+        s+='  "'+a[i]+'":"'+brickts[a[i]].fn+'"'+(i<a.length-1?',':'')+'\n';
+      }
+      s+='},\n';
     }
-    s+='},\n';
+    if (ms.own) {
+      s+='"colors":[\n';
+      for (var i=0;i<ms.length;i++) {
+        console.log(ms[i].color);
+        s+=' "'+ms[i].userData.scol+'"'+(i<ms.length-1?',':'')+'\n';
+      }
+      s+='],\n';
+    }
     s+='"bricks":[\n';
     for (var i=0;i<bricks.length;i++) {
       var b=cloneWithout(bricks[i],without);
@@ -537,7 +557,7 @@ function lego1() {
   }
   //--
   var camera,controls,scene,renderer,sel,mmode,mmenu,mtype,mmultisel,
-      mpos,mdim,click,raycaster=new THREE.Raycaster(),sels=[],
+      mpos,mdim,click,raycaster=new THREE.Raycaster(),sels=[],ms=[],
       without={mesh:1,light:1,fn:1};
   scene = new THREE.Scene();
   renderer = new THREE.WebGLRenderer({antialias:true});
@@ -549,7 +569,7 @@ function lego1() {
   
   //renderer.setPixelRatio(window.devicePixelRatio);
   renderer.setSize( window.innerWidth, window.innerHeight );
-  var container = document.getElementById('container'),ms=[];
+  var container = document.getElementById('container');
   container.appendChild( renderer.domElement );
   camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 2000 );
   camera.position.z = 500;
@@ -602,10 +622,13 @@ function lego1() {
 lego1();
 </script></body></html><script>
 //fr o,13
-//fr o,13,6
+//fr o,13,10
 //fr o,13,17,9
 //fr o,13,17,19
 //fr o,13,17,36
 //fr o,13,17,40
 //fr o,13,17,49
-//fr p,2,34
+//fr o,13,21
+//fr o,13,22
+//fr o,13,26
+//fr p,0,88

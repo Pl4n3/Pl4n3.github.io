@@ -1,31 +1,44 @@
 <!DOCTYPE html><html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+<link rel="shortcut icon" sizes="128x128" href="/blog/alster2.jpg">
+<link rel="apple-touch-icon" href="/blog/alster2.jpg">
 <style>
 body { color:#000;background-color:#aaa;margin:0px;overflow:hidden;font-family:Sans-serif; }
 </style>
 <script src="https://threejs.org/build/three.min.js"></script>
 <script src="https://threejs.org/examples/js/vr/WebVR.js"></script>
 <script src="https://threejs.org/examples/js/libs/stats.min.js"></script>
-<script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
+<script src="/three/v81/OrbitControls.js"></script>
+<script src="/menu.js"></script>
 <script src="/conet.js"></script>
 <script src="/sound.js"></script>
 <script src="../vecmath.js"></script>
 <script src="../canvas/pd5.js"></script>
 <script src="threePd5.js"></script>
-</head><body>
+</head><body oncontextmenu="return false;">
 <div id="container"></div>
 <script>
-function anim() {
+function Planim() {
+  //! https://threejs.org/examples/js/controls/OrbitControls.js
+  //!   stopped using this, since 27.3.2018 it has event.preventDefault in
+  //!   touchStart which disables clickevents
   var scene,stats,views=[],oh={},ot=Date.now(),scra,scri=0,scrt=0,loopAfterLoaded,
-      base,debug='',version='1.317 ',//FOLDORUPDATEVERSION
+      base,debug='',version='1.861 ',//FOLDORUPDATEVERSION
       m0=new THREE.MeshPhongMaterial( { color:0x666666,flatShading:true } ),
       m1=new THREE.MeshPhongMaterial({color:0x77dd77,flatShading:true,
-      transparent:true,opacity:0.5}),keys=[],vrkeys=true,url,click=undefined,
+      transparent:true,opacity:0.5}),mray0=new THREE.MeshPhongMaterial({
+      color:0x66aa66,flatShading:true}),keys=[],url,click=undefined,
       raycaster=new THREE.Raycaster(),anchors={},canch,aa={c0:new THREE.Vector3(),
       c1:new THREE.Vector3(),t0:new THREE.Vector3(),t1:new THREE.Vector3()},taa=0,
-      tam=500,eclick,game={},PI=Math.PI,skipClick=false;
+      tam=500,eclick,game={},PI=Math.PI,skipClick=false,raret=0,vrdevice=undefined,
+      self=this,record,recording=false,viewing=false,vq0=new THREE.Quaternion(),
+      vq1=new THREE.Quaternion(),ray0,fetch,fetchop=new THREE.Vector3(),camkt=0,
+      fetchbp=new THREE.Vector3(),camv=0,cmenu,menui=0,rvr,vrd,vrUserHeight=0,
+      mh0=new THREE.Matrix4(),vh0=new THREE.Vector3(),ot=Date.now(),dtscale=1,
+      egoi=-1,vh0=new THREE.Vector3(),vdef=0.001,vrbu;
   function updateHud(view) {
+    if (!view) view=views[0];
     var hud=view.hud,c=hud.c,ct=c.getContext('2d'),w=c.width,h=c.height;
     ct.clearRect(0,0,w,h);
     ct.fillStyle='rgba(150,150,150,0.3)';ct.fillRect(0,0,w,h);
@@ -38,11 +51,6 @@ function anim() {
     //...
   }
   function addView(v) {
-    if (0) if (v.vr) 
-    WEBVR.checkAvailability().catch( function( message ) {
-      document.body.appendChild( WEBVR.getMessageContainer( message ) );
-    }
-    );
     var camera,controls,renderer;
     renderer = new THREE.WebGLRenderer({antialias:true});
     renderer.setClearColor(v.bgcol||0x888888);
@@ -51,7 +59,10 @@ function anim() {
     //				renderer.shadowMapEnabled=true;
     //				renderer.shadowMapType=THREE.PCFShadowMap;//PCFShadowMap;
     
-    //renderer.setPixelRatio(window.devicePixelRatio);
+    //! without following vr mode is too blurry
+    renderer.setPixelRatio(window.devicePixelRatio);
+    
+    
     //renderer.setSize( window.innerWidth, window.innerHeight );
     
     
@@ -62,27 +73,29 @@ function anim() {
     }
     container.appendChild(c);
     
-    camera=new THREE.PerspectiveCamera(v.fov||60,window.innerWidth/window.innerHeight,0.1,100);//1,1000
+    camera=new THREE.PerspectiveCamera(v.fov||60,window.innerWidth/window.innerHeight,v.camNear||0.01,100);//1,1000
     //camera.position.z=v.camz||500;
     //camera.position.x=v.camx||0;
-    if (v.cam&&!v.vr) camera.position.copy(v.cam);
+    
+    if (v.cam&&!v.vr) camera.position.copy(v.cam); //else camera.position.set(0,0,0);
+    
     //camera.position.set(v.camx||0,v.camy||0,v.camz||500);
     //camera.rotation.y=0.5;
     camera.rotation.order='YXZ';
     scene.add(camera);
     
-    if (!v.vr) {
-    controls=new THREE.OrbitControls(camera,renderer.domElement);
-    controls.enableDamping=true;
-    controls.dampingFactor=0.25;
-    if (v.autoRotate) controls.autoRotate=true;
-    controls.enableZoom=true;
-    controls.enablePan=true;
-    controls.maxDistance=600;
-    controls.rotateSpeed=0.4;
-    controls.enableKeys=false;
-    controls.zoomSpeed=0.5;
-    if (v.target) controls.target.copy(v.target);
+    if (!v.vr&&!v.noOrbitControls) {
+      controls=new THREE.OrbitControls(camera,renderer.domElement);
+      controls.enableDamping=true;
+      controls.dampingFactor=0.25;
+      if (v.autoRotate) controls.autoRotate=true;
+      controls.enableZoom=true;
+      controls.enablePan=true;
+      controls.maxDistance=600;
+      controls.rotateSpeed=0.4;
+      controls.enableKeys=false;
+      controls.zoomSpeed=0.5;
+      if (v.target) controls.target.copy(v.target);
     }
     //controls.rotateLeft(0.5);
     v.renderer=renderer;v.camera=camera;v.controls=controls;
@@ -95,15 +108,13 @@ function anim() {
       container.appendChild(c);
     }
     
-    if (v.vr) {
-      renderer.vr.enabled=true;
-      if (0)
-    WEBVR.getVRDisplay( function ( display ) {
-      renderer.vr.setDevice( display );
-      document.body.appendChild(WEBVR.getButton(display,renderer.domElement));
-    }
-      );
+    views.push(v);
     
+    
+    if (v.vr) {
+      //renderer.vr.enabled=true;
+    
+    //if (!v.noHud) {
       var c=document.createElement('canvas'),w=v.hudres||128,
           h=w;c.width=w;c.height=h;
       var t=new THREE.Texture(c);v.hud={c:c,t:t};
@@ -113,6 +124,7 @@ function anim() {
       //t.needsUpdate=true;
       updateHud(v);
     
+      //if (!v.noHud) {
       var ar=v.hudar||0.11,g=new THREE.PlaneGeometry(0.1,0.1*ar);
       g.faceVertexUvs=[[[{x:0,y:1},{x:0,y:1-ar},{x:1,y:1}],[{x:0,y:1-ar},{x:1,y:1-ar},{x:1,y:1}]]];
       var crosshair = new THREE.Mesh(g,
@@ -120,38 +132,52 @@ function anim() {
           map:t,
           opacity:1,transparent:true}));
       //crosshair.position.z=-0.3;
-      crosshair.position.set(v.hudx||0.05,v.hudy||-0.05,-0.3);
+      crosshair.position.set(v.hudx||0.05,v.hudy||-0.05,v.hudz||-0.3);
       camera.add(crosshair);
+    //}
     
-    window.addEventListener('vrdisplaypointerrestricted',function() {
-      var pointerLockElement=renderer.domElement;
-      if (pointerLockElement&&typeof(pointerLockElement.requestPointerLock)==='function' ) {
-        pointerLockElement.requestPointerLock();
+      if (1) initVr(); else 
+      if (0) { //for now dont using this, but init-vr-menu
+    var c=document.createElement('button'),s=c.style;
+    c.innerHTML='Init VR';
+    c.onclick=function() {
+      document.body.removeChild(c);
+      initVr();
+    }
+    s.position='absolute';
+    s.left='calc(50% - 50px)';
+    s.bottom='20px';s.width='100px';
+    s.cursor='pointer';
+    
+    s.padding = '12px 6px';
+    s.border = '1px solid #fff';
+    s.borderRadius = '4px';
+    s.background = 'rgba(0,0,0,0.1)';
+    s.color = '#fff';
+    s.font = 'normal 13px sans-serif';
+    s.textAlign = 'center';
+    s.opacity = '0.5';
+    s.outline = 'none';
+    s.zIndex = '999';
+    
+    document.body.appendChild(c);vrbu=c;
       }
-    }
-    ,false);
-    window.addEventListener('vrdisplaypointerunrestricted',function() {
-      var currentPointerLockElement=document.pointerLockElement;
-      var expectedPointerLockElement=renderer.domElement;
-      if (currentPointerLockElement&&currentPointerLockElement===expectedPointerLockElement&&typeof(document.exitPointerLock)==='function' ) {
-        document.exitPointerLock();
-      }
-    }
-    ,false);
-    
-      
-      document.body.appendChild( WEBVR.createButton( renderer ) );
+      //var b=WEBVR.createButton(renderer);
+      //document.body.appendChild(b);
+      //var rvr=renderer.vr;
+      //if (rvr.getDevice()) base.position.set(0,rvr.userHeight,0);
     }
     
     
-    views.push(v);
+    //views.push(v);
     
     if (v.bg) {
       threeEnv.camera=camera;
-      renderer.animate(animate);
+      renderer.setAnimationLoop(animate); //before v93: renderer.animate(animate);
     }
   }
   function box(x,y,z,w,h,b,m) {
+    if (!m) m=m0;
     mesh=new THREE.Mesh(new THREE.BoxBufferGeometry(w,h,b),m);
     mesh.position.set(x,y,z);
     mesh.updateMatrix();
@@ -165,6 +191,8 @@ function anim() {
     var gw=window.innerWidth,gh=window.innerHeight,gmin=Math.min(gw,gh),w,h,
         maxa=1.5,gmax=Math.max(gw,gh),ah=1.75//1.75
         ,f=Math.min(ah,gmax/gmin),minf=0.5;//0.5
+    
+    console.log('anim.resize gw='+gw+', gh='+gh);
     
     //f=(1-(ah-f));
     //gmin*=minf+f*(1-minf);
@@ -225,13 +253,24 @@ function anim() {
         //onsole.log(r);
         s.left=(x0+(w-r.width)/2)+'px';
         s.top=(y0+h-r.height)+'px';
+      } else {
+        s.left='0px';s.top='0px';
       }
     }
   }
   function setTargetCampos(tx,ty,tz,cx,cy,cz) {
+    console.log('setTargetCampos');
     var v=views[0];
-    aa.c0.copy(v.camera.position);
-    aa.t0.copy(v.controls.target);
+    aa.c0.copy(v.vr?base.position:v.camera.position);
+    if (v.controls) aa.t0.copy(v.controls.target);
+    if (v.vr) { 
+      var rvr=v.renderer.vr;
+      //onsole.log('setTargetcampos '+rvr.getDevice());
+      cx=-cx;cy=(//rvr.userHeight//rvr.getDevice()
+       //?rvr.userHeight:0
+       vrUserHeight
+       )-cy;cz=-cz; //1.6
+    }
     aa.c1.x=cx;aa.c1.y=cy;aa.c1.z=cz;
     aa.t1.x=tx;aa.t1.y=ty;aa.t1.z=tz;
     
@@ -281,19 +320,180 @@ function anim() {
     //base.remove(a.mesh);
     //...
   }
+  function f4(v) {
+    return Math.floor(0.5+v*10000)/10000;//...
+  }
   function animate() {
     //requestAnimationFrame(animate);
     //controls.update(); // required if controls.enableDamping = true, or if controls.autoRotate = true
     stats.update();
     //if (threeEnv.os.length>0) threeEnv.os[0].meshes[0].tmesh.rotation.y+=0.01;
-    var dt=threeRender();
+    
+    var t=Date.now(),dto=Math.min(100,(t-ot)),dt=dto*dtscale;ot=t;
+    //console.log('anim.animate dt='+dt);
+    
+    var o=self.controlo;
+    if (o) { //! startete in sizes.js
+      o.turnLeft=keys[65];//37];
+      o.turnRight=keys[68];//39];
+      o.goFront=keys[87];//38];
+      o.goBack=keys[83];//40];
+    }
+    
+    
+    if (game.calc) game.calc(dt);
+    
+    if (game.defMoves) 
+    for (var i=threeEnv.os.length-1;i>=0;i--) {
+      var o5=threeEnv.os[i],o=o5.ps;
+      if (o.turnLeft||o.turnRight) 
+        o.roty+=((o.turnLeft?1:0)+(o.turnRight?-1:0))*dt*(o.vrot||0.003);
+      if (o.goFront||o.goBack) {
+        var vx=0,vz=0,v=o.v||vdef;
+        if (o.goFront) vz=1;
+        if (o.goBack) vz-=0.5;
+        var vx0=vz*Math.sin(o.roty)-vx*Math.cos(o.roty),
+            vz0=vz*Math.cos(o.roty)+vx*Math.sin(o.roty);
+        o.pos.x+=vx0*dt*v;
+        o.pos.z+=vz0*dt*v;
+        Pd5.animStart(o5,o5.animh[o.animRun]);
+      } else
+        Pd5.animStart(o5,o5.animh[o.animIdle||o.anim]);
+    }
+    
+    
+    
+    threeRender(dt);
+    
+    
+    if (self.ego) {
+      var o=self.ego;
+      var p=o.pos;
+      var m=base.matrix;
+      vh0.set(0,0,0);
+      m.identity();m.setPosition(vh0);
+      mh0.makeRotationY(-o.roty+Math.PI);
+      m.multiply(mh0);
+      if (o.o.eyew) {
+        var p1=o.o.eyew.p1,f=o.o.scale,a=o.roty;//+o.rotofs-Math.PI;//f=350
+        vh0.set(
+          -p.x-(-p1.x*Math.cos(a)+p1.z*Math.sin(a))*o.scale*f
+         ,-p.y-p1.y*o.scale*f+vrUserHeight
+         ,-p.z+(-p1.x*Math.sin(a)-p1.z*Math.cos(a))*o.scale*f
+         );
+      } else {
+        vh0.set(-p.x,-p.y-1.75,-p.z);
+      }  
+      mh0.identity();mh0.setPosition(vh0);//new THREE.Vector3(-p.x,-p.y,-p.z));
+      m.multiply(mh0);
+      base.matrixAutoUpdate=false;
+      base.matrixWorldNeedsUpdate=true;
+    }
+    
+    var raremt=300;
+    raret+=dt;
+    if (raret>=raremt) { raret=0;var v0=views[0];if (v0) {
+      rvr=v0.renderer.vr;vrd=rvr.getDevice();
+      //console.log('rvr.userHeight='+rvr.userHeight);
+      //if (vrd!=vrdevice) 
+      {
+        vrdevice=vrd;
+        //if (vrd) 
+        var nuh=rvr.userHeight||0;
+        if ((vrUserHeight!=nuh)&&(rvr.enabled))
+        {
+          base.position.y+=nuh-vrUserHeight;
+          vrUserHeight=nuh;self.vrUserHeight=nuh;
+          //base.position.set(0,nuh,0);
+          //vrUserHeight=rvr.userHeight||0;
+          //out('vruh='+vrUserHeight);
+        }
+      }
+      if (recording) {
+        var bp=base.position,cp=v0.camera.position,cq=v0.camera.quaternion;
+        record.push([f4(bp.x),f4(bp.y),f4(bp.z),f4(cp.x),f4(cp.y),f4(cp.z),f4(cq.x),f4(cq.y),f4(cq.z),f4(cq.w)]);
+        debug='Recording '+record.length+', [r] stop';
+        updateHud();
+      }
+      if (game.rays) click=new THREE.Vector2(0,0);
+    }}
+    
+    if (viewing) {
+      viewt+=dt;var mt=raremt;
+      while (viewt>mt) {
+        viewt-=mt;viewi++; 
+        if (viewi==record.length-1) viewi=0;
+      }
+      var a0=record[viewi],a1=record[viewi+1],cam=views[0].camera,f1=viewt/mt,f0=1-f1;
+      base.position.set(a0[0]*f0+a1[0]*f1,a0[1]*f0+a1[1]*f1,a0[2]*f0+a1[2]*f1);
+      cam.position.set(a0[3]*f0+a1[3]*f1,a0[4]*f0+a1[4]*f1,a0[5]*f0+a1[5]*f1);
+      vq0.set(a0[6],a0[7],a0[8],a0[9]);
+      vq1.set(a1[6],a1[7],a1[8],a1[9]);
+      vq0.slerp(vq1,f1);
+      cam.quaternion.copy(vq0);//set(a0[6],a0[7],a0[8],a0[9]);
+      out('Viewing '+(viewi+1)+'/'+(record.length-1)+' [v] stop');
+    }
     
     if (taa>0) {
       taa=Math.max(0,taa-dt);
       var f0=taa/tam,f1=1-f0,v=views[0];
-      v.camera.position.set(aa.c0.x*f0+aa.c1.x*f1,aa.c0.y*f0+aa.c1.y*f1,aa.c0.z*f0+aa.c1.z*f1);
-      v.controls.target.set(aa.t0.x*f0+aa.t1.x*f1,aa.t0.y*f0+aa.t1.y*f1,aa.t0.z*f0+aa.t1.z*f1); 
+      var o3d=v.vr?base:v.camera;
+      //if (!v.vr) {
+        //v.camera.
+        o3d.position.set(aa.c0.x*f0+aa.c1.x*f1,aa.c0.y*f0+aa.c1.y*f1,aa.c0.z*f0+aa.c1.z*f1);
+        if (v.controls) v.controls.target.set(aa.t0.x*f0+aa.t1.x*f1,aa.t0.y*f0+aa.t1.y*f1,aa.t0.z*f0+aa.t1.z*f1); 
+      //}
     }
+    
+    if (self.vrkeys&&(views.length>0)&&!cmenu) {//&&!self.ego) {
+      var cam=views[0].camera,rf=0.003;
+      if (keys[38]) cam.rotation.x+=rf*dto;
+      if (keys[40]) cam.rotation.x-=rf*dto;
+      if (keys[37]) cam.rotation.y+=rf*dto;
+      if (keys[39]) cam.rotation.y-=rf*dto;
+      //console.log(camera.quaternion);
+      if (!self.ego) {
+      var kleft=keys[65],kright=keys[68],kfore=keys[87],kback=keys[83],kup=keys[81],kdown=keys[69];
+      if (kleft||kright||kfore||kback||kup||kdown) {
+        camv+=0.000001*dto;camkt+=dto;
+        //out('camv '+f4(camv));
+        var v=new THREE.Vector3();//,f=0.003;
+        if (kleft) v.x+=1;if (kright) v.x-=1;
+        if (kfore) v.z+=1;if (kback) v.z-=1;
+        if (kup) v.y-=1;if (kdown) v.y+=1;
+        if (game.curskeys) game.curskeys(v,dt); else 
+        if (self.cursscale) {
+          v.z=v.x;v.y=v.x;
+          v.multiplyScalar(0.001*dto/base.scale.x);
+          //if (vrd) 
+          base.position.y-=vrUserHeight;//rvr.userHeight||0;
+          base.position.multiplyScalar(1/base.scale.x);
+          base.scale.add(v);
+          base.position.multiplyScalar(base.scale.x);
+          //if (vrd) 
+          base.position.y+=vrUserHeight;//rvr.userHeight||0;
+          base.updateMatrix();
+          out('Base.scale '+f4(base.scale.x));
+        } else {
+          v.multiplyScalar(camv//
+            //((camkt>3000)?0.01:0.001)
+            *dto);
+          v.applyQuaternion(cam.quaternion);
+          base.position.add(v);
+          //onsole.log(base.position);
+          base.updateMatrix();
+        }
+      } else { camv=0.001;camkt=0; }
+      }
+    }
+    
+    if (fetch) {
+      fetch.position.copy(fetchop);
+      fetch.position.add(fetchbp);
+      fetch.position.sub(base.position);
+      fetch.updateMatrix();
+    }
+    
     
     if (click) {
       raycaster.setFromCamera(click,views[0].camera);
@@ -315,7 +515,16 @@ function anim() {
          //1
          );j++) {
          var o=intersects[j].object;
-        //for (var j=0;j<os.length;j++) {
+         if (j==0) {
+           if (o!=ray0) {
+             if (ray0) if (ray0.select) ray0.select(false);
+             ray0=o;
+             if (o.select) o.select(true);
+             //onsole.log('anim.animate ray0='+o.userData);
+           }
+         }
+         //console.log('anim.animate ray at '+o+' '+j);
+         //for (var j=0;j<os.length;j++) {
          //var o=os[j]; 
          var marko=o.userData.marko;
          //console.log(o.userData.o);
@@ -343,10 +552,13 @@ function anim() {
     //      break;
     //     }
         }
+      } else if (ray0) {
+        if (ray0.select) ray0.select(false);
+        ray0=undefined;
       }
     }
     
-    if (game.calc) game.calc(dt);
+    //if (game.calc) game.calc(dt);
     
     for (var i=views.length-1;i>=0;i--) {
       var view=views[i];
@@ -354,17 +566,24 @@ function anim() {
       view.renderer.render(scene,view.camera);
     }
   }
-  function oonload(v) {
-    var ps=this;//console.log(this);
-    var o=Pd5.load(v);
+  function loadInit(o,ps) {
+    //var ps=o.ps;
+    o.ps=ps;ps.o=o;
+    
+    o.scale=1;//dont use scale from editor
+    if (ps.roty===undefined) ps.roty=0;
+    //...
+    
+    if (ps.onload) ps.onload(o);
+    
     //console.log(o);//Object.assign({},o));
+    
     Pd5.animStart(o,o.animh[ps.animIdle||ps.anim]);
     //o.scale*=0.7;//o.x=-0.1;o.y=-0.7;o.z=-0.5;
     //o.scale*=1;o.x=-0.1;o.y=-0.5;o.z=-0.3;
     Pd5.calc(o,0,0.0,0,1,{x:0,y:0,z:0},0,0,true);
     
-    ps.o=o;
-    o.ps=ps;//o.o={pos:ps.pos,roty:ps.roty||0};
+    //ps.o=o;o.ps=ps;//o.o={pos:ps.pos,roty:ps.roty||0};
     
     threeAddObj(o,0,0,0,ps.scale);
     var m=o.meshes[0].tmesh;
@@ -415,7 +634,32 @@ function anim() {
     //threeRender();
     //...
     loopAfterLoaded--;
-    if (loopAfterLoaded==0) if (scra) calcScra();
+    if (loopAfterLoaded==0) {
+      if (scra) calcScra();
+      if (game.allLoaded) game.allLoaded();
+    }
+    //var rvr=views[0].renderer.vr;
+    //if (rvr.getDevice()) base.position.set(0,rvr.userHeight,0);
+    
+    //...
+  }
+  function oonload(v) {
+    var ps=this;//console.log(this);
+    var o=Pd5.load(v);
+    //o.scale=1;//dont use scale from editor
+    //onsole.log('anim.oonload');// o.scale=+o.scale);
+    //onsole.log(ps);
+    //ps.o=o;o.ps=ps;
+    
+    loadInit(o,ps);
+  }
+  function cload(o,ch) {
+    var ps=ch;
+    //o.ps=ps;ps.o=o;
+    loadInit(o,ps);
+    //console.log('anim.cload o ch');
+    //console.log(o);
+    //console.log(ch);
   }
   function calcScra() {
     var t=Date.now(),dt=t-ot;ot=t;
@@ -460,18 +704,40 @@ function anim() {
   function loadObjsThenLoop(a) {
     loopAfterLoaded=a.length;
     for (var i=0;i<a.length;i++) {
-      var o=a[i];o.f=oonload;
-      Conet.download(o);
+      var o=a[i];
+      if (o.a) {
+        o.cloadf=cload;
+        Pd5.loadCombine(o);
+      } else {
+        if (!o.f) o.f=oonload;
+        Conet.download(o);
+      }
     }
     //...
   }
+  function out(s) {
+    //console.log(s);
+    debug=s;updateHud();//...
+  }
+  function outMenu() {
+    if (!cmenu) { out('[m] menu');return; }
+    var s='';
+    for (var i=0;i<cmenu.length;i++) {
+      var sh=cmenu[i].s;
+      if (i==menui) sh='<'+sh+'>';
+      s+=(i>0?' ':'')+sh;
+    }
+    out('[asd] '+s);
+    //...
+  }
   function keyDown(e) {
+    if (vrbu) { vrbu.parentNode.removeChild(vrbu);vrbu=undefined; }
+    
+    
     var kc=e.keyCode;
     keys[kc]=true;
-    console.log(kc);
-    if (views[0].vr) {
-      debug=' kc='+kc;updateHud(views[0]);
-    }
+    //console.log(kc);
+    //if (views[0].vr) { debug=' kc='+kc;updateHud(); }
     
     if ((kc>=48)&&(kc<=57)) {
     var c=kc-48;
@@ -488,55 +754,119 @@ function anim() {
     case 8:vh=10;break;
     case 9:vh=20;break;
     }
-    threeEnv.dtscale=vh;//gamespeed=vh;
+    dtscale=vh;//gamespeed=vh;
     }
     
-    if (kc==32) {
-      var v=views[0];
-      console.log('keyDown campos,conroltarget');
-      console.log(v.camera.position);
-      console.log(v.controls.target);
+    //if (kc==32) { var v=views[0];console.log('keyDown campos,conroltarget');
+    //console.log(v.camera.position);if (v.controls) console.log(v.controls.target); }
+    
+    if ((kc==77)&&self.menu) {
+      if (cmenu) cmenu=undefined; else { 
+        cmenu=self.menu;menui=0; }
+      outMenu();
+    }
+    if (cmenu) {
+      if (kc==65) { menui=(menui-1+cmenu.length)%cmenu.length;outMenu(); }
+      if (kc==68) { menui=(menui+1)%cmenu.length;outMenu(); }
     }
     
     
+    if (kc==82) { //r
+      if (views[0].recordOnKey) {
+        if (!record) { 
+          record=[];
+          recording=true; 
+        } else {
+          Conet.upload({fn:'/three/anim/cambaseRecord.json',data:JSON.stringify(record)});
+          debug='Record saved to cambaseRecord.json.';
+          updateHud();
+          record=undefined;
+          recording=false;
+        }
+      }
+    }
+    if (kc==86) { //v
+      if (views[0].recordOnKey) {
+        if (!record) {
+          out('Loading record.');
+          Conet.download({fn:'/three/anim/cambaseRecord.json',
+    f:function(v) {
+      record=JSON.parse(v);
+      viewing=true;viewi=0;viewt=0;
+    }
+          });
+        } else {
+          viewing=false;
+          record=undefined;
+          out(' ');
+        }
+      }
+    }
+    //if ((kc==70)&&game.fetchOnKey) self.mfetch.action();//f
+    
+    if (game.defMoves) {
+      //onsole.log(kc);
+      //out('tileskd '+kc);
+      if (kc==67) { //c
+        //if (o0.ego) { o0.ego=0;o1.ego=1; } 
+        //else { o0.ego=1;o1.ego=0; }
+        var i=egoi,os=threeEnv.os;
+        while (1) {
+          i++;
+          if (i==os.length) { i=-1;break; }
+          if (i==egoi) break;
+          if (!os[i].ps.env) break;
+        }
+        egoi=i;
+        //egoi++;if (egoi==threeEnv.os.length) egoi=-1;
+        self.controlo=planim.ego=egoi==-1?undefined:threeEnv.os[egoi].ps;
+        var cam=views[0].camera;
+        //cam.rotation.x=0;cam.rotation.y=0;
+        //console.log(threeEnv.os);
+        //onsole.log(planim.ego);
+      }
+      //if (kc==86) lights[1].castShadow=!lights[1].castShadow;
+    }
+    
+    if (game.keyDown) game.keyDown(e);
     //console.log('kc='+kc);//...
-    if (vrkeys) {
-    var camera=views[0].camera;
-    if (kc==38) camera.rotation.x+=0.1;
-    if (kc==40) camera.rotation.x-=0.1;
-    if (kc==37) camera.rotation.y+=0.1;
-    if (kc==39) camera.rotation.y-=0.1;
-    //console.log(camera.quaternion);
-    var v=new THREE.Vector3();
-    if ((kc==65)) v.x+=0.1;
-    else if ((kc==68)) v.x-=0.1;
-    else if ((kc==87)) v.z+=0.1;
-    else if ((kc==83)) v.z-=0.1;
-    v.applyQuaternion(camera.quaternion);
-    base.position.add(v);
-    //onsole.log(base.position);
-    base.updateMatrix();
-    }
     //...
   }
   function keyUp(e) {
     var kc=e.keyCode;
     keys[kc]=false;
+    if (cmenu) {
+      if ((kc==87)||(kc==83)) {
+        var m=cmenu[menui];
+        if (m.sub) {
+          cmenu=m.sub;menui=0;
+        } else 
+          cmenu=undefined;
+        outMenu();
+        if (m.action) m.action();
+      }
+    }
   }
   function rani(n) {
     return Math.floor(Math.random()*n);
   }
   function onClick(e) {
-    if (skipClick) {
-      skipClick=false;
-      return;
-    }
+    //onsole.log('planim.onClick 0');
+    if (skipClick) { skipClick=false;return; }
+    //onsole.log('planim.onClick 1');
     //onsole.log('anim.onClick');
     eclick=e;
     //onsole.log(e);
     //if (e.detail<2) return;
     click=new THREE.Vector2(2*e.clientX/window.innerWidth-1,-2*e.clientY/window.innerHeight+1);
     //onsole.log(click);
+  }
+  function angle(o,pos) {
+    var dx=pos.x-o.x;
+    var dz=pos.z-o.z;
+    //var l=Math.sqrt(dx*dx+dz*dz);
+    var a=Math.atan2(dx,dz);
+    return a;//...
   }
   function dAng(a0,a1) {
     var da=a0-a1;
@@ -547,19 +877,32 @@ function anim() {
   function pointLight(ps) {
     //--
     var dist=ps.dist,l=new THREE.PointLight(ps.col,ps.int,dist);l.position.set(ps.x,ps.y,ps.z);
+    if (ps.castShadow!==false) {
     l.castShadow=true;
     l.shadow.camera.near=0.1;//100;
     l.shadow.camera.far=dist;//1000;
     l.shadow.mapSize.width=1024;//2048;
     l.shadow.mapSize.height=1024;
+    }
     base.add(l);
+    return l;
     //...
+  }
+  function defaultLights() {
+    var l0,l1,l2;
+    base.add(l0=new THREE.AmbientLight(0xffffff,0.3));
+    l1=pointLight({x:-1,y:2,z:1,col:0xffffaa,dist:10,int:2});
+    //pointLight({x:-5.5,y:0,z:-1,col:0x2222ff,dist:7,int:2});
+    l2=pointLight({x:5,y:-5,z:-5,col:0xaaffff,dist:100,int:0.5,castShadow:false});
+    //var l=new THREE.DirectionalLight(0xaaffff,1);l.position.set(0.2,-1,-0.2);base.add(l);
+    //...
+    return [l0,l1,l2];
   }
   function init() {
     
     scene = new THREE.Scene();
     
-    base=new THREE.Group();scene.add(base);
+    base=new THREE.Group();scene.add(base);self.base=base;
     
     //box(40,-80,0,-50,-100,-50,m1);
     //box(40+60,-80,30,-50,-50,-50,m1);
@@ -587,18 +930,107 @@ function anim() {
     window.addEventListener('keyup',keyUp);
     window.addEventListener('click',onClick,false);
     
-    //| following to avoid click event after viewchange (long mousdown/touch)
-    var tapstart=0;
-    window.addEventListener('mousedown',function(e) {
-      //onsole.log('anim.mousedown');
-      tapstart=Date.now();
+    var tapstart=0,mD=false,c=window,inp={x:0,y:0},touchEnded=true;
+    function coords(e) {
+      var iw=window.innerWidth,ih=window.innerHeight;
+      inp.x=2*e.clientX/iw-1;inp.y=2*e.clientY/ih-1;
+      inp.x*=iw/ih;
+      //...
+    }
+    
+    function mouseScroll(e) {
+      //...
+      var up=false;
+      if (e.wheelDelta!=undefined) up=e.wheelDelta>0;
+      else up=e.detail<0;
+      
+      //console.log('anim.mouseScroll up='+up);
+      if (self.mouseScroll) self.mouseScroll(up);
+      //...
+    }
+    
+    c.addEventListener('DOMMouseScroll',mouseScroll,false);
+    c.addEventListener('mousewheel',mouseScroll,false);
+    c.addEventListener('mousedown',function(e) {
+      //console.log('anim.mousedown');console.log(e.target);
+      if (e.target!=views[0].renderer.domElement) return;
+      tapstart=Date.now();mD=true;
+      
+      //var iw=window.innerWidth,ih=window.innerHeight,x=2*e.clientX/iw-1,y=2*e.clientY/ih-1;
+      //x*=iw/ih;
+      coords(e);
+      inp.button=e.button;
+      if (self.inpDown) self.inpDown(inp);
+      inp.button=undefined;
     }
     ,false);
-    window.addEventListener('mouseup',function(e) {
-      //onsole.log('anim.mouseup '+(Date.now()-tapstart));
+    c.addEventListener('mouseup',function(e) {
+      //| following to avoid click event after viewchange (long mousdown/touch)
       if (Date.now()-tapstart>300) skipClick=true;
+      mD=false;
     }
     ,false);
+    c.addEventListener('mousemove',function(e) {
+      if (!mD) return;
+      if (vrbu) { vrbu.parentNode.removeChild(vrbu);vrbu=undefined; }
+      //var iw=window.innerWidth,ih=window.innerHeight,x=2*e.clientX/iw-1,y=2*e.clientY/ih-1;
+      //x*=iw/ih;
+      //onsole.log('anim.mouseMove '+x+' '+y);
+      coords(e);
+      if (self.inpMove) self.inpMove(inp);
+    }
+    ,false);
+    
+    c.addEventListener('touchstart',function(e) {
+      if (!self.inpDown) return;
+      if (e.target!=views[0].renderer.domElement) return;
+      touchEnded=false;
+      var et=e.touches,l=et.length;
+      if (l==1) {
+        coords(et[0]);
+        self.inpDown(inp);
+      } else if (l==2) {
+        var x0=et[0].clientX,y0=et[0].clientY,
+            x1=et[1].clientX,y1=et[1].clientY,
+            dx=x1-x0,dy=y1-y0;
+        coords({clientX:(x0+x1)/2,clientY:(y0+y1)/2});
+        inp.dist=Math.sqrt(dx*dx+dy*dy);
+        inp.ang=Math.atan2(dy,dx);
+        self.inpDown(inp);
+        inp.ang=undefined;
+        inp.dist=undefined;
+      }
+    }
+    ,{passive:false});
+    c.addEventListener('touchmove',function(e) {
+      if (e.preventDefault) e.preventDefault();
+      if (e.stopPropagation) e.stopPropagation();
+      if (touchEnded) return;
+      if (!self.inpMove) return;
+      var et=e.touches,l=et.length;
+      if (l==1) {
+        coords(et[0]);
+        self.inpMove(inp);
+      } else if (l==2) {
+        var x0=et[0].clientX,y0=et[0].clientY,
+            x1=et[1].clientX,y1=et[1].clientY,
+            dx=x1-x0,dy=y1-y0;
+        coords({clientX:(x0+x1)/2,clientY:(y0+y1)/2});
+        inp.dist=Math.sqrt(dx*dx+dy*dy);
+        inp.ang=Math.atan2(dy,dx);
+        self.inpMove(inp);
+        inp.ang=undefined;
+        inp.dist=undefined;
+      }
+      //...
+    }
+    ,{passive:false});
+    c.addEventListener('touchend',function(e) {
+      touchEnded=true;
+      //console.log('anim.touchend');
+    }
+    ,{passive:false});
+    
     //| ---
     
     
@@ -620,6 +1052,20 @@ function anim() {
     //sc.src='anim/dialogJavaJavascript.js';
     //document.body.appendChild(sc);
     url=Conet.parseUrl();
+    
+    if (url.sn) {
+      var sc=document.createElement('script');
+    sc.onload=function() {
+      //console.log('Script loaded: '+url.sn);
+      resize();
+      //var rvr=views[0].renderer.vr;
+      //if (rvr.getDevice()) base.position.set(0,-rvr.userHeight,0);
+      
+    }
+      sc.src=url.sn;
+      document.body.appendChild(sc);
+    } else {
+    
     var fn=url.fn
       //||'anim/dialogJavaJavascript.js';
       //||'anim/base.js';
@@ -633,6 +1079,7 @@ function anim() {
     }
     });
     //calc();
+    }
     
     var sh='Anim '+version;
     console.log(sh);
@@ -640,17 +1087,121 @@ function anim() {
     
     //...
   }
+  function initVr() {
+    var renderer=views[0].renderer;
+    renderer.vr.enabled=true;
+    
+    window.addEventListener('vrdisplaypointerrestricted',function() {
+      var pointerLockElement=renderer.domElement;
+      if (pointerLockElement&&typeof(pointerLockElement.requestPointerLock)==='function' ) {
+        pointerLockElement.requestPointerLock();
+      }
+    }
+    ,false);
+    window.addEventListener('vrdisplaypointerunrestricted',function() {
+      var currentPointerLockElement=document.pointerLockElement;
+      var expectedPointerLockElement=renderer.domElement;
+      if (currentPointerLockElement&&currentPointerLockElement===expectedPointerLockElement&&typeof(document.exitPointerLock)==='function' ) {
+        document.exitPointerLock();
+      }
+    }
+    ,false);
+    
+      var b=WEBVR.createButton(renderer);
+      ////console.log('button.ih='+b.innerHTML);
+      ////console.log(renderer.vr);
+      document.body.appendChild(b);
+    //...
+    //if (withClick&&b.onclick) b.onclick(); ---autoclick doesnt work :/
+  }
   init();
+  this.etDebug=function(v) {
+    if (v!==undefined) debug=v;
+    return debug;
+  }
+  this.etRay0=function(v) {
+    return ray0;//...
+  }
+  this.etFetch=function(v) {
+    //if (v===null) fetch=undefined; else 
+    //if (v) {
+    if (arguments.length==1) {
+      fetch=v;
+      if (fetch) {
+        fetchop.copy(fetch.position);//subVectors(fetch.position,base.position);
+        fetchbp.copy(base.position);
+      }
+    }
+    return fetch;
+  }
+  this.goTo=function(ops,pos,dt) {
+    var d=ops.pos.distanceTo(pos);
+    if (d<(ops.v||vdef)*dt) { 
+      ops.pos.copy(pos);
+      ops.turnLeft=ops.turnRight=ops.goFront=false;
+      return false; 
+    }
+    
+    var da=dAng(ops.roty,angle(ops.pos,pos));
+    ops.turnLeft=da<-0.1;
+    ops.turnRight=da>0.1;
+    ops.goFront=Math.abs(da)<0.7;
+    
+    //pos.sub(ops.pos);
+    //vh0.subVectors(pos,ops.pos);
+    //vh0.normalize();
+    //vh0.multiplyScalar(dt*0.001);
+    //ops.pos.add(vh0);
+    return 1;
+    //...
+  }
+  this.addView=addView;this.box=box;this.defaultLights=defaultLights;
+  this.loadObjsThenLoop=loadObjsThenLoop;this.game=game;this.animate=animate;
+  this.views=views;this.version=version;this.m0=m0;this.m1=m1;this.out=out;
+  this.f4=f4;this.mray0=mray0;this.cursscale=false;this.keys=keys;
+  this.loadInit=loadInit;this.rani=rani;this.outMenu=outMenu;this.initVr=initVr;
+  this.pointLight=pointLight;this.vrkeys=true;this.threeEnv=threeEnv;
+  this.base=base;this.updateHud=updateHud;this.vrUserHeight=0;
+  //---init menus
+  (function () {
+    self.mfetch={s:'fetch',action:function() {
+      //---
+      if (fetch) {
+        fetch=undefined;
+        out('Fetch ended.');
+      } else {
+        if (ray0) {
+          //fetch=ray0;
+          //fetchop.copy(fetch.position);//subVectors(fetch.position,base.position);
+          //fetchbp.copy(base.position);
+          self.etFetch(ray0);
+          out('Obj fetched.');
+        } else 
+          out('No obj to fetch.');
+      }
+      //...
+    }
+    };
+  }
+  )();
+  //---
 }
-anim();
+var planim=new Planim();
 </script></body>
 </html><script>
-//fr o,18
-//fr o,18,9,82,2
-//fr o,18,14
-//fr o,18,25
-//fr o,18,26
-//fr o,18,26,33
-//fr o,18,26,35
-//fr o,18,26,44
-//fr p,2,140
+//fr o,21
+//fr o,21,18
+//fr o,21,18,89
+//fr o,21,34,59
+//fr o,21,42,32
+//fr o,21,42,34
+//fr o,21,42,38
+//fr o,21,42,40
+//fr o,21,42,42
+//fr o,21,42,45
+//fr o,21,42,47
+//fr o,21,42,49
+//fr o,21,42,59
+//fr o,21,42,74
+//fr o,21,42,86
+//fr p,7,126

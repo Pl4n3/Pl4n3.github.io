@@ -1,7 +1,7 @@
 var Conet={};
 (function(Conet) {
   Conet.offline=false;
-  Conet.version='1.287 ';//FOLDORUPDATEVERSION
+  Conet.version='1.291 ';//FOLDORUPDATEVERSION
   Conet.files={};
   var uploads={},fns,logc,logs=[];//fn=>data,first
   function xhr(p) {
@@ -154,8 +154,11 @@ var Conet={};
     function mloadUpdate() {
       mload.sub.splice(1,mload.sub.length-1);
       //onsole.log(m.files);
+      var firstLoadableIndex=undefined;
       for (var i=0;i<m.files.length;i++) {
         var fn=m.files[i].fn;
+        if (p.noh) if (fn.indexOf('/h/')!=-1) continue;
+        if (firstLoadableIndex===undefined) firstLoadableIndex=i;
         var i0=fn.lastIndexOf('/')+1;//if (i0==-1) i0=0;
         var i1=fn.indexOf('.',2);//skip path dots
         if (i1==-1) i1=fn.length;
@@ -163,6 +166,7 @@ var Conet={};
         mload.sub.push({s:fn.substr(i0,i1-i0),ms:fn.substr(0,i0)+'^'+fn.substr(i1)//,fs:0.5
           ,a:fn,actionf:mload1});
       }
+      return firstLoadableIndex;
     }
     function checkListFile(v) {
       //m.curFn=v;
@@ -277,11 +281,11 @@ var Conet={};
       
       //onsole.log('Conet.fileMenu '+p.fn+' '+v);
       //onsole.log(Conet.fmFiles);
-      mloadUpdate();
+      var firstLoadableIndex=mloadUpdate();
       if (p.noStartLoad) return;
       //m.curFn=p.curFn?p.curFn:m.files[0].fn;
       //Menu.ms(p.loadMs?mload:m,m.curFn);
-      checkListFile(p.curFn?p.curFn:m.files[0].fn);
+      checkListFile(p.curFn?p.curFn:m.files[firstLoadableIndex].fn);//0
       p.loadf(m.curFn,1);
     }
     });
@@ -369,6 +373,7 @@ console.log('Conet '+Conet.version);
 //fr o,1,5,17
 //fr o,1,8
 //fr o,1,8,1
+//fr o,1,9
 //fr o,1,9,2
 //fr o,1,9,3
 //fr o,1,9,4
@@ -381,4 +386,4 @@ console.log('Conet '+Conet.version);
 //fr o,1,9,56
 //fr o,1,10,1
 //fr o,1,13,4
-//fr p,15,3
+//fr p,38,59

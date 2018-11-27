@@ -85,10 +85,11 @@ function jnr() {
       }
       if (!ps.o) continue;
       var u=bod2.loadUnit(ps.o,ps.x,ps.y);
-      u.shadowImg=imgShadow;u.dbg=1;
+      u.shadowImg=imgShadow;//u.dbg=1;
       u.shsc=ps.shsc;
       u.sc=ps.sc||1;
       u.hp=ps.hp;u.mhp=ps.hp;
+      Conet.hcopy(ps,u);
       if (ps.skin) { u.skin=ps.skin;skins[ps.skin]=1; }
       bod2.setFc(u,'idle');
       //reak;
@@ -113,7 +114,7 @@ function jnr() {
         //if (ui==0) continue;
         var u=bod2.units[ui];
         if (u.skin!=this.fn) continue;
-        u.dbg=0;
+        //u.dbg=0;
       
         if (this.fn=='santa.json.txt') {
           for (var i=0;i<i0.length;i++) {
@@ -137,7 +138,8 @@ function jnr() {
         }
       
         //onsole.log('santa.img onload u.polys.length='+u.polys.length);
-        if (!u.dbg) for (var i=u.polys.length-1;i>=0;i--) u.polys[i].img=img;
+        //if (!u.dbg) 
+        for (var i=u.polys.length-1;i>=0;i--) u.polys[i].img=img;
       }
       
     }
@@ -184,6 +186,8 @@ function jnr() {
     }
     
     function ai(u,ui) {
+      if (u.aiSkip) return 0;
+      
       var uf=bod2.units[0];
       
       var ret=0;
@@ -328,9 +332,22 @@ function jnr() {
       //ct.restore();
     }
     
-    var vh='0.289 ';//FOLDORUPDATEVERSION
+    var vh='0.301 ';//FOLDORUPDATEVERSION
     
     Menu.init([
+    {s:'&#9776;',noTri:true,fs:1.4,pw:0.05,sub:[
+    
+    {s:'Fullscreen',vertCenter:1,actionf:function() {
+      var c=document.body.parentNode;
+      if (c.requestFullscreen) c.requestFullscreen();
+      else if (c.mozRequestFullScreen) c.mozRequestFullScreen();
+      else if (c.webkitRequestFullScreen) c.webkitRequestFullscreen();
+      //...
+    }
+    }
+    
+    
+    ]},
     mleft={s:'\u2190',ms:'<br><br><br>Bod2 '+bod2.version,px:0.02,py:0.02,pw:0.116,ph:0.116,ydown:true,fs:1.4,keys:[65,37]},
     mright={s:'\u2192',ms:'<br><br><br>'+vh,px:0.12,py:0.02,pw:0.116,ph:0.116,ydown:true,fs:1.4,keys:[68,39]},
     mattack={s:'\u270a',px:0.02,py:0.12,pw:0.116,ph:0.116,ydown:true,xright:true,fs:1.4,keys:[69,96,87]},//E,num-0,W
@@ -362,8 +379,8 @@ function jnr() {
 <canvas id="canvas" width="500" height="600"></canvas>
 </body>
 </html><script>
-//fr o,16,5,78
-//fr o,16,5,78,3
-//fr o,16,5,110
-//fr o,16,5,120
-//fr p,42,15
+//fr o,16
+//fr o,16,5
+//fr o,16,5,121
+//fr o,16,5,128
+//fr p,21,162

@@ -1,7 +1,7 @@
 var Conet={};
 (function(Conet) {
   Conet.offline=false;
-  Conet.version='1.291 ';//FOLDORUPDATEVERSION
+  Conet.version='1.292 ';//FOLDORUPDATEVERSION
   Conet.files={};
   var uploads={},fns,logc,logs=[];//fn=>data,first
   function xhr(p) {
@@ -362,6 +362,24 @@ var Conet={};
     fns=undefined;
     console.log('conet.updateEditHistory');
   }
+  Conet.hcopy=function(from,to,ka,woh,keep) {
+    //(keep it) same as Pd5.hcopy, this is just needed often
+    if (!to) to={};
+    if (ka===undefined) {
+      for (var k in from) if (from.hasOwnProperty(k)) {
+        if (keep) if (to[k]!==undefined) continue;
+        if (!(woh&&woh[k])) to[k]=from[k];
+      }
+      return to;
+    }
+    for (var ki=0;ki<ka.length;ki++) {
+      var k=ka[ki],v=from[k];
+      if (v===undefined) continue;
+      if (keep) if (to[k]!==undefined) continue;
+      to[k]=v;
+    }
+    return to;
+  }
   Conet.xhr=xhr;
   Conet.upload=upload;
   Conet.download=download;
@@ -371,10 +389,6 @@ var Conet={};
 console.log('Conet '+Conet.version);
 //fr o,1
 //fr o,1,5,17
-//fr o,1,8
-//fr o,1,8,1
-//fr o,1,9
-//fr o,1,9,2
 //fr o,1,9,3
 //fr o,1,9,4
 //fr o,1,9,5
@@ -386,4 +400,5 @@ console.log('Conet '+Conet.version);
 //fr o,1,9,56
 //fr o,1,10,1
 //fr o,1,13,4
-//fr p,38,59
+//fr o,1,14
+//fr p,41,16

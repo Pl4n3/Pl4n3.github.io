@@ -447,7 +447,8 @@ var Menu={};
           //var fs=m.fs?m.fs:1;
           c.innerHTML=m.s+'<br><textarea id="'+tfid+'" '+(mco.wrap?'':'wrap="off" ')+'style="'+(mco.wrap?'':
             //-> in firefox this made \n not do wrap, therfore commented out: 'white-space:nowrap;'+
-            'overflow:auto;')+'font-size:'+c.style.fontSize+'" '+
+            'overflow:auto;')
+            +'font-size:'+c.style.fontSize+'" '+
           'cols='+(mco.tacols?mco.tacols:36)+' rows='+(mco.tarows?mco.tarows:15)+'>'+value+'</textarea>';
           //tacols:36,tarows:15 frueher 20,8
           //'cols='+(mco.tacols?mco.tacols:Math.floor(3/fs+0.5))+' rows='+(mco.tarows?mco.tarows:Math.floor(1.2/fs+0.5))+'>'+value+'</textarea>';
@@ -911,10 +912,5 @@ var Menu={};
 
 //--
 //fr o,2
-//fr o,2,27
-//fr o,2,36
-//fr o,2,38
-//fr o,2,39
-//fr o,2,46
-//fr o,2,48
-//fr p,65,269
+//fr o,2,41
+//fr p,2,44

@@ -1,5 +1,5 @@
 //---
-(function () {
+planim.scriptsLoaded.push(function () {
   var t=0,rani=planim.rani,mainz=-1,// = vr-cam-dist
       camd=2,camx=0,camy=0.75,player,//relates to planim ego,controlo but different semantics:
       //--- ego for cam, controlo for wasd controls
@@ -20,15 +20,19 @@
     player=o.ps;//...
   }
   
+  //onsole.log('zweide.js initing.');
+  
+  if (planim.zweideMap) planim.zweideMap({mainz:mainz,setPlayer:setPlayer});
+  else
   (function() {
     planim.loadObjsThenLoop([
       {fn:'/shooter/objs/templar/o5.txt',pos:new THREE.Vector3(-1,-1.8,mainz),anim:'stand2',scale:2,animRun:'run',v:0.003,vrot:0.01,roty:1.5,onload:setPlayer},
-      {fn:'/shooter/objs/tripod/o5.txt',pos:new THREE.Vector3(1,-1.8,mainz),anim:'idle',scale:2,animRun:'run',v:0.003,roty:-1.5},
-      {fn:'/shooter/objs/shrub/conifer.json',pos:new THREE.Vector3(0,-1.8,mainz-0.7),scale:0.015,env:1},
-      {fn:'/shooter/objs/shrub/conifer.json',pos:new THREE.Vector3(-2,-1.8,mainz-1.7),scale:0.03,env:1},
-      {fn:'/shooter/objs/shrub/conifer.json',pos:new THREE.Vector3(-4,-1.8,mainz-2.7),scale:0.05,env:1},
-      {fn:'/shooter/objs/shrub/conifer.json',pos:new THREE.Vector3(-12,-1.8,mainz-4),scale:0.1,env:1},
-      {fn:'/shooter/objs/shrub/conifer.json',pos:new THREE.Vector3(12,-1.8,mainz-4),scale:0.1,env:1},
+      //{fn:'/shooter/objs/tripod/o5.txt',pos:new THREE.Vector3(1,-1.8,mainz),anim:'idle',scale:2,animRun:'run',v:0.003,roty:-1.5},
+      //{fn:'/shooter/objs/shrub/conifer.json',pos:new THREE.Vector3(0,-1.8,mainz-0.7),scale:0.015,env:1},
+      //{fn:'/shooter/objs/shrub/conifer.json',pos:new THREE.Vector3(-2,-1.8,mainz-1.7),scale:0.03,env:1},
+      //{fn:'/shooter/objs/shrub/conifer.json',pos:new THREE.Vector3(-4,-1.8,mainz-2.7),scale:0.05,env:1},
+      //{fn:'/shooter/objs/shrub/conifer.json',pos:new THREE.Vector3(-12,-1.8,mainz-4),scale:0.1,env:1},
+      //{fn:'/shooter/objs/shrub/conifer.json',pos:new THREE.Vector3(12,-1.8,mainz-4),scale:0.1,env:1},
     ]);
   }
   )();
@@ -38,37 +42,40 @@
   bp.z=-(mainz+camd);
   bp.y+=camy;
   planim.game.defMoves=1;
+  planim.defMoveAi=undefined;
   //planim.vrkeys=false;
   planim.game.calc=function(dt) {
     t+=dt;
     if (!player) return;
-    player.goLeft=//keys[74]||
+    player.zgoLeft=//keys[74]||
       mleft.on;//j
-    player.goRight=//keys[76]||
+    player.zgoRight=//keys[76]||
       mright.on;//l
     
     for (var i=threeEnv.os.length-1;i>=0;i--) {
       var o5=threeEnv.os[i],o=o5.ps;
       if (o.env) continue;
       o.goFront=false;o.turnLeft=false;o.turnRight=false;
-      if (o.goRight) {
+      if (o.zgoRight) {
         if (o.roty<pi2) o.turnLeft=true; else { o.roty=pi2;o.goFront=true; }
+        o.dir=1;
       }
-      if (o.goLeft) {
+      if (o.zgoLeft) {
         if (o.roty>-pi2) o.turnRight=true; else { o.roty=-pi2;o.goFront=true; }
+        o.dir=-1;
       }
     }
     
-    if (player.goLeft||player.goRight) camt=1000;
+    if (player.zgoLeft||player.zgoRight) camt=1000;
     if (camt>0) {
       planim.vrkeys=false;
       camd=Math.max(0.5,camd+((keys[87]?-1:0)+(keys[83]?1:0))*0.01*dt);
       camy=Math.min(2,Math.max(0,camy+((keys[81]?-1:0)+(keys[69]?1:0))*0.001*dt));
       
-      camx=player.pos.x;//camx+=(player.pos.x-camx)/10;
+      camx=player.pos.x+player.dir*camd/2;//camx+=(player.pos.x-camx)/10;
       //camd=2;//camd+=(3-camd)/10;
     
-      cry+=((player.goLeft?pi2/2:(player.goRight?-pi2/2:0))-cry)/10;cr.y=cry;//+=(0-cr.y)/10;
+      cry+=((player.zgoLeft?pi2/2:(player.zgoRight?-pi2/2:0))-cry)/10;cr.y=cry;//+=(0-cr.y)/10;
       bp.x+=(-(camx+Math.sin(cr.y)*camd)-bp.x)/10;
       bp.z+=(-(mainz+Math.cos(cr.y)*camd)-bp.z)/10;
     
@@ -116,7 +123,7 @@
     //onsole.log('zweide.mouseScroll '+up);
   }
   
-  Menu.init([{s:'Menu',ms:planim.version+' zweide v.0.113 ',sub:[//FOLDORUPDATEVERSION
+  Menu.init([{s:'Menu',ms:planim.version+' zweide v.0.132 ',sub:[//FOLDORUPDATEVERSION
   {s:'Fullscreen',actionf:function() {
     var c=document.body;
     if (c.requestFullscreen) c.requestFullscreen();
@@ -134,7 +141,10 @@
   ],{listen:1});
   //...
 }
-)();
+);
 //console.log('YOIUOkokooko');
 //fr o,1
-//fr p,0,19
+//fr o,1,16
+//fr o,1,22
+//fr o,1,32
+//fr p,2,22

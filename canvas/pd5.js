@@ -406,8 +406,9 @@ var Pd5={};
     }
   }
   Pd5.animStart=function(o,anim) {
+    //console.log('Pd5.animStart 0');
     if ((o.anim==anim)||!anim) return;
-    //console.log('anim start '+anim.length);
+    //onsole.log('Pd5.animStart '+anim.length);
     o.anim=anim;
     o.ta=0;o.ca=0;
     
@@ -432,7 +433,7 @@ var Pd5={};
   Pd5.calc=function(lo,dt,aX,aY,scale,tr,cw2,ch2,notris) {
     var o=lo;
     if (o.animStop&&!o.recalc&&!o.isEdit) return;
-    var oo=lo.o;
+    var oo=lo.o;//,ps=o.ps||1;
     var va=lo.verts;
     var m=new Vecmath.Mat4();
     var bones,anim;
@@ -455,7 +456,7 @@ var Pd5={};
         for (var h=0;h<anim.length;h++) { var a=anim[h];aT+=a.t;a.t2=aT; }
         lo.aT=aT;
         if (!lo.ta) lo.ta=0;
-        if (!lo.animStop) lo.ta+=dt;
+        if (!lo.animStop) lo.ta+=dt;// /(ps.animdiv||1);
         var t=lo.ta/1000;
         if (t>aT) lo.ca++;
         t=t%aT;lo.at=t;
@@ -973,7 +974,33 @@ var Pd5={};
       else if (sa0=='norm') { var m=o.meshes[sa.length>2?parseInt(sa[2]):0];if (m) { m.norm=sa[1];m.matChange=true; }}
       else if (sa0=='spec') { var m=o.meshes[sa.length>2?parseInt(sa[2]):0];if (m) { m.spec=sa[1];m.matChange=true; }}
       else if (sa0=='osc') {
-        if (window.Sound) Sound.oscs(s.substr(sa0.length+1));
+        if (window.Sound) Sound.oscs(s.substr(sa0.length+1)); }
+      else if (sa0=='sound') {
+        var src=sa[1];//s.substring(sk.length);        
+        //if (a.length>2) vol*=parseFloat(a[2]);
+        //og(src);
+        Sound.play(src,1);//vol*(o.vol?o.vol:1)*gvol);
+        //console.log('pd5.animText sound '+src);
+        //---
+      } else if (sa0=='attack') {
+        //var oh=o.o;
+        //console.log('Pd5.animText attack '+o.ay);//+' '+oh.roty);
+        //console.log(o);
+        var ps=o.ps,e={x:ps.pos.x,y:ps.pos.y,z:ps.pos.z,s:0,t:0,o:ps},
+            a=ps.roty+PI/4,l=ps.attackr||((ps.collr||1)*2),os=Pd5.os;
+        e.x+=(Math.sin(a)-Math.cos(a))*l;
+        e.z+=(Math.cos(a)+Math.sin(a))*l;
+        
+        if (window.planim) planim.attackMark(e);//box(e.x,e.y,e.z,0.2,0.2,0.2);
+        
+        for (var h=os.length-1;h>=0;h--) {
+          var oh=os[h];
+          if ((o==oh)||!oh.ps.hitr) continue;
+          if (dist(e,oh.ps.pos)<oh.ps.hitr) {
+            oh.ps.hitt=0;oh.ps.hite=e;
+            //if (Pd5.animAttack) Pd5.animAttack(e);
+          }
+        }
       }
     }
     for (var i=o.meshes.length-1;i>=0;i--) {
@@ -1267,6 +1294,7 @@ var Pd5={};
   }
   //---
   Pd5.hcopy=function(from,to,ka,woh,keep) {
+    if (!to) to={};
     if (ka===undefined) {
       for (var k in from) if (from.hasOwnProperty(k)) {
         if (keep) if (to[k]!==undefined) continue;
@@ -1698,6 +1726,17 @@ var Pd5={};
     if (eq(t.n.x,0)) e0.set3(1,0,0); else e0.set3(0,1,0);
     if (eq(t.n.y,0)) e1.set3(0,-1,0); else e1.set3(0,0,1);
     }
+    
+    
+    //---ignore triangles with diagonal normals, because that handling is bugged triangles flip side
+    var nc=(t.n.x!=0?1:0)+(t.n.y!=0?1:0)+(t.n.z!=0?1:0);
+    if (nc>=2) {
+      //onsole.log(t.n);
+      t.check=false;
+      return;
+    }
+    
+    
     //console.log(t.n);console.log(e0);console.log(e1);
     fa.splice(ti,1);
     //if (1) return;
@@ -1991,15 +2030,15 @@ var Pd5={};
     //for (var j=0;j<119;j++)
     var change=true;
     while (change) {
-    change=false;
-    for (var i=0;i<fa.length;i++) {
-      if (fa[i].check) {
-        //og('pd5Opt next '+i+' '+fah.indexOf(fa[i]));
-        Pd5.triOptPlane(o,i);
-        change=true;
-        break;
+      change=false;
+      for (var i=0;i<fa.length;i++) {
+        if (fa[i].check) {
+          //og('pd5Opt next '+i+' '+fah.indexOf(fa[i]));
+          Pd5.triOptPlane(o,i);
+          change=true;
+          break;
+        }
       }
-    }
     }
     //pd5OptPlane(o,o.meshes[0].fa.indexOf(t1));
   }
@@ -2009,12 +2048,11 @@ var Pd5={};
 
 //---
 //fr o,2
-//fr o,2,31
-//fr o,2,37
 //fr o,2,40,75
-//fr o,2,46
 //fr o,2,46,44
 //fr o,2,47,1
 //fr o,2,47,2
 //fr o,2,47,2,3
-//fr p,60,508
+//fr o,2,49
+//fr o,2,50
+//fr p,96,76

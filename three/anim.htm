@@ -24,7 +24,7 @@ function Planim() {
   //!   stopped using this, since 27.3.2018 it has event.preventDefault in
   //!   touchStart which disables clickevents
   var scene,stats,views=[],oh={},ot=Date.now(),scra,scri=0,scrt=0,loopAfterLoaded,
-      base,debug='',version='1.861 ',//FOLDORUPDATEVERSION
+      base,debug='',version='1.1246 ',//FOLDORUPDATEVERSION
       m0=new THREE.MeshPhongMaterial( { color:0x666666,flatShading:true } ),
       m1=new THREE.MeshPhongMaterial({color:0x77dd77,flatShading:true,
       transparent:true,opacity:0.5}),mray0=new THREE.MeshPhongMaterial({
@@ -36,7 +36,8 @@ function Planim() {
       vq1=new THREE.Quaternion(),ray0,fetch,fetchop=new THREE.Vector3(),camkt=0,
       fetchbp=new THREE.Vector3(),camv=0,cmenu,menui=0,rvr,vrd,vrUserHeight=0,
       mh0=new THREE.Matrix4(),vh0=new THREE.Vector3(),ot=Date.now(),dtscale=1,
-      egoi=-1,vh0=new THREE.Vector3(),vdef=0.001,vrbu;
+      egoi=-1,vh0=new THREE.Vector3(),vdef=0.001,vrbu,baseRot={x:0.3,y:0,z:0},
+      tIsoStrafe=0,uiMode=-1;
   function updateHud(view) {
     if (!view) view=views[0];
     var hud=view.hud,c=hud.c,ct=c.getContext('2d'),w=c.width,h=c.height;
@@ -53,7 +54,7 @@ function Planim() {
   function addView(v) {
     var camera,controls,renderer;
     renderer = new THREE.WebGLRenderer({antialias:true});
-    renderer.setClearColor(v.bgcol||0x888888);
+    renderer.setClearColor(v.bgcol!==undefined?v.bgcol:0x888888);
     renderer.shadowMap.enabled=true;
     renderer.shadowMap.type=THREE.BasicShadowMap;
     //				renderer.shadowMapEnabled=true;
@@ -81,6 +82,7 @@ function Planim() {
     
     //camera.position.set(v.camx||0,v.camy||0,v.camz||500);
     //camera.rotation.y=0.5;
+    //camera.rotation.x=0.2;
     camera.rotation.order='YXZ';
     scene.add(camera);
     
@@ -114,7 +116,7 @@ function Planim() {
     if (v.vr) {
       //renderer.vr.enabled=true;
     
-    //if (!v.noHud) {
+    if (!v.noHud) {
       var c=document.createElement('canvas'),w=v.hudres||128,
           h=w;c.width=w;c.height=h;
       var t=new THREE.Texture(c);v.hud={c:c,t:t};
@@ -134,7 +136,7 @@ function Planim() {
       //crosshair.position.z=-0.3;
       crosshair.position.set(v.hudx||0.05,v.hudy||-0.05,v.hudz||-0.3);
       camera.add(crosshair);
-    //}
+    }
     
       if (1) initVr(); else 
       if (0) { //for now dont using this, but init-vr-menu
@@ -192,7 +194,7 @@ function Planim() {
         maxa=1.5,gmax=Math.max(gw,gh),ah=1.75//1.75
         ,f=Math.min(ah,gmax/gmin),minf=0.5;//0.5
     
-    console.log('anim.resize gw='+gw+', gh='+gh);
+    //onsole.log('anim.resize gw='+gw+', gh='+gh);
     
     //f=(1-(ah-f));
     //gmin*=minf+f*(1-minf);
@@ -323,6 +325,126 @@ function Planim() {
   function f4(v) {
     return Math.floor(0.5+v*10000)/10000;//...
   }
+  function angleKeys(kA,kD,kW,kS) {
+    //....
+    var a=(kD&&kW?3*PI/4:(kD&&kS?PI/4:(kA&&kW?-3*PI/4:(kA&&kS?-PI/4:
+        (kA?-PI/2:(kD?PI/2:(kS?0:PI)))))));//da=dAng(o.roty,a-baseRot.y);
+    return a;
+    //...
+  }
+  function len2(x0,y0,x1,y1) {
+    var dx=x1-x0,dy=y1-y0;
+    return dx*dx+dy*dy;
+  }
+  function dist2(o0,o1) {
+    var dx=o0.x-o1.x;
+    //var dy=o0.y-o1.y;
+    var dz=o0.z-o1.z;
+    return dx*dx//+dy*dy
+      +dz*dz;
+  }
+  function animDefMoves(dt) {
+    var os=threeEnv.os,controlo=self.controlo;
+    for (var i=os.length-1;i>=0;i--) {
+      var o5=os[i],o=o5.ps;
+      if (o.env) continue;
+      if (o.health==0) {
+         Pd5.animStart(o5,o5.animh[o.animDead]);
+         continue;
+      }
+      
+      if (self.defMoveAi)
+      if (o!=controlo) {
+        var ofoc=o.focus;
+        if (ofoc) {
+          o.turnLeft=false;
+          o.turnRight=false;
+          o.goFront=false;
+          o.attack=false;
+          //o.focust+=dt;if (o.focust>5000) delete(o.focus);
+          //console.log('animDefMoves focus ');
+          //delete(o.focus);
+          var da=dAng(o.roty,angle(o.pos,ofoc.pos));
+          if (da<-0.1) o.turnLeft=true;
+          if (da>0.1) o.turnRight=true;
+          var d2=dist2(o.pos,ofoc.pos);
+          if ((d2>30)||(ofoc.health<=0)) delete(o.focus); else
+          if (Math.abs(da)<0.2) {
+            var da=o.collr+ofoc.collr;da=da*da+1;
+            if (d2<=da) {
+              o.attack=true; 
+            } else o.goFront=true;
+          }
+          //console.log(ofoc.health);
+          //if (ofoc.health<=0) { delete(o.focus);o.attack=false; }
+        } else {
+          o.idlet=(o.idlet||0)+dt;
+          if (o.idlet>300) {
+            o.idlet=0;
+            if ((controlo.health>0)&&(dist2(o.pos,controlo.pos)<(o.collr+controlo.collr+5))) {
+              o.focus=controlo;
+              o.focust=0;
+            } else {
+              var v=rani(4);
+              o.turnLeft=(v==0);
+              o.turnRight=(v==1);
+              o.goFront=rani(3)==0;
+            }
+          }
+        }
+      }
+      
+      //if (o.turnLeft||o.turnRight) 
+      //  o.roty+=((o.turnLeft?1:0)+(o.turnRight?-1:0))*dt*(o.vrot||0.003);
+      if (o.hite) {
+        Pd5.animStart(o5,o5.animh[o.animHit]);
+        o.hitt+=dt;
+        if (o.hitt>250) {
+          o.focus=o.hite.o;o.focust=0;
+          o.health=Math.max(0,o.health-(o.focus.ap||1));
+          if (o5.bb) o5.bb.update=true;
+          delete(o.hite);
+        }
+      } else if (o.attack) {
+        Pd5.animStart(o5,o5.animh[o.animAttack]);
+      } else {
+      
+      if (o.turnLeft||o.turnRight) 
+        o.roty+=((o.turnLeft?1:0)+(o.turnRight?-1:0))*dt*(o.vrot||0.003);
+      
+      if (o.goFront||o.goBack||o.goLeft||o.goRight) {
+        var vx=0,vz=0,v=o.v||vdef;
+        if (o.goLeft) vx=-0.5; if (o.goRight) vx+=0.5;
+        if (o.goFront) vz=1; if (o.goBack) vz-=0.5;
+        var vx0=vz*Math.sin(o.roty)-vx*Math.cos(o.roty),
+            vz0=vz*Math.cos(o.roty)+vx*Math.sin(o.roty);
+        var x=o.pos.x+vx0*dt*v,
+            z=o.pos.z+vz0*dt*v;
+        var b=self.moveBounds;
+        if (b) {
+          x=Math.min(b.x1,Math.max(b.x0,x));
+          z=Math.min(b.z1,Math.max(b.z0,z));
+        }
+        if (o.collr) {
+          var r0=o.collr;
+          for (var h=os.length-1;h>=0;h--) {
+            if (i==h) continue;
+            var oh=os[h].ps,r1=oh.collr;
+            if (!r1) continue;
+            var d=len2(x,z,oh.pos.x,oh.pos.z),md=(r0+r1);//*0.4;
+            if (d>=md*md) continue;
+            d=Math.sqrt(d);
+            x=oh.pos.x+(x-oh.pos.x)*md/d;
+            z=oh.pos.z+(z-oh.pos.z)*md/d;
+          }
+        }
+        o.pos.x=x;o.pos.z=z;
+        Pd5.animStart(o5,o5.animh[o.animRun]);
+      } else
+        Pd5.animStart(o5,o5.animh[o.animIdle||o.anim]);
+    }}
+    //...
+  }
   function animate() {
     //requestAnimationFrame(animate);
     //controls.update(); // required if controls.enableDamping = true, or if controls.autoRotate = true
@@ -332,49 +454,120 @@ function Planim() {
     var t=Date.now(),dto=Math.min(100,(t-ot)),dt=dto*dtscale;ot=t;
     //console.log('anim.animate dt='+dt);
     
-    var o=self.controlo;
+    var o=self.controlo,ip=self.isoCamPos,strafe=planim.strafe;//ip?ip.strafe:0;
     if (o) { //! startete in sizes.js
-      o.turnLeft=keys[65];//37];
-      o.turnRight=keys[68];//39];
-      o.goFront=keys[87];//38];
-      o.goBack=keys[83];//40];
+      o.attack=keys[96]||self.maction.on||keys[69];//num-0,e
+      var kA=keys[65],kD=keys[68],kW=keys[87],kS=keys[83],
+          kL=keys[37],kR=keys[39],kU=keys[38],kDn=keys[40];
+      if (self.tsd) {
+        var ts0=self.tsd[0];
+        if (ts0.dx<-0.3) kA=true;
+        if (ts0.dx>0.3) kD=true;
+        if (ts0.dy<-0.3) kW=true;
+        if (ts0.dy>0.3) kS=true;
+        var ts1=self.tsd[1];
+        if (strafe) {
+          if (ts1.dx<-0.3) kL=true;
+          if (ts1.dx>0.3) kR=true;
+          if (ts1.dy<-0.3) kU=true;
+          if (ts1.dy>0.3) kDn=true;
+        } else {
+          if (ts1.dx==0) baseRot.yo=baseRot.y;
+          else baseRot.y=baseRot.yo+ts1.dx;
+        }
+      }
+      o.turnLeft=false;o.turnRight=false;
+      o.goFront=false;o.goBack=false;o.goLeft=false;o.goRight=false;
+      
+      if ((kL||kR)&&!strafe) {
+        //if (strafe) { o.turnLeft=kL;o.turnRight=kR; } else {
+        var dry=((kL?-1:0)+(kR?1:0))*dto*0.003;
+        baseRot.y+=dry;
+        //}
+      }
+      if (ip&&strafe&&(kL||kR||kU||kDn)) {
+        var a=angleKeys(kL,kR,kU,kDn),da=dAng(o.roty,a-baseRot.y);
+        if (da<-PI/18) o.turnLeft=true;
+        if (da>PI/18) o.turnRight=true;
+        //tIsoStrafe=0;
+      }
+      //if (kU||kDn) { baseRot.x=Math.min(0.8,Math.max(-0.3,baseRot.x+((kU?-1:0)+(kDn?1:0))*dto*0.001)); }
+      //if (kU||kDn) console.log(baseRot.x);
+      if (ip) {
+        
+        //test: after a while switch into no strafe mode, but that
+        //      doesnt work for long ranged strafe shootings.
+        //tIsoStrafe+=dt;if (tIsoStrafe>500) strafe=0;
+        
+        if (kA||kD||kW||kS) {
+          //var a=(kD&&kW?3*PI/4:(kD&&kS?PI/4:(kA&&kW?-3*PI/4:(kA&&kS?-PI/4:
+          //    (kA?-PI/2:(kD?PI/2:(kS?0:PI))))))),
+          var a=angleKeys(kA,kD,kW,kS),da=dAng(o.roty,a-baseRot.y);
+          var ada=Math.abs(da);
+          
+          if (strafe) {
+            if (ada<3*PI/8) o.goFront=true;
+            if (ada>5*PI/8) o.goBack=true;
+            if ((da<-PI/8)&&(da>-7*PI/8)) o.goLeft=true;
+            if ((da>PI/8)&&(da<7*PI/8)) o.goRight=true;
+          } else {
+            if (ada<=(dt*(o.vrot||0.003))) o.roty-=da; else 
+            if (da>0.1) o.turnRight=true;
+            else if (da<-0.1) o.turnLeft=true;
+            if (ada<0.9) o.goFront=true;
+          }
+        }
+      } else {
+        if (strafe) {
+          o.goLeft=kA;
+          o.goRight=kD;
+          o.turnLeft=kL;
+          o.turnRight=kR;
+        } else {
+          o.turnLeft=kA;//37];
+          o.turnRight=kD;//39];
+        }
+        o.goFront=kW;//38];
+        o.goBack=kS;//40];
+      }
     }
     
     
     if (game.calc) game.calc(dt);
     
-    if (game.defMoves) 
-    for (var i=threeEnv.os.length-1;i>=0;i--) {
-      var o5=threeEnv.os[i],o=o5.ps;
-      if (o.turnLeft||o.turnRight) 
-        o.roty+=((o.turnLeft?1:0)+(o.turnRight?-1:0))*dt*(o.vrot||0.003);
-      if (o.goFront||o.goBack) {
-        var vx=0,vz=0,v=o.v||vdef;
-        if (o.goFront) vz=1;
-        if (o.goBack) vz-=0.5;
-        var vx0=vz*Math.sin(o.roty)-vx*Math.cos(o.roty),
-            vz0=vz*Math.cos(o.roty)+vx*Math.sin(o.roty);
-        o.pos.x+=vx0*dt*v;
-        o.pos.z+=vz0*dt*v;
-        Pd5.animStart(o5,o5.animh[o.animRun]);
-      } else
-        Pd5.animStart(o5,o5.animh[o.animIdle||o.anim]);
-    }
-    
-    
+    if (game.defMoves) animDefMoves(dt);
     
     threeRender(dt);
     
     
     if (self.ego) {
-      var o=self.ego;
-      var p=o.pos;
-      var m=base.matrix;
+      var o=self.ego,p=o.pos,m=base.matrix,camPos=self.camPos;//,ip=self.isoCamPos;
       vh0.set(0,0,0);
       m.identity();m.setPosition(vh0);
-      mh0.makeRotationY(-o.roty+Math.PI);
-      m.multiply(mh0);
-      if (o.o.eyew) {
+      if (!ip) {
+    
+        if (camPos) {
+          //mh0.makeTranslation(-0.5,-1.5,-3);
+          mh0.makeTranslation(camPos.x,camPos.y,camPos.z);
+          m.multiply(mh0);
+        }
+    
+        //mh0.makeRotationX(-0.2);m.multiply(mh0);
+    
+        mh0.makeRotationY(-o.roty+Math.PI);
+        m.multiply(mh0);
+      }
+      if (ip) { 
+    
+        mh0.makeTranslation(ip.x,ip.y,ip.z);
+        m.multiply(mh0);
+        mh0.makeRotationX(baseRot.x);
+        m.multiply(mh0);
+        mh0.makeRotationY(baseRot.y);
+        m.multiply(mh0);
+        //vh0.set(-p.x+ip.x,-p.y+ip.y,-p.z+ip.z); 
+        vh0.set(-p.x,-p.y,-p.z); 
+      } else if (!camPos) {//o.o.eyew) {
         var p1=o.o.eyew.p1,f=o.o.scale,a=o.roty;//+o.rotofs-Math.PI;//f=350
         vh0.set(
           -p.x-(-p1.x*Math.cos(a)+p1.z*Math.sin(a))*o.scale*f
@@ -382,10 +575,12 @@ function Planim() {
          ,-p.z+(-p1.x*Math.sin(a)-p1.z*Math.cos(a))*o.scale*f
          );
       } else {
-        vh0.set(-p.x,-p.y-1.75,-p.z);
+        vh0.set(-p.x,-p.y-(camPos?0:1.75),-p.z);
+        //vh0.set(-p.x,-p.y-1.75,-p.z);
       }  
       mh0.identity();mh0.setPosition(vh0);//new THREE.Vector3(-p.x,-p.y,-p.z));
       m.multiply(mh0);
+    
       base.matrixAutoUpdate=false;
       base.matrixWorldNeedsUpdate=true;
     }
@@ -488,9 +683,17 @@ function Planim() {
     }
     
     if (fetch) {
-      fetch.position.copy(fetchop);
-      fetch.position.add(fetchbp);
-      fetch.position.sub(base.position);
+      var p=fetch.position;
+      p.copy(fetchop);
+      p.add(fetchbp);
+      p.sub(base.position);
+      var fg=self.fetchGrid;
+      if (fg!==undefined) {
+        //fg*=2;
+        p.x=Math.floor(p.x*fg+0.5)/fg;
+        p.y=Math.floor(p.y*fg+0.5)/fg;
+        p.z=Math.floor(p.z*fg+0.5)/fg;
+      }
       fetch.updateMatrix();
     }
     
@@ -572,9 +775,13 @@ function Planim() {
     
     o.scale=1;//dont use scale from editor
     if (ps.roty===undefined) ps.roty=0;
+    if ((ps.health!==undefined)&&!ps.mhealth) ps.mhealth=Math.max(1,ps.health);
+    if (!ps.env) ps.backup={x:ps.pos.x,y:ps.pos.y,z:ps.pos.z,roty:ps.roty,health:ps.health};
     //...
     
     if (ps.onload) ps.onload(o);
+    
+    //if (ps.ego) { self.controlo=planim.ego=o.ps; }
     
     //console.log(o);//Object.assign({},o));
     
@@ -593,10 +800,13 @@ function Planim() {
     //m.position.copy(ps.pos);//set(-30,-140,-80);
     if (ps.ohkey) oh[ps.ohkey]=o;
     //if (ps.roty!==undefined) m.rotation.y=ps.roty;
+    if (ps.ego) { self.controlo=planim.ego=o.ps;egoi=threeEnv.os.length-1; }
     
+    //onsole.log('anim.loadInit');
     if (ps.bb) {
+      //onsole.log('anim.loadInit bb');
       var oyw=1;
-      o.bb=threeBillboardAdd({x:0,y:0,z:0,ar:0.1/oyw,s:0.01*(1+(oyw-1)*2),transparent:false});//,cw:o.bbcw});
+      o.bb=threeBillboardAdd({x:0,y:0,z:0,ar:0.1/oyw,s:0.01*(1+(oyw-1)*2),transparent:ps.bbtransp,gw:ps.bbgw});//,cw:o.bbcw});
       o.bb.o=o.ps;
       
       //console.log(o);
@@ -705,6 +915,7 @@ function Planim() {
     loopAfterLoaded=a.length;
     for (var i=0;i<a.length;i++) {
       var o=a[i];
+      if (o.ego) self.ego=o;
       if (o.a) {
         o.cloadf=cload;
         Pd5.loadCombine(o);
@@ -730,13 +941,42 @@ function Planim() {
     out('[asd] '+s);
     //...
   }
+  function egoSwitch() {
+    //...
+    //if (o0.ego) { o0.ego=0;o1.ego=1; } 
+    //else { o0.ego=1;o1.ego=0; }
+    var os=threeEnv.os;
+    if (planim.ego) planim.ego.ego=undefined;
+    var i=egoi;
+    while (1) {
+      i++;
+      if (i==os.length) { i=-1;break; }
+      if (i==egoi) break;
+      if (!os[i].ps.env) break;
+    }
+    egoi=i;
+    //egoi++;if (egoi==threeEnv.os.length) egoi=-1;
+    console.log('anim.keydown egoi='+egoi);
+    self.controlo=planim.ego=egoi==-1?undefined:threeEnv.os[egoi].ps;
+    var cam=views[0].camera;
+    //cam.rotation.x=0;cam.rotation.y=0;
+    //console.log(threeEnv.os);
+    if (planim.ego) planim.ego.ego=1;
+    //if (!planim.game.defMoves) {
+    //  planim.vrkeys=!planim.ego;
+    //  if (!planim.vrkeys) views[0].camera.rotation.set(0,0,0);
+    //}
+    console.log(planim.ego);
+    //...
+  }
   function keyDown(e) {
+    //console.log('');
     if (vrbu) { vrbu.parentNode.removeChild(vrbu);vrbu=undefined; }
     
     
     var kc=e.keyCode;
     keys[kc]=true;
-    //console.log(kc);
+    //onsole.log('anim.keyDown kc='+kc);
     //if (views[0].vr) { debug=' kc='+kc;updateHud(); }
     
     if ((kc>=48)&&(kc<=57)) {
@@ -786,7 +1026,8 @@ function Planim() {
       }
     }
     if (kc==86) { //v
-      if (views[0].recordOnKey) {
+      if (uiMode!=-1) uiToggle();
+      else if (views[0].recordOnKey) {
         if (!record) {
           out('Loading record.');
           Conet.download({fn:'/three/anim/cambaseRecord.json',
@@ -804,27 +1045,11 @@ function Planim() {
     }
     //if ((kc==70)&&game.fetchOnKey) self.mfetch.action();//f
     
-    if (game.defMoves) {
+    //if (game.defMoves) {
+    if (!game.noEgoSwitch) {
       //onsole.log(kc);
       //out('tileskd '+kc);
-      if (kc==67) { //c
-        //if (o0.ego) { o0.ego=0;o1.ego=1; } 
-        //else { o0.ego=1;o1.ego=0; }
-        var i=egoi,os=threeEnv.os;
-        while (1) {
-          i++;
-          if (i==os.length) { i=-1;break; }
-          if (i==egoi) break;
-          if (!os[i].ps.env) break;
-        }
-        egoi=i;
-        //egoi++;if (egoi==threeEnv.os.length) egoi=-1;
-        self.controlo=planim.ego=egoi==-1?undefined:threeEnv.os[egoi].ps;
-        var cam=views[0].camera;
-        //cam.rotation.x=0;cam.rotation.y=0;
-        //console.log(threeEnv.os);
-        //onsole.log(planim.ego);
-      }
+      if (kc==67) egoSwitch(); //c
       //if (kc==86) lights[1].castShadow=!lights[1].castShadow;
     }
     
@@ -846,6 +1071,7 @@ function Planim() {
         if (m.action) m.action();
       }
     }
+    if (game.keyUp) game.keyUp(e);
   }
   function rani(n) {
     return Math.floor(Math.random()*n);
@@ -900,7 +1126,7 @@ function Planim() {
   }
   function init() {
     
-    scene = new THREE.Scene();
+    scene=new THREE.Scene();self.scene=scene;
     
     base=new THREE.Group();scene.add(base);self.base=base;
     
@@ -944,7 +1170,8 @@ function Planim() {
       if (e.wheelDelta!=undefined) up=e.wheelDelta>0;
       else up=e.detail<0;
       
-      //console.log('anim.mouseScroll up='+up);
+      //onsole.log('anim.mouseScroll up='+up);
+      //onsole.log(self.mouseScroll);
       if (self.mouseScroll) self.mouseScroll(up);
       //...
     }
@@ -1051,9 +1278,38 @@ function Planim() {
     //var sc=document.createElement('script');
     //sc.src='anim/dialogJavaJavascript.js';
     //document.body.appendChild(sc);
-    url=Conet.parseUrl();
+    url=Conet.parseUrl();self.url=url;
     
-    if (url.sn) {
+    var ka=[];
+    for (var k in url) if (url.hasOwnProperty(k)) if (k.startsWith('sn')) ka.push(k);
+    //onsole.log(ka);
+    
+    if (ka.length>0) {
+      
+      var scCount=ka.length;
+      
+    function sconload() {
+      //onsole.log('anim.init script loaded '+this.src+' '+self.scriptsLoaded.length);
+      //console.log(this.body);
+      //indow.scpl=this;
+      scCount--;
+      if (scCount>0) return;
+      
+      //onsole.log('anim.init: Running '+self.scriptsLoaded.length+' functions in scriptsLoaded.');
+      for (var f of self.scriptsLoaded) f();
+      
+      resize();
+    }
+       
+      for (var k of ka) {
+        var sc=document.createElement('script'),fn=url[k];
+        sc.onload=sconload;
+        sc.src=fn;
+        document.body.appendChild(sc);
+        //onsole.log('anim.init loading script '+fn);
+      }
+      
+      if (0) {
       var sc=document.createElement('script');
     sc.onload=function() {
       //console.log('Script loaded: '+url.sn);
@@ -1064,6 +1320,7 @@ function Planim() {
     }
       sc.src=url.sn;
       document.body.appendChild(sc);
+      }
     } else {
     
     var fn=url.fn
@@ -1084,10 +1341,14 @@ function Planim() {
     var sh='Anim '+version;
     console.log(sh);
     //onet.log(sh);
-    
+    Sound.soundDir='/shooter/sound/';
     //...
   }
   function initVr() {
+    if (self.initVrStart) self.initVrStart();
+    delete(self.tsd);
+    Menu.touchSticksRemove();
+    
     var renderer=views[0].renderer;
     renderer.vr.enabled=true;
     
@@ -1106,14 +1367,60 @@ function Planim() {
       }
     }
     ,false);
-    
-      var b=WEBVR.createButton(renderer);
+     
+      var b=WEBVR.createButton(renderer,{frameOfReferenceType:'head-model'});
       ////console.log('button.ih='+b.innerHTML);
       ////console.log(renderer.vr);
       document.body.appendChild(b);
     //...
     //if (withClick&&b.onclick) b.onclick(); ---autoclick doesnt work :/
   }
+  //--- ui = cam & control
+  function uiToggle() {
+    uiSet((uiMode+1)%5);
+    //...
+  }
+  function uiSet(i) {
+    
+    var planim=self,o=self.ego;
+    delete(planim.camPos);
+    delete(planim.isoCamPos);
+    planim.strafe=0;
+    planim.baseRot.x=0;
+    
+    switch (i) {
+      case 0:
+        //leftstick moves,rotates unit and rotates cam
+        o.vrot=0.003;planim.strafe=1;
+        break;
+      case 1:
+        o.vrot=0.003;
+        planim.camPos={x:0.5,y:-1.5,z:-1};planim.strafe=1;//shoulder
+        break;
+      case 2:
+        o.vrot=0.003;
+        planim.camPos={x:0.5,y:-1.5,z:-3};planim.strafe=1;//3rd person
+        break;
+      case 3:
+        //leftstick moves,rotates unit,rightstick not needed or rotates cam
+        o.vrot=0.01;
+        planim.isoCamPos={x:0,y:-1.5,z:-3};planim.baseRot.x=0.3;
+        //planim.isoCamPos={x:0,y:-1,z:-2};planim.baseRot.x=0;
+        break;
+      case 4:
+        //leftstick moves unit, right stick rotates unit, 
+        //lets unit strafe around for better (ranged) combat.
+        //would work good with unit lockon
+        o.vrot=0.01;
+        planim.isoCamPos={x:0,y:-1,z:-5};planim.baseRot.x=0.5;planim.strafe=1;
+        break;
+    
+    }
+    
+    uiMode=i;
+    //...
+  }
+  //---
   init();
   this.etDebug=function(v) {
     if (v!==undefined) debug=v;
@@ -1155,6 +1462,13 @@ function Planim() {
     return 1;
     //...
   }
+  this.attackMark=function(e) {
+    //later maybe add smoke here
+    
+    //var h=1;
+    //box(e.x,e.y+h+0.1,e.z,0.2,h*2,0.2,m1);
+    //...
+  }
   this.addView=addView;this.box=box;this.defaultLights=defaultLights;
   this.loadObjsThenLoop=loadObjsThenLoop;this.game=game;this.animate=animate;
   this.views=views;this.version=version;this.m0=m0;this.m1=m1;this.out=out;
@@ -1162,6 +1476,199 @@ function Planim() {
   this.loadInit=loadInit;this.rani=rani;this.outMenu=outMenu;this.initVr=initVr;
   this.pointLight=pointLight;this.vrkeys=true;this.threeEnv=threeEnv;
   this.base=base;this.updateHud=updateHud;this.vrUserHeight=0;
+  this.fetchGrid=undefined;this.resize=resize;this.dAng=dAng;
+  this.setTargetCampos=setTargetCampos;this.baseRot=baseRot;
+  this.uiToggle=uiToggle;this.uiSet=uiSet;//this.scene=scene;
+  this.defMoveAi=true;this.scriptsLoaded=[];
+  //---waypoint stuff
+  var y0=-1.80,tsc=1.8*1.2,ty0=y0/tsc,mh0=new THREE.Matrix4(),vh0=new THREE.Vector3();
+  this.waypoints=[
+    {x:-1*tsc,y:ty0*tsc,z:0,next:[1,3]},
+    {x:2*tsc,y:(ty0+1)*tsc,z:0,next:[0,2,4]},
+    {x:4*tsc,y:(ty0+1)*tsc,z:0,next:[1,5]},
+    {x:-1*tsc,y:ty0*tsc,z:2*tsc,next:[0,4]},
+    {x:2*tsc,y:(ty0+1)*tsc,z:2*tsc,next:[3,5,1]},
+    {x:4*tsc,y:(ty0+1)*tsc,z:2*tsc,next:[4,2]},
+  ];//o0,o1;
+  function turnBetweenWps(o) {
+    o.wppos0=self.waypoints[o.wpi];
+    var owpi=o.wpi;
+    o.wpi=o.wp0i;o.wp0i=owpi;
+    o.wpt=o.wpmt-o.wpt;
+    o.wprot+=PI;
+    //...
+  }
+  this.waypointAi=function(dt) {
+    
+    //console.log('templar ai '+dt);
+    //console.log('waypoints length='+waypoints.length);
+    //this.ai=undefined;
+    
+    var o=this,vr=0.01,wantrun=false,turnleft=false,turnright=false,flee=false,fleefrom,
+        startAnim=undefined,fleeing=false,waypoints=self.waypoints;
+    
+    if (o.ego) {
+      wantrun=keys[87];//38];
+      turnleft=keys[65];//37];
+      turnright=keys[68];//39];
+      //var cam=views[0].camera;
+      //cam.rotation.set(0,0,0);
+      if (wantrun&&!o.running) {
+        if (o.wpt!=o.wpmt) {//wenn zwischen zwei waypoints
+          //onsole.log('zwischen zwei waypoints');
+          if (Math.abs(dAng(o.roty,o.wprot))>PI/2) turnBetweenWps(o);
+        }
+        o.running=true;
+        startAnim=o.animRun;//Pd5.animStart(o.o,o.o.animh[o.animRun]);
+        //calculate which waypoint based on direction
+      }
+      if ((keys[83]//40]//||turnleft||turnright
+        )&&o.running) {
+        o.running=false;
+        startAnim=o.animIdle;//Pd5.animStart(o.o,o.o.animh[o.animIdle]);
+      }
+    } else if (fleeing) {
+      if ((o.wpi!==undefined)&&o.flee) {
+        o.fleet=(o.fleet||0)+dt;
+        if (o.fleet>200)
+        for (var i=threeEnv.os.length-1;i>=0;i--) {
+          var oh=threeEnv.os[i].ps;
+          if (oh===o) continue;
+          if (((oh.wpi===o.wpi)&&(oh.wp0i!==o.wp0i))||((oh.wpi===o.wp0i)&&(o.wpi===oh.wp0i))) {
+            flee=true;fleefrom=oh;//console.log('ai turn!!!1');
+            o.fleet=0;
+          }
+        }
+      }
+      if (o.running) {
+        if (flee) turnBetweenWps(o);
+      } else {
+        if (flee) {
+          o.running=true;wantrun=true;
+          startAnim=o.animRun;//Pd5.animStart(o.o,o.o.animh[o.animRun]);
+        } else {
+        //o.roty=Math.random()*PI*2;
+        var dr=dAng(o.waita,o.roty);
+        o.roty+=dr>0?Math.min(vr*dt,dr):Math.max(-vr*dt,dr);
+        o.waitt+=dt;
+        if (o.waitt>=o.waitmt) { 
+          if (rani(2)==0) {
+            o.running=true;wantrun=true;
+            startAnim=o.animRun;//Pd5.animStart(o.o,o.o.animh[o.animRun]);
+          } else {
+            o.waitt=0;o.waita=Math.random()*PI*2;
+          } 
+        }
+        //var f1=o.waitt/o.waitmt,f0=;
+        }
+      }
+    }
+    
+    if (//o.ego&&
+      !o.running) {
+      var dr=((turnleft?1:0)+(turnright?-1:0))*dt*vr;
+      o.roty+=dr;
+    } else {
+    //var nextWp=false;
+    if (o.wpi===undefined) { 
+      o.wpi=0;o.wpmt=1000;o.wpt=o.wpmt;o.wprot=o.roty; 
+      if (!o.ego) wantrun=true;
+      startAnim=o.animRun;//Pd5.animStart(o.o,o.o.animh[o.animRun]);
+    }
+    
+    o.wpt+=dt;
+    if (o.wpt>=o.wpmt) {
+      //if (!o.ego&&fleeing) if (rani(3)==0) 
+      wantrun=true;
+      if (//o.ego&&
+        !wantrun) {
+        o.running=false;
+        o.wpt=o.wpmt;
+        o.waitt=0;o.waitmt=500;
+        o.waita=Math.random()*PI*2;
+        o.wp0i=undefined;
+        startAnim=o.animIdle;//Pd5.animStart(o.o,o.o.animh[o.animIdle]);
+      } else {
+      var wp0=waypoints[o.wpi];
+      o.wp0i=o.wpi;
+      o.wppos0=wp0;
+      o.wpt=o.wpt%o.wpmt;
+      
+      if (0) //choose random waypoint
+        o.wpi=wp0.next[rani(wp0.next.length)];
+      else {//choose waypoint in direction
+        if (flee&&!o.ego) o.roty=fleefrom.roty;//Math.random()*PI*2;
+        var minda=Number.MAX_VALUE;
+        for (var i=0;i<wp0.next.length;i++) {
+          var wp=waypoints[wp0.next[i]],dx=wp.x-wp0.x,dz=wp.z-wp0.z,
+              da=Math.abs(dAng(o.roty,-Math.atan2(dz,dx)+Math.PI/2));
+          if (da<minda) { minda=da;o.wpi=wp0.next[i]; }
+        }
+      }
+      var wp1=waypoints[o.wpi],dx=wp1.x-wp0.x,dy=wp1.y-wp0.y,dz=wp1.z-wp0.z,l=Math.sqrt(dx*dx+dy*dy+dz*dz);
+      o.wpmt=Math.floor(l*500/((o.v||0.005)*200)+0.5);
+      o.wpt=Math.min(o.wpt,o.wpmt);
+      //o.wpt=o.wpt%o.wpmt;
+      o.wprot=-Math.atan2(dz,dx)+Math.PI/2;//-+
+      }
+    }
+    var dr=dAng(o.wprot,o.roty);//o.wprot-o.roty;//vr=0.01;
+    o.roty+=dr>0?Math.min(vr*dt,dr):Math.max(-vr*dt,dr);
+    if (Math.abs(dr)>1) o.wpt=Math.max(0,o.wpt-dt);//| angle too big -> no move 
+    
+    var pos0=o.wppos0,pos1=waypoints[o.wpi],f1=o.wpt/o.wpmt,f0=1-f1;
+    o.pos.set(pos0.x*f0+pos1.x*f1,pos0.y*f0+pos1.y*f1,pos0.z*f0+pos1.z*f1);
+    }
+    
+    if (startAnim) Pd5.animStart(o.o,o.o.animh[startAnim]);
+    
+    //o.roty+=dt*0.01;
+    //o.pos.x=Math.random();
+    if (views.length>0)
+    if (views[0].vr)
+    if (o.ego) {
+      if (1) planim.ego=o; else {
+    //  var p=o.pos;
+    //  //base.position.set(-p.x,-p.y-2,-p.z-2);
+    //  var m=base.matrix;
+    //  //if (o.o.eyew) {
+    //  //  console.log(o.o.eyew);
+    //  //}
+    //  vh0.set(0,0,0);
+    //  //vh0.set(0,-1.75,0.15);
+    //  //vh0.set(0.5,-1.75,-1);//x:0.5,z:-1 or 0.3 -0.5 or 0 0.15
+    //  m.identity();m.setPosition(vh0);
+    //  mh0.makeRotationY(-o.roty+Math.PI);
+    //  m.multiply(mh0);
+    //  if (o.o.eyew) {
+    //    var p1=o.o.eyew.p1,f=o.o.scale,a=o.roty;//+o.rotofs-Math.PI;//f=350
+    //    //console.log(o.o.eyew.p0);
+    //    vh0.set(
+    //      -p.x-(-p1.x*Math.cos(a)-p1.z*Math.sin(a))*o.scale*f
+    //     ,-p.y-p1.y*o.scale*f+vrUserHeight
+    //     ,-p.z+(-p1.x*Math.sin(a)+p1.z*Math.cos(a))*o.scale*f
+    //     );
+    //    //debug=p1.x+' '+p1.z;updateHud(views[0]);
+    //    //console.log(p1.x+' '+p1.y+' '+p1.z+' '+o.scale);
+    //  } else {
+    //    vh0.set(-p.x,-p.y-1.75,-p.z);
+    //  }  
+    //  mh0.identity();mh0.setPosition(vh0);//new THREE.Vector3(-p.x,-p.y,-p.z));
+    //  m.multiply(mh0);
+    //  //m.identity();
+    //  //m.setPosition(new THREE.Vector3(-p.x,-p.y-2,-p.z));
+    //  //mh0.makeRotationY(-o.roty+Math.PI);
+    //  //m.premultiply(mh0);
+    //  base.matrixAutoUpdate=false;
+    //  base.matrixWorldNeedsUpdate=true;
+    //  //base.rotation.y=o.roty;
+    //  //base.updateMatrix();
+      }
+    }
+    
+    //...
+  }
+  ;
   //---init menus
   (function () {
     self.mfetch={s:'fetch',action:function() {
@@ -1182,6 +1689,33 @@ function Planim() {
       //...
     }
     };
+    self.mfullscreen={s:'Fullscreen',actionf:function() {
+      var c=document.body;
+      if (c.requestFullscreen) c.requestFullscreen();
+      else if (c.mozRequestFullScreen) c.mozRequestFullScreen();
+      else if (c.webkitRequestFullScreen) c.webkitRequestFullscreen();
+      //---
+    }
+    };
+    self.minitvr={s:'Init VR',actionf:initVr};
+    self.muitoggle={s:'UI',actionf:uiToggle};
+    self.megoswitch={s:'Switch<br>Character',fs:0.8,actionf:egoSwitch};
+    self.maction={s:'\u270a'//,ms:'<br><br>Key 0'
+      ,px:0.045,py:0.22,pw:0.116,ph:0.116,ydown:true,xright:true,fs:1.4};
+    self.mrestart={s:'Restart',actionf:function() {
+      for (var o5 of threeEnv.os) {
+        var ps=o5.ps,bu=ps.backup;  
+        if (!bu) continue;
+        ps.pos.set(bu.x,bu.y,bu.z);
+        ps.health=bu.health;
+        ps.roty=bu.roty;
+        delete(ps.focus);
+        if (o5.bb) o5.bb.update=1;
+        //---
+      }
+    }
+    };
+    
   }
   )();
   //---
@@ -1190,18 +1724,12 @@ var planim=new Planim();
 </script></body>
 </html><script>
 //fr o,21
-//fr o,21,18
-//fr o,21,18,89
-//fr o,21,34,59
-//fr o,21,42,32
-//fr o,21,42,34
-//fr o,21,42,38
-//fr o,21,42,40
-//fr o,21,42,42
-//fr o,21,42,45
-//fr o,21,42,47
-//fr o,21,42,49
-//fr o,21,42,59
-//fr o,21,42,74
-//fr o,21,42,86
-//fr p,7,126
+//fr o,21,19,90
+//fr o,21,40,61
+//fr o,21,48,80
+//fr o,21,48,92
+//fr o,21,49
+//fr o,21,49,7,1
+//fr o,21,49,9
+//fr o,21,49,9,2
+//fr p,41,72

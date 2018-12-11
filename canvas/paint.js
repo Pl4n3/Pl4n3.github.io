@@ -1,7 +1,7 @@
 var Paint={};
 (function(Paint) {
   var canvas,ix,iy,id,iw,ih,oix,oiy,scale,oscale;
-  var version='0.1.3508 ';//FOLDORUPDATEVERSION
+  var version='0.1.3605 ';//FOLDORUPDATEVERSION
   var md=false,imx,imy,mx,my,omx,omy,moused=new Array(4),br=0,bg=0,bb=250,bp=0.1,bra=10;
   var touches={},TM_DRAW=1,TM_IMG=2,touchMode=TM_DRAW,touchlast;
   //var menuroots,menus;
@@ -21,7 +21,7 @@ var Paint={};
   var sal=true,medit3d;//meve=false;//menues and events?//standalone
   var lo,tccanvas,selv=[],wasTcDrag=false,isTouch=false,isInvertgreen=true;//w3dit object
   var oda,pali={},trai=1,addPageAfterLoad=false,loadScale=1,lastBrush={x:0,y:0},copybrush,mtools,getva=[],
-      mprocesscs,idimda,idima,adata=[],clearCanv=true;
+      mprocesscs,idimda,idima,adata=[],clearCanv=true,urls={},mTridatavAdd;
   var pal=[
   {r:119,g:17,b:18},//0
   {r:4,g:119,b:242},
@@ -710,10 +710,11 @@ var Paint={};
     //case MERASE:  a=[mtools,mbp,mbra,mcolor,merase];break;//mpr,
     //case MUNERASE:a=[mtools,mbp,mbra,munerase];break;//mpr,
       case MCOPYBRUSH:a=[mtools,mcopybrush];break;//mpr,
-      case MDRAW:   a=[mtools,mcolors];break;//mcolor//mpr,merase
-      case MERASE:  a=[mtools,mcolor,merase];break;//mpr,
-      case MUNERASE:a=[mtools,munerase];break;//mpr,
-      case MSELR:   a=[mtools,mrect,mrscale,mrload,mcut,mtexify,mvertsel,mpolygon,mselmv,mstayselv];break;
+      case MDRAW:   a=[mcolors].concat(mcolors.sub);break;//mcolor//mpr,merase
+      case MERASE:  a=[mtools,mcolor,merase,mbp,mbra];break;//mpr,
+      case MUNERASE:a=[mtools,munerase,mbp,mbra];break;//mpr,
+      case MSELR:   a=[mtools,mrect,mrscale,mrload,mcut,mtexify,mvertsel,mpolygon
+        ,mselmv,mstayselv,mTridatavAdd];break;
       case MCUTOUT: a=[mtools,mcomain];break;
     }
     //alert(stacktrace());
@@ -1045,6 +1046,7 @@ var Paint={};
           setPage(pages.length-1);
           //log('redim1');
         }
+        if (!sal) { scale=50/iw;isize(); }
         
       }
       if (loadcs) {
@@ -1537,10 +1539,16 @@ var Paint={};
     if (!mad) mad=500;
     var e=0.01;
     var mav=undefined,va=[];
-    for (var h=lo.verts.length-1;h>=0;h--) {
-      var v=lo.verts[h];
-      if (v.paintSkip) continue;
-      var dx=x-v.u*iw*scale,dy=y-v.v*ih*scale,d=dx*dx+dy*dy;
+    var verts=tridata?tridata.verts:lo.verts;
+    for (var h=verts.length-1;h>=0;h--) {
+      var v=verts[h],vx,vy;
+      if (tridata) {
+        vx=v[0];vy=v[1];
+      } else {
+        if (v.paintSkip) continue;
+        vx=v.u;vy=v.v;
+      }
+      var dx=x-vx*iw*scale,dy=y-vy*ih*scale,d=dx*dx+dy*dy;
       if (nonsel) if (selv.indexOf(v)!=-1) continue;
       if (d<mad) {
         mad=d;mav=v;va=[]
@@ -1562,8 +1570,19 @@ var Paint={};
          for (var h=getva.length-1;h>=0;h--) {
            var v=getva[h];if (selv.indexOf(v)==-1) selv.push(v);
          }
-         for (var h=selv.length-1;h>=0;h--) { var v=selv[h];v.ou=v.u;v.ov=v.v; }
-         omx=mav.u*iw;omy=mav.v*ih;
+         for (var h=selv.length-1;h>=0;h--) { 
+           var v=selv[h];
+           if (tridata) {
+             v.ou=v[0];v.ov=v[1]; 
+           } else {
+             v.ou=v.u;v.ov=v.v; 
+           }
+         }
+         if (tridata) {
+           omx=mav[0]*iw;omy=mav[1]*ih;
+         } else {
+           omx=mav.u*iw;omy=mav.v*ih;
+         }
          if (!isTouch) { imx=omx;imy=omy; }
          draw(true);
          done=true;
@@ -1578,10 +1597,24 @@ var Paint={};
   }
   function movev(x,y) {
     var mav=getv(x*scale,y*scale,true);
-    if (mav) { x=mav.u*iw;y=mav.v*ih; }
+    if (mav) { 
+      if (tridata) {
+        x=mav[0]*iw;y=mav[1]*ih; 
+      } else {
+        x=mav.u*iw;y=mav.v*ih; 
+      }
+    }
     if (!isTouch) { imx=x;imy=y; }
     var dx=(x-omx)/iw,dy=(y-omy)/ih;
-    for (var h=selv.length-1;h>=0;h--) { var v=selv[h];v.u=v.ou+dx;v.v=v.ov+dy; }
+    for (var h=selv.length-1;h>=0;h--) { 
+      var v=selv[h];
+      if (tridata) {
+        //onsole.log(v);
+        v[0]=v.ou+dx;v[1]=v.ov+dy; 
+      } else {
+        v.u=v.ou+dx;v.v=v.ov+dy; 
+      }
+    }
     draw(true);
     wasTcDrag=true;
   }
@@ -1719,8 +1752,10 @@ var Paint={};
       //alert
     } else if (mode==MSELR) {
       var done=false;
-      if (lo) 
+      if (lo||tridata) {
         done=selectv(x,y);
+        console.log('paint.cDown done='+done);
+      }
       if (!done) {
       var lx=x<sr.x+sr.w/2;
       var ly=y<sr.y+sr.h/2;
@@ -1828,7 +1863,7 @@ var Paint={};
     
     if (pickm) {
       pickm.s='Brush';
-      pickm.c.innerHTML='Brush';
+      pickm.c.children[0].innerHTML='Brush';
       pickm=undefined;
       if (canvDraw) canvas.getContext('2d').putImageData(id,0,0);
       return 1;
@@ -2153,7 +2188,10 @@ var Paint={};
         if (s=d.bp) mbp.setfunc(''+s);
         if (s=d.bra) mbra.setfunc(''+s);
         if (s=d.col) msetcol.setfunc(s[0]+','+s[1]+','+s[2]); 
-        if (s=d.process) { prSet(s);Menu.setChecked(mprocesscs,true); }
+        if (s=d.process) { 
+          prSet(s);Menu.setChecked(mprocesscs,true); 
+          log('conetLoad d.process.length='+s.length+', pra.len='+pra.length);
+        }
         if (s=d.scale) scale=parseFloat(s);
         if (s=d.ix) { ix=parseInt(s);isize(); }
         if (s=d.iy) { iy=parseInt(s);isize(); }
@@ -2170,11 +2208,11 @@ var Paint={};
         }
         //...
       }
-      });  
+      }); else clearCanv=true;
         
         draw();
         if (d.cutout) if (cutout.carves||(cutout.rects&&(cutout.rects.length>0))) cfmenu.checkListFile(v);
-        var sh={data:1,bp:1,bra:1,col:1,background:1,scale:1,ix:1,iy:1};
+        var sh={data:1,bp:1,bra:1,col:1,background:1,scale:1,ix:1,iy:1,tridata:1,process:1};
         for (var k in d) if (d.hasOwnProperty(k)) if (!sh[k]) adata[k]=d[k];
         //onsole.log('conetLoad adata=');onsole.log(adata);
         //---sth cutout edit loads last loaded cutout on restart
@@ -2279,7 +2317,7 @@ var Paint={};
         fa:[{v0:v0,v1:v1,v2:v2}]
       };
       */
-      
+      urls=Conet.parseUrl();
     } else { 
       //mode=MSELR;sr.x=0;sr.y=0;  //-- if sr isnt set to 0,0, images are loaded with translation..
       mode=MCUTOUT;
@@ -2303,12 +2341,17 @@ var Paint={};
     //----
     
     
-    ix=20;iy=20;//120;
+    //ix=20;iy=20;//120;
     if (sal) { 
-    iw=512;ih=512; 
-    //iw=256;ih=256; 
-    } else { iw=64;ih=64; }
-    scale=acoH.scale?acoH.scale:(sal?1:0.5);//1
+      ix=20;iy=20;
+      iw=512;ih=512;//iw=256;ih=256; 
+      scale=acoH.scale?acoH.scale:1;
+    } else { 
+      ix=0;iy=100;
+      iw=64;ih=64; 
+      scale=50/iw;
+    }
+    //scale=acoH.scale?acoH.scale:(sal?1:0.5);//1
     canvas.width=iw;canvas.height=ih;
     canvas.style.width=iw*scale;canvas.style.height=ih*scale;
     canvas.style.left=ix;canvas.style.top=iy;
@@ -2392,6 +2435,22 @@ var Paint={};
       
     }
     
+    mbp={s:'0.1',ms:'brush pressure',autoval:true,lskey:'wepaintbp',setfunc:function(v) {
+      bp=parseFloat(v);this.s=v;
+      if (mode==MERASE) eraseConf.bp=bp;
+      if (mode==MDRAW) drawConf.bp=bp;
+    }
+    ,sub:[{s:'0.01'},{s:'0.03'},{s:'0.05'},{s:'0.075'},{s:'0.1'},{s:'0.2'},{s:'0.3'},{s:'1'}]};
+    
+    mbra={s:'10',ms:'brush radius',autoval:true,lskey:'wepaintbra',setfunc:function(v) {
+      bra=parseInt(v);this.s=v;
+      if (mode==MERASE) eraseConf.bra=bra;
+      if (mode==MDRAW) drawConf.bra=bra;
+    }
+    ,sub:[{s:'1'},{s:'2'},{s:'3'},{s:'5'},{s:'10'},{s:'20'},{s:'30'},{s:'50'},{s:'100'}]};
+    
+    mcolor=pickm={s:'Brush',t_extShadow:'1px 1px 2px rgb(230,230,230)',r_:1,stay:1,vertCenter:1};
+    
     mcanvas=
     {s:'Dimension',doctrl:'Canvas Dimension',setfunc:function(v) {
       //alert('canvassetfunc '+v);
@@ -2416,7 +2475,7 @@ var Paint={};
     }
     };
     mcanvas.msf=mcanvas.valuef;
-    mtools={s:'Tools',sub:[mcolor=pickm={s:'Brush',t_extShadow:'1px 1px 2px rgb(230,230,230)',r:1},mrect={s:'Rect',ms:'-',msid:'mrectms'},merase={s:'Eraser'},munerase={s:'Uneraser'},mcopybrush={s:'Copy Brush'},mcutout={s:'Cutout'}]};
+    mtools={s:'Tools',vertCenter:1,sub:[{s:'Brush'},mrect={s:'Rect',ms:'-',msid:'mrectms'},merase={s:'Eraser'},munerase={s:'Uneraser'},mcopybrush={s:'Copy Brush'},mcutout={s:'Cutout'}]};
     mscript={s:'Edit&middot;Run',doctrl:'Run script',cstay:true,lskey_:'paintscript0',mcfs:0.07,ta:true,tacols:50,tarows:20,ms:script0.length,value:script0,setfunc:function(v,initLoad) {
       this.value=v;
       this.ms=v.length;
@@ -2427,7 +2486,7 @@ var Paint={};
       } catch (e) { log(e); }
     }
     }
-    mcolors={s:'Color...',textShadow:'1px 1px 2px rgb(230,230,230)',sub:[]
+    mcolors={s:'Color',vertCenter:1,textShadow:'1px 1px 2px rgb(230,230,230)',noinp:1,noTri:1,sub:[mbp,mbra,mcolor]
     ,actionf:function() {
       this.bgcol='';
     }
@@ -2436,12 +2495,14 @@ var Paint={};
       [0x99,0,0x99],[0,0,0xff],[0,0xcc,0xff],[0x33,0xff,0],[0,0x99,0],
       [0x99,0x66,0],[255,255,255],[175,175,175],[0,0,0]];
     for (var i=0;i<ca.length;i++) {
-      var a=ca[i],sh=a[0]+','+a[1]+','+a[2];mcolors.sub.push({s:'',bgcol:'rgb('+sh+')',a:'col_'+sh,pw:0.05});
+      var a=ca[i],sh=a[0]+','+a[1]+','+a[2];mcolors.sub.push({s:'',bgcol:'rgb('+sh+')',a:'col_'+sh,pw:0.05,stay:1});
     }
     
-    cfmenu=Conet.fileMenu({fn:'paint/files.txt',defFn:'test.png.txt',filesRef:'paint',noStartLoad:sal?0:1,loadf:conetLoad
+    cfmenu=Conet.fileMenu({fn:'paint/files.txt',defFn:'test.png.txt',filesRef:'paint',noStartLoad:sal?0:1,loadf:conetLoad,noh:!sal||!urls.withh
     ,savef:function(v) {
-      var data=Paint.saveCanvas(undefined,undefined,{nocanvm:1}).toDataURL('image/'+(adata.saveJpg||v.endsWith('.jpeg.json.txt')?'jpeg':'png'));
+      var data=Paint.saveCanvas(undefined,undefined,{nocanvm:1}).toDataURL(
+        'image/'+(adata.saveJpg||v.endsWith('.jpeg.json.txt')?'jpeg':'png')),
+        pd;
       //if (v.endsWith('.json.txt')) {
       if (v.indexOf('.json')!=-1) {
         data='{'
@@ -2454,7 +2515,7 @@ var Paint={};
           +'"scale":'+scale+','
           +'"ix":'+ix+','
           +'"iy":'+iy+','
-          +(mprocesscs.checked?'"process":'+JSON.stringify(pra.join('\n'))+',':'')
+          +(mprocesscs.checked?'"process":'+(JSON.stringify(pd=pra.join('\n')))+',':'')
           +'"data":"'+data+'"';
         //console.log('loaded.savef adata=');console.log(adata);
         for (var k in adata) if (adata.hasOwnProperty(k)) data+='\n,"'+k+'":'+JSON.stringify(adata[k]);
@@ -2464,7 +2525,11 @@ var Paint={};
       Conet.upload({fn:v,data:data,f:function(d) {
         //onsole.log('paint.save 0');
         //onsole.log('paint.save d="'+d+'"');
-        log(d===''?'Conet.save error.':'Conet.saved: '+v+'.');
+        if (d==='') { log('Conet.save error.');return; }
+        log('Conet.saved: '+v+' (len='+data.length+').');
+        if (pd) {
+          log(' d.process.length='+pd.length+', pra.len='+pra.length);
+        }
       }
       });
       
@@ -2498,22 +2563,9 @@ var Paint={};
     
     );
     //------------
-    mroots=[mmenu={s:'Menu',sub:[
+    mroots=[mmenu={s:'Menu',vertCenter:1,sub:[
     
-    mbp={s:'0.1',ms:'brush pressure',autoval:true,lskey:'wepaintbp',setfunc:function(v) {
-      bp=parseFloat(v);this.s=v;
-      if (mode==MERASE) eraseConf.bp=bp;
-      if (mode==MDRAW) drawConf.bp=bp;
-    }
-    ,sub:[{s:'0.01'},{s:'0.03'},{s:'0.05'},{s:'0.075'},{s:'0.1'},{s:'0.2'},{s:'0.3'},{s:'1'}]},
-    
-    mbra={s:'10',ms:'brush radius',autoval:true,lskey:'wepaintbra',setfunc:function(v) {
-      bra=parseInt(v);this.s=v;
-      if (mode==MERASE) eraseConf.bra=bra;
-      if (mode==MDRAW) drawConf.bra=bra;
-    }
-    ,sub:[{s:'1'},{s:'2'},{s:'3'},{s:'5'},{s:'10'},{s:'20'},{s:'30'},{s:'50'},{s:'100'}]}//3
-    ,mcolor,//mcolors,
+    mtools,mbp,mbra,mcolor,//mcolors,
     
     //{s:'Version '+version,fs:1.4,ph:0.02,noinp:1},
     
@@ -2522,18 +2574,8 @@ var Paint={};
     
     //]},
     {s:'Edit',sub:[mcanvas
-      ,{s:'Clear',ms:'Bitmap & Process-list'}
-    ,mbackground={s:'Background',fs:0.75,ms:'checker',autoval:true,lskey:'wepaintbg',setfunc:function(v) {
-      this.ms=v;
-      if (v=='checker') {
-        canvas.style.backgroundImage='url(paintbg.png)';
-      } else {
-        canvas.style.backgroundColor=v;
-        canvas.style.backgroundImage='';
-      }
-    }
-       ,sub:[{s:'checker'},{s:'white'},{s:'gray'},{s:'black'}]},
-    msetcol={s:'Set color',//ms:br+','+bg+','+bb,
+    ,{s:'Clear',ms:'Bitmap & Process-list'}    
+    ,msetcol={s:'Set color',//ms:br+','+bg+','+bb,
       doctrl:'Color R,G,B values'
     ,valuef:function() {
       return br+','+bg+','+bb;
@@ -2606,13 +2648,14 @@ var Paint={};
     
     {s:'Tridata',doctrl:'Tridata e.g. {"verts":[[0,0],[0.5,0.5],[1,0]],"tris":[[0,1,2]]}',cstay:true,r:true,mcfs:0.07,ta:true,wrap:1,tacols:50,tarows:20,setfunc:function(v,initLoad) {
       tridata=v.length==0?undefined:JSON.parse(v);
+      draw(true);
     }
     ,valuef:function() {
       return tridata?JSON.stringify(tridata):'';
     }
     },
     
-    {s:'Add.Data',doctrl:'Additional data',mcfs:0.07,ta:true,wrap:1,tacols:50,tarows:20,setfunc:function(v,initLoad) {
+    {s:'Add.Data',doctrl:'Additional data<span style="font-size:0.7em;">&middot;keys:layerDraw,saveJpg</span>',mcfs:0.07,ta:true,wrap:0,tacols:30,tarows:20,setfunc:function(v,initLoad) {
       adata=JSON.parse(v);
       //tridata=v.length==0?undefined:JSON.parse(v);
     }
@@ -2706,10 +2749,30 @@ var Paint={};
     }
     } 
     
+    ,mbackground={s:'Background',fs:0.75,ms:'checker',autoval:true,lskey:'wepaintbg',setfunc:function(v) {
+      this.ms=v;
+      if (v=='checker') {
+        canvas.style.backgroundImage='url(paintbg.png)';
+      } else {
+        canvas.style.backgroundColor=v;
+        canvas.style.backgroundImage='';
+      }
+    }
+    ,sub:[{s:'checker'},{s:'white'},{s:'gray'},{s:'black'}]}
+    
+    
     ,{s:'Help',a:'Helps',sub:[
       {s:'Demos',sub:[{s:'Whale'},{s:'Js Knight'}]},
       {s:'Info',ms:'Help'}]}
     
+    ,{s:'Fullscreen',actionf:function() {
+      var c=document.body.parentNode;
+      if (c.requestFullscreen) c.requestFullscreen();
+      else if (c.mozRequestFullScreen) c.mozRequestFullScreen();
+      else if (c.webkitRequestFullScreen) c.webkitRequestFullscreen();
+      //...
+    }
+    }
       
     ]},  
       
@@ -2812,6 +2875,14 @@ var Paint={};
       img.src=v;
       //alert('Loading '+v);
       //...
+    }
+    };
+    mTridatavAdd={s:'Vert add',ms:'Tridata',actionf:function() {
+      if (!tridata) tridata={verts:[],tris:[]};
+      tridata.verts.push([0.5,0.5]);
+      draw(1);
+      log('Tridata vert added #'+tridata.verts.length+'.');
+      //lert('add tridata vert n/i');
     }
     };
     
@@ -3157,24 +3228,25 @@ var Paint={};
       var verts=tridata.verts,tris=tridata.tris;
       if (tris) for (var i=tris.length-1;i>=0;i--) {
         var t=tris[i],v0=verts[t[0]],v1=verts[t[1]],v2=verts[t[2]];
-        ctx.strokeStyle='rgba(0,250,0,0.5)';
-        ctx.beginPath();
-        ctx.moveTo(v0[0]*iw,v0[1]*ih);
-        ctx.lineTo(v1[0]*iw,v1[1]*ih);
-        ctx.lineTo(v2[0]*iw,v2[1]*ih);
-        ctx.lineTo(v0[0]*iw,v0[1]*ih);
-        ctx.stroke();
+        cm.strokeStyle='rgba(0,250,0,0.5)';
+        cm.beginPath();
+        cm.moveTo(v0[0]*iw,v0[1]*ih);
+        cm.lineTo(v1[0]*iw,v1[1]*ih);
+        cm.lineTo(v2[0]*iw,v2[1]*ih);
+        cm.lineTo(v0[0]*iw,v0[1]*ih);
+        cm.stroke();
       }
       for (var i=verts.length-1;i>=0;i--) {
         var ve=verts[i],u=ve[0],v=ve[1],x=u*iw,y=v*ih;
-        ctx.fillStyle='rgba(0,0,0,0.5)';ctx.fillRect(x-1,y-1,4,4);
-        ctx.fillStyle='rgba(0,250,0,0.5)';ctx.fillRect(x-2,y-2,4,4);
-        x=Math.max(0,Math.min(iw-20,x));y=Math.max(10,Math.min(ih,y));
-        var s=''+i;//u+','+v
-        ctx.fillStyle='rgba(0,0,0,0.5)';ctx.fillText(s,x+1,y+1);
-        ctx.fillStyle='rgba(0,250,0,0.5)';ctx.fillText(s,x,y);
+        cm.fillStyle='rgba(0,0,0,0.5)';cm.fillRect(x-1,y-1,4,4);
+        cm.fillStyle=selv.indexOf(ve)==-1?'rgba(0,250,0,0.5)':'rgba(250,250,0,0.5)';cm.fillRect(x-2,y-2,4,4);
+        if (mode==MSELR) {
+          x=Math.max(0,Math.min(iw-20,x));y=Math.max(10,Math.min(ih,y));
+          var s=''+i;//u+','+v
+          cm.fillStyle='rgba(0,0,0,0.5)';cm.fillText(s,x+1,y+1);
+          cm.fillStyle='rgba(0,250,0,0.5)';cm.fillText(s,x,y);
+        }
       }
-      
     }
     
     if (acoH.ondraw) acoH.ondraw(canvas);
@@ -3277,15 +3349,15 @@ var Paint={};
 )(Paint);
 
 //fr o,1
+//fr o,1,143
 //fr o,1,175,3
-//fr o,1,193,2,19,3
+//fr o,1,193,2,22
+//fr o,1,193,2,22,3
 //fr o,1,200
-//fr o,1,200,95
-//fr o,1,200,105
-//fr o,1,200,248
-//fr o,1,200,256
-//fr o,1,200,259
-//fr o,1,200,259,2
-//fr o,1,200,314
-//fr o,1,200,314,9
-//fr p,62,582
+//fr o,1,200,108
+//fr o,1,200,209
+//fr o,1,200,260
+//fr o,1,200,271,2
+//fr o,1,200,273
+//fr o,1,200,328,9
+//fr p,30,418

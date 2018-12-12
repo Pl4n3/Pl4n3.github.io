@@ -1,7 +1,7 @@
 var Paint={};
 (function(Paint) {
   var canvas,ix,iy,id,iw,ih,oix,oiy,scale,oscale;
-  var version='0.1.3605 ';//FOLDORUPDATEVERSION
+  var version='0.1.3611 ';//FOLDORUPDATEVERSION
   var md=false,imx,imy,mx,my,omx,omy,moused=new Array(4),br=0,bg=0,bb=250,bp=0.1,bra=10;
   var touches={},TM_DRAW=1,TM_IMG=2,touchMode=TM_DRAW,touchlast;
   //var menuroots,menus;
@@ -916,7 +916,7 @@ var Paint={};
     if (!d) return;
     var isfn=d.length<100;
     //log('Loading '+(isfn?d:d.length+' bytes')+'.');
-    var sp=sal?'&nbsp;':' ';
+    var sp=' ';//sal?'&nbsp;':' ';
     var lsh=isfn?d:d.length+sp+'bytes';
     var pcy=1;
     if (isfn) {
@@ -956,7 +956,7 @@ var Paint={};
     var img=new Image();
     img.onload=function() {
       nbid=undefined;
-      console.log('loadDataUrl.onload 0');
+      //onsole.log('loadDataUrl.onload 0');
       if ((loadpagec>1)||addPages) {
         //alert('whee');
         var pc=loadpagec;
@@ -1112,6 +1112,7 @@ var Paint={};
     return false;
   }
   function log(s) {
+    console.log('paint.log '+s);
     Paint.log(s);
   }
   Paint.log=function(s) {
@@ -3350,14 +3351,16 @@ var Paint={};
 
 //fr o,1
 //fr o,1,143
+//fr o,1,150
+//fr o,1,150,32
+//fr o,1,152
 //fr o,1,175,3
 //fr o,1,193,2,22
 //fr o,1,193,2,22,3
 //fr o,1,200
 //fr o,1,200,108
-//fr o,1,200,209
 //fr o,1,200,260
 //fr o,1,200,271,2
 //fr o,1,200,273
 //fr o,1,200,328,9
-//fr p,30,418
+//fr p,13,159

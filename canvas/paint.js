@@ -1,7 +1,7 @@
 var Paint={};
 (function(Paint) {
   var canvas,ix,iy,id,iw,ih,oix,oiy,scale,oscale;
-  var version='0.1.3611 ';//FOLDORUPDATEVERSION
+  var version='0.1.3618 ';//FOLDORUPDATEVERSION
   var md=false,imx,imy,mx,my,omx,omy,moused=new Array(4),br=0,bg=0,bb=250,bp=0.1,bra=10;
   var touches={},TM_DRAW=1,TM_IMG=2,touchMode=TM_DRAW,touchlast;
   //var menuroots,menus;
@@ -195,18 +195,19 @@ var Paint={};
       }
       //lert('save');
     } else if (a=='Load') {
-      var d=localStorage[lsKey];
-      var c=localStorage[lsKey+'c'];
-      loadcs=localStorage[lsKey+'cs'];
-      if (c) loadpagec=c;
-      brushpat=localStorage[lsKey+'brushpat'];
-      if (brushpat==="false") brushpat=false;
-      var cuous=localStorage[lsKey+'cutout'];
-      if (cuous) try { cutout=JSON.parse(cuous);log('Cutout loaded: '+cutout.rects.length); } 
-      catch (e) { log('Error while loading cutout from localstorage: '+e); }
-      //lert('Load brushpat="'+(brushpat=='false'?'F':'T')+'"');
-      if (d) loadDataUrl(d);
-      else log('No image found in localStorage.');
+      lsLoad();
+      //var d=localStorage[lsKey];
+      //var c=localStorage[lsKey+'c'];
+      //loadcs=localStorage[lsKey+'cs'];
+      //if (c) loadpagec=c;
+      //brushpat=localStorage[lsKey+'brushpat'];
+      //if (brushpat==="false") brushpat=false;
+      //var cuous=localStorage[lsKey+'cutout'];
+      //if (cuous) try { cutout=JSON.parse(cuous);log('Cutout loaded: '+cutout.rects.length); } 
+      //catch (e) { log('Error while loading cutout from localstorage: '+e); }
+      ////lert('Load brushpat="'+(brushpat=='false'?'F':'T')+'"');
+      //if (d) loadDataUrl(d);
+      //else log('No image found in localStorage.');
     } else if (m==mpr||a=='prgif') {
       //pra=pr.split('\n');
       mRemove(m);
@@ -1112,7 +1113,8 @@ var Paint={};
     return false;
   }
   function log(s) {
-    console.log('paint.log '+s);
+    console.log(//'paint.log '+
+      s);
     Paint.log(s);
   }
   Paint.log=function(s) {
@@ -1741,6 +1743,22 @@ var Paint={};
     }
     //w.document.location='#';//'#'+Math.random();
     //console.log(w.document.location);
+    //...
+  }
+  function lsLoad() {
+    //...
+    var d=localStorage[lsKey];
+    var c=localStorage[lsKey+'c'];
+    loadcs=localStorage[lsKey+'cs'];
+    if (c) loadpagec=c;
+    brushpat=localStorage[lsKey+'brushpat'];
+    if (brushpat==="false") brushpat=false;
+    var cuous=localStorage[lsKey+'cutout'];
+    if (cuous) try { cutout=JSON.parse(cuous);log('Cutout loaded: '+cutout.rects.length); } 
+    catch (e) { log('Error while loading cutout from localstorage: '+e); }
+    //lert('Load brushpat="'+(brushpat=='false'?'F':'T')+'"');
+    if (d) loadDataUrl(d);
+    else log('No image found in localStorage.');
     //...
   }
   //---
@@ -2499,7 +2517,8 @@ var Paint={};
       var a=ca[i],sh=a[0]+','+a[1]+','+a[2];mcolors.sub.push({s:'',bgcol:'rgb('+sh+')',a:'col_'+sh,pw:0.05,stay:1});
     }
     
-    cfmenu=Conet.fileMenu({fn:'paint/files.txt',defFn:'test.png.txt',filesRef:'paint',noStartLoad:sal?0:1,loadf:conetLoad,noh:!sal||!urls.withh
+    cfmenu=Conet.fileMenu({fn:'paint/files.txt',defFn:'test.png.txt',filesRef:'paint',noStartLoad:sal?0:1
+      ,loadf:conetLoad,noh:!sal||!urls.withh,nolistf:lsLoad
     ,savef:function(v) {
       var data=Paint.saveCanvas(undefined,undefined,{nocanvm:1}).toDataURL(
         'image/'+(adata.saveJpg||v.endsWith('.jpeg.json.txt')?'jpeg':'png')),
@@ -2782,6 +2801,7 @@ var Paint={};
     loadf:function(v,atStart) {
       //log('script loading '+v);
       Conet.download({fn:'paint/script/'+v,f:function(v) {
+        if (v===undefined) return;
         mscript.value=v;
         mscript.ms=v.length;
         if (!atStart)
@@ -3351,16 +3371,18 @@ var Paint={};
 
 //fr o,1
 //fr o,1,143
-//fr o,1,150
 //fr o,1,150,32
 //fr o,1,152
 //fr o,1,175,3
-//fr o,1,193,2,22
-//fr o,1,193,2,22,3
-//fr o,1,200
-//fr o,1,200,108
-//fr o,1,200,260
-//fr o,1,200,271,2
-//fr o,1,200,273
-//fr o,1,200,328,9
-//fr p,13,159
+//fr o,1,177
+//fr o,1,194,2,22
+//fr o,1,194,2,22,3
+//fr o,1,201
+//fr o,1,201,108
+//fr o,1,201,217
+//fr o,1,201,217,1
+//fr o,1,201,261
+//fr o,1,201,272,2
+//fr o,1,201,274
+//fr o,1,201,329,9
+//fr p,14,158

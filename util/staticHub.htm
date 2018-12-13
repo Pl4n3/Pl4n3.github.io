@@ -1,0 +1,136 @@
+<!doctype html><html><head>
+<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+<meta name="viewport" content="width=device-width, user-scalable=yes, minimum-scale=1.0, maximum-scale=10.0">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="shortcut icon" sizes="128x128" href="/blog/img/staticHubIcon.png">
+<link rel="apple-touch-icon" href="/blog/img/staticHubIcon.png">
+<style>
+html,body { padding:0px;margin:0px; }
+.fs { font-size:0.65em; }
+</style>
+</head>
+<body bgcolor="#222">
+
+<script type="text/javascript">
+(function() {
+  //---
+  var headc,mainc,d;
+  //---
+  function resize(e) {
+    var w=document.body.clientWidth,h=window.innerHeight,c,s,r;
+    
+    c=headc;s=c.style;s.left='0px';s.top='0px';r=c.getBoundingClientRect();
+    s.width=w+'px';
+    
+    c=mainc;s=c.style;s.left='0px';s.top=r.height+'px';s.width=w+'px';
+    s.height=(h-r.height)+'px';
+    
+    var we=392,he=182,n=Math.floor(w/we)||1,
+        ox=(w-n*we)/2-2;// -2 wegen margin-left=4
+    console.log('resize '+n);
+    for (var i=0;i<d.length;i++) {
+      var e=d[i];
+      c=e.c;s=c.style;
+      s.left=((i%n)*we+ox)+'px';
+      s.top=(Math.floor(i/n)*he)+'px';
+    }
+    
+    //...
+  }
+  function resize2(e) {
+    resize(e);setTimeout(resize,1000);
+    //...
+  }
+  function click(e) {
+    //...
+    location.href=this._shube.ref;
+    //console.log(this._shube);
+    //alert(42);
+    //...
+  }
+  //div style="background-color:#a00;width:390px;height:180px;float:left;">1st/div>
+  //div style="background-color:#0a0;width:390px;height:180px;float:left;">2nd/div>
+  
+  //init
+  (function() {
+    //...
+    var c,s;
+    s=document.body.style;
+    s.fontFamily='sans-serif';s.fontSize='0.9em';
+    
+    c=document.createElement('div');s=c.style;headc=c;
+    c.innerHTML='<a href="//twitter.com/pl4n3" style="font-size:0.7em;color:#060;text-decoration:none;">@pl4n3</a><b'
+      //+' style="color:#00a;"'
+      //+' style="text-shadow:0px 0px 4px #fa0;"'
+      +'>T</b><span style="color:#444;">hings</span>'
+      //+' <img src="/2001.png" height=30 style="vertical-align:text-bottom;" />'
+      ;
+    //s.backgroundColor='#999';
+    s.backgroundImage='linear-gradient(#bbb, #888)';
+    //s.backgroundImage='linear-gradient(#fa0,#bbb 10%,#888 90%,#000)';
+    s.fontSize='2em';s.textAlign='center';
+    s.position='absolute';
+    document.body.appendChild(c);
+    
+    c=document.createElement('div');s=c.style;//c.innerHTML='body';
+    s.position='absolute';s.overflow='auto';
+    //s.backgroundColor='#bbb';
+    document.body.appendChild(c);mainc=c;
+    
+    d=[{s:'Zweide',desc:'2D game test using three.js. Goal: similar playability for phone, desktop and VR. (Est. 2018)'
+      ,_col:'#a00',bgimg:'url("/blog/img/zweide0.png")',ref:'/three/anim.htm?sn=anim/zweide.js&sn0=anim/zweide/test0.js'}
+    ,{s:'Strawman Jump\'n Run',desc:'2D game test using canvas and simple physics. Characters are rigged from plain pictures. (Est. 2017)'
+      ,_col:'#0a0',bgimg:'url("/blog/img/strawman.png")',ref:'/canvas/bod2/jnr.htm'}
+    ,{s:'Web Paint',desc:'Paint app for phone & desktop. Featuring transparency, scripting, multi-page images, gif export, no documentation yet. (Est. 2015)'
+      ,_col:'#aa0',bgimg:'url("/blog/img/paint1.png")',ref:'/canvas/paint.htm'}
+    ,{desc:'<span style="color:#bbb;">Updates and more projects on <a href="//twitter.com/pl4n3" style="color:#080;text-decoration:none;">'
+       +'twitter</a>. For older things visit <a href="//pl4n3.blogspot.com" style="color:#080;text-decoration:none;">pl4n3.blogspot.com</a>.</span>'}
+    ];
+    for (var i=0;i<d.length;i++) {
+      var e=d[i];//i<d.length?d[i]:undefined;
+      c=document.createElement('div');s=c.style;e.c=c;
+      s.width='380px';s.height='170px';
+      s.position='absolute';//s.float='left';
+      s.marginLeft='4px';s.marginTop='4px';s.padding='4px';
+      if (e.s) {
+        c.onclick=click;s.cursor='pointer';c._shube=e;
+        s.textShadow='1px 1px 4px #fff';
+      }
+      //s.display='table-cell';s.verticalAlign='bottom';
+      if (e.col) s.backgroundColor=(e&&e.col)?e.col:'#bbb';
+      if (e.bgimg) { 
+        s.backgroundImage=e.bgimg;
+        //s.filter='grayscale(80%) blur(5px) '; 
+      }
+      var sh='';
+      if (e) {
+        if (e.s) sh='<br><br><br><br><div style="background-color:rgba(210,210,210,0.8);">'
+          +'<span style="font-size:2em;font-weight:bold;">'+e.s+'</span>';
+        if (e.desc) sh+=(e.s?'<br>':'')+e.desc;
+        if (e.s) sh+='</div>';
+      } else 
+        sh='no '+i;
+      c.innerHTML=sh;
+      mainc.appendChild(c);
+    }
+    
+    window.addEventListener('resize',resize2);resize2();
+    document.title='@pl4n3 Things';
+    //...
+  }
+  )();
+  
+  
+  //...
+}
+)();
+</script>
+
+</body>
+</html><script>
+//fr o,14
+//fr o,14,3
+//fr o,14,4
+//fr o,14,5
+//fr o,14,10
+//fr p,40,4

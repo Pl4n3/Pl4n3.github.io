@@ -1,7 +1,7 @@
 var Paint={};
 (function(Paint) {
   var canvas,ix,iy,id,iw,ih,oix,oiy,scale,oscale;
-  var version='0.1.3620 ';//FOLDORUPDATEVERSION
+  var version='0.1.3631 ';//FOLDORUPDATEVERSION
   var md=false,imx,imy,mx,my,omx,omy,moused=new Array(4),br=0,bg=0,bb=250,bp=0.1,bra=10;
   var touches={},TM_DRAW=1,TM_IMG=2,touchMode=TM_DRAW,touchlast;
   //var menuroots,menus;
@@ -1757,8 +1757,20 @@ var Paint={};
     if (cuous) try { cutout=JSON.parse(cuous);log('Cutout loaded: '+cutout.rects.length); } 
     catch (e) { log('Error while loading cutout from localstorage: '+e); }
     //lert('Load brushpat="'+(brushpat=='false'?'F':'T')+'"');
-    if (d) loadDataUrl(d);
-    else log('No image found in localStorage.');
+    if (0&&d) loadDataUrl(d);
+    else {
+      log('No image found in localStorage.');
+      //--- same code as in loadDataUrl, either make func 
+      //--- or call loadDataUrl with empty pic
+      setMode(mode);
+      if (sal) {
+        Menu.cmenu=mmenu;//mcolor;
+        Menu.action();
+        Menu.cmenu=mmenu;//mcolor;
+        Menu.action();
+        //Menu.draw();
+      }
+    }
     //...
   }
   //---
@@ -3372,6 +3384,7 @@ var Paint={};
 //fr o,1
 //fr o,1,140
 //fr o,1,143
+//fr o,1,150
 //fr o,1,150,32
 //fr o,1,152
 //fr o,1,175,3
@@ -3386,4 +3399,4 @@ var Paint={};
 //fr o,1,201,272,2
 //fr o,1,201,274
 //fr o,1,201,329,9
-//fr p,2,241
+//fr p,14,437

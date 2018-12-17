@@ -1,7 +1,7 @@
 var Paint={};
 (function(Paint) {
   var canvas,ix,iy,id,iw,ih,oix,oiy,scale,oscale;
-  var version='0.1.3632 ';//FOLDORUPDATEVERSION
+  var version='0.1.3658 ';//FOLDORUPDATEVERSION
   var md=false,imx,imy,mx,my,omx,omy,moused=new Array(4),br=0,bg=0,bb=250,bp=0.1,bra=10;
   var touches={},TM_DRAW=1,TM_IMG=2,touchMode=TM_DRAW,touchlast;
   //var menuroots,menus;
@@ -21,7 +21,7 @@ var Paint={};
   var sal=true,medit3d;//meve=false;//menues and events?//standalone
   var lo,tccanvas,selv=[],wasTcDrag=false,isTouch=false,isInvertgreen=true;//w3dit object
   var oda,pali={},trai=1,addPageAfterLoad=false,loadScale=1,lastBrush={x:0,y:0},copybrush,mtools,getva=[],
-      mprocesscs,idimda,idima,adata=[],clearCanv=true,urls={},mTridatavAdd;
+      mprocesscs,idimda,idima,adata=[],clearCanv=true,urls={},mTridatavAdd,isExport=false;
   var pal=[
   {r:119,g:17,b:18},//0
   {r:4,g:119,b:242},
@@ -1719,7 +1719,7 @@ var Paint={};
   }
   function windowDataUrl(url,s) {
     var img=new Image();img.src=url;
-    if (1) {
+    if (0) {
       var w=window.open();//'','test');//'',s);//'JpegExport');
       //var s=img.style;s.width='100px';s.height='100px';
       var body=w.document.body;
@@ -1729,10 +1729,19 @@ var Paint={};
     } else { //tried this since window.open doesnt work with mobile webapp
       var c=document.createElement('div'),s=c.style;
       s.position='absolute';s.left='50px';s.top='50px';
-      s.userSelect='auto';s.MozUserSelect='auto';s.WebkitUserSelect='auto';//doesnt work (button not clickable and image not saveable on mobile)
+    
+      isExport=1;//Menu.mcontrol=1;  
+      s=document.body.style;var nv='';
+      s.userSelect=nv;s.MozUserSelect=nv;s.WebkitUserSelect=nv;//doesnt work (button not clickable and image not saveable on mobile)
+      document.body.oncontextmenu=undefined;
+      
       var b=document.createElement('button');b.innerHTML='close';
     b.onclick=function() {
       document.body.removeChild(c);
+      isExport=undefined;
+      nv='none';
+      s.userSelect=nv;s.MozUserSelect=nv;s.WebkitUserSelect=nv;//doesnt work (button not clickable and image not saveable on mobile)
+      document.body.oncontextmenu='return false;';
     }
       c.appendChild(b);c.appendChild(document.createElement('br'));
       //following oncontextmenu doesnt work, tried to make image saveable
@@ -2022,6 +2031,7 @@ var Paint={};
     
   }
   function touchStart(e) {
+    //onsole.log('paint.touchStart isExport='+isExport);
     isTouch=true;
     for (var h=0;h<e.touches.length;h++) {
       var t=e.touches[h];
@@ -2061,7 +2071,7 @@ var Paint={};
     }
     //lo.t=0;lo.ta=0;aY+=0.2;ida=[];//undefined;
     //log('touchstart '+sh);
-    if (!Menu.mcontrol) {
+    if (!Menu.mcontrol&&!isExport) {
       if (e.preventDefault) e.preventDefault();
       if (e.stopPropagation) e.stopPropagation();
     }
@@ -2135,7 +2145,7 @@ var Paint={};
       //mousep=c;
       //odx=dx;ody=dy;vx=0;vy=0;
     }
-    if (!Menu.mcontrol) {
+    if (!Menu.mcontrol&&!isExport) {
       if (e.preventDefault) e.preventDefault();
       if (e.stopPropagation) e.stopPropagation();
     }
@@ -2154,7 +2164,7 @@ var Paint={};
       cUp();
     }
     
-    if (!Menu.mcontrol) {
+    if (!Menu.mcontrol&&!isExport) {
       if (e.preventDefault) e.preventDefault();
       if (e.stopPropagation) e.stopPropagation();
     }
@@ -2569,7 +2579,8 @@ var Paint={};
     });
     cfmenu.sub.push(
     
-    {s:'More IO',sub:[
+    //{s:'More IO',sub:[
+    {s:'More IO',vertCenter:1,fs:0.5,noinp:1},
     //{s:'Load',ms:'file',a:'loadfile',doctrl:'Load file',file:1},
     {s:'Load',ms:'localStorage'},{s:'Save',ms:'localStorage'},
     {s:'Import',doctrl:'(Data)Url',lskey:'paintimport',ta:true,setfunc:function(v,initLoad) {
@@ -2591,7 +2602,7 @@ var Paint={};
       } catch (e) { log('Palette edit: '+e); }
     }
     },{s:'Set Palette',ms:'via NeuQuant.js'}]}
-    ]}
+    //]}
     
     );
     //------------
@@ -3382,21 +3393,20 @@ var Paint={};
 )(Paint);
 
 //fr o,1
-//fr o,1,140
-//fr o,1,143
-//fr o,1,150
-//fr o,1,150,32
-//fr o,1,152
 //fr o,1,175,3
-//fr o,1,177
+//fr o,1,176
+//fr o,1,176,18
+//fr o,1,185
+//fr o,1,187
+//fr o,1,188
+//fr o,1,189
 //fr o,1,194,2,22
 //fr o,1,194,2,22,3
-//fr o,1,201
 //fr o,1,201,108
-//fr o,1,201,217
-//fr o,1,201,217,1
-//fr o,1,201,261
-//fr o,1,201,272,2
-//fr o,1,201,274
-//fr o,1,201,329,9
-//fr p,4,432
+//fr o,1,201,218
+//fr o,1,201,218,1
+//fr o,1,201,262
+//fr o,1,201,273,2
+//fr o,1,201,275
+//fr o,1,201,330,9
+//fr p,2,248

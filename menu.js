@@ -6,7 +6,7 @@ var Menu={};
   Menu.cmenu=undefined;
   var menus,tfid='menutf',mok,mcancel,lsx=0,lsy=0,touchms=[],keym={},gpbum={},gppress=new Array(16),
       nomouse=false,ccw=1,cch=1,pressed=[],pressids={},ps,mD=false,sx=0,sy=0,
-      tsd=[],tsw=100,tsb=50,tsw0=50;//tsw=125,tsb=25
+      tsd=[],tsw=100,tsb=50,tsw0=50,oncome;//tsw=125,tsb=25
   Menu.mcontrol=undefined;
   Menu.color='rgba(0,0,0,1)';
   Menu.borderColor='rgba(0,0,0,1)';
@@ -21,6 +21,7 @@ var Menu={};
   Menu.soff='[ ]';//'\u2610';
   Menu.son='[x]';//'\u2611';
   Menu.pressed=pressed;
+  Menu.version='1.104 ';//FOLDORUPDATEVERSION
   function mCloseAll(a) {
     for (var i=0;i<a.length;i++) {
       var mh=a[i];
@@ -128,12 +129,18 @@ var Menu={};
       if (Menu.mcontrol.cancelf) Menu.mcontrol.cancelf();
     }
     if (Menu.switchf) Menu.switchf(m,a);
-    if (!cstay) Menu.mcontrol=undefined;
+    if (!cstay) {
+      if (Menu.mcontrol) document.body.oncontextmenu=oncome;
+      Menu.mcontrol=undefined;
+    }
     
     
     //^^^^
     
     if (m.doctrl) {
+      //onsole.log('menu.action doctrl '+document.body.oncontextmenu);
+      oncome=document.body.oncontextmenu;
+      document.body.oncontextmenu=undefined;
       var skip=false;
       if (m.valuef) {
         m.valuefval=m.valuef();
@@ -552,6 +559,7 @@ var Menu={};
     return menus;
   }
   Menu.init=function(a,p) {
+    console.log('Menu '+Menu.version);
     Menu.initLoad(a);
     Menu.roots=a;
     menus=a.concat(Menu.recent);
@@ -603,7 +611,7 @@ var Menu={};
   Menu.keyDown=function(ev) {
     if (Menu.mcontrol) return;
     var kc=ev.keyCode,ret;
-    //onsole.log('Menu.keyDown '+kc);
+    if (ps.keyLog) console.log('Menu.keyDown '+kc);
     var m=keym[kc+(ev.ctrlKey?'_c':0)];
     if (m) { 
       //onsole.log('Menu.keyDown 0');
@@ -912,5 +920,5 @@ var Menu={};
 
 //--
 //fr o,2
-//fr o,2,41
-//fr p,2,44
+//fr o,2,40
+//fr p,34,44

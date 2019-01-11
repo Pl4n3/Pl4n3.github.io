@@ -1,7 +1,7 @@
 var Paint={};
 (function(Paint) {
   var canvas,ix,iy,id,iw,ih,oix,oiy,scale,oscale;
-  var version='1.3723 ';//FOLDORUPDATEVERSION
+  var version='1.3726 ';//FOLDORUPDATEVERSION
   var md=false,imx,imy,mx,my,omx,omy,moused=new Array(4),br=0,bg=0,bb=250,bp=0.1,bra=10;
   var touches={},TM_DRAW=1,TM_IMG=2,touchMode=TM_DRAW,touchlast;
   //var menuroots,menus;
@@ -1243,7 +1243,7 @@ var Paint={};
         setMode(mode);
     //mode=-1;//?
     
-    if (1&&sal&&!ps.lsLoad) {
+    if (1&&sal&&mmenu.shown) {//&&!ps.lsLoad) {
       Menu.cmenu=mmenu;//mcolor;
       Menu.action();
       Menu.cmenu=mmenu;//mcolor;
@@ -1281,7 +1281,7 @@ var Paint={};
       //--- same code as in loadDataUrl, either make func 
       //--- or call loadDataUrl with empty pic
       setMode(mode);
-      if (sal) {
+      if (sal&&mmenu.shown) {
         Menu.cmenu=mmenu;//mcolor;
         Menu.action();
         Menu.cmenu=mmenu;//mcolor;
@@ -3450,12 +3450,12 @@ var Paint={};
 )(Paint);
 
 //fr o,1
-//fr o,1,173
+//fr o,1,159
+//fr o,1,161
 //fr o,1,193,3
 //fr o,1,202
-//fr o,1,202,190
 //fr o,1,202,270
 //fr o,1,202,281,2
 //fr o,1,202,283
 //fr o,1,202,338,9
-//fr p,16,407
+//fr p,22,235

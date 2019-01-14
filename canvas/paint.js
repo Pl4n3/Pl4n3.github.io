@@ -1,7 +1,7 @@
 var Paint={};
 (function(Paint) {
   var canvas,ix,iy,id,iw,ih,oix,oiy,scale,oscale;
-  var version='1.3726 ';//FOLDORUPDATEVERSION
+  var version='1.3732 ';//FOLDORUPDATEVERSION
   var md=false,imx,imy,mx,my,omx,omy,moused=new Array(4),br=0,bg=0,bb=250,bp=0.1,bra=10;
   var touches={},TM_DRAW=1,TM_IMG=2,touchMode=TM_DRAW,touchlast;
   //var menuroots,menus;
@@ -88,52 +88,8 @@ var Paint={};
   {r:26,g:26,b:26},
   {r:4,g:4,b:4},
   ];
-  /*
-  var cutouts=[
-    //{x:0,   y:0,  w:677,h:1024,cx:338,cy:0,  ps:[{x:2,y:890}]},
-    //{x:698, y:441,w:639,h:579, cx:315,cy:500,ps:[{x:24,y:-476},{x:-240,y:-130}]},
-    //{x:687, y:9,  w:292,h:436, cx:170,cy:340},
-    //{x:985, y:3,  w:219,h:163, cx:60, cy:60, ps:[{x:113,y:26}]},
-    //{x:1023,y:207,w:224,h:180, cx:40, cy:40},
-  
-    {x:0,   y:0,  w:677,h:1024,cx:338+0,  cy:0+0,    ps:[{x:2+338+0,y:890+0+0}]},
-    {x:698, y:441,w:639,h:579, cx:315+698,cy:500+441,ps:[{x:24+315+698,y:-476+500+441},{x:-240+315+698,y:-130+500+441}]},
-    {x:687, y:9,  w:292,h:436, cx:170+687,cy:340+9},
-    {x:985, y:3,  w:219,h:163, cx:60+985, cy:60+3,   ps:[{x:113+60+985,y:26+60+3}]},
-    {x:1023,y:207,w:224,h:180, cx:40+1023,cy:40+207},
-  ];*/
-  var cutout={
-    rects:[
-    /*
-    {x:0,   y:0,  w:677,h:1024,cx:338+0,  cy:0+0,    ps:[{x:2+338+0,y:890+0+0}]},
-    {x:698, y:441,w:639,h:579, cx:315+698,cy:500+441,ps:[{x:24+315+698,y:-476+500+441},{x:-240+315+698,y:-130+500+441}]},
-    {x:687, y:9,  w:292,h:436, cx:170+687,cy:340+9},
-    {x:985, y:3,  w:219,h:163, cx:60+985, cy:60+3,   ps:[{x:113+60+985,y:26+60+3}]},
-    {x:1023,y:207,w:224,h:180, cx:40+1023,cy:40+207},
-    */
-    ],
-    bones:[
-    /*
-    {i:0,p:-1,pp:-1},
-    {i:1,p:0,pp:0},
-    {i:2,p:1,pp:0},
-    {i:3,p:1,pp:1},
-    {i:4,p:3,pp:0}
-    */
-    ]
-  },cutoutP;
-  var canvlo,wasBrush,acoH={},canvm,cfmenu,tridata=undefined,canvDraw=true,ctdraw,changec=0;
-  //{verts:[[0,0],[1,0],[0.5,0.5]],tris:[[0,1,2]]};
-  //seg0=cut(0,0,677,1024,338,0,0,0);
-  //seg0.segs=[];var s1,s2;
-  //seg0.segs.push(s1=cut(698,441,639,579,315,500,340-338,890));//x340//600
-  //s1.segs=[];
-  //s1.segs.push(     cut(687,9,  292,436,170,340,24,-476));
-  //s1.segs.push(s2=cut(985,3,219,163,60,60,-240,-130));//361,230
-  //s2.segs=[];
-  //s2.segs.push(cut(1023,207,224,180,40,40,113,26));
-  //--- tried (but failed) to examine the scroll error http://jsfiddle.net/7ouvucg9/
-  
+  var cutout={ rects:[],bones:[] },cutoutP,
+      canvlo,wasBrush,acoH={},canvm,cfmenu,tridata=undefined,canvDraw=true,ctdraw,changec=0;
   
   function arc(x,y,r) {
     var ctx=canvas.getContext('2d');
@@ -500,7 +456,7 @@ var Paint={};
   }
   function conetLoad(v,atStart,callback,ps) {
     if (!ps) ps={};
-    cutout=undefined;
+    //cutout=undefined;
     Conet.download({fn:v,f:function(v0) {
       loadText(v0,v.indexOf('.json')!=-1,ps,callback);
     }
@@ -1194,6 +1150,7 @@ var Paint={};
   }
   function loadText(v0,json,ps,callback) {
     //...
+    cutout=undefined;
     if (!ps.dataUrlF) adata={};
     var s;
     Menu.setChecked(mprocesscs,false);
@@ -1638,7 +1595,9 @@ var Paint={};
   }
   function serialize(json) {
     var data=adata.noData?undefined:Paint.saveCanvas(undefined,undefined,{nocanvm:1}).toDataURL(
-      'image/'+(adata.saveJpg||v.endsWith('.jpeg.json.txt')?'jpeg':'png')),
+      'image/'+(adata.saveJpg
+      //||v.endsWith('.jpeg.json.txt')
+      ?'jpeg':'png')),
       pd;
     //if (v.endsWith('.json.txt')) {
     if (json) {//v.indexOf('.json')!=-1) {
@@ -2512,7 +2471,7 @@ var Paint={};
       nbid=undefined;
       
       var xf=w/iw,yf=h/ih;
-      for (var i=0;i<cutout.rects.length;i++) {
+      if (cutout) for (var i=0;i<cutout.rects.length;i++) {
         var r=cutout.rects[i];
         r.x*=xf;r.y*=yf;r.w*=xf;r.h*=yf;r.cx*=xf;r.cy*=yf;
         if (r.ps) for (var j=0;j<r.ps.length;j++) {
@@ -2525,7 +2484,7 @@ var Paint={};
       Menu.ms(mcanvas,iw+'x'+ih+'x'+(pages?pages.length:1));
       draw();
       isize();
-      log('Scaled to '+v+(cutout.rects.length>0?' (also '+cutout.rects.length+' cutout-rects)':'')+'.');
+      log('Scaled to '+v+(cutout&&(cutout.rects.length>0)?' (also '+cutout.rects.length+' cutout-rects)':'')+'.');
     }
     ,valuef:function() {
       return iw+'x'+ih;
@@ -3450,12 +3409,13 @@ var Paint={};
 )(Paint);
 
 //fr o,1
-//fr o,1,159
-//fr o,1,161
-//fr o,1,193,3
-//fr o,1,202
-//fr o,1,202,270
-//fr o,1,202,281,2
-//fr o,1,202,283
-//fr o,1,202,338,9
-//fr p,22,235
+//fr o,1,135
+//fr o,1,149,3
+//fr o,1,158
+//fr o,1,158,119
+//fr o,1,158,119,2
+//fr o,1,158,270
+//fr o,1,158,281,2
+//fr o,1,158,283
+//fr o,1,158,338,9
+//fr p,4,140

@@ -1,7 +1,7 @@
 var Paint={};
 (function(Paint) {
   var canvas,ix,iy,id,iw,ih,oix,oiy,scale,oscale;
-  var version='1.3732 ';//FOLDORUPDATEVERSION
+  var version='1.3749 ';//FOLDORUPDATEVERSION
   var md=false,imx,imy,mx,my,omx,omy,moused=new Array(4),br=0,bg=0,bb=250,bp=0.1,bra=10;
   var touches={},TM_DRAW=1,TM_IMG=2,touchMode=TM_DRAW,touchlast;
   //var menuroots,menus;
@@ -21,7 +21,7 @@ var Paint={};
   var sal=true,medit3d;//meve=false;//menues and events?//standalone
   var lo,tccanvas,selv=[],wasTcDrag=false,isTouch=false,isInvertgreen=true;//w3dit object
   var oda,pali={},trai=1,addPageAfterLoad=false,loadScale=1,lastBrush={x:0,y:0},copybrush,mtools,getva=[],
-      mprocesscs,idimda,idima,adata=[],clearCanv=true,urls={},mTridatavAdd,isExport=false;
+      mprocesscs,idimda,idima,adata={},clearCanv=true,urls={},mTridatavAdd,isExport=false;
   var pal=[
   {r:119,g:17,b:18},//0
   {r:4,g:119,b:242},
@@ -1167,6 +1167,7 @@ var Paint={};
       if (s=d.col) msetcol.setfunc(s[0]+','+s[1]+','+s[2]); 
       if (s=d.process) { 
         prSet(s);Menu.setChecked(mprocesscs,true); 
+        //onsole.log(mprocesscs);
         //og('conetLoad d.process.length='+s.length+', pra.len='+pra.length);
       }
       if (s=d.scale) scale=parseFloat(s);
@@ -1194,7 +1195,10 @@ var Paint={};
       //onsole.log('conetLoad adata=');onsole.log(adata);
       //---sth cutout edit loads last loaded cutout on restart
       
-      if (d.process) log('Process image loaded, '+v0.length+' bytes.');
+      //if (d.process) log('Process image loaded, '+v0.length+' bytes.');
+      //log('Image loaded '+v0.length+' bytes'+(d.data?', pixdata:'+d.data.length+' bytes':'')
+      //  +(d.process?', process:'+d.process.length:'')+', adata:'+JSON.stringify(adata)+'.');
+      if (d.noData) log('Image loaded '+v0.length+' bytes'+(d.noData?', noPixData':'')+'.')
       if (d.noData&&d.process) {
         
         setMode(mode);
@@ -1230,7 +1234,9 @@ var Paint={};
   }
   function lsLoad() {
     //...
+    setTimeout(
     
+    function() {
     var d=localStorage[lsKey+'json'];
     if (d) loadText(d,1,{lsLoad:1});
     else {
@@ -1246,6 +1252,9 @@ var Paint={};
         //Menu.draw();
       }
     }
+    }
+    
+    ,100);
     
     //onsole.log('lsLoad '+d.length);
     
@@ -2501,6 +2510,7 @@ var Paint={};
     },
     
     {s:'Add.Data',doctrl:'Additional data<span style="font-size:0.7em;">&middot;keys:layerDraw,saveJpg,noData</span>',mcfs:0.07,ta:true,wrap:0,tacols:30,tarows:20,setfunc:function(v,initLoad) {
+      //if (!initLoad) 
       adata=JSON.parse(v);
       //tridata=v.length==0?undefined:JSON.parse(v);
     }
@@ -3409,13 +3419,14 @@ var Paint={};
 )(Paint);
 
 //fr o,1
-//fr o,1,135
+//fr o,1,100
+//fr o,1,115
 //fr o,1,149,3
-//fr o,1,158
 //fr o,1,158,119
 //fr o,1,158,119,2
+//fr o,1,158,174
 //fr o,1,158,270
 //fr o,1,158,281,2
 //fr o,1,158,283
 //fr o,1,158,338,9
-//fr p,4,140
+//fr p,16,163

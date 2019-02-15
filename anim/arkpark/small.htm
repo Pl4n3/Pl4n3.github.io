@@ -1,0 +1,42 @@
+<!doctype html><html><head>
+<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+<meta name="viewport" content="width=device-width, user-scalable=yes, minimum-scale=1.0, maximum-scale=10.0">
+<script src="/menu.js"></script>
+<script src="/conet.js"></script>
+<script src="/sound.js"></script>
+<script src="/util/arrows.js"></script>
+<script src="/util/gridPath.js"></script>
+<script src="/anim/arkpark/arkpark.js"></script>
+</head><body bgcolor="#aaa" oncontextmenu="return false;" style="font-family:Sans-serif;">
+<script type="text/javascript">
+//---inspired by screenshots of android game langrisser: smaller field, attacking and healing units
+(function() {
+  //...
+  var mel='MELEE',med='MEDIC';
+  
+  Arkpark({gw:12,gh:6,fog:false,medikits:0,//noMsg:1,
+    //friendlyFire:true,
+    objs:[
+      {descr:mel,x:2,y:1,party:0,a:1,ap:2},
+      {descr:mel,x:2,y:2,party:0,a:1,ap:2},
+      {descr:med,x:1,y:2,party:0,a:1,heal:1,ap:3},
+      
+      {descr:mel,x:9,y:1,party:1,a:3,ap:2},
+      {descr:mel,x:9,y:2,party:1,a:3,ap:2},
+      {descr:med,x:10,y:2,party:1,a:3,heal:1,ap:3},
+      {descr:mel,x:9,y:3,party:1,a:3,ap:2},
+      //{descr:mel,x:10,y:1,party:1,a:3,ap:2},
+      //{descr:mel,x:10,y:3,party:1,a:3,ap:2},
+      {descr:med,x:11,y:2,party:1,a:3,heal:1,ap:3},
+    ]
+  });
+  
+  
+  
+  //...
+}
+)();
+//---
+</script></body></html><script>
+//fr o,12
+//fr p,43,16

@@ -175,6 +175,17 @@ var Pd5={};
     //onsole.log(lo);
     //...
   }
+  function animRng(h) {
+    var s=0,a=h.a;
+    for (var i=a.length-1;i>=0;i--) s+=a[i].w||1;
+    s=Math.random()*s;
+    for (var i=a.length-1;i>=0;i--) {
+      var ah=a[i],w=ah.w||1;
+      if (s<w) { h.curr=ah;return ah.s; }
+      s-=w;
+    }
+    //...
+  }
   Pd5.vertNew=function(x,y,z,u,v) {
     return {p0:new Vecmath.Vec4(x,y,z,1),p1:new Vecmath.Vec4(0,0,0,1),ts:[],vis:false,u:u,v:v};
   }
@@ -192,6 +203,8 @@ var Pd5={};
         var fh=new Function('','return {'+s+'};');
         h=fh();
       }
+      if (h.onlyAnims) { //console.log('pd5.load onlyAnims!!1');
+        return h; }
       return Pd5.loadh(h);
     } catch (re) {
       //console.warn('Pd5.load error: '+re);
@@ -406,10 +419,18 @@ var Pd5={};
     }
   }
   Pd5.animStart=function(o,anim) {
-    //console.log('Pd5.animStart 0');
+    //onsole.log('Pd5.animStart 0');
+    //if (typeof(anim)=='string') anim=o.animh[anim];
+    
     if ((o.anim==anim)||!anim) return;
     //onsole.log('Pd5.animStart '+anim.length);
     o.anim=anim;
+    //o.animStarted=anim;
+    
+    if (typeof(anim)=='string') { o.animInt=o.animh[anim];if (!o.animInt) throw 'no0 anim '+anim; } else 
+    if (!Array.isArray(anim)) { var sh=animRng(anim);o.animInt=o.animh[sh];if (!o.animInt) throw 'no1 anim '+sh; }
+    else o.animInt=undefined;
+    
     o.ta=0;o.ca=0;
     
     if (o.cm) return;//else bulletized objects looks strange..
@@ -440,8 +461,9 @@ var Pd5={};
     var t=0;
     if (lo) {
       bones=lo.bones;
-      anim=lo.anim;
+      anim=lo.animInt||lo.anim;//Started;
     }
+    //onsole.log('pd5.calc');
     //if (!anim) anim=lo.anims[0].a;//alert(lo.anims.length);
     var inplace=oo&&o.cm;
     
@@ -458,7 +480,26 @@ var Pd5={};
         if (!lo.ta) lo.ta=0;
         if (!lo.animStop) lo.ta+=dt;// /(ps.animdiv||1);
         var t=lo.ta/1000;
-        if (t>aT) lo.ca++;
+        if (t>aT) {
+          lo.ca++;
+          if ((typeof(lo.anim)!='string')&&!Array.isArray(lo.anim)) {
+            if (lo.ca<(lo.anim.curr.cmin||0)) 
+              lo.ta=(t%aT)*1000;
+            else {
+            //onsole.log('pd5.calc lo.ca='+lo.ca);
+            var as=animRng(lo.anim),animn=lo.animh[as];
+            if (!animn) throw 'no anim '+as;
+            //onsole.log('pd5.calc as='+as);
+            if (animn!=lo.animInt) {
+              //onsole.log('pd5.calc change anim nao');
+              var oanim=lo.anim;
+              Pd5.animStart(lo,animn);lo.anim=oanim;lo.animInt=animn;
+              t=0;
+            } else
+              lo.ta=(t%aT)*1000;
+            }
+          }
+        }
         t=t%aT;lo.at=t;
         var key1=0;//,t2=0;
         for (var h=0;h<anim.length;h++) {
@@ -484,6 +525,7 @@ var Pd5={};
         } else {
         if ((key1==0)&&(lo.ca==0)&&lo.animc) ak0=lo.animc;
         var ak1=anim[key1];//if (ak1==undefined) alert(key1);
+        if (ak1===undefined) console.log(lo.anims);
         var af=t/ak1.t;
         ////af=3*af*af-2*af*af*af; //small smooth
         ////af=1-(af-1)*(af-1)+af*af*(0.1*Math.cos(PI*6*af)-0.1);
@@ -1313,7 +1355,7 @@ var Pd5={};
   Pd5.modAnims=function(bi,ph) {
     var o=ph.o;
     for (var i=o.anims.length-1;i>=0;i--) {
-      var a=o.anims[i].a;
+      var an=o.anims[i],a=an.a;
       for (var j=a.length-1;j>=0;j--) {
         var p=a[j].bs[bi].t;
         if (ph.s) { p.x*=ph.s;p.y*=ph.s;p.z*=ph.s; }
@@ -1665,6 +1707,39 @@ var Pd5={};
       //log(a[0].o.bones.length+' '+a[1].o.bones.length);
       Pd5.combine(ch.a[0].o,ch.a[1].o,ch.key);
       //alert(a[0].o);
+      if (ch.modf) ch.modf(ch.a[0].o,ch);
+      //onsole.log('pd5.loadCombine ch.a.len='+ch.a.length);
+      if ((ch.a.length>2)&&ch.a[2].o.onlyAnims) { //integrate extern anim files
+        //console.log('pd5.loadcombine integrate extern anims nao.');
+        var o0=ch.a[0].o,cha2=ch.a[2],oa=cha2.o;
+        o0.animFn=cha2.fn;//so that for now on w3dit save only anim file is saved
+        var boneh={}
+        for (var i=0;i<o0.bones.length;i++) boneh[o0.bones[i].name]=i;
+        //onsole.log(boneh);
+        for (var an of oa.anims) {
+          console.log('pd5.loadCombine adding extern anim: '+an.name);
+          for (var i=o0.anims.length-1;i>=0;i--) {
+            if (o0.anims[i].name==an.name) {
+              //onsole.log('pd5.loadCombine: overwriting existing anim.');
+              o0.anims.splice(i,1,1);
+            }
+          }
+          an.animFn=cha2.fn;
+          //onsole.log('pd5.loadCombine bones counts '+o0.bones.length+' '+an.a[0].bs.length);
+          for (var i=0;i<an.a.length;i++) {
+            var ak=an.a[i];
+            var bsn=new Array(o0.bones.length);
+            for (var j=0;j<ak.bs.length;j++) {
+              bsn[boneh[oa.bones[j]]]=ak.bs[j];
+            }
+            for (var j=0;j<bsn.length;j++) if (bsn[j]===undefined) bsn[j]={t:{x:0,y:0,z:0},q:{x:0,y:0,z:0}};
+            ak.bs=bsn;
+          }
+          //onsole.log(an);
+          o0.anims.push(an);
+          o0.animh[an.name]=an.a;
+        }
+      }
       //loadPd5({o5:ch.a[0].o,x:0,y:0,z:0,v:1,ego:1,rotofs:PI,s:8,sasc:0.07,rot:PI,eyeh:0.33});
       ch.cloadf(ch.a[0].o,ch);
     }
@@ -2048,11 +2123,8 @@ var Pd5={};
 
 //---
 //fr o,2
-//fr o,2,40,75
-//fr o,2,46,44
-//fr o,2,47,1
-//fr o,2,47,2
-//fr o,2,47,2,3
-//fr o,2,49
-//fr o,2,50
-//fr p,96,76
+//fr o,2,35
+//fr o,2,37
+//fr o,2,41,75
+//fr o,2,47,44
+//fr p,92,47

@@ -48,7 +48,7 @@ function threeTexture(ts,o5,tlOnload) {
     //onsole.log('threeTexture load '+(threeEnv.path+ts)+' threeTL='+threeTL);
     //onsole.log(threeEnv);
     var fn=ts.startsWith('/')?ts:threeEnv.path+ts;
-    console.log('threeTexture '+fn);
+    //onsole.log('threeTexture '+fn);
     if (fn.endsWith('.json')) {
       var img=document.createElement('img');
       text=new THREE.Texture(img);
@@ -473,7 +473,7 @@ function threeBillboardAdd(p) {
     //if (!mipmap) t1.minFilter=THREE.LinearFilter;
     //Nearest
     var planeMaterial=new THREE.MeshBasicMaterial({map:t1,opacity:1,transparent:((p.transparent!==undefined)?p.transparent:true)});
-    var g=new THREE.PlaneGeometry(80,80*p.ar);
+    var g=new THREE.PlaneGeometry(p.gw||80,(p.gw||80)*p.ar);
     
     g.faceVertexUvs=[[[{x:0,y:1},{x:0,y:1-p.ar},{x:1,y:1}],[{x:0,y:1-p.ar},{x:1,y:1-p.ar},{x:1,y:1}]]];//[0][0][0].y*=p.ar;
     //onsole.log(g);
@@ -537,7 +537,8 @@ function threeRender(dt) {
     threeEnv.ot=t;
   }    
   
-  
+  //console.log('threeRender '+threeEnv.os.length);
+  Pd5.os=threeEnv.os;//for animText.attack
   for (var obi=threeEnv.os.length-1;obi>=0;obi--) {
     var lo=threeEnv.os[obi];
     
@@ -551,8 +552,10 @@ function threeRender(dt) {
       }
     }
   
-    if (!threeEnv.nocalc) Pd5.calc(lo,dt,0,lo.ay||0,lo.scale||1,{x:lo.x||0,y:lo.y||0,z:lo.z||0},0,0,true);
-    Pd5.calcNormals(lo,true);
+    //console.log('calc obi');
+    var calcnorms=true;
+    if (!threeEnv.nocalc) calcnorms=Pd5.calc(lo,dt,0,lo.ay||0,lo.scale||1,{x:lo.x||0,y:lo.y||0,z:lo.z||0},0,0,true);
+    if (calcnorms) Pd5.calcNormals(lo,true); //else console.log('calcNormals skipped');
   
     for (var mi=lo.meshes.length-1;mi>=0;mi--) {
       var m=lo.meshes[mi];
@@ -586,7 +589,7 @@ function threeRender(dt) {
     }
   }
   
-  
+  var br=threeEnv.useBaseRot?planim.baseRot:undefined;
   for (var i=threeEnv.billboards.length-1;i>=0;i--) {
     var bb=threeEnv.billboards[i];
     if (bb.update) {
@@ -601,15 +604,24 @@ function threeRender(dt) {
       //console.log(o);
       //ct.fillStyle='rgba(255,0,0,0.5)';
       var wb=o.bbwb||2,w0=(w-wb*2)*f;
-      ct.fillStyle='rgba(0,255,0,1)';ct.fillRect(wb,wb,w0,h-wb*2);
-      ct.fillStyle='rgba(255,0,0,1)';ct.fillRect(wb+w0,wb,(w-wb*2)-w0,h-wb*2);
+      if (!o.bbtransp) {
+        ct.fillStyle='rgba(0,255,0,1)';ct.fillRect(wb,wb,w0,h-wb*2);
+        ct.fillStyle='rgba(255,0,0,1)';ct.fillRect(wb+w0,wb,(w-wb*2)-w0,h-wb*2);
+      } else {
+        ct.fillStyle='rgba(0,255,0,0.3)';ct.clearRect(wb,wb,w0,h-wb*2);ct.fillRect(wb,wb,w0,h-wb*2);
+        ct.fillStyle='rgba(255,0,0,0.3)';ct.clearRect(wb+w0,wb,(w-wb*2)-w0,h-wb*2);ct.fillRect(wb+w0,wb,(w-wb*2)-w0,h-wb*2);
+      }
       }
       //bb.threeTex.needsUpdate=1;
       bb.threeTex.needsUpdate=true;
       //onsole.log(' '+bb.threeTex.needsUpdate);
     }
     bb.threeMesh.position.set(bb.x,bb.y,bb.z);
-    bb.threeMesh.quaternion.copy(threeEnv.camera.quaternion);
+    if (br) {
+      bb.threeMesh.rotation.set(-br.x,-br.y,-br.z);
+      bb.threeMesh.rotation.order='ZYX';
+    } else 
+      bb.threeMesh.quaternion.copy(threeEnv.camera.quaternion);
   }
   
   
@@ -796,6 +808,7 @@ function DungeonGeometry(ps,view) {
   var rH=ps.rH,b=ps.blockw||10;  
   for (var k in rH) if (rH.hasOwnProperty(k)) {
     var a=rH[k],x,y,z;
+    if (a.sky) continue;
     if (a.x!==undefined) {
       x=a.x;y=a.y;z=a.z;
     } else {
@@ -852,7 +865,4 @@ if (window.THREE) {
   //onsole.log('threePd5: DungeonGeometry inited.');
 }
 //fr o,9,33
-//fr o,10
-//fr o,22
-//fr o,24,52
-//fr p,18,90
+//fr p,0,18

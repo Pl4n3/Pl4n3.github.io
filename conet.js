@@ -1,7 +1,7 @@
 var Conet={};
 (function(Conet) {
   Conet.offline=false;
-  Conet.version='1.295 ';//FOLDORUPDATEVERSION
+  Conet.version='1.298 ';//FOLDORUPDATEVERSION
   Conet.files={};
   var uploads={},fns,logc,logs=[];//fn=>data,first
   function xhr(p) {
@@ -215,7 +215,7 @@ var Conet={};
     if (p.savef) {
     m.sub.push(
     {s:'Save',a:'conetSave',keys:['83_c'],ms:'<span style="color:#00f">ctrl+s</span>',actionf:function() {
-      checkListFile(m.curFn);
+      if (m.curFn!==undefined) checkListFile(m.curFn);
       p.savef(m.curFn);
     }
     });
@@ -364,13 +364,17 @@ var Conet={};
     fns=undefined;
     console.log('conet.updateEditHistory');
   }
-  Conet.hcopy=function(from,to,ka,woh,keep) {
+  Conet.hcopy=function(from,to,ka,woh,keep,ps) {
+    //190118 new option ps.delwo do delete keys in a hash
+    //       e.g. hcopy(h,h,undef,{deleteThisKey:1},undefined,{delwo:1});
     //(keep it) same as Pd5.hcopy, this is just needed often
     if (!to) to={};
     if (ka===undefined) {
       for (var k in from) if (from.hasOwnProperty(k)) {
         if (keep) if (to[k]!==undefined) continue;
-        if (!(woh&&woh[k])) to[k]=from[k];
+        if (woh&&woh[k]) {
+          if (ps&&ps.delwo) delete(to[k]);
+        } else to[k]=from[k];
       }
       return to;
     }
@@ -391,9 +395,7 @@ var Conet={};
 console.log('Conet '+Conet.version);
 //fr o,1
 //fr o,1,5,17
-//fr o,1,6
 //fr o,1,6,1
-//fr o,1,6,3
 //fr o,1,9
 //fr o,1,9,3
 //fr o,1,9,4
@@ -401,10 +403,9 @@ console.log('Conet '+Conet.version);
 //fr o,1,9,17
 //fr o,1,9,18
 //fr o,1,9,28
-//fr o,1,9,31
 //fr o,1,9,32
 //fr o,1,9,56
 //fr o,1,10,1
 //fr o,1,13,4
 //fr o,1,14
-//fr p,29,176
+//fr p,25,87

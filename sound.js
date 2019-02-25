@@ -4,12 +4,13 @@ var Sound={};
   Sound.vol=1;
   Sound.mute=false;
   Sound.sounds={};
+  Sound.soundDir='sound/';
   var audioPools={},useWebaudio=1,context,audio,osch={};
   
   function getPool(src) {
     var pool=audioPools[src];
     if (!pool) {
-      var asrc=(src.indexOf('.')==-1)?'sound/'+src+'.wav':src;//a.src=src;
+      var asrc=(src.indexOf('.')==-1)?Sound.soundDir+src+'.wav':src;//a.src=src;
       
       
       if (useWebaudio) {
@@ -172,11 +173,11 @@ var Sound={};
 )(Sound);
 //---
 //fr o,2
-//fr o,2,5
-//fr o,2,5,12
-//fr o,2,5,12,1
-//fr o,2,7
+//fr o,2,6
+//fr o,2,6,12
+//fr o,2,6,12,1
 //fr o,2,8
-//fr o,2,8,44
 //fr o,2,9
-//fr p,2,58
+//fr o,2,9,44
+//fr o,2,10
+//fr p,48,12

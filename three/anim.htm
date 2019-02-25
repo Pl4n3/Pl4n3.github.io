@@ -24,7 +24,7 @@ function Planim() {
   //!   stopped using this, since 27.3.2018 it has event.preventDefault in
   //!   touchStart which disables clickevents
   var scene,stats,views=[],oh={},ot=Date.now(),scra,scri=0,scrt=0,loopAfterLoaded,
-      base,debug='',version='1.1246 ',//FOLDORUPDATEVERSION
+      base,debug='',version='1.1358 ',//FOLDORUPDATEVERSION
       m0=new THREE.MeshPhongMaterial( { color:0x666666,flatShading:true } ),
       m1=new THREE.MeshPhongMaterial({color:0x77dd77,flatShading:true,
       transparent:true,opacity:0.5}),mray0=new THREE.MeshPhongMaterial({
@@ -177,6 +177,7 @@ function Planim() {
       threeEnv.camera=camera;
       renderer.setAnimationLoop(animate); //before v93: renderer.animate(animate);
     }
+    return v;
   }
   function box(x,y,z,w,h,b,m) {
     if (!m) m=m0;
@@ -235,10 +236,10 @@ function Planim() {
       }
       camera.aspect=w/h;//window.innerWidth/window.innerHeight;
       if (v.fovportrait) {
-        var f=h/w;
-        camera.fov=(v.fov||60)+(f>1?
+        var f=h/w,f0=v.fovptf0||1;
+        camera.fov=(v.fov||60)+(f>f0?//>1
           //(f-1)*30
-          (1-1/f)*75
+          (1/f0-1/f)*(v.fovptv||75)
           :0);
       }
       camera.updateProjectionMatrix();
@@ -361,30 +362,57 @@ function Planim() {
           o.turnRight=false;
           o.goFront=false;
           o.attack=false;
-          //o.focust+=dt;if (o.focust>5000) delete(o.focus);
-          //console.log('animDefMoves focus ');
-          //delete(o.focus);
-          var da=dAng(o.roty,angle(o.pos,ofoc.pos));
-          if (da<-0.1) o.turnLeft=true;
-          if (da>0.1) o.turnRight=true;
+          ////o.focust+=dt;if (o.focust>5000) delete(o.focus);
+          ////console.log('animDefMoves focus ');
+          ////delete(o.focus);
+          
+          //var da=dAng(o.roty,angle(o.pos,ofoc.pos));
+          //if (da<-0.1) o.turnLeft=true;
+          //if (da>0.1) o.turnRight=true;
+          
           var d2=dist2(o.pos,ofoc.pos);
-          if ((d2>30)||(ofoc.health<=0)) delete(o.focus); else
-          if (Math.abs(da)<0.2) {
-            var da=o.collr+ofoc.collr;da=da*da+1;
-            if (d2<=da) {
-              o.attack=true; 
-            } else o.goFront=true;
+          var wp=(ofoc.health===undefined);
+          if (!wp&&((d2>30)||(ofoc.health<=0))) delete(o.focus); else {
+          
+            var da=dAng(o.roty,angle(o.pos,ofoc.pos));
+            if (da<-0.1) o.turnLeft=true;
+            if (da>0.1) o.turnRight=true;
+          
+            if (Math.abs(da)<0.2) {
+              //var da;
+              if (wp) da=0.05; else { da=o.collr+(ofoc.collr||0);da=da*da+1; }
+              if (d2<=da) {
+                if (wp) {
+                  delete(o.focus); 
+                  o.turnLeft=false;o.turnRight=false;
+                } else o.attack=true; 
+              } else o.goFront=true;
+            }
           }
           //console.log(ofoc.health);
           //if (ofoc.health<=0) { delete(o.focus);o.attack=false; }
         } else {
           o.idlet=(o.idlet||0)+dt;
           if (o.idlet>300) {
-            o.idlet=0;
-            if ((controlo.health>0)&&(dist2(o.pos,controlo.pos)<(o.collr+controlo.collr+5))) {
+            o.idlet=0;var done=false;
+            if (o.attackParty) { //first since craft
+              //onet.log('look for party nao.');
+              for (var j=os.length-1;j>=0;j--) {
+                var o5j=os[j],oj=o5j.ps;
+                if ((oj.party===undefined)||(oj.party==o.party)||(oj.health<=0)) continue;
+                if (dist2(o.pos,oj.pos)<(o.collr+oj.collr+5)) {
+                  o.focus=oj;
+                  o.focust=0;
+                  done=true;
+                }
+              }
+            }
+            if (controlo&&(controlo.health>0)&&(dist2(o.pos,controlo.pos)<(o.collr+controlo.collr+5))) {
               o.focus=controlo;
               o.focust=0;
-            } else {
+              done=true;
+            }
+            if (!done&&(o.randomWalk!==false)) {
               var v=rani(4);
               o.turnLeft=(v==0);
               o.turnRight=(v==1);
@@ -440,8 +468,10 @@ function Planim() {
         }
         o.pos.x=x;o.pos.z=z;
         Pd5.animStart(o5,o5.animh[o.animRun]);
-      } else
-        Pd5.animStart(o5,o5.animh[o.animIdle||o.anim]);
+      } else if (!o.isSpecial) {
+        var an=o.animIdle||o.anim;//o5.animh[o.animIdle||o.anim];
+        if (o5.anim!=an) Pd5.animStart(o5,an);
+      }
     }}
     //...
   }
@@ -567,7 +597,7 @@ function Planim() {
         m.multiply(mh0);
         //vh0.set(-p.x+ip.x,-p.y+ip.y,-p.z+ip.z); 
         vh0.set(-p.x,-p.y,-p.z); 
-      } else if (!camPos) {//o.o.eyew) {
+      } else if ((!camPos)&&o.o&&o.o.eyew) {//o.o.eyew) {
         var p1=o.o.eyew.p1,f=o.o.scale,a=o.roty;//+o.rotofs-Math.PI;//f=350
         vh0.set(
           -p.x-(-p1.x*Math.cos(a)+p1.z*Math.sin(a))*o.scale*f
@@ -675,10 +705,10 @@ function Planim() {
             *dto);
           v.applyQuaternion(cam.quaternion);
           base.position.add(v);
-          //onsole.log(base.position);
+          console.log(base.position);
           base.updateMatrix();
         }
-      } else { camv=0.001;camkt=0; }
+      } else { camv=self.startCamV;camkt=0; }
       }
     }
     
@@ -704,7 +734,7 @@ function Planim() {
       //onsole.log('animate intersects.len='+intersects.length);
       click=undefined;
       if (intersects.length>0) {
-        ////onet.log('render intersects='+intersects.length);
+        //onet.log('render intersects='+intersects.length);
         //var os=[];
         //for (var j=0;j<intersects.length;j++) {
         //  var o=intersects[j].object;//,found=false;
@@ -717,7 +747,7 @@ function Planim() {
          intersects.length//:
          //1
          );j++) {
-         var o=intersects[j].object;
+         var ij=intersects[j],o=ij.object;
          if (j==0) {
            if (o!=ray0) {
              if (ray0) if (ray0.select) ray0.select(false);
@@ -741,11 +771,11 @@ function Planim() {
            viewAnchor(marko);
            break;
          }
-         if (o.userData.onclick) { o.userData.onclick(eclick);break; }//,o);
+         if (o.userData.onclick) { o.userData.onclick(eclick,ij);break; }//,o);
          o=o.userData.o;
          //onsole.log(o);
          if (!o) continue;
-         if (o.ps.onclick) { o.ps.onclick(eclick);break; }
+         if (o.ps.onclick) { o.ps.onclick(eclick,ij);break; }
     //     for (var i=bricks.length-1;i>=0;i--) {
     //      var b=bricks[i];
     //      if (b.mesh!=o) continue;
@@ -785,7 +815,8 @@ function Planim() {
     
     //console.log(o);//Object.assign({},o));
     
-    Pd5.animStart(o,o.animh[ps.animIdle||ps.anim]);
+    //Pd5.animStart(o,o.animh[ps.animIdle||ps.anim]);
+    Pd5.animStart(o,ps.animIdle||ps.anim);
     //o.scale*=0.7;//o.x=-0.1;o.y=-0.7;o.z=-0.5;
     //o.scale*=1;o.x=-0.1;o.y=-0.5;o.z=-0.3;
     Pd5.calc(o,0,0.0,0,1,{x:0,y:0,z:0},0,0,true);
@@ -952,11 +983,12 @@ function Planim() {
       i++;
       if (i==os.length) { i=-1;break; }
       if (i==egoi) break;
-      if (!os[i].ps.env) break;
+      var oh=os[i].ps;
+      if (!oh.env&&!oh.noEgo) break;
     }
     egoi=i;
     //egoi++;if (egoi==threeEnv.os.length) egoi=-1;
-    console.log('anim.keydown egoi='+egoi);
+    console.log('anim.egoSwitch egoi='+egoi);
     self.controlo=planim.ego=egoi==-1?undefined:threeEnv.os[egoi].ps;
     var cam=views[0].camera;
     //cam.rotation.x=0;cam.rotation.y=0;
@@ -1046,7 +1078,9 @@ function Planim() {
     //if ((kc==70)&&game.fetchOnKey) self.mfetch.action();//f
     
     //if (game.defMoves) {
+    //onsole.log('anim.keydown0 '+kc);
     if (!game.noEgoSwitch) {
+      //onsole.log('anim.keydown1');
       //onsole.log(kc);
       //out('tileskd '+kc);
       if (kc==67) egoSwitch(); //c
@@ -1081,6 +1115,7 @@ function Planim() {
     if (skipClick) { skipClick=false;return; }
     //onsole.log('planim.onClick 1');
     //onsole.log('anim.onClick');
+    if (click) return;//dont overwrite first click
     eclick=e;
     //onsole.log(e);
     //if (e.detail<2) return;
@@ -1179,8 +1214,9 @@ function Planim() {
     c.addEventListener('DOMMouseScroll',mouseScroll,false);
     c.addEventListener('mousewheel',mouseScroll,false);
     c.addEventListener('mousedown',function(e) {
-      //console.log('anim.mousedown');console.log(e.target);
+      //onsole.log('anim.mousedown0');//console.log(e.target);
       if (e.target!=views[0].renderer.domElement) return;
+      //onsole.log('anim.mousedown1');//console.log(e.target);
       tapstart=Date.now();mD=true;
       
       //var iw=window.innerWidth,ih=window.innerHeight,x=2*e.clientX/iw-1,y=2*e.clientY/ih-1;
@@ -1188,6 +1224,8 @@ function Planim() {
       coords(e);
       inp.button=e.button;
       if (self.inpDown) self.inpDown(inp);
+      //onsole.log('anim.mousedown self.dragRays='+self.dragRays);
+      if (self.dragRays) onClick(e);
       inp.button=undefined;
     }
     ,false);
@@ -1197,6 +1235,7 @@ function Planim() {
       mD=false;
     }
     ,false);
+    //if (0)
     c.addEventListener('mousemove',function(e) {
       if (!mD) return;
       if (vrbu) { vrbu.parentNode.removeChild(vrbu);vrbu=undefined; }
@@ -1205,14 +1244,17 @@ function Planim() {
       //onsole.log('anim.mouseMove '+x+' '+y);
       coords(e);
       if (self.inpMove) self.inpMove(inp);
+      if (self.dragRays) onClick(e);
     }
     ,false);
     
     c.addEventListener('touchstart',function(e) {
+      var et=e.touches,l=et.length;
+      if (self.dragRays&&l==1) { et[0].type='touchstart';onClick(et[0]); }
       if (!self.inpDown) return;
       if (e.target!=views[0].renderer.domElement) return;
       touchEnded=false;
-      var et=e.touches,l=et.length;
+      //var et=e.touches,l=et.length;
       if (l==1) {
         coords(et[0]);
         self.inpDown(inp);
@@ -1230,14 +1272,18 @@ function Planim() {
     }
     ,{passive:false});
     c.addEventListener('touchmove',function(e) {
+      //onsole.log('touchmove0 '+touchEnded);
       if (e.preventDefault) e.preventDefault();
       if (e.stopPropagation) e.stopPropagation();
+      var et=e.touches,l=et.length;
+      //onsole.log('touchmove1');
+      if (self.dragRays&&l==1) { et[0].type='touchmove';onClick(et[0]); }
       if (touchEnded) return;
       if (!self.inpMove) return;
-      var et=e.touches,l=et.length;
       if (l==1) {
         coords(et[0]);
         self.inpMove(inp);
+        //if (self.dragRays) onClick(et[0]);
       } else if (l==2) {
         var x0=et[0].clientX,y0=et[0].clientY,
             x1=et[1].clientX,y1=et[1].clientY,
@@ -1441,6 +1487,10 @@ function Planim() {
     }
     return fetch;
   }
+  this.etDtscale=function(v) {
+    if (v!==undefined) dtscale=v;
+    return dtscale;//...
+  }
   this.goTo=function(ops,pos,dt) {
     var d=ops.pos.distanceTo(pos);
     if (d<(ops.v||vdef)*dt) { 
@@ -1479,7 +1529,7 @@ function Planim() {
   this.fetchGrid=undefined;this.resize=resize;this.dAng=dAng;
   this.setTargetCampos=setTargetCampos;this.baseRot=baseRot;
   this.uiToggle=uiToggle;this.uiSet=uiSet;//this.scene=scene;
-  this.defMoveAi=true;this.scriptsLoaded=[];
+  this.defMoveAi=true;this.scriptsLoaded=[];this.startCamV=0.001;
   //---waypoint stuff
   var y0=-1.80,tsc=1.8*1.2,ty0=y0/tsc,mh0=new THREE.Matrix4(),vh0=new THREE.Vector3();
   this.waypoints=[
@@ -1508,9 +1558,10 @@ function Planim() {
         startAnim=undefined,fleeing=false,waypoints=self.waypoints;
     
     if (o.ego) {
-      wantrun=keys[87];//38];
-      turnleft=keys[65];//37];
-      turnright=keys[68];//39];
+      var tsd1=self.tsd?self.tsd[1]:undefined;
+      wantrun=keys[87]||(tsd1&&(tsd1.dy<-0.3));//38];
+      turnleft=keys[65]||(tsd1&&(tsd1.dx<-0.3));//37];
+      turnright=keys[68]||(tsd1&&(tsd1.dx>0.3));//39];
       //var cam=views[0].camera;
       //cam.rotation.set(0,0,0);
       if (wantrun&&!o.running) {
@@ -1522,7 +1573,7 @@ function Planim() {
         startAnim=o.animRun;//Pd5.animStart(o.o,o.o.animh[o.animRun]);
         //calculate which waypoint based on direction
       }
-      if ((keys[83]//40]//||turnleft||turnright
+      if ((keys[83]||(tsd1&&(tsd1.dy>0.3))//40]//||turnleft||turnright
         )&&o.running) {
         o.running=false;
         startAnim=o.animIdle;//Pd5.animStart(o.o,o.o.animh[o.animIdle]);
@@ -1566,12 +1617,22 @@ function Planim() {
     
     if (//o.ego&&
       !o.running) {
-      var dr=((turnleft?1:0)+(turnright?-1:0))*dt*vr;
+      var dr=((turnleft?1:0)+(turnright?-1:0))*dt*(o.vrot||vr);
       o.roty+=dr;
     } else {
     //var nextWp=false;
     if (o.wpi===undefined) { 
-      o.wpi=0;o.wpmt=1000;o.wpt=o.wpmt;o.wprot=o.roty; 
+      //onsole.log('anim.waypointAi wpi===undefined searching i '+o.pos.x+' '+o.pos.y+' '+o.pos.z);
+      var wps=self.waypoints,mind,mini;
+      for (var i=wps.length-1;i>=0;i--) {
+        var wp=wps[i];if (wp.im) continue;
+        var d=Vecmath.dist2(wp,o.pos);
+        if (mind===undefined) { mind=d;mini=i;continue; }
+        if (d>=mind) continue;
+        mind=d;mini=i;
+      }
+      //onsole.log('anim.waypointAi wpi===undefined searching mini='+mini);
+      o.wpi=mini;o.wpmt=1000;o.wpt=o.wpmt;o.wprot=o.roty; 
       if (!o.ego) wantrun=true;
       startAnim=o.animRun;//Pd5.animStart(o.o,o.o.animh[o.animRun]);
     }
@@ -1579,7 +1640,8 @@ function Planim() {
     o.wpt+=dt;
     if (o.wpt>=o.wpmt) {
       //if (!o.ego&&fleeing) if (rani(3)==0) 
-      wantrun=true;
+      var wp0=waypoints[o.wpi];
+      if (wp0.im||!o.ego) wantrun=true;
       if (//o.ego&&
         !wantrun) {
         o.running=false;
@@ -1589,19 +1651,20 @@ function Planim() {
         o.wp0i=undefined;
         startAnim=o.animIdle;//Pd5.animStart(o.o,o.o.animh[o.animIdle]);
       } else {
-      var wp0=waypoints[o.wpi];
+      //var wp0=waypoints[o.wpi];
       o.wp0i=o.wpi;
       o.wppos0=wp0;
       o.wpt=o.wpt%o.wpmt;
       
-      if (0) //choose random waypoint
+      if (o.wpRand) //choose random waypoint
         o.wpi=wp0.next[rani(wp0.next.length)];
       else {//choose waypoint in direction
         if (flee&&!o.ego) o.roty=fleefrom.roty;//Math.random()*PI*2;
         var minda=Number.MAX_VALUE;
         for (var i=0;i<wp0.next.length;i++) {
           var wp=waypoints[wp0.next[i]],dx=wp.x-wp0.x,dz=wp.z-wp0.z,
-              da=Math.abs(dAng(o.roty,-Math.atan2(dz,dx)+Math.PI/2));
+              da=Math.abs(dAng(o.roty+((turnleft?1:0)+(turnright?-1:0))*1.5
+                ,-Math.atan2(dz,dx)+Math.PI/2));
           if (da<minda) { minda=da;o.wpi=wp0.next[i]; }
         }
       }
@@ -1724,12 +1787,15 @@ var planim=new Planim();
 </script></body>
 </html><script>
 //fr o,21
+//fr o,21,19
 //fr o,21,19,90
+//fr o,21,21
 //fr o,21,40,61
-//fr o,21,48,80
-//fr o,21,48,92
-//fr o,21,49
+//fr o,21,48
+//fr o,21,48,46
+//fr o,21,48,81
+//fr o,21,48,93
 //fr o,21,49,7,1
 //fr o,21,49,9
 //fr o,21,49,9,2
-//fr p,41,72
+//fr p,31,219

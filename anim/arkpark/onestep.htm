@@ -1,0 +1,70 @@
+<!doctype html><html><head>
+<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+<meta name="viewport" content="width=device-width, user-scalable=yes, minimum-scale=1.0, maximum-scale=10.0">
+<script src="/menu.js"></script>
+<script src="/conet.js"></script>
+<script src="/sound.js"></script>
+<script src="/util/arrows.js"></script>
+<script src="/util/gridPath.js"></script>
+<script src="/anim/arkpark/arkpark.js"></script>
+</head><body bgcolor="#aaa" oncontextmenu="return false;" style="font-family:Sans-serif;">
+<script type="text/javascript">
+//---inspired by screenshots of android game langrisser: smaller field, attacking and healing units
+(function() {
+  //...
+  var mel='MELEE',med='MEDIC';
+  
+  var gps={gw:15,gh:7,onestep:1,fog:true,medikits:7,initMinDist:3,
+    noMsg:1,blocks:[],noStart:1,withStun:1,//randBlocks:17,
+    //friendlyFire:true,
+    objs:[
+      //{descr:mel,x:6,y:6,party:0,a:1,ap:1,hp:3,movelen:2},    
+      //{descr:mel,x:7,y:6,party:0,a:1,ap:1,hp:3,movelen:2},    
+      //{descr:mel,x:4,y:6,party:1,a:3,ap:1,hp:1,movelen:1},
+    ],
+  };
+  
+  if (0)  // 1 vs 9
+    gps.objs=[
+      {descr:mel,x:6,y:6,party:0,a:1,ap:1,hp:3,movelen:2},
+      {descr:mel,party:1,ap:1,hp:2,movelen:1,count:9}
+    ];
+  else if (0) // 2 vs 9
+    gps.objs=[
+      {descr:mel,x:6,y:6,party:0,a:1,ap:1,hp:3,movelen:2},
+      {descr:mel,x:7,y:6,party:0,a:1,ap:1,hp:3,movelen:2},
+      {descr:mel,party:1,ap:1,hp:3,movelen:1,count:9}
+    ];
+  else if (0) // 2 vs 7 and 3 berserk
+    gps.objs=[
+      {descr:mel,x:6,y:6,party:0,a:1,ap:1,hp:3,movelen:2},
+      {descr:mel,x:7,y:6,party:0,a:1,ap:1,hp:3,movelen:2},
+      {descr:mel,party:1,ap:1,hp:3,movelen:1,count:7},
+      {descr:mel,party:1,ap:2,hp:1,movelen:2,count:3},
+    ];
+  else if (1) // 1 & 1 berserk vs 9 berserk
+    gps.objs=[
+      {descr:'SWORD',x:6,y:6,party:0,a:0,ap:1,hp:4,movelen:2},
+      {descr:'ALIEN',x:7,y:6,party:0,a:0,ap:2,hp:1,movelen:2,src:'/anim/arkpark/alien.png.txt',sc:0.1},
+      {descr:'SWORD',party:1,ap:1,hp:3,movelen:1,count:6},
+      {descr:'ALIEN',party:1,ap:2,hp:1,movelen:2,count:3,src:'/anim/arkpark/alien.png.txt',sc:0.1},
+      {descr:'ALIEN',party:1,ap:3,hp:7,movelen:1,count:1,w:2,src:'/anim/arkpark/alien.png.txt',sc:0.1},
+    ];
+  
+  
+  
+  var ap=new Arkpark(gps);
+  
+  for (var i=0;i<10;i++) gps.blocks.push({x:ap.rani(gps.gw),y:ap.rani(gps.gh)});
+  
+  
+  ap.restart();
+  //console.log(ap);
+  
+  //...
+}
+)();
+//---
+</script></body></html><script>
+//fr o,12
+//fr p,54,48

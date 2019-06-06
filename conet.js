@@ -1,9 +1,10 @@
 var Conet={};
 (function(Conet) {
   Conet.offline=false;
-  Conet.version='1.298 ';//FOLDORUPDATEVERSION
+  Conet.version='1.338 ';//FOLDORUPDATEVERSION
   Conet.files={};
-  var uploads={},fns,logc,logs=[];//fn=>data,first
+  var uploads={},fns,logc,logs=[],//fn=>data,first
+      logSameLineCount=0;
   function xhr(p) {
     var x=new XMLHttpRequest(),ps=p.ps||{},omt;
     x.overrideMimeType(omt=(ps.overrideMimeType||'text/plain'));
@@ -146,6 +147,7 @@ var Conet={};
     function mload1() {
       ////m.curFn=this.s;
       ////Menu.ms(m,m.curFn);
+      Conet.lastLoadMenu=this;
       var fn=this.a;//this.s;
       if (p.loadList||!p.savef) checkListFile(fn);//| if there is no save, filelist be updated on load
       else setCurFn(fn);//checkListFile(fn);
@@ -154,19 +156,24 @@ var Conet={};
     function mloadUpdate() {
       mload.sub.splice(1,mload.sub.length-1);
       //onsole.log(m.files);
-      var firstLoadableIndex=undefined;
+      var firstLoadableIndex=undefined,mn;
       for (var i=0;i<m.files.length;i++) {
-        var fn=m.files[i].fn;
+        var o=m.files[i],fn=o.fn;
         if (p.noh) if (fn.indexOf('/h/')!=-1) continue;
         if (firstLoadableIndex===undefined) firstLoadableIndex=i;
         var i0=fn.lastIndexOf('/')+1;//if (i0==-1) i0=0;
         var i1=fn.indexOf('.',2);//skip path dots
         if (i1==-1) i1=fn.length;
         if (i1-i0>10) i0=i1-10;
-        mload.sub.push({s:fn.substr(i0,i1-i0),ms:fn.substr(0,i0)+'^'+fn.substr(i1)//,fs:0.5
-          ,a:fn,actionf:mload1});
+        mload.sub.push(mn={s:fn.substr(i0,i1-i0),ms:fn.substr(0,i0)+'^'+fn.substr(i1)//,fs:0.5
+          ,a:fn,actionf:mload1,cfmo:o});
+        if (o.isrc) { mn.c2=new Image();mn.c2.src=o.isrc; }
       }
       return firstLoadableIndex;
+    }
+    function uploadFilenames() {
+      Conet.upload({fn:p.fn,data:JSON.stringify(m.files)});
+      //...
     }
     function checkListFile(v) {
       //m.curFn=v;
@@ -183,7 +190,7 @@ var Conet={};
         m.files.splice(0,0,h);
       }
       mloadUpdate();
-      Conet.upload({fn:p.fn,data:JSON.stringify(m.files)});
+      uploadFilenames();//Conet.upload({fn:p.fn,data:JSON.stringify(m.files)});
       //...
     }
     Conet.fileMenuCount=(Conet.fileMenuCount||0)+1;
@@ -288,6 +295,7 @@ var Conet={};
       //m.curFn=p.curFn?p.curFn:m.files[0].fn;
       //Menu.ms(p.loadMs?mload:m,m.curFn);
       checkListFile(p.curFn?p.curFn:m.files[firstLoadableIndex].fn);//0
+      Conet.lastLoadMenu=mload.sub[firstLoadableIndex+1];
       p.loadf(m.curFn,1);
     }
     });
@@ -301,6 +309,7 @@ var Conet={};
       
     }
     m.checkListFile=checkListFile;
+    m.uploadFilenames=uploadFilenames;
     return m;
   }
   Conet.initEditHistory=function(pf) {
@@ -312,14 +321,59 @@ var Conet={};
     });
     
   }
-  Conet.log=function(sh) {
+  Conet.initJsonTa=function(ps) {
+    var c=ps.c;
+    
+    if (ps.auto) {
+      if (c.value.length==0) return false;
+      try {
+        JSON.parse(c.value);
+      } catch (er) {
+        //onsole.log('conet.initJsonTa: no json.');
+        return false;
+      }
+    }
+    
+    c.oninput=function(e) {
+      //---
+      //onsole.log(e);
+      var c=e.target;//taps;
+      try {
+        ps.psh=JSON.parse(c.value);
+        c.style.backgroundColor='#efa';//bfb
+      } catch (er) {
+        c.style.backgroundColor='#fbb';
+      }
+      //console.log(taps.value);
+      //---
+    }
+    //...
+    return true;
+  }
+  Conet.log=function(sh,ps) {
     if (!logc) {
       var c=document.createElement('div'),s=c.style;s.fontSize='10px';s.fontFamily='Sans-serif';s.paddingLeft='2px';
       s.position='absolute';c.innerHTML='Log:<br>123...';s.left='2px';s.top='50px';s.backgroundColor='rgba(255,255,255,0.2)';
       s.userSelect=s.MozUserSelect=s.WebkitUserSelect='none';
       document.body.appendChild(c);Conet.logc=logc=c;
     }
-    logs.push(sh);
+    //logs.push(sh);
+    
+    var done=false;
+    if (ps&&ps.sameline) {
+      var i=sh.substr(' ');
+      if (i!=-1) {
+        if (logs[0].startsWith(sh.substr(0,i+1))) {
+          logSameLineCount++;
+          logs[0]=sh+' <span style="color:#666;">#'+logSameLineCount+'</span>';
+          done=true;
+        }
+      }
+    }
+    if (!done) {
+      logs.splice(0,0,sh);var ml=20;if (logs.length>ml) logs.length=ml;
+      logSameLineCount=0;
+    }
     logc.innerHTML='<b>Logs:</b> '+logs.join('<br>');
   }
   Conet.parseUrl=function(s) {
@@ -390,22 +444,49 @@ var Conet={};
   Conet.upload=upload;
   Conet.download=download;
   Conet.dir=dir;
+  
+  //--------------------------------------------------------
+  //---seeded rand from https://stackoverflow.com/questions/
+  //   521295/seeding-the-random-number-generator-in-javascript
+  var m_w = 123456789,m_z = 987654321,mask = 0xffffffff,seed=1;
+  // Takes any integer
+  Conet.seed=function(i) {
+    seed=i;
+    m_w = (123456789 + i) & mask;
+    m_z = (987654321 - i) & mask;
+  }
+  
+  // Returns number between 0 (inclusive) and 1.0 (exclusive),
+  // just like Math.random().
+  Conet.rand=function() {
+    if (1) {
+      var x = Math.sin(seed++) * 10000;
+      return x - Math.floor(x);
+    }
+    
+    m_z = (36969 * (m_z & 65535) + (m_z >> 16)) & mask;
+    m_w = (18000 * (m_w & 65535) + (m_w >> 16)) & mask;
+    var result = ((m_z << 16) + (m_w & 65535)) >>> 0;
+    result /= 4294967296;
+    return result;
+  }
+  //---
 }
 )(Conet);
 console.log('Conet '+Conet.version);
 //fr o,1
-//fr o,1,5,17
-//fr o,1,6,1
-//fr o,1,9
-//fr o,1,9,3
-//fr o,1,9,4
-//fr o,1,9,5
-//fr o,1,9,17
-//fr o,1,9,18
-//fr o,1,9,28
-//fr o,1,9,32
-//fr o,1,9,56
-//fr o,1,10,1
-//fr o,1,13,4
-//fr o,1,14
-//fr p,25,87
+//fr o,1,6,17
+//fr o,1,7,1
+//fr o,1,10,3
+//fr o,1,10,4
+//fr o,1,10,5
+//fr o,1,10,6
+//fr o,1,10,18
+//fr o,1,10,19
+//fr o,1,10,29
+//fr o,1,10,33
+//fr o,1,11,1
+//fr o,1,12
+//fr o,1,12,12
+//fr o,1,15,4
+//fr p,5,32

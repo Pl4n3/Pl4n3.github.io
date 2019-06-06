@@ -171,6 +171,7 @@ var Arrows=function(gps) {
     var w=d-d0-d1;//d*(f1-f0);
     s.width=w+'px';s.height='20px';
     s.transform='rotate('+Math.atan2(dy,dx)+'rad) scale(1, '+(ec.ps.arrowWidth||1)+')';
+    s.opacity=d>400?0.3:1;
     ////'translate(-'+w/2+'px 0px)';
     ////...
   }
@@ -363,7 +364,10 @@ var Arrows=function(gps) {
   }
   function click(e) {
     //onsole.log('arrows.click '+e.detail);
-    if (e.detail>1) if (gps.onDoubleClick) gps.onDoubleClick();
+    if (e.detail>1) {
+      if (gps.onDoubleClick) gps.onDoubleClick();
+    } else 
+      if (gps.onClick) gps.onClick();
     //...
   }
   function serialize() {
@@ -438,7 +442,7 @@ var Arrows=function(gps) {
     });
     
     
-    Menu.init([{s:'Menu',sub:[cfm,
+    var ma=[{s:'Menu',sub:[cfm,
     
     {s:'Add',ms:'Node',actionf:function() {
       div({x:10+'px',y:10+'px',s:'Node'+cont.childNodes.length,c:'#fff'});
@@ -526,7 +530,14 @@ var Arrows=function(gps) {
     
     ]}
     
-    ,mtime={s:'500',r:1,close:1,ms:'Time',doctrl:'Time',range:{min:500,max:1300},value:500
+    //]}
+    
+    
+    ];
+    
+    if (url.animate) ma.push(//m0.sub.push(
+    
+    mtime={s:'500',r:1,close:1,ms:'Time',doctrl:'Time',range:{min:500,max:1300},value:500
     ,setfunc:function(v) {
       alert(v);
     }
@@ -558,11 +569,9 @@ var Arrows=function(gps) {
     }
     }
     
-    //]}
+    );
     
-    
-    ],{listen:1,diw:750});
-    
+    Menu.init(ma,{listen:1,diw:750});
     
     //...
   }
@@ -690,20 +699,17 @@ var Arrows=function(gps) {
   this.etScene=function() {
     return scene;//...
   }
-  this.version='1.43 ';//FOLDORUPDATEVERSION
+  this.version='1.58 ';//FOLDORUPDATEVERSION
   console.log('Arrows '+this.version);
   //...
 }
 //---
 
 //fr o,1
-//fr o,1,6
-//fr o,1,10
-//fr o,1,14
-//fr o,1,16
+//fr o,1,3,33
+//fr o,1,20
 //fr o,1,20,9
 //fr o,1,20,11
 //fr o,1,20,17
 //fr o,1,20,23
-//fr o,1,20,50
-//fr p,93,52
+//fr p,8,45

@@ -1,1 +1,114 @@
-123
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<meta name="ROBOTS" content="ALL">
+<title>Javascript Dubstep Generator</title>
+<script type="text/javascript" async="" src="ga.js"></script>
+<script src="audiolib.min.js"></script>
+<script src="jquery.js"></script>
+<script src="oo.js"></script>
+<script src="graphics.js"></script>
+<script src="dsp.js"></script>
+<script src="freeverb.js"></script>
+
+<style type="text/css">
+body {
+
+	text-align:center;
+	background-color:#111;
+	color:white;
+	font-family:Helvetica, Arial, Sans-serif;	
+
+}
+#info {
+	margin:1em auto;
+	width:500px;
+	text-align:left;
+	padding:2px 1em 1em 1em;
+	background-color:black;	
+}
+h1, h2 {
+	font-weight:normal;
+	text-transform:uppercase;
+}
+p, li {
+	font-size:12px;
+}
+a {
+	color:#FF9999;
+}
+
+#text {
+
+	background-color:black;
+	padding:1em;
+	width:600px;
+	text-align:left;
+	margin: 1em auto;
+}
+</style>
+
+<script src="dubstep.js"></script>
+
+<script type="text/javascript">
+$(document).ready(function() {
+  graphics.init("#holder", draw, 800, 240);
+  background(0,0,0);
+});
+
+	function draw() {
+		background(0,0,0, 0.4);
+		//setColor(100,100,100, 0.7);
+		//rect(100,100,100, ((bassWobble+1)*0.5)*100);
+		//rect(200, 100, 100*snareEnvelope, 100);
+		//rect(100, 100, -100*kickEnvelope, 100);
+		//graphics.context.globalAlpha = 1.0;
+		snareEnvelope = Math.pow(snareEnvelope, 0.5);
+		var g = Math.round(snareEnvelope*255);
+		var b = Math.max(g, Math.round(kickEnvelope*255));
+		
+		pushMatrix();
+		translate(400, 100);
+
+		for(i = 5; i < oscilloscope.length; i += 5) {
+			var alph = 1.0 - i/oscilloscope.length;
+			alph = Math.pow(alph, 0.7);
+			setColor(255,g, b, alph);
+			rect(i/5-5, 100*(oscilloscope[i]*0.5)+0.5, 1 + 50 * kickEnvelope, 2 + 50 * snareEnvelope);
+
+		}
+		scale(-1,1);
+		for(i = 5; i < oscilloscope.length; i += 5) {
+			var alph = 1.0 - i/oscilloscope.length;
+			alph = Math.pow(alph, 0.7);
+			setColor(255,g, b, alph);
+			rect(i/5-5, 100*(oscilloscope[i]*0.5)+0.5, 1 + 50 * kickEnvelope, 2 + 50 * snareEnvelope);
+		}
+
+		popMatrix();
+	}
+</script>
+
+
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-321213-4']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+
+<script charset="utf-8" src="button.509719336ca39171c37a321231ccaf83.js"></script></head>
+
+<body>
+<h1>Javascript Techno Generator (click to start)</h1>
+<div id="holder"><canvas id="mygraphicscanvas" width="800" height="240"></canvas></div>
+<div id="info">
+<p>Original here: <a href=http://www.mazbox.com/synths/dubstep/>http://www.mazbox.com/synths/dubstep/</a> (also with info on libraries)</p>
+</div>
+
+<iframe scrolling="no" frameborder="0" allowtransparency="true" src="widget_iframe.d753e00c3e838c1b2558149bd3f6ecb8.html" title="Twitter settings iframe" style="display: none;"></iframe><style id="extraClass">.extraClassAspect {-webkit-transform: scaleX(1.34)!important;}.extraClassCrop {-webkit-transform: scale(1.34)!important;}</style></body></html>

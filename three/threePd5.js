@@ -578,9 +578,13 @@ function threeRender(dt) {
         var tf=	mesh1.geometry.faces[h],t=tf.o5t;
       			  			tf.normal.set(t.nx,t.ny,t.nz);
       					}
-      mesh1.geometry.computeVertexNormals();
-      mesh1.geometry.verticesNeedUpdate = true;
-      mesh1.geometry.normalsNeedUpdate = true;
+      
+      var g=mesh1.geometry;
+      g.computeVertexNormals();
+      g.verticesNeedUpdate = true;
+      g.normalsNeedUpdate = true;
+      //g.computeBoundingBox();
+      if (lo.cm) g.computeBoundingSphere();//else shadows are wrong for phys objs
       
       if (threeEnv.aipos) {
         mesh1.position.copy(lo.ps.pos);
@@ -644,7 +648,11 @@ function threeAnimate() {
 function threePs(p) {
   var o=threeEnv.ps2.pop();
   var ps=threeEnv.ps;
+  console.log('threePs '+ps);
+  //console.log(ps);
+  //console.log(p);
   if (o) {
+    //console.log('threePs oooooo');
     
     var vs=o.geometry.vertices;
     for (var h=vs.length-1;h>=0;h--) {
@@ -661,7 +669,9 @@ function threePs(p) {
   }
   
   var geometry=new THREE.Geometry();
-  		var 		sprite=THREE.ImageUtils.loadTexture(urlPf("boom.png"));
+  var fn='boom.png';
+  if (window.urlPf) fn=urlPf(fn); else fn='/shooter/'+fn;
+  var sprite=THREE.ImageUtils.loadTexture(fn);
   for (var h=50-1;h>=0;h--) {
     var v=new THREE.Vector3(p.x,p.y,p.z);
     var vx=(Math.random()-0.5),vy=(Math.random()-0.5),vl=Math.sqrt(vx*vx+vy*vy)
@@ -673,11 +683,13 @@ function threePs(p) {
     geometry.vertices.push(v);
   }
   //					geometry.vertices.push(new THREE.Vector3(0,60,0));
-  var 			material=new THREE.ParticleBasicMaterial({size:30*threeEnv.scale,sizeAttenuation:true,map:sprite,transparent:true,color:'#f00'});//1500
-  				particles=new THREE.ParticleSystem(geometry,material);
-  				particles.sortParticles=true;
+  var material=new THREE.ParticleBasicMaterial({size:30*threeEnv.scale,sizeAttenuation:true,map:sprite,transparent:true,color:'#f00'});//1500
+  //var material=new THREE.PointsMaterial({size:30*threeEnv.scale,sizeAttenuation:true,map:sprite,transparent:true,color:'#f00'});//1500
+  particles=new THREE.ParticleSystem(geometry,material);
+  //particles=new THREE.Points(geometry,material);
+  particles.sortParticles=true;
   ps.push({geometry:geometry,material:material,t:0,mt:500,ps:particles});
-  				scene.add(particles);
+  scene.add(particles);
   //og('ps created');
   
 }
@@ -865,4 +877,5 @@ if (window.THREE) {
   //onsole.log('threePd5: DungeonGeometry inited.');
 }
 //fr o,9,33
-//fr p,0,18
+//fr o,20
+//fr p,2,61

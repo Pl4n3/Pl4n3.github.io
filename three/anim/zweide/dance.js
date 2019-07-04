@@ -126,7 +126,7 @@ planim.scriptsLoaded.splice(0,0,function () {
     planim._zCamIdle=5;
     ps.etCamd(5);
     
-    Menu.init([{s:'&#9776;',noTri:true,pw:0.05,fs:1.4,sub:[planim.mfullscreen,planim.minitvr,planim.mtimescale]}],{listen:1});
+    Menu.init([{s:'&#9776;',noTri:true,pw:0.05,fs:1.4,sub:[planim.mfullscreen,planim.mtimescale]}],{listen:1});
     
     return {skipMenu:true};
   }
@@ -140,4 +140,4 @@ planim.scriptsLoaded.splice(0,0,function () {
 //fr o,1,3
 //fr o,1,5
 //fr o,1,7
-//fr p,49,82
+//fr p,74,82

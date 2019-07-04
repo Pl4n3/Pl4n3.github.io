@@ -6,7 +6,7 @@
 <style>
 body { color:#000;background-color:#aaa;margin:0px;overflow:hidden;font-family:Sans-serif; }
 </style>
-<script src="https://threejs.org/build/three.js"></script>
+<script src="https://threejs.org/build/three.min.js"></script>
 <script src="https://threejs.org/examples/js/vr/WebVR.js"></script>
 <script src="https://threejs.org/examples/js/libs/stats.min.js"></script>
 <script src="/three/v81/OrbitControls.js"></script>
@@ -25,7 +25,7 @@ function Planim() {
   //!   stopped using this, since 27.3.2018 it has event.preventDefault in
   //!   touchStart which disables clickevents
   var scene,stats,views=[],oh={},ot=Date.now(),scra=[],scri=0,scrt=0,loopAfterLoaded,
-      base,debug='',version='1.1637 ',//FOLDORUPDATEVERSION
+      base,debug='',version='1.1638 ',//FOLDORUPDATEVERSION
       m0=new THREE.MeshPhongMaterial( { color:0x666666,flatShading:true } ),
       m1=new THREE.MeshPhongMaterial({color:0x77dd77,flatShading:true,
       transparent:true,opacity:0.5}),mray0=new THREE.MeshPhongMaterial({
@@ -1984,4 +1984,4 @@ var planim=new Planim();
 //fr o,22,93
 //fr o,22,93,3
 //fr o,22,93,14
-//fr p,25,226
+//fr p,48,8

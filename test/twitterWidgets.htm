@@ -13,18 +13,38 @@ body,input { font-size:10pt; }
 <body width=100% bgcolor="#555">
 
 <div id="d0">
-<a class="twitter-timeline" href="https://twitter.com/Pl4n3/lists/media" data-widget-id="422759768696975360">Listmedia</a>
+<a class="twitter-timeline" href="https://twitter.com/Pl4n3/lists/media" data-widget-id="422759768696975360">Listmedia </a>
 <script>!function(d,s,id) {
-  var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+"://platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>          
+  var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+"://platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs"); </script>          
   </div>
 <div id="d1">
 <a class="twitter-timeline" href="https://twitter.com/Pl4n3/lists/devs" data-widget-id="423499296898437120">Listdev</a>
 <script>!function(d,s,id) {
   var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+"://platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>          
   </div>
+
+<div id="d2">
+<a class="twitter-timeline" href="https://twitter.com/Pl4n3/lists/gamenews" data-widget-id="423499296898437130">GameNews</a>
+<script>!function(d,s,id) {
+  var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+"://platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>          
+  </div>
+
+
 <button id="bu" style="font-size:2em;">View all.</button>
     
 <script type="text/javascript">
+
+//a class="twitter-timeline" href="https://twitter.com/Pl4n3/lists/media" data-widget-id="422759768696975360">Listmedia /a>
+//script>!function(d,s,id) {
+//  var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+"://platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs"); /script>          
+//a class="twitter-timeline" href="https://twitter.com/Pl4n3/lists/devs" data-widget-id="423499296898437120">Listdev /a>
+//script>!function(d,s,id) {
+//  var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+"://platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs"); /script>          
+
+//a class="twitter-timeline" href="https://twitter.com/Pl4n3/lists/gamenews?ref_src=twsrc%5Etfw">A Twitter List by Pl4n3/a> 
+//script async src="https://platform.twitter.com/widgets.js" charset="utf-8">/script>
+
+
 //href=https://dl.dropboxusercontent.com/u/55896607/shooter/shooter.htm?map=iso2&glge=0>iso2
 //href=https://dl.dropboxusercontent.com/u/55896607/shooter/shooter.htm?map=betonSimple&threevr=1>betonSimple
 //href=https://dl.dropboxusercontent.com/u/55896607/shooter/shooter.htm?map=bulletfight&threevr=1>bulletfight
@@ -32,23 +52,34 @@ body,input { font-size:10pt; }
 //href=https://dl.dropboxusercontent.com/u/55896607/three/graphJson.htm>graphJson
 //href=https://dl.dropboxusercontent.com/u/55896607/three/deep.htm>deep
     
-var d0=document.getElementById('d0'),d1=document.getElementById('d1'),bu=document.getElementById('bu'),view=0;
+var d0=document.getElementById('d0'),
+    d1=document.getElementById('d1'),
+    d2=document.getElementById('d2'),
+    bu=document.getElementById('bu'),view=0;
 bu.onclick=function() {
-  view=(view+1)%3;var sa=['all','media','dev'];
+  view=(view+1)%4;var sa=['all','media','dev','gamenews'];
   this.innerHTML='View '+sa[view]+'.';
   resize();
 }
 function resize(e) {
   var w=window.innerWidth,h=window.innerHeight,s,c,b=4,b2=b*2;
   w=Math.min(w,1000);
+
   c=d0;s=c.style;
-  s.position='absolute';s.top=b+'px';s.left=b+'px';s.width=(view==1?w-b*2:w/2-b-b/2)+'px';s.height=h-b2+'px';
-  s.display=view==2?'none':'';
-  c=c.children[0];if (c) { s=c.style;s.width=(view==1?w-b*2:w/2-b-b/2)+'px';s.height=h-b2+'px'; }
+  s.position='absolute';s.top=b+'px';s.left=b+'px';s.width=(view==1?w-b*2:w/3-b-b/2)+'px';s.height=h-b2+'px';
+  s.display=(view!=0&&view!=1)?'none':'';
+  c=c.children[0];if (c) { s=c.style;s.width=(view==1?w-b*2:w/3-b-b/2)+'px';s.height=h-b2+'px'; }
+
   c=d1;s=c.style;
-  s.position='absolute';s.top=b+'px';s.left=(view==2?b:w/2+b/2)+'px';s.width=(view==2?w-b*2:w/2-b-b/2)+'px';s.height=h-b2+'px';
-  s.display=view==1?'none':'';
-  c=c.children[0];if (c) { s=c.style;s.width=(view==2?w-b*2:w/2-b-b/2)+'px';s.height=h-b2+'px'; }
+  s.position='absolute';s.top=b+'px';s.left=(view==2?b:w/3+b/2)+'px';s.width=(view==2?w-b*2:w/3-b-b/2)+'px';s.height=h-b2+'px';
+  s.display=(view!=0&&view!=2)?'none':'';
+  c=c.children[0];if (c) { s=c.style;s.width=(view==2?w-b*2:w/3-b-b/2)+'px';s.height=h-b2+'px'; }
+
+  c=d2;s=c.style;
+  s.position='absolute';s.top=b+'px';s.left=(view==3?b:2*w/3-b/4)+'px';s.width=(view==3?w-b*2:w/3-b-b/2)+'px';s.height=h-b2+'px';
+  s.display=(view!=0&&view!=3)?'none':'';
+  c=c.children[0];if (c) { s=c.style;s.width=(view==3?w-b*2:w/3-b-b/2)+'px';s.height=h-b2+'px'; }
+
   
   c=bu;s=c.style;s.position='absolute';s.top='0px';s.left='0px';
 }

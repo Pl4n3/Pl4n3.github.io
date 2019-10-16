@@ -3,7 +3,7 @@ var threeEnv={
   //lightMesh,reflectionCube
   scale:1,dtscale:1,r:2.5,
   ot:new Date().getTime(),os:[],rotLightV:0.05,ps:[],ps2:[],path:'',camFar:10000,
-  billboards:[]
+  billboards:[],posVerts:{},vertIndices:{}
 },isVr=false,onlyThree=false,threeTexH={},threeTL=window.THREE&&THREE.TextureLoader?new THREE.TextureLoader():undefined;
 function threeParticles(geometry,x,y,z,wh,c) {
   				for ( i = 0; i < c; i ++ ) {
@@ -543,7 +543,10 @@ function threeRender(dt) {
     var lo=threeEnv.os[obi];
     
     if (threeEnv.aipos) {
-      if (lo.ps.ai) lo.ps.ai(dt);
+      if (lo.ps.ai) {
+        //onsole.log('...threRender lo.ps.ai');
+        lo.ps.ai(dt);
+      }
       lo.ay=lo.ps.roty+(lo.ps.rotofs||0);
       var bb=lo.bb;
       if (bb) {
@@ -876,6 +879,78 @@ if (window.THREE) {
   DungeonGeometry.prototype.constructor=DungeonGeometry;
   //onsole.log('threePd5: DungeonGeometry inited.');
 }
+//--------three js contruction funcs
+threeEnv.pv=function(p) {
+  
+  var k=(p.k||'')+' '+Math.floor(p.x*1000+0.5)+' '+Math.floor(p.y*1000+0.5)+' '+Math.floor(p.z*1000+0.5),ret=threeEnv.posVerts[k];
+  if (!ret) {
+    threeEnv.posVerts[k]=p;
+    ret=p;
+  } //else console.log('from hash');
+  
+  return ret;
+  //...
+}
+threeEnv.addTri=function(ps) {
+  var fa,ge=ps.ge,vl=ge.vertices.length,v0,v1,v2,//=ps.v0,v1=ps.v1,v2=ps.v2,
+      a0=ps.a0,k=ps.k,f=ps.f,vis=threeEnv.vertIndices;
+  
+  if (a0) {
+    var a1=ps.a1,a2=ps.a2;
+    if (ps.dim) {
+      v0=new THREE.Vector3(a0[0],a0[1],a0[2]);                  v1=new THREE.Vector3(a0[0]+a1[0],a0[1]+a1[1],a0[2]+a1[2]);
+      v2=new THREE.Vector3(a0[0]+a2[0],a0[1]+a2[1],a0[2]+a2[2]);//v3=new THREE.Vector3(a0[0]+a3[0],a0[1]+a3[1],a0[2]+a3[2]);
+    } else {
+      v0=new THREE.Vector3(a0[0],a0[1],a0[2]);v1=new THREE.Vector3(a1[0],a1[1],a1[2]);
+      v2=new THREE.Vector3(a2[0],a2[1],a2[2]);//v3=new THREE.Vector3(a3[0],a3[1],a3[2]);
+    }
+  } else {
+    v0=ps.v0;v1=ps.v1;v2=ps.v2;//v3=ps.v3;
+  }
+  if (k) { v0.k=k;v1.k=k;v2.k=k; }
+  if (f) { v0=f(v0);v1=f(v1);v2=f(v2); }
+  
+  //var i0=v0.flat?-1:ge.vertices.indexOf(v0);if (i0==-1) { ge.vertices.push(v0);i0=ge.vertices.length-1; }
+  //var i1=v1.flat?-1:ge.vertices.indexOf(v1);if (i1==-1) { ge.vertices.push(v1);i1=ge.vertices.length-1; }
+  //var i2=v2.flat?-1:ge.vertices.indexOf(v2);if (i2==-1) { ge.vertices.push(v2);i2=ge.vertices.length-1; }
+  
+  //--- lots faster than above
+  var i0=v0.flat?-1:v0.vi||-1;if (i0==-1) { ge.vertices.push(v0);i0=ge.vertices.length-1;v0.vi=i0; }
+  var i1=v1.flat?-1:v1.vi||-1;if (i1==-1) { ge.vertices.push(v1);i1=ge.vertices.length-1;v1.vi=i1; }
+  var i2=v2.flat?-1:v2.vi||-1;if (i2==-1) { ge.vertices.push(v2);i2=ge.vertices.length-1;v2.vi=i2; }
+  
+  //var i0=v0.flat?undefined:vis[v0];if (i0===undefined) { ge.vertices.push(v0);i0=ge.vertices.length-1;vis[v0]=i0; }
+  //var i1=v1.flat?undefined:vis[v1];if (i1===undefined) { ge.vertices.push(v1);i1=ge.vertices.length-1;vis[v1]=i1; }
+  //var i2=v2.flat?undefined:vis[v2];if (i2===undefined) { ge.vertices.push(v2);i2=ge.vertices.length-1;vis[v2]=i2; }
+  
+  ge.faces.push(fa=new THREE.Face3(i0,i1,i2));
+  fa.vertexColors=[v0.col||ps.c0||ps.c,v1.col||ps.c1||ps.c,v2.col||ps.c2||ps.c];
+  //fa.vertexColors=[v0.col?v0.col:ps.c0,v1.col?v1.col:ps.c1,v2.col?v2.col:ps.c2];
+  //...
+}
+threeEnv.addQuad=function(ps) {
+  //---
+  var v0,v1,v2,v3,a0=ps.a0,k=ps.k,f=ps.f;
+  if (a0) {
+    var a1=ps.a1,a2=ps.a2,a3=ps.a3;
+    if (ps.dim) {
+      v0=new THREE.Vector3(a0[0],a0[1],a0[2]);                  v1=new THREE.Vector3(a0[0]+a1[0],a0[1]+a1[1],a0[2]+a1[2]);
+      v2=new THREE.Vector3(a0[0]+a2[0],a0[1]+a2[1],a0[2]+a2[2]);v3=new THREE.Vector3(a0[0]+a3[0],a0[1]+a3[1],a0[2]+a3[2]);
+    } else {
+      v0=new THREE.Vector3(a0[0],a0[1],a0[2]);v1=new THREE.Vector3(a1[0],a1[1],a1[2]);
+      v2=new THREE.Vector3(a2[0],a2[1],a2[2]);v3=new THREE.Vector3(a3[0],a3[1],a3[2]);
+    }
+  } else {
+    v0=ps.v0;v1=ps.v1;v2=ps.v2;v3=ps.v3;
+  }
+  if (k) { v0.k=k;v1.k=k;v2.k=k;v3.k=k; }
+  if (f) { v0=f(v0);v1=f(v1);v2=f(v2);v3=f(v3); }
+  var c0=ps.c0||ps.c,c1=ps.c1||ps.c,c2=ps.c2||ps.c,c3=ps.c3||ps.c;
+  threeEnv.addTri({ge:ps.ge,v0:v0,v1:v1,v2:v2,c0:c0,c1:c1,c2:c2});
+  threeEnv.addTri({ge:ps.ge,v0:v1,v1:v3,v2:v2,c0:c1,c1:c3,c2:c2});
+  //---
+}
 //fr o,9,33
-//fr o,20
-//fr p,2,61
+//fr o,32
+//fr o,33
+//fr p,28,55

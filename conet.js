@@ -1,7 +1,7 @@
 var Conet={};
 (function(Conet) {
   Conet.offline=false;
-  Conet.version='1.338 ';//FOLDORUPDATEVERSION
+  Conet.version='1.355 ';//FOLDORUPDATEVERSION
   Conet.files={};
   var uploads={},fns,logc,logs=[],//fn=>data,first
       logSameLineCount=0;
@@ -49,6 +49,7 @@ var Conet={};
         if (p.log) p.log(responseText===''?'Conet-save error.':'Conet-saved: '+p.fn+' '+p.data.length);
         return;
       }
+      if (p.log&&p.logChunk) p.log('conet-sendChunk '+uh.data.length);
       console.log('conet-sendChunk '+uh.data.length);
       
       var sh,clen=100000;//200000 was ok,400000 err;
@@ -353,7 +354,8 @@ var Conet={};
   Conet.log=function(sh,ps) {
     if (!logc) {
       var c=document.createElement('div'),s=c.style;s.fontSize='10px';s.fontFamily='Sans-serif';s.paddingLeft='2px';
-      s.position='absolute';c.innerHTML='Log:<br>123...';s.left='2px';s.top='50px';s.backgroundColor='rgba(255,255,255,0.2)';
+      s.position='absolute';c.innerHTML='Log:<br>123...';s.left='2px';s.top='50px';
+      s.backgroundColor='rgba(200,200,200,0.8)';//'rgba(255,255,255,0.2)';
       s.userSelect=s.MozUserSelect=s.WebkitUserSelect='none';
       document.body.appendChild(c);Conet.logc=logc=c;
     }
@@ -361,17 +363,20 @@ var Conet={};
     
     var done=false;
     if (ps&&ps.sameline) {
-      var i=sh.substr(' ');
+      var i=sh.substr(' ');//---190904 cant work? better lastIndexOf ?
       if (i!=-1) {
-        if (logs[0].startsWith(sh.substr(0,i+1))) {
+        var isl=logs.length-1;//0
+        if (logs[isl].startsWith(sh.substr(0,i+1))) {
           logSameLineCount++;
-          logs[0]=sh+' <span style="color:#666;">#'+logSameLineCount+'</span>';
+          logs[isl]=sh+' <span style="color:#666;">#'+logSameLineCount+'</span>';
           done=true;
         }
       }
     }
     if (!done) {
-      logs.splice(0,0,sh);var ml=20;if (logs.length>ml) logs.length=ml;
+      var ml=20;
+      //ogs.splice(0,0,sh);if (logs.length>ml) logs.length=ml;
+      logs.push(sh);while (logs.length>ml) logs.splice(0,1);
       logSameLineCount=0;
     }
     logc.innerHTML='<b>Logs:</b> '+logs.join('<br>');
@@ -470,13 +475,32 @@ var Conet={};
     result /= 4294967296;
     return result;
   }
+  //-------------------------------------------------------
+  //--- url to a-html (anker)
+  
+  //---191009 change for taFold-linearView: domain can have -, 
+  //---http is mandatory, if too strict for other apps, urlToAnk 
+  //---should use different regexp via param
+  //var urlRe=/(https?:\/\/)?(www\.)?(\w+\.\w+)(\/[\~\-\.\w]*)*/g;
+  var urlRe=/(https?:\/\/)(www\.)?([\-\w]+(\.\w+)+)(\/[\=\&\?\~\-\.\w]*)*/g;
+  function urlReplace(match,prot,www,domain,path,offset,string) {
+    if ((prot===undefined)&&(www===undefined)&&(path===undefined)) return match;
+    return '<a href='+match+'>'+domain+'</a>';
+  }
+  Conet.urlToAnk=function(s) {
+    s=s.replace(urlRe,urlReplace);
+    return s;
+    //...
+  }
   //---
 }
 )(Conet);
 console.log('Conet '+Conet.version);
 //fr o,1
+//fr o,1,6
 //fr o,1,6,17
 //fr o,1,7,1
+//fr o,1,10
 //fr o,1,10,3
 //fr o,1,10,4
 //fr o,1,10,5
@@ -486,7 +510,5 @@ console.log('Conet '+Conet.version);
 //fr o,1,10,29
 //fr o,1,10,33
 //fr o,1,11,1
-//fr o,1,12
-//fr o,1,12,12
 //fr o,1,15,4
-//fr p,5,32
+//fr p,29,36

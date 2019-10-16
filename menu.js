@@ -14,14 +14,14 @@ var Menu={};
   Menu.colBg='rgba(150,150,150,0.9)';//'rgba(0,0,0,0.2)';
   Menu.colOver='rgba(200,200,100,0.9)';//0.2
   Menu.colNoinp='#666';
-  Menu.pw=0.13;Menu.ph=0.05;Menu.px=1-Menu.pw-0.02;Menu.py=0.02;
+  Menu.pw=0.13;Menu.ph=0.05;Menu.px=1-Menu.pw-0.02;Menu.py=0.02;Menu.cpy=0.02;
   Menu.tafs=0.1;//0.15;
   Menu.recent=[];
   Menu.roots=[];
   Menu.soff='[ ]';//'\u2610';
   Menu.son='[x]';//'\u2611';
   Menu.pressed=pressed;
-  Menu.version='1.123 ';//FOLDORUPDATEVERSION
+  Menu.version='1.137 ';//FOLDORUPDATEVERSION
   function mCloseAll(a) {
     for (var i=0;i<a.length;i++) {
       var mh=a[i];
@@ -155,7 +155,7 @@ var Menu={};
           menus=[mcancel];mcancel.s='Close';
         } else menus=[mok,mcancel]
         menus.push(
-          {s:m.doctrl,px:m.mcpx?m.mcpx:(ps.diw?0.01:0.32),py:0.02,
+          {s:m.doctrl,px:m.mcpx?m.mcpx:(ps.diw?0.01:0.32),py:Menu.cpy,//0.02,
           pw:m.mcpw?m.mcpw:(ps.diw?0.51:(1-0.49)),
           ph:m.mcph?m.mcph:(m.ta?(ps.diw?0.3:0.44):0.14),tf:1,
           fs:(m.mcfs?m.mcfs:(m.ta?Menu.tafs:0.75)),mctrl:m,yvh:m.mcyvh});
@@ -594,6 +594,7 @@ var Menu={};
           if (m.checkbox) m.checked=(v=='1');
         }
       }
+      if (m.initLoadVal) m.setfunc(m.initLoadVal,true);//--- new param since 191015 voxed.js
       if (m.lskeyimg) {
         var v=localStorage[m.lskeyimg];
         if (v!==undefined) {
@@ -926,5 +927,9 @@ var Menu={};
 
 //--
 //fr o,2
-//fr o,2,37
-//fr p,16,294
+//fr o,2,40
+//fr o,2,41
+//fr o,2,50
+//fr o,2,55
+//fr o,2,58
+//fr p,53,106

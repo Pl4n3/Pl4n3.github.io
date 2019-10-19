@@ -21,7 +21,7 @@ var Menu={};
   Menu.soff='[ ]';//'\u2610';
   Menu.son='[x]';//'\u2611';
   Menu.pressed=pressed;
-  Menu.version='1.137 ';//FOLDORUPDATEVERSION
+  Menu.version='1.141 ';//FOLDORUPDATEVERSION
   function mCloseAll(a) {
     for (var i=0;i<a.length;i++) {
       var mh=a[i];
@@ -151,7 +151,8 @@ var Menu={};
           mok={s:m.okS||'Ok',keys:m.ta?[]:[13]};Menu.initLoad([mok]);
           mcancel={s:m.cancelS||'Cancel'};
         }
-        if (m.close) {
+        if (m.close
+          ||!m.setfunc) {//---191018
           menus=[mcancel];mcancel.s='Close';
         } else menus=[mok,mcancel]
         menus.push(
@@ -927,9 +928,9 @@ var Menu={};
 
 //--
 //fr o,2
-//fr o,2,40
-//fr o,2,41
+//fr o,2,30
+//fr o,2,37
 //fr o,2,50
 //fr o,2,55
 //fr o,2,58
-//fr p,53,106
+//fr p,81,373

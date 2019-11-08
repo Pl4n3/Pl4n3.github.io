@@ -1,0 +1,373 @@
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+<style>
+html, body {
+  border: 0;
+  margin: 0;
+  width: 100%;
+  height: 100%;
+}
+</style>
+<script src="../bayes.js"></script>
+<script src="../menu.js"></script>
+<script type="application/x-javascript">
+//meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height, target-densityDpi=device-dpi" 
+var logs=[];
+var ot;
+var canvas,cont;
+var width,height;
+var tparts=[];
+var canv;
+var fpst=0,fpsc=0,fpss='';
+var what='Bayes v.0.1.169 ';//FOLDORUPDATEVERSION;
+var vh=10,vw=50,ni=-1,nvi=-1,md=false,mnode,omx,omy,moused=[];
+
+//----
+function log(s) {
+  logs.splice(0,0,s);
+  while (logs.length>50) logs.pop();
+}
+function tryFullscreen() {
+  
+  //var docElm = document.getElementById('canvas');
+  //var ret;
+  var c=canvas;
+  if (c.requestFullscreen) c.requestFullscreen();
+  else if (c.mozRequestFullScreen) c.mozRequestFullScreen();
+  else if (c.webkitRequestFullScreen) c.webkitRequestFullScreen();
+  log('Trying fullscreen.');
+  
+}
+function mouseNode(x,y) {
+  ni=-1;nvi=-1;
+  for (var i=Bayes.nodes.length-1;i>=0;i--) {
+    var n=Bayes.nodes[i];
+    var x0=n.x-vw/2,y0=n.vy+1;
+    //if ((x>x0)&&(y>y0)&&(x<x0+vw)&&(y<y0+vh*n.values.length)) { 
+    if ((x>x0)&&(y>n.y0)&&(x<x0+vw)&&(y<y0+vh*n.values.length)) { 
+      ni=i;
+      var vi=Math.floor((y-y0)/vh);
+      if ((vi>=0)&&(vi<n.values.length)) nvi=vi;
+      break; 
+    }
+  }
+  
+}
+function mouseDown(e) {
+  //log
+  var x=e.pageX,y=e.pageY;
+  mouseNode(x,y);
+  if (e.which) moused[e.which]=true;
+  //log(e.which);
+  if (nvi!=-1) {
+    //og(nvi);
+    var n=Bayes.nodes[ni];
+    if (e.which==3) {
+      n.isObserved=false;
+    } else {
+      n.value=nvi;
+      n.isObserved=true;
+    }
+    Bayes.sample(10000);
+    //og('sampled 10000 '+Bayes.sample(1000));
+    draw();
+  } else if (ni!=-1) {
+    mnode=Bayes.nodes[ni];
+    mnode.ox=mnode.x;
+    mnode.oy=mnode.y;
+    omx=x;omy=y;
+  }
+  md=true;
+}
+function mouseUp(e) {
+  //log("mouseUp");
+  md=false;
+  if (e.which) moused[e.which]=false;
+  mnode=undefined;
+}
+function mouseMove(e) {
+  var x=e.pageX,y=e.pageY;
+  if (!md) {
+    mouseNode(x,y);
+    canvas.style.cursor=ni==-1?'default':(nvi==-1?'move':'crosshair');
+  }
+  if (mnode) {
+    mnode.x=mnode.ox+x-omx;
+    mnode.y=mnode.oy+y-omy;
+    draw();
+  }
+  //log(x+','+y);
+  //draw();
+  //if (!mousePart) return;
+}
+
+function touchStart(e) {
+  //var sh='';
+  for (var h=0;h<e.touches.length;h++) {
+    var t=e.touches[h];
+    var x=t.pageX,y=t.pageY;
+    if ((x<200)&&(y<200)) {
+      tryFullscreen();
+      return;
+    }
+    ////sh+=' '+t.identifier+'-'+c;
+    //if (c) { c.xt=t.pageX;c.yt=t.pageY; }
+    //tparts[t.identifier]=c;//h
+  }
+  //log('touchstart '+sh);
+  if (e.preventDefault) e.preventDefault();
+  if (e.stopPropagation) e.stopPropagation();
+}
+function touchMove(e) {
+  //og('touchmove '+e.touches.length);
+  for (var h=0;h<e.touches.length;h++) {
+    var t=e.touches[h];
+    //var c=tparts[t.identifier];
+    //if (!c) continue;
+    //c.xt=t.pageX;c.yt=t.pageY;
+  }
+  if (e.preventDefault) e.preventDefault();
+  if (e.stopPropagation) e.stopPropagation();
+}
+function touchEnd(e) {
+  //var sh='';
+  //var tp={};
+  for (var h=0;h<e.touches.length;h++) {
+    var t=e.touches[h];
+    ////sh+=' '+t.identifier;
+    //tp[t.identifier]=tparts[t.identifier];
+  }
+  //tparts=tp;
+  //log('touchend '+sh);
+  if (e.preventDefault) e.preventDefault();
+  if (e.stopPropagation) e.stopPropagation();
+}
+function tilt(x,y) {
+  //log("Tilt: "+Math.floor(x)+' '+Math.floor(y));
+  //for (var i=parts.length-1;i>=0;i--) {
+  //  var p=parts[i];
+  //  p.xa=y/180;
+  //  p.ya=x/180;
+  //}
+}
+function resize(e) {
+  draw();
+  setTimeout(draw,100);
+}
+
+function loaded() {
+  canvas=document.getElementById('canvas');
+  cont=canvas.parentNode;
+  
+  //log('pa0.len='+pa0.len);
+  var c=window;//canvas;//window
+  c.addEventListener('mousemove',mouseMove,false);
+  c.addEventListener('mousedown',mouseDown,false);
+  c.addEventListener('mouseup',mouseUp,false);
+  c.addEventListener('touchstart',touchStart,false);
+  c.addEventListener('touchmove',touchMove,false);
+  c.addEventListener('touchend',touchEnd,false);
+  c.addEventListener('resize',resize,false);
+  
+  
+  if (window.DeviceOrientationEvent) {
+  window.addEventListener('deviceorientation', function () {
+    tilt(event.beta, event.gamma);
+  }
+  , true);
+  } else if (window.DeviceMotionEvent) {
+  window.addEventListener('devicemotion', function () {
+    tilt(event.acceleration.x * 2, event.acceleration.y * 2);
+  }
+  , true);
+  } else {
+  window.addEventListener('MozOrientation', function () {
+    tilt(orientation.x * 50, orientation.y * 50);
+  }
+  , true);
+  }
+  
+  //canvas=document.getElementById('canvas');
+  //cont=canvas.parentNode;
+  
+  var n;
+  n=new Bayes.Node('Burglary',['yes','no']);var nbur=n;
+  n.x=300;n.y=65;n.value=0;n.cpt=[0.01,0.99];
+  Bayes.nodes.push(n);
+  
+  n=new Bayes.Node('Earthquake',['yes','no']);var nea=n;
+  n.x=400;n.y=65;n.value=0;n.cpt=[0.02,0.98];
+  Bayes.nodes.push(n);
+  
+  n=new Bayes.Node('Alarm',['yes','no']);var nal=n;
+  n.x=350;n.y=165;n.value=0;
+  n.parents.push(nbur);
+  n.parents.push(nea);
+  n.cpt=[
+    [[0.95,0.05],[0.94,0.06]],
+    [[0.29,0.71],[0.001,0.999]]
+  ];
+  Bayes.nodes.push(n);
+  
+  n=new Bayes.Node('John calls',['yes','no']);var nbur=n;
+  n.x=300;n.y=265;n.value=0;
+  n.parents.push(nal);
+  n.cpt=[[0.9,0.1],[0.05,0.95]];
+  Bayes.nodes.push(n);
+  
+  n=new Bayes.Node('Mary calls',['yes','no']);var nbur=n;
+  n.x=400;n.y=265;n.value=0;
+  n.parents.push(nal);n.value=0;n.isObserved=true;
+  n.cpt=[[0.7,0.3],[0.01,0.99]];
+  Bayes.nodes.push(n);
+  
+  
+  n=new Bayes.Node('Cloudy',['yes','no']);var ncl=n;
+  n.x=100;n.y=65;n.cpt=[0.5,0.5];
+  Bayes.nodes.push(n);
+  
+  n=new Bayes.Node('Sprinkler',['yes','no']);var nsp=n;
+  n.x=50;n.y=165;
+  n.parents.push(ncl);n.value=0;n.isObserved=true;
+  n.cpt=[[0.1,0.9],[0.5,0.5]];
+  Bayes.nodes.push(n);
+  
+  n=new Bayes.Node('Rain',['yes','no']);var nra=n;
+  n.x=150;n.y=165;
+  n.parents.push(ncl);
+  n.cpt=[[0.8,0.2],[0.2,0.8]];
+  Bayes.nodes.push(n);
+  
+  n=new Bayes.Node('Wet grass',['yes','no']);
+  n.x=100;n.y=265;
+  n.parents.push(nsp);
+  n.parents.push(nra);
+  n.cpt=[
+    [[0.99,0.01],[0.9,0.1]],
+    [[0.9,0.1],[0.001,0.999]]
+  ];
+  Bayes.nodes.push(n);
+  
+  
+  
+  //alert(n.name);
+  
+  ot=new Date().getTime();
+  Bayes.sample(10000);
+  log('Left mouse click on values to set observation, right mouseclick to query posterior probability.');
+  draw();
+}
+function draw() {
+  if (!canv) {
+    canv={width:canvas.width,height:canvas.height};
+  }
+  //if (false)
+  if ((canv.width!=cont.clientWidth)||(canv.height!=cont.clientHeight)) {
+    canv.width=cont.clientWidth;canv.height=cont.clientHeight;
+    var dpr=window.devicePixelRatio || 1;
+    var dr=1;//((dpr==1)||(dpr==2))?1:Math.sqrt((dpr*dpr)*6/7);
+    canvas.width=canv.width/dr+(dr!=1?2:0);canvas.height=canv.height/dr+(dr!=1?2:0);//*devicePixelRatio;
+    //og("Canvas "+canvas.width+" x "+canvas.height);
+    //log("DevicePixelRatio "+dpr+(dr!=1?" ("+dr+")":""));
+  }  
+  
+  var t=new Date().getTime();var dt=t-ot;ot=t;
+  
+  if (!canvas.getContext) return;
+  var ctx = canvas.getContext('2d');
+  
+  width=canvas.width,height=canvas.height;
+  ctx.fillStyle='#cccccc';
+  ctx.fillRect(0,0,width,height);
+  ctx.strokeStyle='#000000';
+  ctx.lineWidth=1;
+  ctx.strokeRect(5,5,width-10,height-10);
+  ctx.fillStyle='#000000';
+  
+  var fon='sans-serif';
+  var fs=14;
+  var fonts=fs+'px '+fon;
+  ctx.font=fonts;
+  ctx.textBaseline='top';
+  
+  
+  ctx.strokeStyle='#000000';
+  
+  for (var i=0;i<Bayes.nodes.length;i++) {
+    var n0=Bayes.nodes[i];
+    for (var j=0;j<n0.parents.length;j++) {
+      var n1=n0.parents[j];
+      var dx=n1.x-n0.x,dy=n1.y-n0.y,l=Math.sqrt(dx*dx+dy*dy);
+      dx/=l;dy/=l;
+      var r=30,x0=n0.x+dx*r,y0=n0.y+dy*r,x1=n0.x+dx*(l-r),y1=n0.y+dy*(l-r),aw=5,aw2=aw*2;
+      ctx.beginPath();
+      ctx.moveTo(x0,y0);
+      ctx.lineTo(x1,y1);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x0,y0);
+      ctx.lineTo(x0+dx*aw2+dy*aw,y0+dy*aw2-dx*aw);
+      ctx.lineTo(x0+dx*aw2-dy*aw,y0+dy*aw2+dx*aw);
+      ctx.lineTo(x0,y0);
+      ctx.fill();
+    }
+  }
+  
+  for (var i=0;i<Bayes.nodes.length;i++) {
+    var n=Bayes.nodes[i];
+    //ctx.strokeRect(n.x-2,n.y-2,4,4);
+    ctx.textAlign='center';
+    ctx.fillStyle='#000000';
+    var vgh=n.values.length*vh;
+    var h=vgh+fs;
+    var y=n.y-h/2;n.y0=y;
+    ctx.font=fs+'px '+fon;
+    ctx.fillText(n.name,n.x,y-2);
+    y+=fs;n.vy=y;
+    ctx.font='10px '+fon;
+    ctx.textAlign='right';
+    var slws=0;
+    if (n.sampledLw) for (var j=n.values.length-1;j>=0;j--) slws+=n.sampledLw[j];
+    for (var j=0;j<n.values.length;j++) {
+      if (n.isObserved) {
+        if (n.value==j) {
+          ctx.fillStyle='#000000';//'#0099aa';
+          ctx.fillRect(n.x-vw/2,y+j*vh,vw,vh);
+          ctx.fillStyle='#ffffff';
+        } else ctx.fillStyle='#000000';
+      } else {
+        if (n.sampledLw) {
+          ctx.fillStyle='#777777';
+          ctx.fillRect(n.x-vw/2,y+j*vh,vw*n.sampledLw[j]/slws,vh);
+        }
+        ctx.fillStyle='#000000';
+      }
+      ctx.fillText(n.values[j],n.x+vw/2-3,y+j*vh-1);
+    }
+    ctx.strokeRect(n.x-vw/2,y,vw,vgh);
+  }
+  
+  var fonts='10px sans-serif';
+  ctx.font=fonts;
+  ctx.textAlign='left';
+  
+  
+  ctx.fillStyle='#000000';
+  ctx.fillText(what,10,10);
+  for (var h=0;h<logs.length;h++)
+    ctx.fillText(logs[h],10,22+h*10);
+  
+  //setTimeout(draw,500);
+}
+</script>
+</head>
+<body bgcolor="#aaaaaa" onload="loaded();" oncontextmenu="return false;">
+<canvas id="canvas"></canvas>
+</body>
+</html><script>
+//fr o,26
+//fr o,39
+//fr o,40
+//fr p,48,98
+//fr x,compile.cmd,copyto C:/Users/Pe/Dropbox/Public

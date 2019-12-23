@@ -1,1 +1,46 @@
-123
+{
+"data":[
+  {"rel":"addr","rows":[
+    [1,"Max","Mustermann","Musterstr. 42","12345","Musterstadt","de"],
+    [2,"Gandalf","Greybeard","Pargqstreet 23","4242","Mordor","me"],
+    [3,"Hearth","Stone","Cardstreet 5","123","Blizzard","us"]
+  ]},
+  {"rel":"contact","rows":[
+    [1,"Email","test@test.de"],
+    [1,"Phone priv.","12 12 12"],
+    [1,"Phone work","22 333"],
+    [1,"ICQ","22 333 abc"],
+    [3,"Email","hearth@stone.game"]
+  ]}
+],
+"rels":[
+  {"n":"addr","fields":[
+    {"n":"aid","s":"Id","w":60,"align":"right"},
+    {"n":"name1"},
+    {"n":"name2"},
+    {"n":"street1"},
+    {"n":"pc","w":50},
+    {"n":"place1"},
+    {"n":"cc","w":40}
+  ]},
+  {"n":"contact","fields":[
+    {"n":"aid","s":"Id","w":60,"align":"right"},
+    {"n":"service"},
+    {"n":"code"}    
+  ]}
+],
+"views":[
+{
+  "wmul":1,"sub":[
+      { "header":"<span style=\"font-size:30px;\">Addresses&nbsp;</span><span style=\"font-size:12px;\">relsRenderInfo</span>",
+        "list":1,"rel":"addr"}
+    ,
+    {"hori":1,"sub":[
+      {"form":1,"rel":"addr"},
+      {"header":"<span style=\"font-size:30px;color:#666;\">Contacts</span>",
+       "list":1,"rel":"contact","fkey":"aid","frel":"addr"}
+    ]}
+  ]
+}
+]
+}

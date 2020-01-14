@@ -1,0 +1,363 @@
+<!doctype html><html><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, user-scalable=yes, minimum-scale=0.1, maximum-scale=10.0">
+<script src="/conet.js"></script>
+</head>
+<body bgcolor="#aaaaaa">
+<script type="text/javascript">
+(function() {
+  //---
+  var cos=[],timeCursor,bx=10,ct,wi,he,
+      mint,maxt,time,ot,timeText,persons=[],
+      canvPlaces,places=[],ids={},doAnimate=true,
+      urls=Conet.parseUrl(),da,pauset=0,pausei=-1;
+  
+  function animate() {
+    if (!doAnimate) return;
+    
+    var t=Date.now(),dt=t-ot;ot=t;
+    
+    if (pauset>0) pauset-=dt; else {
+      time+=dt*(maxt-mint)/20000;
+      if (time>maxt) { time=mint;pausei=-1; }
+      
+      for (var i=0;i<da.length;i++) { //---bedingung: ordnung nach t
+        var d=da[i];
+        if (!d.t) continue;
+        if (d.t>time) break;
+        if ((time>=d.t)&&(i>pausei)) {
+          time=d.t;pausei=i;
+          pauset=1500;
+        }
+      }
+      
+      update();
+    }
+    
+    //for (var i=persons.length-1;i>=0;i--) {
+    //  var p=persons[i],intime=(time>=p.mint)&&(time<=p.maxt);
+    //  for (var j=p.rects.length-1;j>=0;j--) p.rects[j].col=intime?'#0f0':undefined;
+    //}
+    //
+    //timeText.s=Math.floor(time);
+    //timeCursor.x=bx+(wi-bx-bx)*(time-mint)/(maxt-mint);//Math.random()*100;
+    //drawCos({ct:ct,cos:cos});
+    //
+    //drawPlaces();
+    //update();
+    
+    setTimeout(animate,10);
+    //...
+  }
+  function drawCos(ps) {
+    //--- draws canvas objects
+    var ct=ps.ct,cos=ps.cos,col,font;
+    
+    ct.clearRect(0,0,wi,he);
+    ct.strokeStyle='#444';
+    ct.strokeRect(0,0,wi,he);
+    ct.fillStyle='#000';
+    for (var i=0;i<cos.length;i++) {
+      var o=cos[i];
+      if (o.col) { col=ct.fillStyle;ct.fillStyle=o.col; }
+      if (o.font) { font=ct.font;ct.font=o.font; }
+      if (o.r) ct.fillRect(o.x,o.y,o.w,o.h);
+      if (o.t) ct.fillText(o.s,o.x,o.y);
+      if (o.col) ct.fillStyle=col;
+      if (o.font) ct.font=font;
+    }
+    //...
+  }
+  function drawPlaces() {
+    var c=canvPlaces,ct=c.getContext('2d'),
+        wi=c.width,he=c.height;
+    
+    console.log('-------------drawPlaces');
+    
+    ct.lineWidth=1;
+    ct.lineCap='butt';
+    ct.clearRect(0,0,wi,he);
+    ct.strokeStyle='#444';
+    ct.strokeRect(0,0,wi,he);
+    
+    var minx=Number.MAX_VALUE,miny=Number.MAX_VALUE,
+        maxx=-Number.MAX_VALUE,maxy=-Number.MAX_VALUE;
+        
+    for (var p of places) {
+      minx=Math.min(minx,p.pos[1]);
+      miny=Math.min(miny,p.pos[0]);
+      maxx=Math.max(maxx,p.pos[1]);
+      maxy=Math.max(maxy,p.pos[0]);
+      if (!p.n) p.n=idText(p.id);
+    }
+    
+    var dx=maxx-minx,dy=maxy-miny;
+    if (dx>dy) { var d=dx-dy;
+      miny-=d;//miny-=d/2;maxy+=d/2; 
+    }
+    else { var d=dy-dx;minx-=d/2;maxx+=d/2; }
+    
+    //onsole.log('min-max x: '+minx+' '+maxx+', y: '+miny+' '+maxy);
+    //onsole.log((maxx-minx)+' '+(maxy-miny));
+    
+    var bo=70;
+    ct.font='14px sans-serif';
+    ct.fillStyle='#666';
+    for (var i=0;i<places.length;i++) {
+      var p=places[i],
+          x=bo+(p.pos[1]-minx)*(wi-bo-bo)/(maxx-minx),
+          y=bo+(maxy-p.pos[0])*(he-bo-bo)/(maxy-miny);
+      p.x=x;p.y=y;
+      if (!p.hidden) ct.fillRect(x-1.5,y-1.5,3,3);
+      //if (!p.hideName) {
+      //  var s=p.n,tw=ct.measureText(s).width;
+      //  ct.fillText(s,x-tw/2,y-6+(p.textDy||0));
+      //}
+    }
+    
+    ct.lineWidth=4;
+    ct.lineCap='round';
+    ct.textAlign='center';
+    var tfade=4;
+    for (var pers of persons) {
+      //for (var move of pers.moves) {
+      for (var mi=0;mi<pers.moves.length;mi++) {
+        var move=pers.moves[mi],d0=move[0],d1=move[1];
+        if ((time>=d0.t)&&(time<=d1.t+tfade)) {
+          //console.log(move);
+          //console.log(pers.moves[mi]);
+          var p0=ids[d0.posid],
+              p1=ids[d1.posid],p1x=p1.x,p1y=p1.y,
+              drawPerson=false;
+              
+          if (time<d1.t) {
+            p1x=p0.x+(time-d0.t)*(p1x-p0.x)/(d1.t-d0.t);
+            p1y=p0.y+(time-d0.t)*(p1y-p0.y)/(d1.t-d0.t);
+            ct.strokeStyle='#0f0';
+            drawPerson=true;
+          } else {
+            var a=1-(time-d1.t)/tfade;
+            ct.strokeStyle='rgba(150,150,150,'+a+')';
+            //drawPerson=(mi==pers.moves.length-1);
+          }
+          ct.beginPath();
+          ct.moveTo(p0.x,p0.y);
+          ct.lineTo(p1x,p1y);
+          ct.stroke();
+          
+          if (drawPerson) {
+            ct.fillStyle='#000';
+            ct.fillText(pers.n,p1x+1,p1y-5);
+            ct.fillStyle=ct.strokeStyle;
+            ct.fillText(pers.n,p1x,p1y-6);//20);
+          }
+          //console.log(pers.n+' drawPerson='+drawPerson+' mi='+mi+' pers.moves.length='+pers.moves.length);
+          //console.log(pers.moves);
+          //console.log(move);
+          //console.log(pers.moves[mi]);
+        }
+      }
+    }
+    
+    ct.fillStyle='#000';
+    ct.font='9px sans-serif';
+    //if (0)
+    for (var p of places) {
+      if (!p.hidden) {
+        //var s=p.n,tw=ct.measureText(s).width;
+        //ct.fillText(s,p.x-tw/2,p.y-6+(p.textDy||0));
+        ct.fillText(p.n,p.x,p.y+10//-6
+          +(p.textDy||0));
+      }
+    }
+    
+    ct.font='14px sans-serif';
+    
+    //if (0)
+    for (var d of da) {
+      if (d.t===undefined) continue;
+      if (d.posid===undefined) continue;
+      if ((time<d.t)||(time>d.t+tfade)) continue;
+      var p=ids[d.posid];
+      var a=1-(time-d.t)/tfade;
+      if (d.n===undefined) continue;
+      var s=(d.n||(''+d.tags)),//+' '+Math.floor(d.t),
+          w=ct.measureText(s).width;
+      ct.fillStyle='rgba(250,250,250,'+a+')';
+      ct.fillRect(p.x-w/2,p.y-18,w,14);
+      ct.fillStyle='rgba(0,0,150,'+a+')';
+      ct.fillText(s,p.x,p.y-6);
+    }
+    
+    //...
+  }
+  function idText(id) {
+    return id.substr(0,1).toUpperCase()+id.substr(1);
+    //...
+  }
+  function mouseMove(e) {
+    if (!e.buttons) return;
+    var x=e.offsetX,y=e.offsetY;
+    
+    doAnimate=false;
+    
+    time=mint+(x-bx)*(maxt-mint)/(wi-bx-bx);
+    update();
+    
+    //console.log(t);
+  }
+  function update() {
+    //---
+    for (var i=persons.length-1;i>=0;i--) {
+      var p=persons[i],intime=(time>=p.mint)&&(time<=p.maxt);
+      for (var j=p.rects.length-1;j>=0;j--) p.rects[j].col=intime?'#0f0':undefined;
+    }
+    
+    
+    timeText.s=Math.floor(time);
+    timeCursor.x=bx+(wi-bx-bx)*(time-mint)/(maxt-mint);//Math.random()*100;
+    drawCos({ct:ct,cos:cos});
+    
+    drawPlaces();
+    //...
+  }
+  
+  Conet.download({fn:urls.fn||'abodrits.history.json',f:function(v) {
+    //console.log(v);
+    da=JSON.parse(v);
+    mint=10000,maxt=-10000;
+    ids={};var idc=0;
+    //onsole.log(da);
+    for (var d of da) {
+      var t=d.t;
+      if (t!==undefined) { mint=Math.min(mint,t);maxt=Math.max(maxt,t); }
+      var id=d.id;
+      if (id!==undefined) { 
+        ids[id]=d;
+        if (d.pos) places.push(d);
+      }
+    }
+    
+    //onsole.log(places);
+    
+    for (var d of da) {
+      var t=d.t,//,tags=d.tags;
+          x=bx+(wi-bx-bx)*(t-mint)/(maxt-mint);
+      if (t===undefined) continue;
+      var id=d.tags[0],idh=ids[id];
+      if (!idh) { idh={id:id};ids[id]=idh; }
+      if (idh.drawi===undefined) { 
+        persons.push(idh);idh.moves=[];
+        idh.rects=[];idh.mint=maxt;idh.maxt=mint;
+        idh.drawi=idc;idc++; 
+      }
+    }
+    
+    //onsole.log('idc='+idc);
+    
+    var c=document.createElement('canvas');
+    wi=600;he=Math.max(130,idc*15+20);
+    c.width=wi;c.height=he;
+    ct=c.getContext('2d');
+    document.body.appendChild(c);
+    c.addEventListener('mousemove',mouseMove);
+    
+    var y=20.5;
+    
+    cos.push(timeCursor={r:1,x:bx-1,y:bx,w:1,h:he-bx-bx,col:'#888'});
+    
+    
+    for (var d of da) {
+      var t=d.t,//,tags=d.tags;
+          x=bx+(wi-bx-bx)*(t-mint)/(maxt-mint),rect;
+      if (t===undefined) continue;
+      
+      var posid=undefined;
+      for (var tag of d.tags) {
+        var hidh=ids[tag];
+        if (!hidh) continue;
+        if (hidh.pos) { posid=tag;break; }
+      }
+      d.posid=posid;
+      
+      
+      //var id=d.tags[0],idh=ids[id];
+      for (var id of d.tags) { var idh=ids[id];
+      if (!idh) continue;
+      if (idh.pos) continue;
+      //if (!idh) { idh={id:id};ids[id]=idh; }
+      if (idh.y===undefined) { 
+        idh.y=y;y+=15; 
+        if (!idh.n) {
+          idh.n=idText(id);//id.substr(0,1).toUpperCase()+id.substr(1);
+        }
+        var s=idh.n;
+        //if (idh.on) s+=' ('+idh.on+')';
+        cos.push({t:1,s:s,x:x,y:idh.y-4});
+        //ct.fillText(s,x,idh.y-4);
+        var sw=ct.measureText(s).width;
+        s='';
+        for (var k of ['brother','mother','father'])
+          if (idh[k]) s+=', '+k+': '+ids[idh[k]].n;
+        if (idh.info) s+=', '+idh.info;
+        //if (idh.brother) s+=', brother: '+ids[idh.brother].n;
+        //ct.fillStyle='#888';
+        cos.push({t:1,s:s,x:x+sw,y:idh.y-4,col:'#888'});
+        //ct.fillText(s,x+sw,idh.y-4);
+        //ct.fillStyle='#000';
+      }
+      //var posid=undefined;
+      //for (var tag of d.tags) {
+      //  var hidh=ids[tag];
+      //  if (!hidh) continue;
+      //  if (hidh.pos) { posid=tag;break; }
+      //}
+      //d.posid=posid||(idh.lastd?idh.lastd.posid:undefined);
+      if ((d.posid===undefined)&&idh.lastd) d.posid=idh.lastd.posid;
+      if (!d.posid) { console.log('No posid');console.log(d); }
+      idh.mint=Math.min(idh.mint,t);
+      idh.maxt=Math.max(idh.maxt,t);
+      //ct.fillRect(x-1,idh.y-1,2,2);
+      cos.push(rect={r:1,x:x-1,y:idh.y-1,w:2,h:2});idh.rects.push(rect);
+      if (idh.lastx) {
+        cos.push(rect={r:1,x:idh.lastx,y:idh.y-0.5,w:x-idh.lastx,h:1});idh.rects.push(rect);
+        idh.moves.push([idh.lastd,d]);
+      }
+      idh.lastx=x;
+      idh.lastd=d;
+      }
+    }
+    
+    cos.push(timeText={t:1,s:mint,x:bx+bx,y:he-bx-bx,font:'80px sans-serif'});
+    
+    drawCos({ct:ct,cos:cos});
+    
+    //console.log(ids);
+    //console.log(persons);
+    //console.log(mint+' '+maxt);
+    
+    document.body.appendChild(document.createElement('br'));
+    
+    var c=document.createElement('canvas');
+    c.width=wi;c.height=wi;
+    canvPlaces=c;
+    drawPlaces();
+    document.body.appendChild(c);
+    
+    
+    
+    time=mint;ot=Date.now();
+    animate();
+  }
+  });
+  
+  //---
+}
+)();
+</script>
+</body>
+</html><script>
+//fr o,7
+//fr o,7,8
+//fr o,7,13
+//fr p,7,41

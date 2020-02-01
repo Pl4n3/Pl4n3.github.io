@@ -1,7 +1,7 @@
 var Conet={};
 (function(Conet) {
   Conet.offline=false;
-  Conet.version='1.355 ';//FOLDORUPDATEVERSION
+  Conet.version='1.370 ';//FOLDORUPDATEVERSION
   Conet.files={};
   var uploads={},fns,logc,logs=[],//fn=>data,first
       logSameLineCount=0;
@@ -177,6 +177,8 @@ var Conet={};
       //...
     }
     function checkListFile(v) {
+      //onsole.log('Conet.checkListFile '+v);
+      //onsole.trace();
       //m.curFn=v;
       //Menu.ms(p.loadMs?mload:m,m.curFn);
       setCurFn(v);
@@ -284,6 +286,15 @@ var Conet={};
       } else {
         //onsole.log('conet.fileMenu found fn "'+p.fn+'": '+v);
         m.files=JSON.parse(v);
+        
+        //-----
+        for (var i=m.files.length-1;i>=0;i--) {
+          if (m.files[i].fn.length>100) {
+            console.error('Conet.fileMenu: fn.len>100, splicing '+i);
+            m.files.splice(i,1);
+          }
+          //console.log('Conet.fileMenu files-i.len='+m.files[i].fn.length);
+        }
       }
       
       //Conet.fmFiles=m.files;//--- this is currently needed for cutouts app.js editmode
@@ -351,6 +362,39 @@ var Conet={};
     //...
     return true;
   }
+  
+  Conet.load=function(ps) {
+    var a=ps.a,fcount=a.length;
+    
+    function onload(v) {
+      //onsole.log('Conet.load.onload v='+v);
+      
+      if (this.fh) this.fh.v=v;
+      
+      fcount--;
+      if (fcount>0) return;
+      
+      for (var fh of a) {
+        if (fh.onAll) fh.onAll(fh.v);
+      }
+      if (ps.onAll) ps.onAll();
+      //...
+    }
+    
+    
+    for (var fh of a) {
+      if (fh.fn.endsWith('.js')) {
+        var sc=document.createElement('script');
+        sc.onload=onload;
+        sc.src=fh.fn;
+        document.body.appendChild(sc);
+      } else 
+        download({fn:fh.fn,f:onload,fh:fh});
+    }
+    
+    //...
+  }
+  
   Conet.log=function(sh,ps) {
     if (!logc) {
       var c=document.createElement('div'),s=c.style;s.fontSize='10px';s.fontFamily='Sans-serif';s.paddingLeft='2px';
@@ -497,18 +541,14 @@ var Conet={};
 )(Conet);
 console.log('Conet '+Conet.version);
 //fr o,1
-//fr o,1,6
-//fr o,1,6,17
 //fr o,1,7,1
 //fr o,1,10
-//fr o,1,10,3
-//fr o,1,10,4
-//fr o,1,10,5
+//fr o,1,10,2
 //fr o,1,10,6
 //fr o,1,10,18
 //fr o,1,10,19
-//fr o,1,10,29
-//fr o,1,10,33
+//fr o,1,10,57
 //fr o,1,11,1
-//fr o,1,15,4
-//fr p,29,36
+//fr o,1,14,2
+//fr o,1,18,4
+//fr p,2,24

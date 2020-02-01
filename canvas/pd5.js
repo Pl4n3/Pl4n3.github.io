@@ -432,6 +432,7 @@ var Pd5={};
     else o.animInt=undefined;
     
     o.ta=0;o.ca=0;
+    o.key0=undefined;//--- to avoid wrong animTexts 
     
     if (o.cm) return;//else bulletized objects looks strange..
     if (!o.animc) {
@@ -444,6 +445,7 @@ var Pd5={};
       var b=o.bones[h],a=o.animc.bs[h];
       a.t.set1(b.t);a.q.set1(b.q);
     }
+    
   }
   Pd5.animLen=function(anim) {
     var t=0;
@@ -585,7 +587,24 @@ var Pd5={};
         matupdate=true;
         //if (lo.eyew&&ego) if (ego.o5==lo) abones[3].q.x+=camAx/2;
         if (key0!=lo.key0) {
-          if (ak0.text) Pd5.animText(lo,ak0.text);//alert(ak0.text);
+          //console.log('Pd5.calc '+key0+' '+lo.key0);
+          
+          if (lo.key0!==undefined) {
+            var k=lo.key0;//,c=0;
+            while (1) {
+              //c++;if (c==100) break;
+              k=(k+1)%anim.length;
+              //console.log(key0+' '+lo.key0+' '+k);
+              var ak=anim[k],text=ak?ak.text:undefined;
+              if (text!==undefined) Pd5.animText(lo,text);//console.log(text); }
+              if (k==key0) break;
+            } 
+          } else if (ak0.text) Pd5.animText(lo,ak0.text);
+          
+          //if (ak0.text) {
+          //  console.log('Pd5.calc '+key0+' '+lo.key0);
+          //  Pd5.animText(lo,ak0.text);//alert(ak0.text);
+          //} else console.log('Pd5.calc  no text '+key0+' '+lo.key0);
           lo.key0=key0;
         }
       }
@@ -746,7 +765,10 @@ var Pd5={};
             if (!b.pc0) {
               var body=b.co;//Bullet.RigidBody.upcast(b.co);
               var bodyb=new Bullet.RigidBody(0,null,body.collisionShape);
-              b.pc0=new Bullet.HingeConstraint(body,bodyb,new Vecmath.Vec3(0,0,0),new Vecmath.Vec3(0,0,0),new Vecmath.Vec3(0,1,0),new Vecmath.Vec3(0,1,0));
+              //b.pc0=new Bullet.HingeConstraint(body,bodyb,new Vecmath.Vec3(0,0,0),new Vecmath.Vec3(0,0,0),new Vecmath.Vec3(0,1,0),new Vecmath.Vec3(0,1,0));
+              //200115 0.707,0.707,0 instead of 0,1,0 makes bones not rotate around y axis
+              b.pc0=new Bullet.HingeConstraint(body,bodyb,new Vecmath.Vec3(0,0,0),new Vecmath.Vec3(0,0,0),new Vecmath.Vec3(0.707,0.707,0),new Vecmath.Vec3(0.707,0.707,0));
+              //b.pc0.angularOnly=true;
               Pd5.dynamicsWorld.addConstraint(b.pc0,false);
               //onsole.log('Pd5.calc new pc0 '+h);
             }
@@ -807,6 +829,8 @@ var Pd5={};
              
     
             if (!b.pc0) continue;
+            //onsole.log('Pd5.calc removing constraint');
+            //onsole.log(b.pc0);
             Pd5.dynamicsWorld.removeConstraint(b.pc0);
             delete b.pc0;
             //onsole.log('Pd5.calc del pc0 '+h);
@@ -1021,12 +1045,17 @@ var Pd5={};
         var src=sa[1];//s.substring(sk.length);        
         //if (a.length>2) vol*=parseFloat(a[2]);
         //og(src);
-        Sound.play(src,1);//vol*(o.vol?o.vol:1)*gvol);
+        
+        var vol=1;
+        if (window.planim) if (planim.ego) { //onsole.log(planim.ego.pos);onsole.log(o.ps.pos);
+          vol=1-dist(planim.ego.pos,o.ps.pos)/200; }
+          
+        if (vol>0) Sound.play(src,vol);//vol*(o.vol?o.vol:1)*gvol);
         //console.log('pd5.animText sound '+src);
         //---
-      } else if (sa0=='attack') {
+      } else if ((sa0=='attack')&&(o.ps)) {
         //var oh=o.o;
-        //console.log('Pd5.animText attack '+o.ay);//+' '+oh.roty);
+        //onsole.log('Pd5.animText attack '+o.ay);//+' '+oh.roty);
         //console.log(o);
         var ps=o.ps,e={x:ps.pos.x,y:ps.pos.y,z:ps.pos.z,s:0,t:0,o:ps},
             a=ps.roty+PI/4,l=ps.attackr||((ps.collr||1)*2),os=Pd5.os;
@@ -1040,6 +1069,7 @@ var Pd5={};
           if ((o==oh)||!oh.ps.hitr) continue;
           if (dist(e,oh.ps.pos)<oh.ps.hitr) {
             oh.ps.hitt=0;oh.ps.hite=e;
+            //onsole.log('Pd5.animText attacking '+h);
             //if (Pd5.animAttack) Pd5.animAttack(e);
           }
         }
@@ -1270,6 +1300,12 @@ var Pd5={};
         joint6DOF.setAngularUpperLimit(tmp);
         
         Pd5.dynamicsWorld.addConstraint(joint6DOF,true);
+        if (!o.j6dofs) o.j6dofs=[];
+        o.j6dofs.push(joint6DOF);
+        //if (o.j6dofs.length==1) {
+        //  console.log(v0);
+        //  console.log(tmp);
+        //}
       }
     }
     
@@ -1705,13 +1741,16 @@ var Pd5={};
     function combine(ch) {
       for (var h=0;h<ch.a.length;h++) ch.a[h].o=Pd5.load(ch.a[h].d);
       //log(a[0].o.bones.length+' '+a[1].o.bones.length);
-      Pd5.combine(ch.a[0].o,ch.a[1].o,ch.key);
+      if (!ch.a[1].o.onlyAnims)
+        Pd5.combine(ch.a[0].o,ch.a[1].o,ch.key);
       //alert(a[0].o);
       if (ch.modf) ch.modf(ch.a[0].o,ch);
       //onsole.log('pd5.loadCombine ch.a.len='+ch.a.length);
-      if ((ch.a.length>2)&&ch.a[2].o.onlyAnims) { //integrate extern anim files
+      for (var chi=1;chi<ch.a.length;chi++) 
+      if (//(ch.a.length>2)&&
+        ch.a[chi].o.onlyAnims) { //integrate extern anim files
         //console.log('pd5.loadcombine integrate extern anims nao.');
-        var o0=ch.a[0].o,cha2=ch.a[2],oa=cha2.o;
+        var o0=ch.a[0].o,cha2=ch.a[chi],oa=cha2.o;
         o0.animFn=cha2.fn;//so that for now on w3dit save only anim file is saved
         var boneh={}
         for (var i=0;i<o0.bones.length;i++) boneh[o0.bones[i].name]=i;
@@ -2123,8 +2162,8 @@ var Pd5={};
 
 //---
 //fr o,2
-//fr o,2,37
-//fr o,2,39
+//fr o,2,41
 //fr o,2,41,75
 //fr o,2,47,44
-//fr p,2,518
+//fr o,2,48,2,3
+//fr p,6,254

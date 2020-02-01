@@ -597,6 +597,10 @@ function threeRender(dt) {
   }
   
   var br=threeEnv.useBaseRot?planim.baseRot:undefined;
+  
+  //var q=threeEnv.camera.quaternion;
+  //console.log(q._x+' '+q._y+' '+q._z+' '+q._w);
+  
   for (var i=threeEnv.billboards.length-1;i>=0;i--) {
     var bb=threeEnv.billboards[i];
     if (bb.update) {
@@ -628,6 +632,7 @@ function threeRender(dt) {
       bb.threeMesh.rotation.set(-br.x,-br.y,-br.z);
       bb.threeMesh.rotation.order='ZYX';
     } else 
+      //bb.threeMesh.matrix.copy(threeEnv.camera.matrix);
       bb.threeMesh.quaternion.copy(threeEnv.camera.quaternion);
   }
   
@@ -951,6 +956,8 @@ threeEnv.addQuad=function(ps) {
   //---
 }
 //fr o,9,33
+//fr o,16
+//fr o,18
 //fr o,32
 //fr o,33
-//fr p,28,55
+//fr p,6,158

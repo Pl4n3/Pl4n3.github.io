@@ -276,8 +276,10 @@
   
   planim.defMoveAi=false;
   
-  Menu.init([{s:'Menu',ms:planim.version+' scrubs v.0.779 ',sub:[//FOLDORUPDATEVERSION
-    planim.mfullscreen,planim.minitvr,planim.muitoggle,planim.megoswitch,planim.mrestart]},
+  Menu.init([{s:'Menu',ms:planim.version,sub:[
+    planim.mfullscreen
+    //planim.minitvr,planim.muitoggle,planim.megoswitch,planim.mrestart
+    ]},
     
   /*  
     
@@ -351,4 +353,4 @@
 //fr o,1,23,1
 //fr o,1,23,3
 //fr o,1,29
-//fr p,0,143
+//fr p,20,239

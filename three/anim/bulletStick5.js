@@ -181,33 +181,6 @@
       return;
     }
     
-    else if (1) {
-      a.push(o={fn:'/shooter/objs/h/malus/o5.txt',pos:new THREE.Vector3(0,-1.8,0),health:5,rotofs:Math.PI,onload:initBullet
-        ,anim:'stand',scale:0.5,animRun:'run',animAttack:'attackmid',animHit:'hit',animDead:'lost',v:0.006,ego:1,vrot:0.01});
-      a.push(o0={fn:'/shooter/objs/h/samus/base.txt',pos:new THREE.Vector3(1,-1.8,0),health:5,rotofs:Math.PI,onload:initBullet
-      ,anim:'stand',scale:0.5,animRun:'run',animAttack:'attackmid',animHit:'hit',animDead:'lost',v:0.006,vrot:0.01});
-      return;
-    }
-    
-    
-    a.push(
-      o={fn:'/shooter/objs/bot/o5.txt',pos:new THREE.Vector3(0,-1.8,0),health:5,rotofs:Math.PI
-        ,anim:'stand',scale:0.4,animRun:'run',animAttack:'attackmid',animHit:'hit',animDead:'lost',v:0.006,ego:startWithEgo,vrot:0.01,
-    onload:function(o) {
-      o.o={x:0,y:0,z:0,rot:0,go:{rotofs:o.ps.rotofs}};
-      //console.log('baseUnit.onload '+o.ps.pos);
-      Pd5.bulletize(o);
-      //onsole.log(o);
-      o.bones[9].co.gravity.y=40;
-      o.bones[8].co.gravity.y=40;
-      o.bones[2].co.gravity.y=40;
-      //...
-    }
-        });
-    
-    if (1) a.push( o0={fn:'/shooter/objs/bot/o5.txt',pos:new THREE.Vector3(1,-1.8,0),health:5,rotofs:Math.PI
-      ,anim:'stand',scale:0.4,animRun:'run',animAttack:'attackmid',animHit:'hit',v:0.006,vrot:0.01,onload:initBullet});
-    else camz=-6;
     
   }
   )();
@@ -303,7 +276,7 @@
   
   planim.defMoveAi=false;
   
-  Menu.init([{s:'Menu',ms:planim.version+' scrubs v.0.778 ',sub:[//FOLDORUPDATEVERSION
+  Menu.init([{s:'Menu',ms:planim.version+' scrubs v.0.779 ',sub:[//FOLDORUPDATEVERSION
     planim.mfullscreen,planim.minitvr,planim.muitoggle,planim.megoswitch,planim.mrestart]},
     
   /*  
@@ -378,4 +351,4 @@
 //fr o,1,23,1
 //fr o,1,23,3
 //fr o,1,29
-//fr p,57,6
+//fr p,0,143

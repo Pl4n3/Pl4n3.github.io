@@ -1095,7 +1095,8 @@ var Pd5={};
     body.setWorldTransform(groundTransform);
     Pd5.dynamicsWorld.addRigidBody(body);
   }
-  Pd5.bulletize=function(o) {
+  Pd5.bulletize=function(o,ps) {
+    if (!ps) ps={};
     th=new Bullet.Transform();
     var f2=1/20;//ragdoll_scale/translationscale
     var f3=f2*100;
@@ -1128,7 +1129,7 @@ var Pd5={};
     
     o.cm=new Bullet.Transform();
     
-    var mH={},sH={},sh,mH2={};
+    var mH={},sH={},sh,mH2={},j6ah={},j6names=[];
     for (var bi=0;bi<o.bones.length;bi++) {
       var b=o.bones[bi];
       b.cr=1;b.cl=2;
@@ -1137,8 +1138,22 @@ var Pd5={};
         var m=w.mark;
         if (m===undefined) continue;
         w.bi=bi;
-        if (startsWith(m,'j6')) mH[m]=w;
-        else if (startsWith(m,'s')) mH[m+','+bi]=w;
+        if (startsWith(m,'j6')) {
+          mH[m]=w;
+          var sa=m.split(','),
+              s1=sa[1],s2=sa[2];
+          if (s2=='a') {
+            if (j6ah[s1]) console.log('j6 multiple a with: '+s1);
+            else {
+              j6ah[s1]=m;
+              //j6as.push(s1);
+              //console.log('pd5.bulletize '+j6as.length+' '+s1);
+            }
+          } else if (s2=='b') {
+            j6names.push(s1);
+            //onsole.log('pd5.bulletize j6names '+j6names.length+' '+s1);
+          }
+        } else if (startsWith(m,'s')) mH[m+','+bi]=w;
         //alert('bulletTest mark '+m);
       }
     }
@@ -1239,7 +1254,7 @@ var Pd5={};
             
       dynamicsWorld.addRigidBody(body);
     //        this.coH[s.name]=body;
-      body.setDamping(0.05,0.85);
+      body.setDamping(ps.damp0||0.05,ps.damp1||0.85);
       //body.setDamping(10,10);
       body.deactivationTime=0.8;
       body.setSleepingThresholds(1.6,2.5);
@@ -1253,11 +1268,15 @@ var Pd5={};
     
     
     
-    for (var s in mH) if (mH.hasOwnProperty(s)) {
-      var sa=s.split(','),s0=sa[0],s1=(sa.length>1?sa[1]:undefined);
-      if (s0=='j6') {
-        var s2=sa[2];
-        if (s2=='b') continue;
+    //for (var s in mH) if (mH.hasOwnProperty(s)) {
+    //  var sa=s.split(','),s0=sa[0],s1=(sa.length>1?sa[1]:undefined);
+    //  if (s0=='j6') {
+    //    var s2=sa[2];
+    //    if (s2=='b') continue;
+    
+    for (var s1 of j6names) {
+        var s=j6ah[s1],sa=s.split(','),s0=sa[0];    
+        
         var w0=mH[s];
         var w1=mH[s0+','+s1+',b'];
         var l0=mH2['s1_'+w0.bi];
@@ -1306,7 +1325,7 @@ var Pd5={};
         //  console.log(v0);
         //  console.log(tmp);
         //}
-      }
+      //}
     }
     
     
@@ -2163,7 +2182,7 @@ var Pd5={};
 //---
 //fr o,2
 //fr o,2,41
-//fr o,2,41,75
+//fr o,2,41,90
 //fr o,2,47,44
 //fr o,2,48,2,3
-//fr p,6,254
+//fr p,10,100

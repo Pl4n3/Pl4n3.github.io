@@ -32,7 +32,7 @@ function Planim() {
     //--- 191029 using local r109 copies now, because bad internet currently
   }
   var scene,stats,views=[],oh={},ot=Date.now(),scra=[],scri=0,scrt=0,loopAfterLoaded,
-      base,debug='',version='1.1870 ',//FOLDORUPDATEVERSION
+      base,debug='',version='1.1884 ',//FOLDORUPDATEVERSION
       m0=new THREE.MeshPhongMaterial( { color:0x666666,flatShading:true } ),
       m1=new THREE.MeshPhongMaterial({color:0x77dd77,flatShading:true,
       transparent:true,opacity:0.5}),mray0=new THREE.MeshPhongMaterial({
@@ -257,10 +257,18 @@ function Planim() {
       }
       var aspect=w/h,frustumSize=10;
       if (v.ortho) {
-        camera.left=frustumSize*aspect/-2;
-        camera.right=frustumSize*aspect/2;
-        camera.top=frustumSize/2;
-        camera.bottom=frustumSize/-2;
+        var a0=1.5;
+        if (aspect>=a0) {
+          camera.left=frustumSize*aspect/-2;
+          camera.right=frustumSize*aspect/2;
+          camera.top=frustumSize/2;
+          camera.bottom=frustumSize/-2;
+        } else {
+          camera.left=frustumSize*a0/-2;
+          camera.right=frustumSize*a0/2;
+          camera.top=frustumSize*a0/2/aspect;
+          camera.bottom=frustumSize*a0/-2/aspect;
+        }
       } else 
         camera.aspect=aspect;//window.innerWidth/window.innerHeight;
       if (v.fovportrait) {
@@ -1396,10 +1404,18 @@ function Planim() {
     if (!ps) ps={};
     base.add(l0=new THREE.AmbientLight(0xffffff,0.3));
     l1=pointLight({x:-1,y:2,z:1,col:0xffffaa,dist:10,int:2,base:ps.l1base});
-    //pointLight({x:-5.5,y:0,z:-1,col:0x2222ff,dist:7,int:2});
+    ////pointLight({x:-5.5,y:0,z:-1,col:0x2222ff,dist:7,int:2});
     l2=pointLight({x:5,y:-5,z:-5,col:0xaaffff,dist:100,int:0.5,castShadow:false});
     //var l=new THREE.DirectionalLight(0xaaffff,1);l.position.set(0.2,-1,-0.2);base.add(l);
-    //...
+    
+    //var l=new THREE.DirectionalLight(0xffffff,1);l.position.set(0.4,1,-0.4);
+    //l.castShadow=true;
+    //l.shadow.camera.near=0.5;//100;
+    //l.shadow.camera.far=5;//1000;
+    //l.shadow.mapSize.width=1024;//2048;
+    //l.shadow.mapSize.height=1024;
+    //base.add(l);
+    ////...
     return [l0,l1,l2];
   }
   function init() {
@@ -2132,11 +2148,11 @@ var planim=new Planim();
 </script></body>
 </html><script>
 //fr o,22
-//fr o,22,18
 //fr o,22,18,96
+//fr o,22,20
 //fr o,22,44,63
-//fr o,22,52
-//fr o,22,52,32
+//fr o,22,50
+//fr o,22,51
 //fr o,22,52,43
 //fr o,22,52,46
 //fr o,22,52,48
@@ -2144,4 +2160,4 @@ var planim=new Planim();
 //fr o,22,53,13,2
 //fr o,22,94,11
 //fr o,22,94,15
-//fr p,20,251
+//fr p,34,99

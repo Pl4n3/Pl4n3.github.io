@@ -1,10 +1,10 @@
 //----
 (function () {
-  var mtool,f4=planim.f4,medit,base=planim.base,vw=0.03,mesh,cfmp,//medit1,
+  var mtool,f4=planim.f4,medit,base=planim.base,vw=0.03,mesh,cfm,cfmp,//medit1,
       vh={'0_0_0':{x:0,y:0,z:0},'1_0_0':{x:1,y:0,z:0},'2_0_0':{x:2,y:0,z:0},'2_1_0':{x:2,y:1,z:0},},
       colors=[new THREE.Color(0.5,0.5,0.5),new THREE.Color(0.2,0.8,0.2)],
-      ccol=colors[0],mcolor,isConet;
-  
+      ccol=colors[0],mcolor,isConet,planeY=15,mplaney,mpyshow,va=[],mcolor2,bgcoldef=0x666666,
+      mbackground,groundbox,mgroundbox,brush='0,0,0',brusha=[0,0,0];
   
   planim.game.calc=function(dt) {
     //---
@@ -12,20 +12,83 @@
   ;
   
   //...
-  planim.addView({ortho:1,w:1,h:1,x:0,y:0,cam:new THREE.Vector3(0.1,-0.1,2.5),bg:1,autoRotate:0,
-    target:new THREE.Vector3(0,-0.4,0),fov:60,bgcol:0x666666,_vr:1,camZoom:5});
+  var view=planim.addView({ortho:1,w:1,h:1,x:0,y:0,cam:new THREE.Vector3(0.1+0.5,-0.1+1,2.5),bg:1,autoRotate:0,
+    target:new THREE.Vector3(0,-0.4,0),fov:60,bgcol:bgcoldef,_vr:1,camZoom:5});
   
   //planim.game.rays=1;
   //planim.game.fetchOnKey=1;
   planim.dragRays=true;
   
+  function scriptForest2001() {
+    //...
+    //colors.push(new THREE.Color(1,0,0),new THREE.Color(0.2,0.4,0));//,new THREE.Color(1,1,0));
+    var vs=planim.getVoxels(),d=50;//vh={};
+    planim.putVoxels({vs:vs,dy:-48});
+    planim.putVoxels({x:20,y:-47,z:20,dx:15,dy:30,dz:3,col:new THREE.Color(0.2,0.2,0.2)});//c:6});
+    //return;
+    Conet.seed(100);
+    for (var c=0;c<20;c++)
+    planim.putVoxels({vs:vs,colRedir:{1:Math.floor(Conet.rand()*3+3)},
+      dx:Math.floor(Conet.rand()*d*2)-d,dy:-48,dz:Math.floor(Conet.rand()*d*2)-d,
+      mirrorx:Conet.rand()<0.5,mirrorz:Conet.rand()<0.5,swapxz:Conet.rand()<0.5});
+    //...
+  }
+  function scriptForest2001Winter() {
+    //...
+    //colors.push(new THREE.Color(1,0,0),new THREE.Color(0.2,0.4,0));//,new THREE.Color(1,1,0));
+    var vs=planim.getVoxels(),d=50;//vh={};
+    planim.putVoxels({vs:vs,dy:-47,colRedir:{1:7,2:7}});
+    planim.putVoxels({vs:vs,dy:-48,colRedir:{1:0}});
+    planim.putVoxels({x:20,y:-47,z:20,dx:15,dy:30,dz:3,col:new THREE.Color(0.2,0.2,0.2)});//c:6});
+    //return;
+    Conet.seed(100);
+    for (var c=0;c<20;c++) {
+      var col1=Math.floor(Conet.rand()*3+3),//not used
+          dx=Math.floor(Conet.rand()*d*2)-d,
+          dz=Math.floor(Conet.rand()*d*2)-d,
+          mirrorx=Conet.rand()<0.5,
+          mirrorz=Conet.rand()<0.5,
+          swapxz=Conet.rand()<0.5;
+      planim.putVoxels({vs:vs,colRedir:{1:7,2:7},dx:dx,dy:-47,dz:dz,mirrorx:mirrorx,mirrorz:mirrorz,swapxz:swapxz});
+      planim.putVoxels({vs:vs,colRedir:{1:0}    ,dx:dx,dy:-48,dz:dz,mirrorx:mirrorx,mirrorz:mirrorz,swapxz:swapxz});
+    }
+    //...
+  }
+  function scriptRooms() {
+    var vs=planim.getVoxels(),w=10;//vh={};
+    Conet.seed(100);
+    for (var z=0;z<w;z++) for (var y=0;y<w;y++) for (var x=-4;x<6;x++) {
+      if ((Math.floor(x/2)%2!=0)&&(Math.floor(y/2)%2!=0)) continue;
+      if ((Math.floor(z/2)%2!=0)&&(Math.floor(y/2)%2!=0)) continue;
+      if ((Math.floor(z/2)%2!=0)&&(Math.floor(x/2)%2!=0)) continue;
+      planim.putVoxels({vs:vs,dx:x*6,dy:y*6-48,dz:-z*8,nomesh:1,colRedir:{1:Conet.rand()<0.8?6:1}});
+    }
+    
+    planim.putVoxels({vs:vs,dx:0,dy:-48,dz:16,nomesh:1,colRedir:{1:6}});  
+    planim.putVoxels({vs:vs,dx:6,dy:-48,dz:16,nomesh:1,colRedir:{1:1}});  
+    
+    voxMesh();
+    //...
+  }
+  function scriptShadowPoles() {
+    
+    for (var z=-5;z<5;z++) for (var x=-5;x<5;x++) planim.putVoxels({x:x*20,y:0,z:z*20,dx:1,dy:10,dz:1,c:0});
+    planim.putVoxels({x:-100,y:-1,z:-100,dx:200,dy:1,dz:200,c:0});
+    
+    //...
+  }
+  
   function etV(x,y,z,v) {
     var k=x+'_'+y+'_'+z;
+    //onet.log(k);
     if (v===undefined) return vh[k];
-    if (v===null) delete(vh[k]);
-    else {
+    if (v===null) {
+      va.splice(va.indexOf(vh[k]),1);
+      delete(vh[k]);
+    } else {
       v.x=x;v.y=y;v.z=z;
       vh[k]=v;
+      va.push(v);
     }
     //...
   }
@@ -37,19 +100,29 @@
     //threeEnv.addTri({ge:ge,a0:[0,0,0],a1:[-10,0,0],a2:[0,10,0],dim:1});
     
     var //c=new THREE.Color(0.5,0.5,0.5),
-        w=vw,f=undefined;//threeEnv.pv;
+        w=vw,f=undefined,//threeEnv.pv;
+        isplaney=mpyshow.checked,
+        count=0;
     
     for (var k in vh) if (vh.hasOwnProperty(k)) {
       var v=vh[k],x=v.x,y=v.y,z=v.z,
           x0=x*w+w/2,y0=y*w-0.4+w/2,z0=z*w+w/2,
           c=colors[v.c||0];
+      if (isplaney&&(y>planeY)) continue;
       //onsole.log(v);
       if (!etV(x,y,z-1)) threeEnv.addQuad({ge:ge,a0:[x0,y0,z0-w],a1:[-w,0,0],a2:[0,w,0],a3:[-w,w,0],dim:1,c:c,f:f});
       if (!etV(x,y,z+1)) threeEnv.addQuad({ge:ge,a0:[x0-w,y0,z0],a1:[w,0,0],a2:[0,w,0],a3:[w,w,0],dim:1,c:c,f:f});
       if (!etV(x+1,y,z)) threeEnv.addQuad({ge:ge,a0:[x0,y0,z0],a1:[0,0,-w],a2:[0,w,0],a3:[0,w,-w],dim:1,c:c,f:f});
       if (!etV(x-1,y,z)) threeEnv.addQuad({ge:ge,a0:[x0-w,y0,z0-w],a1:[0,0,w],a2:[0,w,0],a3:[0,w,w],dim:1,c:c,f:f});
-      if (!etV(x,y+1,z)) threeEnv.addQuad({ge:ge,a0:[x0-w,y0+w,z0],a1:[w,0,0],a2:[0,0,-w],a3:[w,0,-w],dim:1,c:c,f:f});
+      if ((isplaney&&(y==planeY))||!etV(x,y+1,z)) threeEnv.addQuad({ge:ge,a0:[x0-w,y0+w,z0],a1:[w,0,0],a2:[0,0,-w],a3:[w,0,-w],dim:1,c:c,f:f});
       if (!etV(x,y-1,z)) threeEnv.addQuad({ge:ge,a0:[x0,y0,z0],a1:[-w,0,0],a2:[0,0,-w],a3:[-w,0,-w],dim:1,c:c,f:f});
+      count++;
+    }
+    //onsole.log('voxed.voxMesh count='+count);
+    
+    if (isplaney) {
+      var y=planeY,y0=y*w-0.4+w/2;
+      threeEnv.addQuad({ge:ge,a0:[-1,y0+w/10,1],a1:[2,0,0],a2:[0,0,-2],a3:[2,0,-2],dim:1,c:colors[0],f:f});
     }
     
     //Conet.rand=Math.random;
@@ -85,7 +158,15 @@
     
     ge.computeVertexNormals();
     var bge=new THREE.BufferGeometry().fromGeometry(ge);
-    var m=new THREE.Mesh(bge,new THREE.MeshPhongMaterial({vertexColors:THREE.FaceColors}));
+    var mh={vertexColors:THREE.FaceColors};
+    if (isplaney) { mh.transparent=true;mh.opacity=0.75; }
+    
+    var m=new THREE.Mesh(bge,new THREE.MeshPhongMaterial(
+    mh
+    //{vertexColors:THREE.FaceColors
+    //  ,transparent:true,opacity:0.75
+    //}
+    ));
     m.position.set(0,0,0);
     m.castShadow=true;
     m.receiveShadow=true;
@@ -120,17 +201,47 @@
     
     //...
   }
+  
+  function prefix(s,n,s0) {
+    while (s.length<n) s=(s0===undefined?'0':s0)+s;
+    return s;
+    //...
+  }
+  
+  function colToHex(ccol) {
+    
+    var r=prefix(Math.floor(ccol.r*255+0.5).toString(16),2),
+        g=prefix(Math.floor(ccol.g*255+0.5).toString(16),2),
+        b=prefix(Math.floor(ccol.b*255+0.5).toString(16),2);
+    //if (r.length%2>0) r='0'+r;
+    //if (g.length%2>0) g='0'+g;
+    //if (b.length%2>0) b='0'+b;
+    
+    
+    var v='#'+r+g+b;
+    return v;
+    //...
+  }
+  
+  function colIToS(c) {
+    
+    return '#'+prefix(c.toString(16),6);
+    //...
+  }
+  
   function onclick(e,ij,j) {
     if (!medit.checked) return;
     if (j!=0) return;
     var mts=mtool.s,
         add=mts.startsWith('Add'),
+        sub=mts.startsWith('Sub'),
         paint=(mts=='Paint');
     //if (add&&(e.type!='click')) return;
     //if (medit1.checked) 
     if (mts.endsWith(' 1'))
     if ((e.type!='touchstart')&&(e.type!='click')) return;//mousedown
     //onet.log('voxed.onclick e.type='+e.type);
+    //console.trace();
     //onsole.log('voxed fi='+ij.faceIndex+' uv.x='+f4(ij.uv.x)+' uv.y='+f4(ij.uv.y));
     //onsole.log(ij);
     var p=ij.point,n=ij.face.normal;
@@ -141,24 +252,39 @@
     x=Math.floor(x);y=Math.floor(y)-1;z=Math.floor(z);
     
     //onet.log(f4(x)+' '+f4(y)+' '+f4(z));
+    if (mpyshow.checked) {
+      if ((y!=planeY)&&(add||sub)) return;
+    }
+    //onsole.log('voxed.onclick y='+y+' planeY='+planeY);
     
+    console.log('voxel '+x+' '+y+' '+z);
     
     if (add||paint) checkIndexColor(ccol);
-    if (add) 
+    if (add) {
       //etV(x,y,z,{x:x,y:y,z:z,c:ccol.ci});
       etV(x,y,z,{c:ccol.ci});
-    else if (mts.startsWith('Sub')) etV(x,y,z,null);
-    else if (mts.startsWith('Pick')) {
+      
+      //var r=1;
+      for (var zh=z-brusha[2];zh<=z+brusha[2];zh++)
+      for (var yh=y-brusha[1];yh<=y+brusha[1];yh++)
+      for (var xh=x-brusha[0];xh<=x+brusha[0];xh++)
+      if (!etV(xh,yh,zh)) etV(xh,yh,zh,{c:ccol.ci});
+    } else if (sub) {
+      console.log('voxed.onclick etV...null nao.');
+      etV(x,y,z,null);
+    } else if (mts.startsWith('Pick')) {
       var c=colors[etV(x,y,z).c];
       if ((c.r!=ccol.r)||(c.g!=ccol.g)||(c.b!=ccol.b)) {
         ccol=c;
         Menu.remove();
-        mcolor.setfunc(c.r+','+c.g+','+c.b);
+        //mcolor.setfunc(c.r+','+c.g+','+c.b);
+        mcolor2.oninput(colToHex(c));
         mtool.s='Paint';
         Menu.draw();
         //onsole.log(ccol);
       }
     } else if (paint) etV(x,y,z).c=ccol.ci;
+    else if (mts=='Paint range') app.onclick(x,y,z);
     
     
     voxMesh();
@@ -183,7 +309,15 @@
       first=false;
     }
     data+=']';
+    
+    data+=',"backgroundColor":"'+colIToS(planim.views[0].bgcol)+'"\n';
+    data+=',"groundbox":'+(mgroundbox.checked?1:0)+'\n';
+    
+    
     data+='}';
+    
+    console.log('serialize size='+data.length);
+    
     return data;
     //...
   }
@@ -220,19 +354,20 @@
       if (v.c>=colors.length) v.c=0;
       etV(v.x,v.y,v.z,v);
     }
-    voxMesh();
-    if (1) return;
-    //colors.push(new THREE.Color(1,0,0),new THREE.Color(0.2,0.4,0));//,new THREE.Color(1,1,0));
-    var vs=planim.getVoxels(),d=50;//vh={};
-    planim.putVoxels({vs:vs,dy:-48});
-    planim.putVoxels({x:20,y:-47,z:20,dx:15,dy:30,dz:3,col:new THREE.Color(0.2,0.2,0.2)});//c:6});
-    //return;
-    Conet.seed(100);
-    for (var c=0;c<20;c++)
-    planim.putVoxels({vs:vs,colRedir:{1:Math.floor(Conet.rand()*3+3)},
-      dx:Math.floor(Conet.rand()*d*2)-d,dy:-48,dz:Math.floor(Conet.rand()*d*2)-d,
-      mirrorx:Conet.rand()<0.5,mirrorz:Conet.rand()<0.5,swapxz:Conet.rand()<0.5});
     
+    if (d.backgroundColor) mbackground.oninput(d.backgroundColor);
+    
+    var m=mgroundbox;
+    if (!m.checked) { Menu.setChecked(m,1);m.actionf(); }
+    if (d.groundbox!==undefined) {
+      if (!d.groundbox) { Menu.setChecked(m,0);m.actionf(); }
+    }
+    
+    voxMesh();
+    
+    //scriptForest2001Winter();
+    //scriptRooms();
+    //scriptShadowPoles();
     //...
   }
   function num4(n) {
@@ -324,7 +459,9 @@
     //for (var i=0;i<s.length;i++) console.log(i+' '+s.charAt(i)+' '+s.charCodeAt(i));
     
     s=btoa(s);
-    if (isConet) Conet.upload({fn:'/three/anim/voxed/export.vox.base64',data:s,log:Conet.log});//.b64
+    
+    //---following not necessary anymore with comfortable binary download link
+    //if (isConet) Conet.upload({fn:'/three/anim/voxed/export.vox.base64',data:s,log:Conet.log});//.b64
     
     return s;
     //...
@@ -366,37 +503,186 @@
         etV(x,y,z,{c:c});
     }
     
-    voxMesh();
+    if (!ps.nomesh) voxMesh();
     //...
   }
   ;
-  //---init 
-  (function() {
+  planim.inpDown=function(inp) {
+    //console.log('voxed.inpDown');
+    //console.log(inp);
     //...
+  }
+  ;
+  planim.inpMove=function(inp) {
+    if (inp.dist===undefined) return;
+    //console.log('voxed.inpMove');
+    //console.log(inp);
+    var f=1,a=-view.camera.rotation.y,
+        cosa=Math.cos(a),sina=Math.sin(a),
+        x=inp.dx*cosa-inp.dy*sina,
+        y=inp.dx*sina+inp.dy*cosa;
+    //console.log(a);
+    view.camera.position.x-=x*f;
+    view.controls.target.x-=x*f;
+    view.camera.position.z-=y*f;
+    view.controls.target.z-=y*f;
+    //...
+  }
+  ;
+  //---
+  
+  var app=(function() {
+    //--- turnbased game test, viewrange depends on height
+    //--- inspired by mib
     
-    isConet=document.URL.indexOf(':7000')!=-1;//---hack
-    //console.log(isConet);
+    var y0=-3,marks=[];
     
-    planim.box(0,-1.9,0,3,0.2,3).castShadow=false;
-    planim.defaultLights();
-    planim.pointLight({x:15,y:15,z:15,col:0xffffff,dist:100,int:0.5,castShadow:false});
-    
-    var msub=[
-    
-    Conet.fileMenu(cfmp={fn:'/three/anim/voxed/files'+(isConet?'':'NoConet')+'.txt',
-    newf:function() {
+    this.init=function() {
+      //===
+      //cfm.sub[0].sub[1].actionf();//cfmp.newf();
+      cfmp.loadf('/three/anim/voxed/mib40.json');
+      //...
+    }
+    this.newRandom=function() {
       
-      vh={};vw=0.03;
+      vh={};va=[];vw=0.03*4;
       var b=10,by=1;
-      for (var z=-b;z<=b;z++) for (var y=-by;y<=by;y++) for (var x=-b;x<=b;x++)
+      for (var z=-b;z<=b;z++) for (var y=-by+y0;y<=by+y0;y++) for (var x=-b;x<=b;x++)
         //if ((x+b*3+y+z)>2)
-        if ((x==0)||(y==0)||(z==0))
+        //if ((x==0)||(y==0)||(z==0))
+        if (y==y0)
           etV(x,y,z,{x:x,y:y,z:z,c:0});
+      
+      //console.log(va.length);
+      Conet.seed(100);
+      //if (0)
+      for (var i=0;i<500;i++) {
+        var vi=Math.floor(Conet.rand()*va.length),
+            v=va[vi];
+        if (!(etV(v.x-1,v.y,v.z)||etV(v.x-1,v.y,v.z)
+          ||etV(v.x,v.y,v.z-1)||etV(v.x-1,v.y,v.z+1))) {
+          i--;continue;
+        }
+        etV(v.x,v.y,v.z,null);
+        etV(v.x,v.y+1,v.z,v);
+        //console.log(v);
+      }
+      var ymax=y0;
+      for (var vi=va.length-1;vi>=0;vi--) {
+        var v=va[vi];
+        ymax=Math.max(ymax,v.y);
+        for (var y=v.y-1;y>=y0;y--) etV(v.x,y,v.z,{c:0});
+      }
+      //onsole.log('ymax='+ymax);
+      
+      function colf(c,f) {
+        return new THREE.Color(c.r*f,c.g*f,c.b*f);//...
+      }
+      
+      for (var v of va) v.c=v.y-y0;
+      
+      var orange={r:0.8,g:0.3,b:0.1};
+      colors=[
+        new THREE.Color(0.2,0.2,0.2),
+        new THREE.Color(0.4,0.4,0.4),
+        new THREE.Color(0.6,0.6,0.6),
+        new THREE.Color(0.2,0.8,0.2),
+      
+        colf(orange,0.25),
+        colf(orange,0.5),
+        colf(orange,0.75),
+        colf(orange,1)
+        //new THREE.Color(0.4,0.0,0.2),
+        //new THREE.Color(0.6,0.1,0.2),
+        //new THREE.Color(0.7,0.2,0.2),
+        //new THREE.Color(0.8,0.3,0.2),
+        
+      ];
+      /*colors=[
+        new THREE.Color(0.8,0.8,0.8),
+        new THREE.Color(0.6,0.8,0.6),
+        new THREE.Color(0.4,0.8,0.4),
+        new THREE.Color(0.2,0.8,0.2)];*/
+      
       voxMesh();//planim.box(0,-0.4,0,1,1,1);
       
       //...
     }
-    ,loadf:function(v) {
+    this.onclick=function(x,y,z) {
+      //---
+      for (var v of marks) v.c=v.y-y0;
+      marks.length=0;
+      
+      var r=6,ra=[2,4,5,6,8,10];
+      for (var zh=-r;zh<=r;zh++)
+        for (var yh=-r;yh<=0;yh++)
+          for (var xh=-r;xh<=r;xh++) {
+            var xp=xh+x,yp=yh+y,zp=zh+z;
+            var v=etV(xp,yp,zp);
+            if (!v) continue;
+            ////if (etV(xp,yp+1,zp)) continue;
+            //if (Math.sqrt(xh*xh+zh*zh)>r) continue;
+            //if (Math.sqrt(xh*xh+zh*zh)>(r/2-yh/2)) continue;
+            if (Math.sqrt(xh*xh+zh*zh)>ra[-yh]) continue;
+            v.c=4+yp-y0;
+            marks.push(v);
+          }
+      //...
+    }
+    
+    //planim.views[0].controls.enabled=false;
+    
+    return this;
+    //...
+  }
+  )();
+  app=undefined;
+  
+  //---init 
+  (function() {
+    //...
+    
+    function planeChange() {
+      planeY+=this._dy;
+      mplaney.ms=planeY;
+      //console.log(this);
+      voxMesh();
+    }
+    
+    isConet=document.URL.indexOf(':7000')!=-1;//---hack
+    //console.log(isConet);
+    
+    //if (0) 
+    (groundbox=planim.box(0,-1.9,0,3,0.2,3)).castShadow=false;
+    
+    //planim.defaultLights();
+    //planim.pointLight({x:15,y:15,z:15,col:0xffffff,dist:100,int:0.5,castShadow:false});
+    
+    var dl=new THREE.DirectionalLight(0xffffee,1.3);//ffe
+    dl.position.set(10,100,50);
+    dl.castShadow=true;
+    if (1) {
+    var c=dl.shadow.camera;
+    c.near=1;//100;
+    c.far=500;//1000;
+    c.left=c.bottom=-20;
+    c.right=c.top=20;
+    dl.shadow.mapSize.width=4*1024;//2048;
+    dl.shadow.mapSize.height=4*1024;
+    }
+    planim.base.add(dl);
+    
+    var l=new THREE.HemisphereLight(0x000000,0xeeeeff,1);
+    l.position.set(10,100,50);
+    planim.base.add(l);
+    
+    
+    
+    
+    var msub=[
+    
+    cfm=Conet.fileMenu(cfmp={fn:'/three/anim/voxed/files'+(isConet?'':'NoConet')+'.txt',noStartLoad:app,
+    loadf:function(v) {
       if (1)
       Conet.download({fn:v,f:function(v) {
         load(v);
@@ -416,12 +702,106 @@
       planim.views[0].controls.autoRotate=!planim.views[0].controls.autoRotate;
       //...
     }
-    }]}
+    }
+    
+    ,mplaney={s:'Plane Y',ms:planeY,r:1,sub:[
+    
+    mpyshow={checkbox:1,ms:'Show plane y',actionf:voxMesh}
+    ,{s:'+10',actionf:planeChange,_dy:10}
+    ,{s:'+1',actionf:planeChange,_dy:1}
+    ,{s:'-1',actionf:planeChange,_dy:-1}
+    ,{s:'-10',actionf:planeChange,_dy:-10}
+    
+    ]}
+    
+    ,{s:'Docs',doctrl:'Docs',mcfs:0.07,wrap:0,ta:true,tacols:60,tarows:20
+    ,valuef:function() {
+      
+      return ''+
+      '2020-08-18 v.0.792 ... Added color and brush-width menu.\n'+
+      '2019-10-16 v.0.423 ... First version online.';
+      //...
+    }
+    }
+    
+    ]}
+    
+    ,{s:'Config',sub:[
     
     
-    ,{s:'IO',sub:[
+    mbackground={s:'Background',doctrl:'Pick color',color:1,bgcol:colIToS(planim.views[0].bgcol),ms:colIToS(planim.views[0].bgcol),oninput:function(v) {
+      //var col='0x'+v.substr(1);
+      //console.log(col);
+      var col=parseInt(v.substr(1),16);
+      
+      planim.views[0].bgcol=col;
+      planim.views[0].renderer.setClearColor(col);
+      
+      this.bgcol=v;
+      this.ms=v;
+      
+      
+      //data.colors[sel.col]=col;
+      //mat.needsUpdate=true;
+      //console.log(parseInt(col));
+    }
+    ,valuef:function() {
+      return colIToS(planim.views[0].bgcol);
+    }
+    }
     
-    {s:'Json',ms:'import/export',doctrl:'Json data',mcfs:0.07,ta:true,wrap:0,tacols:30,tarows:20,setfunc:function(v,initLoad) {
+    ,mgroundbox={ms:'GroundBox',checkbox:1,checked:1,actionf:function() {
+      if (this.checked) {
+        planim.base.add(groundbox);
+      } else {
+        planim.base.remove(groundbox);
+      }
+    }
+    }
+    
+    ,{s:'Brush',doctrl:'Set brush (x-width,y-width,z-width)',lskey:'voxbrush',ms:brush,setfunc:function(v) {
+      var a=v.split(',');
+      for (var i=0;i<a.length;i++) a[i]=parseInt(a[i]);
+      brusha=a;brush=v;
+      //onsole.log(a);
+      this.ms=v;
+      //...
+    }
+    ,valuef:function() {
+      return brush;
+    }
+    }
+    
+    ]}
+    
+    ];
+    
+    cfm.sub.splice(0,0,{s:'New',sub:[
+    
+    {s:'plain',
+    actionf:function() {
+      
+      vh={};va=[];vw=0.03;
+      var b=10,by=1;
+      for (var z=-b;z<=b;z++) for (var y=-by;y<=by;y++) for (var x=-b;x<=b;x++)
+        //if ((x+b*3+y+z)>2)
+        if ((x==0)||(y==0)||(z==0))
+          etV(x,y,z,{x:x,y:y,z:z,c:0});
+      colors=[new THREE.Color(0.5,0.5,0.5),new THREE.Color(0.2,0.8,0.2)]
+      
+      voxMesh();//planim.box(0,-0.4,0,1,1,1);
+      
+      //...
+    }
+    }
+    
+    //,{s:'chess-like',actionf:app.newRandom}
+    
+    ]});
+    
+    cfm.sub.push(
+    
+    {s:'Json',ms:'import/export',doctrl:'Json data',mcfs:0.07,ta:true,jsonCheck:1,wrap:0,tacols:30,tarows:20,setfunc:function(v,initLoad) {
       load(v);
       //...
     }
@@ -430,7 +810,7 @@
     }
     }
     
-    ,{s:'Vox',ms:'export',doctrl:'Copy data to file, decode base64.',mcfs:0.07,wrap:1,ta:true,tacols:30,tarows:20
+    ,{s:'Vox',ms:'export',doctrl:'Download vox file.',mcfs:0.07,wrap:1,text:1,_ta:true,tacols:30,tarows:20
     ,valuef:function() {
       
       var s=vox();//'VOX \u0096\u0097\u0001\u0002'+String.fromCharCode(150);//+'\u2013';
@@ -442,10 +822,20 @@
       //w.document.write(s);
       //console.log({s:s});
       //console.log(btoa(s));
-      return s;//JSON.stringify(s);
+      //this.s='2323232';
+      //return s;//JSON.stringify(s);
+      
+      var fn=cfm.curFn,i=fn.lastIndexOf('/');
+      if (i!=-1) fn=fn.substr(i+1);
+      i=fn.lastIndexOf('.');
+      if (i!=-1) fn=fn.substr(0,i);
+      fn+='.vox';
+      
+      return ' <a download="'+fn+'" href="data:application/octet-stream;base64,'+s+'">'+fn+'</a>';
     }
     }
     
+    /*
     ,{s:'Obj',ms:'export',doctrl:'Obj data',mcfs:0.07,ta:true,wrap:0,tacols:30,tarows:20
     ,valuef:function() {
       
@@ -455,20 +845,20 @@
       return result;
     }
     }
+    */
     
-    ]}
-    
-    ];
+    );
     
     
-    Menu.init([{s:'Voxed',ms:planim.version+'- 0.423 ',sub:msub}//FOLDORUPDATEVERSION
+    var startEditing=app;//for mib4
+    Menu.init([{s:'Voxed',ms:planim.version+'- 0.796 ',sub:msub}//FOLDORUPDATEVERSION
     
-    ,medit={s:'Edit',checkbox:1,ms:'Edit',actionf:function(v) {
+    ,medit={s:'Edit',checked:startEditing,checkbox:1,ms:'Edit',actionf:function(v) {
       planim.views[0].controls.enabled=!this.checked;
       mtool.bgcol=this.checked?'#fff':undefined;
     }
     }
-    ,mtool={s:'Sub N',ms:'Edit-tool',autoval:1,setfunc:function(v) {
+    ,mtool={s:'Add 1',ms:'Edit-tool',autoval:1,setfunc:function(v) {
       this.s=v;
       if (!medit.checked) {
         Menu.setChecked(medit,1);
@@ -476,7 +866,10 @@
       }
       //Conet.log('edittool setfunc v='+v);
     }
-    ,sub:[{s:'Add 1'},{s:'Add N'},{s:'Sub 1'},{s:'Sub N'},{s:'Paint'},{s:'Pick<span style="font-size:0.5em;">Color</span>'}]}
+    ,sub:[{s:'Add 1'},{s:'Add N'},{s:'Sub 1'},{s:'Sub N'},{s:'Paint'},{s:'Pick<span style="font-size:0.5em;">Color</span>'}
+    ,{s:'Paint range'}]}
+    
+    /*
     
     ,mcolor={s:'Color',initLoadVal:ccol.r+','+ccol.g+','+ccol.b,doctrl:'r,g,b e.g. 1,1,0 is yellow',setfunc:function(v,initLoad) {
       //console.log('mcolor.setfunc '+v+' '+initLoad);
@@ -492,16 +885,47 @@
     }
     }
     
+    */
+    
+    
+    ,mcolor2={s:'Color',doctrl:'Pick color',color:1,bgcol:colToHex(ccol),ms:colToHex(ccol),oninput:function(v) {
+      var col='0x'+v.substr(1);
+      console.log(col);
+      ccol=new THREE.Color(parseInt(v.substr(1),16));
+      
+      this.bgcol=v;
+      this.ms=v;this.vertCenter=undefined;
+      
+      
+      //data.colors[sel.col]=col;
+      //mat.needsUpdate=true;
+      //console.log(parseInt(col));
+    }
+    ,valuef:function() {
+      var v=colToHex(ccol);
+      console.log('v='+v);
+      return v;
+    }
+    }
+    
+    
+    
+    
+    
     ],{listen:1});
     Menu.cpy=0.08;//--- controls down from stats
-    cfmp.newf();
     
-    var sc=document.createElement('script');
-    sc.src='https://threejs.org/examples/js/exporters/OBJExporter.js';
-    document.body.appendChild(sc);
+    if (app) app.init();
+    
+    //var sc=document.createElement('script');
+    //sc.src='https://threejs.org/examples/js/exporters/OBJExporter.js';
+    //document.body.appendChild(sc);
+    
+    if (startEditing) medit.actionf();
     
     //script src="https://threejs.org/examples/js/exporters/OBJExporter.js"
     //planim.views[0].controls.autoRotate=true;
+    //planim.views[0].renderer.setClearColor(0x75ddff);
     //...
   }
   )();
@@ -510,8 +934,16 @@
 )();
 //console.log('YOIUOkokooko');
 //fr o,1
-//fr o,1,26
-//fr o,1,33
-//fr o,1,33,14
-//fr o,1,33,30
-//fr p,13,108
+//fr o,1,35
+//fr o,1,50,5
+//fr o,1,55
+//fr o,1,55,37
+//fr o,1,55,37,1
+//fr o,1,55,57
+//fr o,1,55,72
+//fr o,1,55,73
+//fr o,1,55,93
+//fr o,1,55,120
+//fr o,1,55,143
+//fr o,1,55,144
+//fr p,19,154

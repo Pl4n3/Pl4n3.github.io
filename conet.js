@@ -1,10 +1,10 @@
 var Conet={};
 (function(Conet) {
   Conet.offline=false;
-  Conet.version='1.370 ';//FOLDORUPDATEVERSION
+  Conet.version='1.379 ';//FOLDORUPDATEVERSION
   Conet.files={};
   var uploads={},fns,logc,logs=[],//fn=>data,first
-      logSameLineCount=0;
+      logSameLineCount=0,ac;
   function xhr(p) {
     var x=new XMLHttpRequest(),ps=p.ps||{},omt;
     x.overrideMimeType(omt=(ps.overrideMimeType||'text/plain'));
@@ -537,18 +537,32 @@ var Conet={};
     //...
   }
   //---
+  Conet.beep=function(ps) {
+    if (!ps) ps={};
+    if (!ac) ac=new(window.AudioContext||window.webkitAudioContext)();
+    var os=ac.createOscillator(),gn=ac.createGain();
+    os.connect(gn);gn.connect(ac.destination);
+    gn.gain.value=ps.vol||Conet.vol||1;os.frequency.value=ps.freq||400;os.type='sine';
+    os.start();
+    setTimeout(
+    function() {
+      os.stop();//...
+    }
+    ,ps.time||100);
+    
+    //...
+  }
+  //---
 }
 )(Conet);
 console.log('Conet '+Conet.version);
 //fr o,1
 //fr o,1,7,1
-//fr o,1,10
 //fr o,1,10,2
-//fr o,1,10,6
 //fr o,1,10,18
 //fr o,1,10,19
 //fr o,1,10,57
 //fr o,1,11,1
-//fr o,1,14,2
 //fr o,1,18,4
-//fr p,2,24
+//fr o,1,46
+//fr p,33,53

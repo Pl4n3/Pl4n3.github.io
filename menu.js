@@ -6,7 +6,7 @@ var Menu={};
   Menu.cmenu=undefined;
   var menus,tfid='menutf',mok,mcancel,lsx=0,lsy=0,touchms=[],keym={},gpbum={},gppress=new Array(16),
       nomouse=false,ccw=1,cch=1,pressed=[],pressids={},ps,mD=false,sx=0,sy=0,
-      tsd=[],tsw=100,tsb=50,tsw0=50,oncome;//tsw=125,tsb=25
+      tsd=[],tsw=100,tsb=50,tsw0=50,oncome,gamepad;//tsw=125,tsb=25
   Menu.mcontrol=undefined;
   Menu.color='rgba(0,0,0,1)';
   Menu.borderColor='rgba(0,0,0,1)';
@@ -21,7 +21,7 @@ var Menu={};
   Menu.soff='[ ]';//'\u2610';
   Menu.son='[x]';//'\u2611';
   Menu.pressed=pressed;
-  Menu.version='1.141 ';//FOLDORUPDATEVERSION
+  Menu.version='1.237 ';//FOLDORUPDATEVERSION
   function mCloseAll(a) {
     for (var i=0;i<a.length;i++) {
       var mh=a[i];
@@ -53,6 +53,8 @@ var Menu={};
     Menu.mouseUp();
   }
   function resize(e) {
+    //console.log('Menu.resize '+Menu.mcontrol);
+    if (Menu.mcontrol) return;//because on mobile switching from tf to pulldown disables keyboards and makes resize
     Menu.draw();
   }
   function rw(v,yvh) {
@@ -122,6 +124,17 @@ var Menu={};
         Menu.mcontrol.setfunc(tf?tf.value:undefined);
         if (Menu.mcontrol.lskey&&tf) localStorage[Menu.mcontrol.lskey]=tf.value;
         //if (Menu.mcontrol.lskey) localStorage[Menu.mcontrol.lskey]=tf?tf.value:undefined;
+        //console.log(Menu.mcontrol);
+        if (tf) {
+          var k='menuTfpd'+Menu.mcontrol.s,
+              sh=localStorage[k],a=(sh===undefined)?[]:JSON.parse(sh);
+          sh=tf.value;
+          for (var i=a.length-1;i>=0;i--) if (a[i]==sh) a.splice(i,1);    
+          a.splice(0,0,sh);
+          if (a.length>30) a.length=30;
+          //onsole.log(a);
+          localStorage[k]=JSON.stringify(a);
+        }
       }
       else alert('Menu.action '+tf.value);
     }
@@ -146,6 +159,7 @@ var Menu={};
         m.valuefval=m.valuef();
         if (m.valuefval===undefined) skip=true;
       }
+      //onsole.log('menu.action doctrl skip='+skip);
       if (!skip) {
         if (!mok) {
           mok={s:m.okS||'Ok',keys:m.ta?[]:[13]};Menu.initLoad([mok]);
@@ -154,12 +168,13 @@ var Menu={};
         if (m.close
           ||!m.setfunc) {//---191018
           menus=[mcancel];mcancel.s='Close';
-        } else menus=[mok,mcancel]
+        } else menus=[mok,mcancel];
         menus.push(
           {s:m.doctrl,px:m.mcpx?m.mcpx:(ps.diw?0.01:0.32),py:Menu.cpy,//0.02,
           pw:m.mcpw?m.mcpw:(ps.diw?0.51:(1-0.49)),
           ph:m.mcph?m.mcph:(m.ta?(ps.diw?0.3:0.44):0.14),tf:1,
           fs:(m.mcfs?m.mcfs:(m.ta?Menu.tafs:0.75)),mctrl:m,yvh:m.mcyvh});
+        //console.log(menus);
         Menu.mcontrol=m;
       }
     } else if (m.sub) {
@@ -269,27 +284,54 @@ var Menu={};
       s.left=(c.cx=(i==0?tsb:(ccw-tsw-tsb)))+'px';s.top=(c.cy=(cch-tsw-tsb))+'px';
     }
     
+    //------------------
+    var psdiw=ps.diw;
     //ccw=cch;
     var cx=Math.floor(Menu.px*ccw+0.5),
-        cy0=Math.floor(Menu.py*ccw+0.5),cy=cy0,diw=ps.diw?ps.diw:ccw,//ccw,
+        cy0=Math.floor(Menu.py*ccw+0.5),cy=cy0,diw=psdiw?ps.diw:ccw,//ccw,
         cw=Math.floor(Menu.pw*diw+0.5),
         ch=Math.floor(Menu.ph*diw+0.5),
         //mfs=Math.floor(ch*0.25);
-        padding=Math.floor(0.01*diw+0.5);//ccw
-        
-    if (ps.diw) {
+        padding=Math.floor(0.01*diw+0.5);//ccw   
+    if (psdiw) {
       //console.log('Menu.draw cont.style.overflow='+cont.style.overflow);
       cx=ccw-cw-(cont.style.overflow=='hidden'?10:25);
       cy0=cy=10; 
     }
+    //--------------------
         
     sy=window.pageYOffset||document.scrollTop||0,
     sx=window.pageXOffset||document.scrollLeft||0;    
     //onsole.log('Menu.draw sxy='+sx+' '+sy);
     
+    var opsdiw=psdiw;
+    
     for (var i=0;i<menus.length;i++) {
       var m=menus[i];
       var c=m.c;
+      
+    
+    //-----------------------  
+    var psdiw=m.fullscale?undefined:ps.diw;
+    if (psdiw!=opsdiw) {
+    //ccw=cch;
+    var cx=Math.floor(Menu.px*ccw+0.5),
+        //cy0=Math.floor(Menu.py*ccw+0.5),cy=cy0,
+        diw=psdiw?ps.diw:ccw,//ccw,
+        cw=Math.floor(Menu.pw*diw+0.5),
+        ch=Math.floor(Menu.ph*diw+0.5),
+        //mfs=Math.floor(ch*0.25);
+        padding=Math.floor(0.01*diw+0.5);//ccw
+    if (psdiw) {
+      //console.log('Menu.draw cont.style.overflow='+cont.style.overflow);
+      cx=ccw-cw-(cont.style.overflow=='hidden'?10:25);
+      //cy0=cy=10; 
+    }
+    opsdiw=psdiw;
+    }
+    //---------------------------- 
+      
+      
       var mco=m.mctrl;
       var cos=mco?mco.cos:undefined;
       var mfs=Math.floor(ch*0.25*(m.mfs||1));
@@ -394,7 +436,7 @@ var Menu={};
         var ccw7=diw;
         m.cx=Math.floor((m.xright?ccw-m.px*diw-m.pw*diw:m.px*ccw7)+0.5);
         m.cw=Math.floor(m.pw*ccw7+0.5)-(cos?0:padding*2);
-        m.ch=Math.floor(m.ph*(m.yvh?cch:ccw7)+0.5)-(cos?0:padding*2);
+        m.ch=m.fixh||Math.floor(m.ph*(m.yvh?cch:ccw7)+0.5)-(cos?0:padding*2);
         m.cy=Math.floor(m.py*(m.yvh?cch:ccw7)+0.5);if (m.ydown) m.cy=cch-m.cy-m.ch;
       } else {
         m.cx=(m.pdx||0)+cx-(m.pw?Math.floor(m.pw*diw+0.5)-cw:0);//ccw
@@ -451,6 +493,8 @@ var Menu={};
         //if (mco.cos) {} else 
         if (mco.co)
           c.innerHTML=m.s+'<br>...';
+        else if (mco.text)
+          c.innerHTML=m.s+'<br>'+value;
         else if (mco.ta) {
           //var fs=m.fs?m.fs:1;
           c.innerHTML=m.s+'<br><textarea id="'+tfid+'" '+(mco.wrap?'':'wrap="off" ')+'style="'+(mco.wrap?'':
@@ -460,16 +504,36 @@ var Menu={};
           'cols='+(mco.tacols?mco.tacols:36)+' rows='+(mco.tarows?mco.tarows:15)+'>'+value+'</textarea>';
           //tacols:36,tarows:15 frueher 20,8
           //'cols='+(mco.tacols?mco.tacols:Math.floor(3/fs+0.5))+' rows='+(mco.tarows?mco.tarows:Math.floor(1.2/fs+0.5))+'>'+value+'</textarea>';
-        } else
-        c.innerHTML=m.s+'<br>'//+'<datalist id="mlist"><option value="ains">eins</option><option value="svai">zwei</option></datalist>'
-          +'<input id="'+tfid+'"'+(1?' type="'+(file?'file':'text')+'"':'')+' value="'+(''+value).replace(/"/g,'&quot;')          
-          +'" style="font-size:'+c.style.fontSize+';" size='+(file?2:15)//+' list="mlist"'
+          if (mco.jsonCheck) Conet.initJsonTa({c:document.getElementById(tfid)});
+        } else {
+          var k='menuTfpd'+m.mctrl.s,lsv=localStorage[k],sels='';
+          if (lsv!==undefined) {
+            var a=JSON.parse(lsv);
+            sels='<select oninput="document.getElementById(\''+tfid+'\').value=this.value;" style="width:30px;">';
+            a.splice(0,0,'');//--- empty selected value at start, else on mobile first value is selected, no input event
+            //for (var v of a) sels+='<option>'+v+'</option>';
+            for (var i=0;i<a.length;i++) sels+='<option'+(i==0?' selected':'')+'>'+a[i]+'</option>';
+            sels+='</select>';
+          }
+          //onsole.log(m);
+          
+          var s=m.s;
+          if (m.mctrl.ctrlTextId) s='<span id="'+m.mctrl.ctrlTextId+'">'+s+'</span>';
+          //s=s+' '+m.mctrl.ctrlTextId;
+          
+          c.innerHTML=s+'<br>'//+'<datalist id="mlist"><option value="ains">eins</option><option value="svai">zwei</option></datalist>'
+          +'<input id="'+tfid+'"'+(1?' type="'+(mco.color?'color':(file?'file':'text'))+'"':'')+' value="'+(''+value).replace(/"/g,'&quot;')          
+          +'" style="font-size:'+c.style.fontSize+';" size='+(file?2:25)//was 2:15 //+' list="mlist"'
           +' oninput="var m=Menu.mcontrol;if (m.oninput) m.oninput(this.value);"'
           +'></input>'
-          +(mco.range?'<br><input type="range" min="'+mco.range.min+'" max="'+mco.range.max+'" oninput='//mco==m.mctrl
+          +sels//'<select style="width:30px;"><option value="n1">Nummer eins</option><option value="n2">Nummer zwei</option></select>'
+          +(mco.range?'<br><input type="range" min="'+mco.range.min+'" max="'+mco.range.max+'"'
+            +' style="width:300px;"'
+            +' oninput='//mco==m.mctrl
             +'"var e=document.getElementById(\''+tfid+'\');e.value=this.value;'
             +'var m=Menu.mcontrol;if (m.oninput) m.oninput(this.value);"></input>':'')
-          ;      
+          ;     
+        } 
         } else if (m.canv) {        
           c.width=m.cw;        c.height=m.ch;
       } else {
@@ -891,6 +955,7 @@ var Menu={};
   }
   Menu.touchSticksInit=function(ps) {
     if (!ps) ps={};
+    
     for (var i=0;i<2;i++) {
       var c=document.createElement('div'),s=c.style;
       s.position='absolute';s.width=tsw+'px';s.height=tsw+'px';c.cw=tsw;c.ch=tsw;
@@ -921,6 +986,27 @@ var Menu={};
     //onsole.log(tsd);
     //...
   }
+  Menu.checkGamepad=function(ps) {
+    
+    //if (!gamepad) {
+      var gamepads=navigator.webkitGetGamepads&&navigator.webkitGetGamepads();
+      if (!gamepads) gamepads=navigator.getGamepads&&navigator.getGamepads();
+      gamepad=gamepads?gamepads[0]:undefined;
+      //if (gamepad) console.log('Listening to '+gamepad.id+'.');
+    //}
+    
+    if (!gamepad) return; 
+    
+    var tsd0=tsd[0],tsd1=tsd[1],gp=gamepad,f=1,min=0.3*f;
+    tsd0.dx=gp.axes[0]*f;if (Math.abs(tsd0.dx)<min) tsd0.dx=0;
+    tsd0.dy=gp.axes[1]*f;if (Math.abs(tsd0.dy)<min) tsd0.dy=0;
+    tsd1.dx=gp.axes[2]*f;if (Math.abs(tsd1.dx)<min) tsd1.dx=0;
+    tsd1.dy=gp.axes[3]*f;if (Math.abs(tsd1.dy)<min) tsd1.dy=0;
+    //console.log(gp.axes+' ');
+    return gp.buttons;
+    //...
+  }
+  
   //Menu.setRoots=function(m) {menuroots=m;//menus=a.concat([]);}
   //Menu.setMenuroots=function(a) {menuroots=a;}
 }
@@ -929,8 +1015,4 @@ var Menu={};
 //--
 //fr o,2
 //fr o,2,30
-//fr o,2,37
-//fr o,2,50
-//fr o,2,55
-//fr o,2,58
-//fr p,81,373
+//fr p,4,115

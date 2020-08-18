@@ -32,7 +32,7 @@ function Planim() {
     //--- 191029 using local r109 copies now, because bad internet currently
   }
   var scene,stats,views=[],oh={},ot=Date.now(),scra=[],scri=0,scrt=0,loopAfterLoaded,
-      base,debug='',version='1.1884 ',//FOLDORUPDATEVERSION
+      base,debug='',version='1.1979 ',//FOLDORUPDATEVERSION
       m0=new THREE.MeshPhongMaterial( { color:0x666666,flatShading:true } ),
       m1=new THREE.MeshPhongMaterial({color:0x77dd77,flatShading:true,
       transparent:true,opacity:0.5}),mray0=new THREE.MeshPhongMaterial({
@@ -46,7 +46,7 @@ function Planim() {
       mh0=new THREE.Matrix4(),ot=Date.now(),dtscale=1,
       egoi=-1,vh0=new THREE.Vector3(),vdef=0.001,vrbu,baseRot={x:0.3,y:0,z:0},
       tIsoStrafe=0,uiMode=-1,mD=false,inp={x:0,y:0},controls,pts=[],pts2=[],
-      vrButtonShown=false,vrY=0,attackMarks=[];
+      vrButtonShown=false,vrY=0,attackMarks=[];//,urlfiles={};
   function updateHud(view) {
     if (!view) view=views[0];
     var hud=view.hud;
@@ -460,8 +460,11 @@ function Planim() {
       if (o!=controlo) {
         if (o.attack&&o.attackt) {
           o.attackt-=dt;
-          if (o.attackt<=0) { o.attackt=0;o.attack=false; }
+          if (o.attackt<=0) { 
+            o.attackt=0;o.attack=false;if (self.dtOnAttack) dtscale=1; 
+          }
         } //else 
+        if (!(o.attack&&o.attackFix)) 
         {
         var ofoc=o.focus;
         if (ofoc) {
@@ -498,7 +501,10 @@ function Planim() {
                   delete(o.focus); 
                   o.turnLeft=false;o.turnRight=false;
                 } else { 
-                  if (!o.noAttack) { o.attack=true;o.attackt=1000; }
+                  if (!o.noAttack) { 
+                    o.attack=true;o.attackt=o.attackmt||1000;o.turnLeft=false;o.turnRight=false;
+                    if (self.dtOnAttack) dtscale=0.2; 
+                  }
                 }
               } else o.goFront=true;
             }
@@ -522,7 +528,7 @@ function Planim() {
                 }
               }
             }
-            if (1&&controlo&&(controlo.health>0)&&(dist2(o.pos,controlo.pos)<(o.collr+controlo.collr+(o.distUnfocus||5)))) {
+            if (1&&controlo&&(controlo.health>0)&&(dist2(o.pos,controlo.pos)<(o.collr+controlo.collr+(o.distUnfocus||5)))&&!o.noRangeFocus) {
               if (o.aFocus) {
                 var a=angle(o.pos,controlo.pos);
                 var da=dAng(a,o.roty);
@@ -562,9 +568,20 @@ function Planim() {
           //threePs({x:o.x*100,y:o.y*100+60,z:o.z*100});
           //ps({x:o.pos.x,y:o.pos.y,z:o.pos.z,dy:0.8});
           //ps({x:10,y:10,z:10});
-          o.focus=o.hite.o;o.focust=0;
-          o.health=Math.max(0,o.health-(o.focus.ap||1));
-          if (o5.bb) o5.bb.update=true;
+          //console.log(o.hite.o);
+          var oho=o.hite.o;
+          if (o.party!==oho.party) {
+            o.focus=oho;
+            o.focust=0;o.attack=false;
+            var nh=Math.max(0,o.health-(oho.ap||1));
+            if ((nh==0)&&(o.health>0)) {
+              if (o.onDead) o.onDead();
+              //planim.unitDied=true; //200518 instead use o.onDead
+            }
+            o.health=nh;
+            if (o5.bb) o5.bb.update=true;
+            oho.lastAttacked=o;
+          }
           delete(o.hite);
         }
       } else if (o.attack) {
@@ -627,7 +644,7 @@ function Planim() {
     
     var t=Date.now(),dto=Math.min(100,(t-ot)),dt=dto*dtscale,tsd0,tsd1;ot=t;
     //console.log('anim.animate dt='+dt);
-    if (self.tsd) { tsd0=self.tsd[0];tsd1=self.tsd[1]; }
+    if (self.tsd) { var buttons=Menu.checkGamepad();if (buttons) self.maction.on=buttons[0].value>0.1;tsd0=self.tsd[0];tsd1=self.tsd[1]; }
     
     var o=self.controlo,ip=self.isoCamPos,strafe=planim.strafe;//ip?ip.strafe:0;
     if (o) { //! startete in sizes.js
@@ -643,23 +660,31 @@ function Planim() {
         if (ts0.dy<-0.3) kW=true;
         if (ts0.dy>0.3) kS=true;
         var ts1=self.tsd[1];
-        if (strafe) {
+        //if (strafe) {
           if (ts1.dx<-0.3) kL=true;
           if (ts1.dx>0.3) kR=true;
           if (ts1.dy<(ip?-0.3:-0.6)) kU=true;
           if (ts1.dy>(ip?0.3:0.6)) kDn=true;
-        } else {
-          if (ts1.dx==0) baseRot.yo=baseRot.y;
-          else baseRot.y=baseRot.yo+ts1.dx;
-        }
+        //} else {
+          //if (ts1.dx==0) baseRot.yo=baseRot.y;
+          //else baseRot.y=baseRot.yo+ts1.dx;
+        //}
       }
       o.turnLeft=false;o.turnRight=false;
       o.goFront=false;o.goBack=false;o.goLeft=false;o.goRight=false;
       
-      if ((kL||kR)&&!strafe) {
+      if ((kL||kR||kU||kDn)&&!strafe) {
         //if (strafe) { o.turnLeft=kL;o.turnRight=kR; } else {
         var dry=((kL?-1:0)+(kR?1:0))*dto*0.003;
         baseRot.y+=dry;
+        var drx=((kU?-1:0)+(kDn?1:0))*dto*0.003;
+        var a=Math.min(1.0,Math.max(-0.4,baseRot.x+drx));
+        baseRot.x=a;
+        if (uiMode==3) {
+          //ip.z=(self.uiZ||-3)-(a-0.3)*2;
+          //ip.y=(self.uiY||-1.5)-(a-0.3)*1;//0.7;
+          self.isoCamPosUi3Calc();
+        }
         //}
       }
       if (ip&&strafe&&(kL||kR||kU||kDn)) {
@@ -668,7 +693,8 @@ function Planim() {
         if (da>PI/18) o.turnRight=true;
         //tIsoStrafe=0;
       }
-      if (!ip&&strafe&&(kU||kDn)) {
+      if (kL||kR) o.lastAttacked=undefined;//to loose lockon, maybe rename flag to 'lockedObj'?
+      if (!ip&&strafe&&(kU||kDn)&&!planim.noKeyRotX&&!(uiMode==3)) {
         //onsole.log('nao kU kDn');
         var v0=views[0],r=v0.camera.rotation;
         if (kU) r.x=Math.min(1.57,r.x+0.001*dt);
@@ -743,11 +769,14 @@ function Planim() {
         }
     
         //mh0.makeRotationX(-0.2);m.multiply(mh0);
-    
-        mh0.makeRotationY(-o.roty+Math.PI);
+        if (self.oroty===undefined) self.oroty=0;
+        if (o.roty!==undefined) self.oroty+=(o.roty-self.oroty)/2;
+        //onsole.log(self.oroty+' '+o.roty);
+        var oroty=self.oroty;//o.roty/2;
+        mh0.makeRotationY(-oroty+Math.PI);
         m.multiply(mh0);
         
-        planim.baseRot.y=-o.roty+Math.PI;//---191029 sothat threePd5 billboards work in fogrest.js
+        planim.baseRot.y=-oroty+Math.PI;//---191029 sothat threePd5 billboards work in fogrest.js
         // alternatively billboards could be calculated with base.matrix, not with baseRot
       }
       if (ip) { 
@@ -1620,12 +1649,14 @@ function Planim() {
     //sc.src='anim/dialogJavaJavascript.js';
     //document.body.appendChild(sc);
     url=Conet.parseUrl();self.url=url;
-    
+    self.urlfiles=[];
     var ka=[],scriptH={},loada=[];
     for (var k in url) if (url.hasOwnProperty(k)) if (k.startsWith('sn')) { 
       //ka.push(k);
       scriptH[url[k]]=1;
-      loada.push({fn:url[k]});
+      var h7;
+      loada.push(h7={fn:url[k]});
+      self.urlfiles[k]=h7;
     }
     //onsole.log(ka);
     
@@ -1633,6 +1664,7 @@ function Planim() {
     Conet.load({a:loada,onAll:function() {
       for (var f of self.scriptsLoaded) f({scriptH:scriptH});
       resize();
+      //onsole.log(self.urlfiles);
       //...
     }
     });
@@ -1748,6 +1780,7 @@ function Planim() {
     //return v1;
   }
   function uiSet(i,ps) {
+    //onsole.log('uiSet '+i);
     if (!ps) ps={}; else Conet.log('planim.uiSet(..,ps) shouldnt be used, doesnt work with uiToggle, instead use e.g. planim.uiY.');
     var planim=self,o=self.ego;
     if (!o) { console.error('no ego.');return; }
@@ -1760,7 +1793,7 @@ function Planim() {
     switch (i) {
       case 0:
         //leftstick moves,rotates unit and rotates cam
-        o.vrot=0.003;planim.strafe=1;
+        o.vrot=o.vrotUi0||0.003;planim.strafe=1;
         break;
       case 1:
         o.vrot=0.003;
@@ -1773,10 +1806,13 @@ function Planim() {
       case 3:
         //leftstick moves,rotates unit,rightstick not needed or rotates cam
         //if (o) o.vrot=0.01;
+        //onsole.log('uiSet 3 view0.camRot.x='+views[0].camera.rotation.x);
+        views[0].camera.rotation.x=0;
+        if (o.vrotUi3) o.vrot=o.vrotUi3;
         planim.isoCamPos={x:0
           ,y:nu(self.uiY,ps.camy,-1.5)//-1.5
           ,z:nu(self.uiZ,ps.camz,-3)};
-          planim.baseRot.x=0.3;
+        planim.baseRot.x=0.3;
         //planim.isoCamPos={x:0,y:-1,z:-2};planim.baseRot.x=0;
         break;
       case 4:
@@ -1859,6 +1895,17 @@ function Planim() {
     return h?Conet.hcopy(h,o):o;
     //...
   }
+  this.isoCamPosUi3Calc=function() {
+    //-------------------------------
+    //--- invoked here and in fogrest
+    //-------------------------------
+    var ip=self.isoCamPos,
+        a=self.baseRot.x;
+    
+    ip.z=(self.uiZ||-3)-(a-0.3)*2;
+    ip.y=(self.uiY||-1.5)-(a-0.3)*1;//0.7;
+    //...
+  }
   this.addView=addView;this.box=box;this.defaultLights=defaultLights;
   this.loadObjsThenLoop=loadObjsThenLoop;this.game=game;this.animate=animate;
   this.views=views;this.version=version;this.m0=m0;this.m1=m1;this.out=out;
@@ -1871,7 +1918,7 @@ function Planim() {
   this.uiToggle=uiToggle;this.uiSet=uiSet;//this.scene=scene;
   this.defMoveAi=true;this.scriptsLoaded=[];this.startCamV=0.001;
   this.loadObj=loadObj;this.scra=scra;this.calcScra=calcScra;
-  this.skipUis={};
+  this.skipUis={};this.angle=angle;
   //---waypoint stuff
   var y0=-1.80,tsc=1.8*1.2,ty0=y0/tsc,mh0=new THREE.Matrix4();//,vh0=new THREE.Vector3();
   this.waypoints=[
@@ -2149,15 +2196,18 @@ var planim=new Planim();
 </html><script>
 //fr o,22
 //fr o,22,18,96
-//fr o,22,20
+//fr o,22,31
+//fr o,22,44
 //fr o,22,44,63
-//fr o,22,50
-//fr o,22,51
 //fr o,22,52,43
 //fr o,22,52,46
 //fr o,22,52,48
+//fr o,22,52,84
 //fr o,22,53,11,1
 //fr o,22,53,13,2
-//fr o,22,94,11
-//fr o,22,94,15
-//fr p,34,99
+//fr o,22,63
+//fr o,22,67
+//fr o,22,95
+//fr o,22,95,11
+//fr o,22,95,15
+//fr p,30,111

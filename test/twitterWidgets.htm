@@ -80,8 +80,10 @@ function resize(e) {
   s.display=(view!=0&&view!=3)?'none':'';
   c=c.children[0];if (c) { s=c.style;s.width=(view==3?w-b*2:w/3-b-b/2)+'px';s.height=h-b2+'px'; }
 
-  
-  c=bu;s=c.style;s.position='absolute';s.top='0px';s.left='0px';
+  c=bu;s=c.style;s.position='absolute';
+  var r=c.getBoundingClientRect();
+
+  s.top=(h/2-r.height/2)+'px';s.left=(w-r.width)+'px';
 }
 window.addEventListener('resize',resize);
 resize();

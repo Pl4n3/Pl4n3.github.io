@@ -1,0 +1,330 @@
+<html>
+<head>
+<script type="application/x-javascript">
+var worlds=[],worldi=0;
+var imga;
+var mx=0,my=0,mD=false,ti=-1,sti=-1;
+var tiles=[];
+var tga=[ //marks of tiles on the grid
+  [[-17,12],[17,-12],[-8,-12],[8,12],[-7,5],[7,-5],[0,0],[-5,12],[5,-12],[-12,0],[12,0]],
+  [[-20,5.5],[20,-5.5],[-3,-6],[3,6],[-11,2],[11,-2],[0,0]]
+];
+var stat='';
+var gridw=10,gridd=gridw/2;
+var grid={};
+var gridCols=[
+'rgba(250,250,250,0.1)',
+'rgba(250,250,0,0.1)',
+'rgba(250,0,0,0.1)'
+];
+var rules={
+  0:{
+    0:[[0,0,-40,2],[1,24,-32,0],[0,38,12,8],[1,38,-12,4],[0,0,40,2],[1,10,32,1],[0,-38,-12,8],[1,-28,-20,3]],
+    ae2:[0,6,4,2,0,5,4,3,0,1,-1],
+    ae5:[7,5,3,9,7,6,3,8,0,-1,-1],
+    ae7:[5,1,9,7,5,0,9,8,0,-1,1],
+    1:[[0,24,-32,3],[1,38,-12,1],[0,24,32,9],[1,38,12,5],[0,-24,32,3],[1,-10,32,2],[0,-24,-32,9],[1,-10,-32,4]],
+    ae6:[8,6,4,0,8,7,4,9,1,-1,-1],
+    3:[[0,24,-32,1],[1,28,-20,6],[0,38,12,5],[1,24,32,3],[0,-24,32,1],[1,0,40,7],[0,-38,-12,5],[1,-34,0,4]],
+    ae9:[1,0,7,3,1,9,7,2,3,1,-1],
+    ae8:[6,1,0,8,6,2,0,9,3,-1,-1],
+    ae4:[6,5,2,8,6,4,2,7,3,-1,1],
+  },
+  1:{
+    0:[[1,0,-24,6],[1,14,20,4],[1,0,24,6],[1,-14,-20,4]],
+    ae1:[5,7,5,7,0,-1,1],
+    ae5:[1,9,1,9,0,1,1],
+    ae6:[0,2,0,2,0,-1,1],
+    3:[[1,24,-8,7],[1,24,8,9],[1,-24,8,7],[1,-24,-8,9]],
+    ae8:[2,4,2,4,3,1,1],
+    2:[[1,14,-20,6],[1,24,-8,8],[1,-14,20,6],[1,-24,8,8]],
+    ae4:[0,8,0,8,2,-1,1],
+    ae7:[1,3,1,3,2,1,1],
+    ae9:[5,3,5,3,2,-1,1]
+  }
+};
+var EMPTY=1,FOUND=2,OTHER=3;//checktile
+var NEW=1,OLD=2,FAIL=3;//addrule
+var todo=[];
+
+function mCoords(ev) {
+  if (ev.layerX || ev.layerX == 0) { // Firefox
+    mx = ev.layerX;
+    my = ev.layerY;
+  } else if (ev.offsetX || ev.offsetX == 0) { // Opera
+    mx = ev.offsetX;
+    my = ev.offsetY;
+  }
+}
+function mouseDown(ev) {
+  mD=true;
+  mCoords(ev);
+  sti=ti;
+}
+function mouseUp(ev) {
+  mD=false;
+}
+function mouseMove(ev) {
+  mCoords(ev);
+  var dm=500,im=-1;
+  for (var i=tiles.length-1;i>=0;i--) {
+    var t=tiles[i];
+    var dx=t.x-mx;var dy=t.y-my;
+    var d=dx*dx+dy*dy;
+    if (d<dm) {
+      im=i;dm=d;
+    }
+  }
+  ti=im;
+  if (im!=-1) {
+    var t=tiles[im];
+    if ((sti!=-1)&&(sti!=ti)) {
+      var ts=tiles[sti];
+      var s=' diff '+t.i+','+(t.x-ts.x)+','+(t.y-ts.y)+','+t.a;
+      if (s!=stat) {
+        stat=s;
+        /*
+        document.getElementById('i1').value=t.i;
+        document.getElementById('x1').value=t.x-ts.x;
+        document.getElementById('y1').value=t.y-ts.y;
+        document.getElementById('a1').value=t.a;
+        bclick();
+        */
+      }
+    } else
+      stat=t.i+','+t.x+','+t.y+','+t.a; 
+  } else stat='';
+  draw();
+}
+function imgLoaded() {
+  //--
+  //alert('img loaded.');
+  this.iLoaded=true;
+  for (var i=0;i<imga.length;i++) {
+    if (!imga[i].iLoaded) return;
+  }
+  calc();
+}
+function gridAt(x,y,t,remove) {
+  var s=Math.floor(x/gridw+0.5)+'-'+Math.floor(y/gridw+0.5);
+  var ret=grid[s];
+  if (t!=undefined) {
+    ret=(ret!=undefined?(ret[0]==t?ret:[t,2]):[t,1]);
+    grid[s]=ret;
+  }
+  if (remove) {
+    ret=undefined;
+    delete grid[s];
+  }
+  return ret;
+}
+function removeTile(ti) {
+  var t=tiles[ti];
+  tiles.splice(ti,1);
+  var ar=t.a*Math.PI/5;
+  var tg=tga[t.i];
+  for (var h=tg.length-1;h>=0;h--) {
+    var p=tg[h];
+    var x2=p[0],y2=p[1];
+    var x3=x2*Math.cos(ar)-y2*Math.sin(ar);
+    var y3=x2*Math.sin(ar)+y2*Math.cos(ar); 
+    gridAt(t.x+x3,t.y+y3,undefined,1);
+  }
+}
+function checkTile(i,x,y,a) {
+  var ar=a*Math.PI/5;
+  var tg=tga[i];
+  var found=undefined;
+  for (var h=tg.length-1;h>=0;h--) {
+    var p=tg[h];
+    var x2=p[0],y2=p[1];
+    var x3=x2*Math.cos(ar)-y2*Math.sin(ar);
+    var y3=x2*Math.sin(ar)+y2*Math.cos(ar); 
+    var ga=gridAt(x+x3,y+y3);
+    if (ga) {
+      var t=ga[0];
+      if ((t.i!=i)||(t.x!=x)||(t.y!=y)||(t.a!=a))
+        return [t,OTHER];
+      else found=t;
+    }
+  }
+  if (found) return [t,FOUND];
+  return [undefined,EMPTY];
+}
+function adt(i,x,y,a) {
+  var ar=a*Math.PI/5;
+  var ret;
+  tiles.push(ret={i:i,x:x,y:y,a:a});
+  var tg=tga[i];
+  for (var h=tg.length-1;h>=0;h--) {
+    var p=tg[h];
+    var x2=p[0],y2=p[1];
+    var x3=x2*Math.cos(ar)-y2*Math.sin(ar);
+    var y3=x2*Math.sin(ar)+y2*Math.cos(ar); 
+    gridAt(x+x3,y+y3,ret); 
+  }
+  //gridSet(x,y,1);
+  //gridSet(x,y,1);
+  //gridSet(x-13.75,y+10,1);
+  //gridSet(x+13.75,y-10,1);
+  return ret;
+}
+function addRule(t,ri) {
+  var r=rules[t.i][t.a][ri];
+  var i=r[0],x=t.x+r[1],y=t.y+r[2],a=r[3];
+  var va=checkTile(i,x,y,a);
+  var vt=va[0],vv=va[1];
+  if (vv==EMPTY) {
+    return [adt(i,x,y,a),NEW];
+    //return true;
+  }
+  if (vv==FOUND) {
+    return [vt,OLD];
+  }
+  return [undefined,FAIL];
+}
+function tileNeighborhood(t,d) {
+  var ok=false;
+  d++;
+  for (var r0=0;r0<8;r0++) {
+    if (ok) break;var a0=addRule(t,r0);var t0=a0[0];var v0=a0[1];if (v0==FAIL) continue;
+    for (var r1=r0+1;r1<8;r1++) {
+      if (ok) break;var a1=addRule(t,r1);var t1=a1[0];var v1=a1[1];if (v1==FAIL) continue;
+      for (var r2=r1+1;r2<8;r2++) {
+        if (ok) break;var a2=addRule(t,r2);var t2=a2[0];var v2=a2[1];if (v2==FAIL) continue;
+        for (var r3=r2+1;r3<8;r3++) {
+          if (ok) break;var a3=addRule(t,r3);var t3=a3[0];var v3=a3[1];if (v3==FAIL) continue;
+          if (d>2) ok=true;
+          else {
+            ok=tileNeighborhood(t0,d)&&
+               tileNeighborhood(t1,d)&&
+               tileNeighborhood(t2,d)&&
+               tileNeighborhood(t3,d);
+          }
+          if (v3==NEW) removeTile(tiles.length-1);
+        }
+        if (v2==NEW) removeTile(tiles.length-1);
+      }  
+      if (v1==NEW) removeTile(tiles.length-1);
+    }
+    if (v0==NEW) removeTile(tiles.length-1);
+  }
+  return ok;
+}
+function loaded() {
+  var canvas = document.getElementById("canvas");
+  canvas.addEventListener('mousemove',mouseMove,false);
+  canvas.addEventListener('mousedown',mouseDown,false);
+  canvas.addEventListener('mouseup',mouseUp,false);
+  imga=new Array();
+  var img;
+  img=new Image();img.src="penrose0.png";img.dx=-27.5;img.dy=-20;img.onload=imgLoaded;imga.push(img);
+  img=new Image();img.src="penrose1.png";img.dx=-34.5;img.dy=-11;img.onload=imgLoaded;imga.push(img);
+  
+  for (var ti=0;ti<2;ti++) 
+  for (var j=0;j<10;j++) {
+    var ae=rules[ti]['ae'+j];
+    if (!rules[ti][j]) rules[ti][j]=[];
+    if (!ae) continue;
+    var l=(ti==0?8:4);
+    for (var i=0;i<l;i++) {
+      var r=rules[ti][ae[l]][i];
+      rules[ti][j][i]=[r[0],r[1]*ae[l+1],r[2]*ae[l+2],ae[i]];
+    }
+  }
+  //complete 1-rules with mirrored 0-rules
+  var sets={};
+  for (var a1=0;a1<10;a1++) {//2
+    for (var a0=0;a0<10;a0++) {
+      for (var ri=0;ri<8;ri++) {
+        //if (cancel) break;
+        var r=rules[0][a0][ri];
+        if ((r[0]!=1)||(r[3]!=a1)) continue;
+        //alert(''+r);
+        var k=a1+'-'+a0;
+        if (sets[k]) continue;
+        rules[1][a1].push([0,-r[1],-r[2],a0]);
+        sets[k]=1;
+      }
+    }
+  }
+  
+  
+  var t;
+  t=adt(0,200,200,0);
+  t.rulesDone=[];
+  todo=[t];
+    
+  //setTimeout(calc,100);
+}
+function calc() {
+  var canvas = document.getElementById("canvas");
+  for (var lo=0;lo<1;lo++) {
+    if (todo.length==0) break;
+    var t=todo[0];todo.splice(0,1);
+    if ((t.x<0)||(t.y<0)||(t.x>=canvas.width)||(t.y>=canvas.height)) continue;
+    var pr=[0,1,2,3,4,5,6,7];
+    var tn=undefined;
+    while (1) {
+      var i=Math.floor(Math.random()*pr.length);
+      var a=addRule(t,pr[i]);
+      tn=a[0];var v=a[1];
+      if (v==NEW) {
+        if (tileNeighborhood(tn,0)) {
+          t.rulesDone.push(pr[i]);
+          tn.rulesDone=[];
+          todo.push(tn);
+        } else removeTile(tiles.length-1);
+      }
+      if (v==OLD) {
+        t.rulesDone.push(pr[i]);
+      }
+      pr.splice(i,1);
+      if (pr.length==0) { tn=undefined;break; }
+      if (t.rulesDone.length==4) break;
+    }
+  }
+  draw();
+  if (todo.length>0) setTimeout(calc,50);
+}
+function draw() {
+  var canvas = document.getElementById("canvas");
+  if (!canvas.getContext) return;
+  var ctx=canvas.getContext("2d");
+  
+  ctx.fillStyle="rgb(100,100,100)";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  
+  for (var i=tiles.length-1;i>=0;i--) {
+    var t=tiles[i];
+    ctx.translate(t.x,t.y);
+    var ar=t.a*Math.PI/5;
+    ctx.rotate(ar);
+    var img=imga[t.i];
+    ctx.drawImage(img,img.dx,img.dy);
+    ctx.rotate(-ar);
+    ctx.translate(-t.x,-t.y);
+  }
+  
+  
+  ctx.fillStyle='rgba(200,200,200,0.7)';
+  ctx.fillRect(4,4,300,20);
+  ctx.font='12px Georgia';
+  ctx.fillStyle='rgb(0,0,0)';
+  ctx.textAlign='left';
+  ctx.fillText('Tiles : '+tiles.length+(todo.length>0?' ('+todo.length+' to be calculated)':'')+(stat.length>0?' ... '+stat:''),7,18);
+}
+
+</script>
+</head>
+<body onload="loaded();"  bgcolor="#999999">
+<canvas id="canvas" width="700" height="500"></canvas><br>
+</body>
+</html><script>
+//fr o,49
+//fr o,50
+//fr o,51
+//fr o,60
+//fr o,61
+//fr o,62
+//fr p,70,27

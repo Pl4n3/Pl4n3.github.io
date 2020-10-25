@@ -1,10 +1,10 @@
 var Conet={};
 (function(Conet) {
   Conet.offline=false;
-  Conet.version='1.379 ';//FOLDORUPDATEVERSION
+  Conet.version='1.430 ';//FOLDORUPDATEVERSION
   Conet.files={};
   var uploads={},fns,logc,logs=[],//fn=>data,first
-      logSameLineCount=0,ac;
+      logSameLineCount=0,ac,downloads={};
   function xhr(p) {
     var x=new XMLHttpRequest(),ps=p.ps||{},omt;
     x.overrideMimeType(omt=(ps.overrideMimeType||'text/plain'));
@@ -23,6 +23,7 @@ var Conet={};
   }
   function upload(p) {
     //onsole.log('Conet.upload 0');
+    //onsole.trace();
     if (Conet.offline) {
       //onsole.log('Conet.upload 1');
       localStorage['conetd'+p.fn]=p.data;
@@ -72,6 +73,23 @@ var Conet={};
   }
   function download(p) {
     var noResponseTimer;
+    Conet.checkParams(p,{
+      fn:1,f:1,cache:1,json:1,usecache:{notWith:['cache','json']}
+      ,i:1 //used in taFold.linearView, besser use 'userData' to avoid clashes
+    });
+    
+    
+    if (p.cache) {
+      var dl=downloads[p.fn];
+      if (dl) {
+        if (dl.done) {
+          p.f(dl.data);
+        } else dl.waiting.push(p);
+        return;
+      }
+      downloads[p.fn]={waiting:[]};
+    }
+    
     var x=xhr({url:p.fn,ps:p,f:function(s) {
       clearTimeout(noResponseTimer);
       if (x.status!=200) {
@@ -95,7 +113,15 @@ var Conet={};
         localStorage['conetd'+p.fn]=s;
         console.log('conet.download set localStorage: conetd'+p.fn);
       }
+      if (p.json) s=JSON.parse(s);
       p.f(s);
+      if (p.cache) {
+        var dl=downloads[p.fn];
+        dl.data=s;dl.done=true;
+        for (var pw of dl.waiting) pw.f(s);
+        delete(dl.waiting);
+      }
+      
     }
     });
     noResponseTimer=setTimeout(function() {
@@ -169,6 +195,12 @@ var Conet={};
         mload.sub.push(mn={s:fn.substr(i0,i1-i0),ms:fn.substr(0,i0)+'^'+fn.substr(i1)//,fs:0.5
           ,a:fn,actionf:mload1,cfmo:o});
         if (o.isrc) { mn.c2=new Image();mn.c2.src=o.isrc; }
+        //if (ps&&ps.urlfn) {
+        //  if (fn==ps.urlfn) {
+        //    Conet.lastLoadMenu=undefined;
+        //    console.log('conet: setting lastLoadMenu for urlfn.');
+        //  }
+        //}
       }
       return firstLoadableIndex;
     }
@@ -269,13 +301,13 @@ var Conet={};
         if (s) {
           console.log('Conet.fileMenu loading via url: '+s+' (history ignored)');
           p.loadf(s);
-          return;// {s:'-'};
+          return m;// {s:'-'};
         }
       }
     }
     
     Conet.download({fn:p.fn,f:function(v) {
-      //console.log('Conet.fileMenu '+p.fn+' '+v);
+      //onsole.log('Conet.fileMenu '+p.fn+' loaded.');//+v);
       if (v===undefined) {
         if (p.nolistf) p.nolistf();
         //onsole.log('conet.fileMenu.download.f v===undefined');
@@ -302,11 +334,30 @@ var Conet={};
       
       //onsole.log('Conet.fileMenu '+p.fn+' '+v);
       //onsole.log(Conet.fmFiles);
-      var firstLoadableIndex=mloadUpdate();
+      
+      var urlfn=undefined;
+      if (p.loadUrlKey) {
+        urlfn=Conet.parseUrl()[p.loadUrlKey];
+      }
+      
+      var firstLoadableIndex=mloadUpdate();//{urlfn:urlfn});
+      
+      if (urlfn) {
+        Conet.lastLoadMenu=undefined;
+        setCurFn(urlfn);
+        p.loadf(urlfn,1);
+        return;
+      }
+      
+      
       if (p.noStartLoad) return;
       //m.curFn=p.curFn?p.curFn:m.files[0].fn;
       //Menu.ms(p.loadMs?mload:m,m.curFn);
-      checkListFile(p.curFn?p.curFn:m.files[firstLoadableIndex].fn);//0
+      //var url=Conet.parseUrl();
+      checkListFile(p.curFn?p.curFn://(url.cfmload?url.cfmload:
+        m.files[firstLoadableIndex].fn
+        //)
+        );//0
       Conet.lastLoadMenu=mload.sub[firstLoadableIndex+1];
       p.loadf(m.curFn,1);
     }
@@ -477,7 +528,12 @@ var Conet={};
         if (keep) if (to[k]!==undefined) continue;
         if (woh&&woh[k]) {
           if (ps&&ps.delwo) delete(to[k]);
-        } else to[k]=from[k];
+        } else {
+          if (ps&&ps.logOverwrite&&(to[k]!==undefined)) {
+            console.log('overwriting '+to[k]+' with '+from[k]);
+          }
+          to[k]=from[k];
+        }
       }
       return to;
     }
@@ -542,7 +598,12 @@ var Conet={};
     if (!ac) ac=new(window.AudioContext||window.webkitAudioContext)();
     var os=ac.createOscillator(),gn=ac.createGain();
     os.connect(gn);gn.connect(ac.destination);
-    gn.gain.value=ps.vol||Conet.vol||1;os.frequency.value=ps.freq||400;os.type='sine';
+    var vol=ps.vol||Conet.vol||1;
+    gn.gain.value=vol;os.frequency.value=ps.freq||400;os.type='sine';
+    
+    if (ps.freqAtTime) for (var a of ps.freqAtTime) os.frequency.linearRampToValueAtTime(a[0],ac.currentTime+a[1]/1000);
+    if (ps.volAtTime) for (var a of ps.volAtTime) gn.gain.linearRampToValueAtTime(a[0]*vol,ac.currentTime+a[1]/1000);
+    
     os.start();
     setTimeout(
     function() {
@@ -553,16 +614,48 @@ var Conet={};
     //...
   }
   //---
+  Conet.checkParams=function(ps,cfg) {
+    //onsole.log('Conet.checkParams');
+    for (var k in ps) if (ps.hasOwnProperty(k)) {
+      var cf=cfg[k];
+      if (cf===undefined) {
+        console.log('Conet.checkParams unkown param: \''+k+'\'.');
+        //onsole.trace();
+        //console.log(ps);
+        continue;
+      }
+      if (cf.notWith) {
+        //onsole.log('Conet.checkParams notwith ');
+        for (var nw of cf.notWith) {
+          if (ps[nw]!==undefined) {
+            console.log('Conet.checkParams \''+k+'\' not with \''+nw+'\'.');
+          }
+        }
+      }
+    }
+    //...
+  }
+  //---
 }
 )(Conet);
 console.log('Conet '+Conet.version);
 //fr o,1
-//fr o,1,7,1
+//fr o,1,5
+//fr o,1,5,4
+//fr o,1,7
+//fr o,1,7,18
+//fr o,1,7,20
 //fr o,1,10,2
+//fr o,1,10,3
+//fr o,1,10,4
+//fr o,1,10,5
+//fr o,1,10,6
 //fr o,1,10,18
 //fr o,1,10,19
-//fr o,1,10,57
+//fr o,1,10,60
 //fr o,1,11,1
 //fr o,1,18,4
 //fr o,1,46
-//fr p,33,53
+//fr o,1,46,12
+//fr o,1,48
+//fr p,86,134

@@ -21,7 +21,7 @@ var Menu={};
   Menu.soff='[ ]';//'\u2610';
   Menu.son='[x]';//'\u2611';
   Menu.pressed=pressed;
-  Menu.version='1.237 ';//FOLDORUPDATEVERSION
+  Menu.version='1.248 ';//FOLDORUPDATEVERSION
   function mCloseAll(a) {
     for (var i=0;i<a.length;i++) {
       var mh=a[i];
@@ -557,7 +557,7 @@ var Menu={};
             ,s2=c2.style;
         s2.position='absolute';
         s2.top='0px';s2.left='0px';
-        s2.width=m.cw;s2.height=m.ch;
+        s2.width=m.cw+'px';s2.height=m.ch+'px';
         //s2.width='20px';s2.height='20px';
         //s2.backgroundColor='rgba(0,250,0,0.5)';
         c.appendChild(c2);
@@ -681,12 +681,15 @@ var Menu={};
   Menu.keyDown=function(ev) {
     if (Menu.mcontrol) return;
     var kc=ev.keyCode,ret;
-    if (ps.keyLog) console.log('Menu.keyDown '+kc);
+    if (ps.keyLog) 
+     console.log('Menu.keyDown '+kc);
     var m=keym[kc+(ev.ctrlKey?'_c':0)];
     if (m) { 
-      //onsole.log('Menu.keyDown 0');
-      //onsole.log(m);
+      console.log('Menu.keyDown 0');
+      console.log(m);
       if (ev.ctrlKey) ev.preventDefault();
+      //
+      if (!m.on) {
       m.on=true;
       if (m.c) {
         //m.c.style.backgroundColor=Menu.colOver;
@@ -701,6 +704,7 @@ var Menu={};
           Menu.action();
         }
       }
+      }
       //ev.preventDefault();
       //ev.stopPropagation();
     }
@@ -709,7 +713,7 @@ var Menu={};
   }
   Menu.keyUp=function(ev) {
     var kc=ev.keyCode;
-    var m=keym[kc];if (m) { m.on=false;if (m.c) m.c.style.backgroundColor=m.bgcol?m.bgcol:Menu.colBg; }
+    var m=keym[kc+(ev.ctrlKey?'_c':0)];if (m) { m.on=false;if (m.c) m.c.style.backgroundColor=m.bgcol?m.bgcol:Menu.colBg; }
   }
   Menu.mouseDown=function() {
     //console.log('Menu.mouseDown 0');
@@ -868,7 +872,11 @@ var Menu={};
     for (var h=pressed.length-1;h>=0;h--) {
       var m=pressed[h];
       if (m.stayPressed) continue;
-      if ((Menu.cmenu==m)&&(e.touches.length==0)) Menu.action();
+      if ((Menu.cmenu==m)
+        //&&(e.touches.length==0) //200911 auskommentiert,
+        //damit menu waehrend touchstick-move funktioniert
+      ) Menu.action();
+      //else console.log('no action ');
       m.on=false;
       m.c.style.backgroundColor=m.bgcol?m.bgcol:Menu.colBg;
       pressed.splice(h,1);
@@ -1014,5 +1022,6 @@ var Menu={};
 
 //--
 //fr o,2
-//fr o,2,30
-//fr p,4,115
+//fr o,2,42
+//fr o,2,43
+//fr p,1,49

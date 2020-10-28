@@ -11,7 +11,11 @@
   //---
   var mx=-1,my=-1,canv,dpr,
       maddp,pts=[{x:0,y:0},{x:100,y:100}],md=false,
-      nearpi=-1,sel=undefined,lskey='pointGraph';
+      nearpi=-1,sel=undefined,lskey='pointGraph',
+      data=[
+        {s:'Freq',c:'#4a4',pts:pts},
+        {s:'Gain',c:'#44c',pts:[{x:0,y:100},{x:100,y:0}]}
+      ],datai=0,lskeyData='pointGraphData';
   
   function draw() {
     var ct=canv.getContext('2d'),
@@ -26,14 +30,18 @@
     ct.moveTo(0,my);ct.lineTo(w,my);
     ct.stroke();
     
-    ct.beginPath();
-    for (var i=0;i<pts.length;i++) {
-      var p=pts[i];
-      if (i==0) ct.moveTo(p.x,p.y); 
-      else ct.lineTo(p.x,p.y);
+    for (var dh of data) {
+      ct.strokeStyle=dh.c;
+      ct.beginPath();
+      for (var i=0;i<dh.pts.length;i++) {
+        var p=dh.pts[i];
+        if (i==0) ct.moveTo(p.x,p.y); 
+         else ct.lineTo(p.x,p.y);
+      }
+      ct.stroke();
     }
-    ct.stroke();
     
+    ct.strokeStyle='#888';
     
     if (sel) {
       var p=pts[sel.pi];
@@ -58,6 +66,8 @@
   function examples() {
     
     // distorted [{"x":21,"y":289.5},{"x":45,"y":231},{"x":64.5,"y":273},{"x":97.5,"y":274.5},{"x":126,"y":24},{"x":169.5,"y":58.5},{"x":189,"y":18},{"x":219,"y":48},{"x":250,"y":16},{"x":274.5,"y":57},{"x":304.5,"y":16.5},{"x":304.5,"y":270},{"x":331.5,"y":228},{"x":355.5,"y":267},{"x":378,"y":214.5},{"x":397.5,"y":270},{"x":411,"y":13.5},{"x":432,"y":274.5},{"x":462,"y":15},{"x":484.5,"y":271.5}]
+    // chirp [{"x":9,"y":13},{"x":23,"y":290},{"x":34,"y":12},{"x":53,"y":270},{"x":60,"y":46},{"x":79,"y":244},{"x":85,"y":83},{"x":105,"y":223},{"x":116,"y":105},{"x":129,"y":208},{"x":146,"y":122},{"x":169,"y":209},{"x":187,"y":150},{"x":217,"y":197},{"x":238,"y":160},{"x":264,"y":194},{"x":293,"y":162},{"x":320,"y":195},{"x":333,"y":175},{"x":351,"y":195},{"x":372,"y":186},{"x":389,"y":194},{"x":404,"y":143},{"x":412,"y":243},{"x":426,"y":157},{"x":435,"y":216},{"x":449,"y":175},{"x":464,"y":192}]
+    // klappezu [{"x":9,"y":13},{"x":23,"y":290},{"x":34,"y":12},{"x":53,"y":270},{"x":60,"y":46},{"x":79,"y":244},{"x":85,"y":83},{"x":105,"y":223},{"x":116,"y":105},{"x":129,"y":208},{"x":146,"y":122},{"x":169,"y":209},{"x":193,"y":45},{"x":228,"y":74},{"x":255,"y":14},{"x":278,"y":71},{"x":301,"y":32},{"x":328,"y":195},{"x":339,"y":180},{"x":356,"y":224},{"x":374,"y":223},{"x":386,"y":287},{"x":414,"y":270},{"x":427,"y":290},{"x":444,"y":227},{"x":454,"y":286},{"x":466,"y":263},{"x":489,"y":292}]
     
     //...
   }
@@ -70,7 +80,16 @@
     c.width=w;c.height=h;canv=c;
     
     var s=localStorage[lskey];
-    if (s!==undefined) pts=JSON.parse(s);
+    if (s!==undefined) {
+      pts=JSON.parse(s);
+      data[datai].pts=pts;
+    }
+    
+    var s=localStorage[lskeyData];
+    if (s!=undefined) {
+      data=JSON.parse(s);
+      pts=data[datai].pts;
+    }
     
     
     //var ct=c.getContext('2d');
@@ -96,25 +115,46 @@
       draw();
     }
     },{s:'Test sound',actionf:function() {
-      var fa=[],w=canv.width,h=canv.height;
-      for (var p of pts) {
-        fa.push([100+4000*(h-p.y)/h,500*p.x/w]);
+      var fa=[],w=canv.width,h=canv.height,ga=[];
+      for (var p of data[0].pts) fa.push([100+4000*(h-p.y)/h,500*p.x/w]);
+      for (var p of data[1].pts) {
+        var v=0+1*(h-p.y)/h;
+        v*=v*v;
+        ga.push([v,500*p.x/w]);
       }
-      //console.log(fa);
-      Conet.beep({time:fa[fa.length-1][1],freqAtTime:fa});
+      
+      //onsole.log(ga);
+      Conet.beep({
+        time:Math.max(fa[fa.length-1][1],ga[ga.length-1][1]),
+        freqAtTime:fa,
+        gainAtTime:ga,
+      });
     }
-    },{s:'ImpExport',doctrl:'io',ta:1,jsonCheck:1,valuef:function() {
-      for (var p of pts) { delete(p.ox);delete(p.oy); }
-      return JSON.stringify(pts);
+    },{s:'ImpExport',doctrl:'Point Set Data (Json)',wrap:1,ta:1,jsonCheck:1,valuef:function() {
+      for (var dh of data)
+      for (var p of dh.pts) { delete(p.ox);delete(p.oy); }
+      return JSON.stringify(data);
     }
     ,setfunc:function(v) {
-      pts=JSON.parse(v);nearpi=-1;sel=undefined;
+      //pts=JSON.parse(v);
+      data=JSON.parse(v);
+      nearpi=-1;sel=undefined;
+      //data[datai].pts=pts;
       draw();
     }
-    }],{listen:1});
+    },{s:'PointSet',ms:'Freq',autoval:2,sub:[{s:'Freq'},{s:'Gain'}],setfunc:function(v) {
+      //---
+      datai={Freq:0,Gain:1}[v];
+      pts=data[datai].pts;nearpi=-1;sel=undefined;
+      draw();
+      console.log(v+' '+datai);
+      //...
+    }
+    }
+    ],{listen:1});
     
     
-    console.log('PointGraphEdit v.0.108 ');//FOLDORUPDATEVERSION
+    console.log('PointGraphEdit v.0.145 ');//FOLDORUPDATEVERSION
     
     //...
   }
@@ -191,7 +231,8 @@
   
   function mouseUp(e) {
     md=false;
-    localStorage[lskey]=JSON.stringify(pts);
+    //localStorage[lskey]=JSON.stringify(pts);
+    localStorage[lskeyData]=JSON.stringify(data);
     //onsole.log('mouseup');
     //...
   }
@@ -205,13 +246,14 @@
 </body>
 </html><script>
 //fr o,9
-//fr o,9,5
-//fr o,9,7
 //fr o,9,9
-//fr o,9,9,27
-//fr o,9,9,28
-//fr o,9,9,29
 //fr o,9,11
 //fr o,9,13
+//fr o,9,13,36
+//fr o,9,13,37
+//fr o,9,13,38
+//fr o,9,13,39
 //fr o,9,15
-//fr p,16,95
+//fr o,9,17
+//fr o,9,19
+//fr p,8,116

@@ -1,7 +1,7 @@
 var Conet={};
 (function(Conet) {
   Conet.offline=false;
-  Conet.version='1.430 ';//FOLDORUPDATEVERSION
+  Conet.version='1.432 ';//FOLDORUPDATEVERSION
   Conet.files={};
   var uploads={},fns,logc,logs=[],//fn=>data,first
       logSameLineCount=0,ac,downloads={};
@@ -602,7 +602,7 @@ var Conet={};
     gn.gain.value=vol;os.frequency.value=ps.freq||400;os.type='sine';
     
     if (ps.freqAtTime) for (var a of ps.freqAtTime) os.frequency.linearRampToValueAtTime(a[0],ac.currentTime+a[1]/1000);
-    if (ps.volAtTime) for (var a of ps.volAtTime) gn.gain.linearRampToValueAtTime(a[0]*vol,ac.currentTime+a[1]/1000);
+    if (ps.gainAtTime) for (var a of ps.gainAtTime) gn.gain.linearRampToValueAtTime(a[0]*vol,ac.currentTime+a[1]/1000);
     
     os.start();
     setTimeout(
@@ -658,4 +658,4 @@ console.log('Conet '+Conet.version);
 //fr o,1,46
 //fr o,1,46,12
 //fr o,1,48
-//fr p,86,134
+//fr p,73,134

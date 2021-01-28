@@ -1,7 +1,7 @@
 var Conet={};
 (function(Conet) {
   Conet.offline=false;
-  Conet.version='1.432 ';//FOLDORUPDATEVERSION
+  Conet.version='1.442 ';//FOLDORUPDATEVERSION
   Conet.files={};
   var uploads={},fns,logc,logs=[],//fn=>data,first
       logSameLineCount=0,ac,downloads={};
@@ -73,9 +73,11 @@ var Conet={};
   }
   function download(p) {
     var noResponseTimer;
-    Conet.checkParams(p,{
-      fn:1,f:1,cache:1,json:1,usecache:{notWith:['cache','json']}
-      ,i:1 //used in taFold.linearView, besser use 'userData' to avoid clashes
+    if (p.checkParams) Conet.checkParams(p,{
+      fn:1,f:1,cache:1,json:1,usecache:{notWith:['cache','json']},
+      checkParams:1, //for now this param needed since planim.loadObj invokes donwload with lots other params
+      i:1, //used in taFold.linearView, besser use 'userData' to avoid clashes
+      fh:1, //used in Conet.load
     });
     
     
@@ -575,6 +577,10 @@ var Conet={};
     result /= 4294967296;
     return result;
   }
+  Conet.rani=function(v) {
+    return Math.floor(Conet.rand()*v);
+    //...
+  }
   //-------------------------------------------------------
   //--- url to a-html (anker)
   
@@ -620,7 +626,10 @@ var Conet={};
       var cf=cfg[k];
       if (cf===undefined) {
         console.log('Conet.checkParams unkown param: \''+k+'\'.');
-        //onsole.trace();
+        if (!Conet.checkParamsTrace) {
+          console.trace();
+          Conet.checkParamsTrace=1;
+        }
         //console.log(ps);
         continue;
       }
@@ -640,11 +649,9 @@ var Conet={};
 )(Conet);
 console.log('Conet '+Conet.version);
 //fr o,1
-//fr o,1,5
 //fr o,1,5,4
 //fr o,1,7
-//fr o,1,7,18
-//fr o,1,7,20
+//fr o,1,7,22
 //fr o,1,10,2
 //fr o,1,10,3
 //fr o,1,10,4
@@ -654,8 +661,9 @@ console.log('Conet '+Conet.version);
 //fr o,1,10,19
 //fr o,1,10,60
 //fr o,1,11,1
+//fr o,1,14
 //fr o,1,18,4
-//fr o,1,46
-//fr o,1,46,12
-//fr o,1,48
-//fr p,73,134
+//fr o,1,35
+//fr o,1,47,12
+//fr o,1,49
+//fr p,34,87

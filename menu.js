@@ -21,7 +21,7 @@ var Menu={};
   Menu.soff='[ ]';//'\u2610';
   Menu.son='[x]';//'\u2611';
   Menu.pressed=pressed;
-  Menu.version='1.248 ';//FOLDORUPDATEVERSION
+  Menu.version='1.293 ';//FOLDORUPDATEVERSION
   function mCloseAll(a) {
     for (var i=0;i<a.length;i++) {
       var mh=a[i];
@@ -217,6 +217,8 @@ var Menu={};
     
     Menu.draw();
     Menu.search(lsx,lsy);
+    
+    Conet.beep({vol:0.05,freq:400});
   }
   Menu.arrayRemove=function(a,o) {
     var i=a.indexOf(o);
@@ -267,7 +269,8 @@ var Menu={};
     else Menu.cmenu.c.style.backgroundColor=Menu.cmenu==Menu.press?Menu.colPress:(Menu.cmenu.colOver?Menu.cmenu.colOver:Menu.colOver);
   }
   Menu.draw=function() {
-    //console.log('Menu.draw 0');
+    //onsole.log('Menu.draw 0');
+    //onsole.trace();
     if (!menus) return;
     //console.log('Menu.draw 1');
     
@@ -500,6 +503,7 @@ var Menu={};
           c.innerHTML=m.s+'<br><textarea id="'+tfid+'" '+(mco.wrap?'':'wrap="off" ')+'style="'+(mco.wrap?'':
             //-> in firefox this made \n not do wrap, therfore commented out: 'white-space:nowrap;'+
             'overflow:auto;')
+            +'width:'+(ccw*0.8)+'px;'
             +'font-size:'+c.style.fontSize+'" '+
           'cols='+(mco.tacols?mco.tacols:36)+' rows='+(mco.tarows?mco.tarows:15)+'>'+value+'</textarea>';
           //tacols:36,tarows:15 frueher 20,8
@@ -643,13 +647,14 @@ var Menu={};
       window.addEventListener('keyup',Menu.keyUp);
       window.addEventListener('touchstart',Menu.touchStarts,{passive:false});
       window.addEventListener('touchmove',Menu.touchMoves,{passive:false});
-      window.addEventListener('touchend',Menu.touchEnds);  
+      window.addEventListener('touchend',Menu.touchEnds,{passive:false});  
       Menu.draw();
     }
   }
   Menu.initLoad=function(a) {
     for (var i=0;i<a.length;i++) {
       var m=a[i];
+      if ((m.ms===undefined)&&m.keys) { m.ms='<span style="color:#338;">Key:</span> '+String.fromCharCode(m.keys[0]); } 
       if ((m.ms===undefined)&&(m.vertCenter===undefined)&&((m.s||'').indexOf('<br>')==-1)) m.vertCenter=1;
       if (m.lskey) {
         var v=localStorage[m.lskey];
@@ -685,8 +690,8 @@ var Menu={};
      console.log('Menu.keyDown '+kc);
     var m=keym[kc+(ev.ctrlKey?'_c':0)];
     if (m) { 
-      console.log('Menu.keyDown 0');
-      console.log(m);
+      //onsole.log('Menu.keyDown 0');
+      //onsole.log(m);
       if (ev.ctrlKey) ev.preventDefault();
       //
       if (!m.on) {
@@ -881,8 +886,10 @@ var Menu={};
       m.c.style.backgroundColor=m.bgcol?m.bgcol:Menu.colBg;
       pressed.splice(h,1);
     }
-    e.preventDefault();
-    e.stopPropagation();
+    if (!ps.touchEndsPropagation) { //---used in /anim/cannon/builder.htm otherwise mdiv inputs dont get focus
+      e.preventDefault();
+      e.stopPropagation();
+    }
   }
   Menu.touchMoves=function(e) {
     var ret=undefined;
@@ -915,7 +922,7 @@ var Menu={};
     return false;
   }
   Menu.touchStarts=function(e) {
-    //onsole.log('Menu.touchStarts sx/sy='+sx+'/'+sy);
+    //onsole.log('Menu.touchStarts');// sx/sy='+sx+'/'+sy);
     nomouse=true;
     var ret=undefined;//,foundM=false;
     for (var h=0;h<e.touches.length;h++) {
@@ -1015,6 +1022,15 @@ var Menu={};
     //...
   }
   
+  //--- often used menus:
+  Menu.mFullscreen={s:'Fullscreen',actionf:function() {
+    var c=document.body,h={navigationUI:'hide'};
+    if (c.requestFullscreen) c.requestFullscreen(h);
+    else if (c.mozRequestFullScreen) c.mozRequestFullScreen(h);
+    else if (c.webkitRequestFullScreen) c.webkitRequestFullscreen(h);
+  }
+  };
+  
   //Menu.setRoots=function(m) {menuroots=m;//menus=a.concat([]);}
   //Menu.setMenuroots=function(a) {menuroots=a;}
 }
@@ -1023,5 +1039,4 @@ var Menu={};
 //--
 //fr o,2
 //fr o,2,42
-//fr o,2,43
-//fr p,1,49
+//fr p,4,52

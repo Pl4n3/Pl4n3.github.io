@@ -69,7 +69,7 @@ var CanvNotes=function() {
     movedist=Math.max(movedist,Math.abs(x-oinp.x)+Math.abs(y-oinp.y));
     view.posx=oinp.px+(x-oinp.x)/view.scx;
     view.posy=oinp.py+(y-oinp.y)/view.scy;
-    //onsole.log(view);
+    console.log(view);
     //if (!mousePart) return;
   }
   function mouseScroll(e) {
@@ -279,7 +279,7 @@ var CanvNotes=function() {
       //ctx.fillStyle='rgba(150,255,150,0.5)';
       //ctx.fillRect(x,y,w,h);
       
-      if ((scx>0.5/dpr)) {
+      if ((scx>1)) {///dpr)) {
     
         if (o.bgcol) {
           ctx.fillStyle=o.bgcol;//||'rgba(150,255,150,0.5)';
@@ -301,6 +301,13 @@ var CanvNotes=function() {
         else {
           ctx.fillText('Lorem ipsum dolor sit amet, consectetur adipisici elit,',x+1,y+1);
           ctx.fillText('sed eiusmod tempor incidunt ut labore et dolore magna aliqua.',x+1,y+fs);
+        }
+        if (o.img) {
+          var iw=o.img.width,ih=o.img.height,wh=w,hh=h-fs;
+          if (iw&&ih) {
+            var sc=Math.min(wh/iw,hh/ih);
+            ctx.drawImage(o.img,x,y+1+fs,iw*sc,ih*sc);
+          }
         }
         ctx.restore();
         //ctx.strokeRect(x,y,w,h);
@@ -329,7 +336,7 @@ var CanvNotes=function() {
     }
     
     ctx.fillStyle='#000000';
-    ctx.fillText('CanvNotes v.0.201 - '+fpss,10*dpr,10*dpr);//FOLDORUPDATEVERSION
+    ctx.fillText('CanvNotes v.0.212 - '+fpss,10*dpr,10*dpr);//FOLDORUPDATEVERSION
     for (var h=0;h<logs.length;h++)
       ctx.fillText(logs[h],10*dpr,10*dpr+fs+h*fs);
     
@@ -347,6 +354,4 @@ var CanvNotes=function() {
 //fr o,1
 //fr o,1,10
 //fr o,1,11
-//fr o,1,20
-//fr o,1,21
-//fr p,23,218
+//fr p,1,53

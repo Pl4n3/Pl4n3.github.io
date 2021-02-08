@@ -13,7 +13,7 @@ html, body { border:0;margin:0;width:100%;height:100%;font-family:arial; }
 <script>
 (function() {
   //---
-  var cano=new CanvNotes(),objs=cano.objs,sels=cano.sels,view=cano.view;
+  var cano=new CanvNotes(),objs=cano.objs,sels=cano.sels,view=cano.view,url;
   
   function testRandom10000() {
     //---
@@ -102,6 +102,19 @@ html, body { border:0;margin:0;width:100%;height:100%;font-family:arial; }
         //...
       }
       
+      
+      
+      function onimgload(v) {
+        //onsole.log(this);
+        var o=JSON.parse(v);
+        var img=new Image();
+        img.src=o.data;
+        this.o.img=img;
+        //img.onload=onimgload0;
+        //onsole.log(o);
+        
+        //...
+      }
       
       var db=JSON.parse('['+v+']');
       //onsole.log(db);
@@ -223,14 +236,25 @@ html, body { border:0;margin:0;width:100%;height:100%;font-family:arial; }
       var rh7=2;
       for (var n of nodes) {
         if (1) {
-          objs.push(o={x:n.t*2,y:n.y,w:n.w||20,h:rh7,s:n.s+' '+n.t});
+          let s=n.s,i=s.indexOf('{'),y=n.y,h=rh7,ps;
+          if (i!=-1) {
+            ps=JSON.parse(s.substr(i));
+            //console.log(o);
+            if (ps.img) { h=rh7*5; }
+            s=s.substr(0,i);
+          }
+          objs.push(o={x:n.t*2,y:y,w:n.w||20,h:h,s:s+' '+n.t});
+          if (ps&&ps.img) {
+            Conet.download({o:o,fn:'/anim/arrows/history/'+ps.img,f:onimgload});
+          }
+          y+=o.h;
           o.bgcol='rgba(200,200,200,0.5)';
           o.smolcol='rgb(150,150,150)';
           //for (var r of n.reltos) {
           for (var ri=0;ri<n.reltos.length;ri++) {
             var r=n.reltos[ri],rh=relh[r];
             if (!rh) { rh={};relh[r]=rh; }
-            objs.push(o={x:n.t*2,y:n.y+(ri+1)*rh7,w:Math.min(n.w||20,20),h:rh7,s:rh.s?rh.s:r});
+            objs.push(o={x:n.t*2,y:y+ri*rh7,w:Math.min(n.w||20,20),h:rh7,s:rh.s?rh.s:r});
             o.bgcol='rgba(200,200,200,0.5)';
             o.smolcol='rgb(150,150,150)';
             if (!rh.objs) rh.objs=[];
@@ -256,6 +280,23 @@ html, body { border:0;margin:0;width:100%;height:100%;font-family:arial; }
       //cano.view.posx=-1900;
       //cano.view.posy=-300;
       Conet.hcopy({posx:-1900,posy:-300,scx:2.5,scy:2.5},view);
+      
+      if (url.ps) {
+        //onsole.log(url.ps);
+        //onsole.log(decodeURI(url.ps));
+        Conet.hcopy(JSON.parse(decodeURI(url.ps)),view);
+      }
+      
+      //var vh;  
+      //Conet.hcopy(vh={posx:-1233,posy:-194,scx:8.63,scy:8.63},view);
+      //console.log(encodeURI(JSON.stringify(vh)));
+      
+      //posx: -1236.1010412257322
+      //posy: -199.9345947420994
+      //scx: 8.630678035982765
+      //scy: 8.630678035982765
+      //width: 112
+      
       //onsole.log(cano.view);
       //..
     }
@@ -263,7 +304,8 @@ html, body { border:0;margin:0;width:100%;height:100%;font-family:arial; }
     //...
   }
   
-  if (Conet.parseUrl().test10000) testRandom10000();
+  url=Conet.parseUrl();
+  if (url.test10000) testRandom10000();
   else testHistories();
   
   //...
@@ -275,7 +317,6 @@ html, body { border:0;margin:0;width:100%;height:100%;font-family:arial; }
 </html><script>
 //fr o,13
 //fr o,13,4
-//fr o,13,4,1
 //fr o,13,4,3
-//fr o,13,4,3,1
-//fr p,47,229
+//fr o,13,4,3,5
+//fr p,11,205

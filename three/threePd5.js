@@ -266,10 +266,10 @@ function threeReaddObj(o) {
   //...
 }
 function threeRemoveObj(o) {
-  if (o.bb) {
-    threeEnv.base.remove(o.bb.threeMesh);
-    threeEnv.billboards.splice(threeEnv.billboards.indexOf(o.bb),1);
-  }
+  if (o.bb) threeBbRemove(o.bb);
+  //  threeEnv.base.remove(o.bb.threeMesh);
+  //  threeEnv.billboards.splice(threeEnv.billboards.indexOf(o.bb),1);
+  
   for (var mi=o.meshes.length-1;mi>=0;mi--) 
     threeEnv.base.remove(o.meshes[mi].tmesh);
   threeEnv.os.splice(threeEnv.os.indexOf(o),1);
@@ -488,6 +488,12 @@ function threeBillboardAdd(p) {
   threeEnv.billboards.push(p);
   return p;
 }
+function threeBbRemove(bb) {
+  //---
+  threeEnv.base.remove(bb.threeMesh);
+  threeEnv.billboards.splice(threeEnv.billboards.indexOf(bb),1);
+  //...
+}
 function threeBane(noSceneAdd) {
   var lo=Pd5.loadh({
   bones:[
@@ -587,7 +593,8 @@ function threeRender(dt) {
       g.verticesNeedUpdate = true;
       g.normalsNeedUpdate = true;
       //g.computeBoundingBox();
-      if (lo.cm) g.computeBoundingSphere();//else shadows are wrong for phys objs
+      if (lo.cm||threeEnv.coBoSp) 
+        g.computeBoundingSphere();//else shadows are wrong for phys objs
       
       if (threeEnv.aipos) {
         mesh1.position.copy(lo.ps.pos);
@@ -606,6 +613,7 @@ function threeRender(dt) {
     if (bb.update) {
       bb.update=false;
       if (bb.o.bbdraw) bb.o.bbdraw(bb); else {
+      //onsole.log('bb default draw');
       var c=bb.c,w=c.width,h=c.height*bb.ar,ct=bb.ct;//c.getContext('2d');
       ct.clearRect(0,0,w,h);
       ct.fillStyle='rgba(0,0,0,0.5)';ct.fillRect(0,0,w,h);//p.c=c;p.ct=ct;
@@ -628,7 +636,9 @@ function threeRender(dt) {
       //onsole.log(' '+bb.threeTex.needsUpdate);
     }
     bb.threeMesh.position.set(bb.x,bb.y,bb.z);
-    if (br) {
+    if (threeEnv.bbquat) 
+      bb.threeMesh.quaternion.copy(threeEnv.bbquat);
+    else if (br) {
       bb.threeMesh.rotation.set(-br.x,-br.y,-br.z);
       bb.threeMesh.rotation.order='ZYX';
     } else 
@@ -956,8 +966,5 @@ threeEnv.addQuad=function(ps) {
   //---
 }
 //fr o,9,33
-//fr o,16
-//fr o,18
-//fr o,32
-//fr o,33
-//fr p,6,158
+//fr o,19
+//fr p,7,127

@@ -66,6 +66,10 @@
         <script src="/conet.js"></script>
         <script src="/menu.js"></script>
         <script src="/util/mdiv.js"></script>
+<script src="/vecmath.js"></script>
+<script src="/canvas/pd5.js"></script>
+<script src="/three/threePd5.js"></script>
+        
         
 
         <div id="blocker">
@@ -82,11 +86,12 @@
 
 (function() {
   //---
-  var sphereShape,sphereBody,world,physicsMaterial,walls=[],balls=[],ballMeshes=[],boxes=[],boxMeshes=[],tsd,
+  var sphereShape,sphereBody,world,physicsMaterial,walls=[],balls=[],//ballMeshes=[],
+      boxes=[],boxMeshes=[],tsd,
       camera, scene, renderer,raycaster=new THREE.Raycaster(),rayobj=undefined,cfgMd,dpr,
       mray0=new THREE.MeshPhongMaterial({color:0x66aa66,flatShading:true}),
       geometry,material,mesh,groundMesh,stats,lskey='buildr0',
-      controls,time=Date.now(),
+      controls,time=Date.now(),waypoints={},
       blocker=document.getElementById( 'blocker' ),
       instructions=document.getElementById( 'instructions' ),
       havePointerLock = 'pointerLockElement' in document || 'mozPointerLockElement' in document || 'webkitPointerLockElement' in document;
@@ -173,14 +178,34 @@
     return parseFloat(v);
     //...
   }
+  function bbdraw(bb) {
+    //--- -
+    //onsole.log('boxScales.bbdraw');
+    //var ct=bb.ct;
+    
+    var c=bb.c,w=c.width,h=c.height*bb.ar,ct=bb.ct;//c.getContext('2d');
+    ct.clearRect(0,0,w,h);
+    ct.fillStyle='rgba(0,0,0,0.5)';ct.fillRect(0,0,w,h);//p.c=c;p.ct=ct;
+    
+    ct.fillStyle='#fff';
+    ct.textAlign='center';
+    ct.font='20px sans-serif';
+    ct.fillText(bb.o.ps.text||'No text.',w/2,2);
+    //onsole.log('bbdraw '+(bb.o.ps.text||'No text.'));
+    
+    bb.threeTex.needsUpdate=true;
+    //...
+  }
   
   function boxDef(o) {
     var p=o.position,d=o.geometry.parameters,q=o.quaternion;
-    return {
+    var r={
       pos:{x:p.x,y:p.y,z:p.z},
       dim:{x:d.width/2,y:d.height/2,z:d.depth/2},
       quat:{x:q.x,y:q.y,z:q.z,w:q.w}
     };
+    if (o.userData.props!==undefined) r.props=o.userData.props;
+    return r;
     //...
   }
   
@@ -191,17 +216,77 @@
     boxBody.addShape(new CANNON.Box(new CANNON.Vec3(h.dim.x,h.dim.y,h.dim.z)));
     var boxMesh=new THREE.Mesh(new THREE.BoxGeometry(h.dim.x*2,h.dim.y*2,h.dim.z*2),material);
     world.addBody(boxBody);
-    scene.add(boxMesh);
+    //scene.add(boxMesh);
+    //console.log(h.dim);
+    if ((h.dim.x==0.4)&&(h.dim.y==0.4)&&(h.dim.z==0.4)) {
+      //onsole.log('light');
+      var l=new THREE.PointLight(0xff9900,1,20);
+      l.position.set(h.pos.x,h.pos.y,h.pos.z);
+    
+    if (0) {
+    var light=l;  
+    light.castShadow = true;
+    light.shadow.camera.near = 20;
+    light.shadow.camera.far = 50;//camera.far;
+    light.shadow.camera.fov = 40;
+    light.shadowMapBias = 0.1;
+    light.shadowMapDarkness = 0.7;
+    light.shadow.mapSize.width = 2*512;
+    light.shadow.mapSize.height = 2*512;  
+    }
+      
+      //l.distance=20;
+      scene.add(l);
+      boxMesh.userData.light=l;
+    } else { 
+      boxMesh.castShadow=true;
+      boxMesh.receiveShadow=true;
+      //boxMesh.geometry.computeBoundingBox();
+      //boxMesh.geometry.computeBoundingSphere();
+      scene.add(boxMesh);
+    }
     boxBody.position.set(h.pos.x,h.pos.y,h.pos.z);
     boxMesh.position.set(h.pos.x,h.pos.y,h.pos.z);
     boxBody.quaternion.set(h.quat.x,h.quat.y,h.quat.z,h.quat.w);
     boxMesh.quaternion.copy(boxBody.quaternion);
-    boxMesh.castShadow=true;
-    boxMesh.receiveShadow=true;
     boxes.push(boxBody);
     boxMeshes.push(boxMesh);
     boxMesh.userData.body=boxBody;
+    var ps=h.props;
+    if (ps) {
+      boxMesh.userData.props=ps;
     
+    if (ps.pd5&&ps.pd5.fn) 
+    Conet.download({fn:ps.pd5.fn,f:function(v) {
+      //---
+      var o=Pd5.load(v);
+      //onsole.log(o);
+      o.scale=1;
+      if (ps.pd5.anim) Pd5.animStart(o,ps.anim);
+      //Pd5.calc(o,0,0.0,0,1,{x:0,y:0,z:0},0,0,true);
+      threeAddObj(o,h.pos.x,h.pos.y,h.pos.z,ps.pd5.scale||1);
+      boxMesh.userData.pd5=o;
+      
+      //...
+    }
+    });
+    
+    if (ps.bb) {
+      var psbb=ps.bb,oyw=1,psh={},pos=boxMesh.position;
+      var bb=threeBillboardAdd({
+        x:pos.x+(psbb.x||0),y:pos.y+(psbb.y||0),z:pos.z+(psbb.z||0),
+        ar:psbb.ar||0.2,s:0.1*(1+(oyw-1)*2),transparent:psh.bbtransp,gw:psbb.gw||30,cw:128});
+      bb.o={bbdraw:bbdraw,ps:psbb};
+      boxMesh.userData.bb=bb;
+      //onsole.log('add bb');
+    }
+    
+    if (ps.waypoint) {
+      wp0=boxMesh.position;//console.log('waypoint');
+      waypoints[ps.waypoint.name]=boxMesh;
+    }
+    
+    }
     return boxMesh;
     //...
   }
@@ -213,6 +298,12 @@
     boxes.splice(ix,1);
     scene.remove(o);
     world.removeBody(o.userData.body);
+    if (o.userData.light) {
+      scene.remove(o.userData.light);
+      //onsole.log('Removed light.');
+    }
+    if (o.userData.pd5) threeRemoveObj(o.userData.pd5);
+    if (o.userData.bb) threeBbRemove(o.userData.bb);
     
     
     //...
@@ -238,6 +329,14 @@
   
   function load(sh) {
     //---
+    
+    for (var ix=boxMeshes.length-1;ix>=0;ix--) {
+      if (!boxMeshes[ix].userData.body) continue;
+      boxDel(ix);
+    }
+    waypoints={};
+    
+    
     var dh=JSON.parse(sh);
     for (var h of dh.a) {
       //console.log(h);
@@ -304,6 +403,7 @@
                     var ambient = new THREE.AmbientLight( 0x222222 );
                     scene.add( ambient );
     
+    if (1) {
                     light = new THREE.SpotLight( 0xffffff );
                     light.position.set( 10, 30, 20 );
                     light.target.position.set( 0, 0, 0 );
@@ -322,16 +422,17 @@
                         //light.shadowCameraVisible = true;
                     }
                     scene.add( light );
+    }
     
-    
-                    controls = new PointerLockTsControls( camera , sphereBody );
+                    controls=new PointerLockTsControls( camera , sphereBody );
                     scene.add( controls.getObject() );
     
                     // floor
                     geometry = new THREE.PlaneGeometry( 300, 300, 50, 50 );
                     geometry.applyMatrix4( new THREE.Matrix4().makeRotationX( - Math.PI / 2 ) );
     
-                    material = new THREE.MeshLambertMaterial( { color: 0xdddddd } );
+                    //material = new THREE.MeshLambertMaterial( { color: 0xdddddd } );
+                    material=new THREE.MeshPhongMaterial({color:0xdddddd,flatShading:true}),
     
                     mesh=new THREE.Mesh(geometry,material);groundMesh=mesh;
                     mesh.castShadow=true;
@@ -348,6 +449,15 @@
                     document.body.appendChild( renderer.domElement );
     
                     window.addEventListener('resize',resize,false);
+    
+    threeEnv.base=scene;//scene;
+    threeEnv.scene=scene;
+    threeEnv.path='/shooter/';
+    threeEnv.coBoSp=1;//computeBoundingSphere
+    //threeEnv.camera=camera;
+    threeEnv.bbquat=controls.quat;
+    //console.log(controls.quat);
+    
     
                     // Add boxes
                     var sh=localStorage[lskey];
@@ -434,16 +544,31 @@
                         last = boxbody;
                     }
     
-    var version='0.66 ';//FOLDORUPDATEVERSION
+    var version='0.231 ';//FOLDORUPDATEVERSION
     
-    if (1)                
-    Menu.init([{s:'Menu',ms:'CBuilder v. '+version,sub:[{s:'Fullscreen',actionf:function() {
-      var c=document.body,h={navigationUI:'hide'};
-      if (c.requestFullscreen) c.requestFullscreen(h);
-      else if (c.mozRequestFullScreen) c.mozRequestFullScreen(h);
-      else if (c.webkitRequestFullScreen) c.webkitRequestFullscreen(h);
+    
+    if (1) {
+    
+    var cfm=Conet.fileMenu({fn:'/anim/cannon/builder/files.txt',defFn:'/anim/cannon/builder/marbleRun0.json',url:'fn',noStartLoad:undefined,
+    loadf:function(fn) {
+      //load(v);
+      //console.log(fn);
+      Conet.download({fn:fn,f:function(v) {
+        //...
+        load(v);
+        Conet.log('Loaded '+fn+'.');
+      }
+      });
+      //onet.download({fn:v+'?1',f:parseLoad});
     }
-    },
+    ,savef:function(fn) {
+      Conet.upload({fn:fn,data:serialize()});
+      Conet.log('Saved '+fn+'.');
+    }
+    });
+    
+    
+    Menu.init([{s:'Menu',ms:'CBuilder v. '+version,sub:[cfm,Menu.mFullscreen,
     
     {s:'BoxAdd..',r:1,actionf:function() {
       var o=rayobj;
@@ -478,10 +603,10 @@
     {s:'Json..',ms:'import/export',doctrl:'Json data',jsonCheck:1,mcfs:0.07,ta:true,wrap:0,tacols:30,tarows:20,setfunc:function(v,initLoad) {
       //...
       console.log('loading new scene');
-      for (var ix=boxMeshes.length-1;ix>=0;ix--) {
-        if (!boxMeshes[ix].userData.body) continue;
-        boxDel(ix);
-      }
+      //for (var ix=boxMeshes.length-1;ix>=0;ix--) {
+      //  if (!boxMeshes[ix].userData.body) continue;
+      //  boxDel(ix);
+      //}
       load(v);
       //...
     }
@@ -498,6 +623,8 @@
     ],{listen:1,touchEndsPropagation:1//,keyLog:1
     });
     
+    }
+    
     tsd=Menu.touchSticksInit();
     controls.setTsd(tsd);
     
@@ -507,6 +634,19 @@
     document.body.appendChild(c);
     }
     
+    if (0)
+    Conet.download({fn:'/shooter/objs/templar/o5.txt',f:function(v) {
+      //---
+      var o=Pd5.load(v);
+      //onsole.log(o);
+      o.scale=1;
+      Pd5.animStart(o,'stand2');
+      //Pd5.calc(o,0,0.0,0,1,{x:0,y:0,z:0},0,0,true);
+      threeAddObj(o,0,0,0,2);
+      
+      //...
+    }
+    });
     //onsole.log(tsd);
   }
   function resize() {
@@ -529,7 +669,7 @@
     
     var p=o.position,d=o.geometry.parameters,q=o.quaternion;
     
-    var md=new Mdiv.Cont(2,50,300,120);cfgMd=md;
+    var md=new Mdiv.Cont(2,50,300,200);cfgMd=md;
     
     var sh='<table>'
     +'<tr><td>Position</td>  <td><input type=text size=3 id="tfposx" value="'+p.x
@@ -543,6 +683,7 @@
       +'" /><input type=text size=3 id="tfqz" value="'+q.z
       +'" /><input type=text size=3 id="tfqw" value="'+q.w
       +'" /></td></tr>'
+    +'<tr><td valign="top">Props</td><td><textarea id="taprops" cols=25 rows=5>'+(o.userData.props===undefined?'':JSON.stringify(o.userData.props))+'</textarea></td></tr>'
     +'<tr><td></td><td><button id="buset">Set</button><button id="bucl">Close</button>'
     +' Index: '+boxMeshes.indexOf(o)+'</td></tr>'
     +'</table>';
@@ -553,6 +694,9 @@
     gebi('tfqx').oninput=quatw;
     gebi('tfqy').oninput=quatw;
     gebi('tfqz').oninput=quatw;
+    
+    Conet.initJsonTa({c:gebi('taprops')});
+    
     
     function quatw() {
       //---
@@ -586,6 +730,12 @@
       //b.computeAABB();
       b.updateBoundingRadius();
       b.updateMassProperties();
+      
+      var props=gebi('taprops').value;
+      if (props.length==0) delete(o.userData.props);
+      else o.userData.props=JSON.parse(props);
+      
+      
       localStorage[lskey]=serialize();
       //...
     }
@@ -598,16 +748,42 @@
     //...
   }
   
-              var dt = 1/60;
   function animate() {
-    requestAnimationFrame( animate );
+    requestAnimationFrame(animate);
     if(controls.enabled){
-        world.step(dt);
+        //if (wp0) 
+        for(var i=0; i<balls.length; i++){
+          var b=balls[i];
+          if (b.wp===undefined) continue;
+          var wp=waypoints[b.wp];
+          if (wp===undefined) continue;
+          var wp0=wp.position,
+              bp=b.body.position,dx=wp0.x-bp.x,dy=wp0.y-bp.y,dz=wp0.z-bp.z,
+              l=Math.sqrt(dx*dx+dy*dy+dz*dz),f=1/l;
+          dx*=f;dy*=f;dz*=f;
+          var v=b.body.velocity;
+          v.x+=dx;v.y+=dy;v.z+=dz;
+          var vl=Math.sqrt(v.x*v.x+v.y*v.y+v.z*v.z),mv=5;
+          if (vl>mv) { v.x*=mv/vl;v.y*=mv/vl;v.z*=mv/vl; }
+          //onsole.log(vl);
+          if (l<0.6) b.wp=wp.userData.props.waypoint.next[0];
+          //onsole.log(l);
+          //ballMeshes[i].position.copy(balls[i].position);
+          //ballMeshes[i].quaternion.copy(balls[i].quaternion);
+        }
+    
+    
+    
+    
+        world.step(1/60);
     
         // Update ball positions
         for(var i=0; i<balls.length; i++){
-            ballMeshes[i].position.copy(balls[i].position);
-            ballMeshes[i].quaternion.copy(balls[i].quaternion);
+            var b=balls[i];
+            b.mesh.position.copy(b.body.position);
+            b.mesh.quaternion.copy(b.body.quaternion);
+            //ballMeshes[i].position.copy(balls[i].position);
+            //ballMeshes[i].quaternion.copy(balls[i].quaternion);
         }
     
         // Update box positions
@@ -632,9 +808,12 @@
     //onsole.log('intersects.length='+intersects.length);//if (intersects.length>0) {
     
     if (stats) stats.update();
-    controls.update( Date.now() - time );
-    renderer.render( scene, camera );
-    time = Date.now();
+    
+    var cuti=Date.now(),dt=cuti-time;
+    controls.update(dt);
+    threeRender(dt);
+    renderer.render(scene,camera);
+    time=cuti;
     
   }
   
@@ -677,8 +856,9 @@
         scene.add(ballMesh);
         ballMesh.castShadow = true;
         ballMesh.receiveShadow = true;
-        balls.push(ballBody);
-        ballMeshes.push(ballMesh);
+        balls.push({body:ballBody,mesh:ballMesh,wp:'wp0'});
+        //onsole.log(ballBody);
+        //ballMeshes.push(ballMesh);
         getShootDir(shootDirection);
         ballBody.velocity.set(  shootDirection.x * shootVelo,
                                 shootDirection.y * shootVelo,
@@ -703,15 +883,16 @@
         </script>
     </body>
 </html><script>
-//fr o,82
-//fr o,82,52
-//fr o,82,54
-//fr o,82,60
-//fr o,82,60,145
-//fr o,82,60,148
-//fr o,82,60,151
-//fr o,82,63,33
-//fr o,82,63,36
-//fr o,82,63,38
-//fr o,82,68
-//fr p,35,215
+//fr o,86
+//fr o,86,62
+//fr o,86,62,156
+//fr o,86,62,156,2
+//fr o,86,62,157
+//fr o,86,62,163
+//fr o,86,62,166
+//fr o,86,62,169
+//fr o,86,62,170
+//fr o,86,65,37
+//fr o,86,65,40
+//fr o,86,65,42
+//fr p,105,305

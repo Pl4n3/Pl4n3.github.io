@@ -29,6 +29,9 @@ body,input { font-size:10pt; }
   var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+"://platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>          
   </div>
 
+<div id="d3" style="overflow:auto;">
+<a class="twitter-timeline" href="https://twitter.com/Pl4n3/lists/comedy-55709?ref_src=twsrc%5Etfw">A Twitter List by Pl4n3</a> <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+</div>
 
 <button id="bu" style="font-size:2em;">View all.</button>
     
@@ -55,9 +58,10 @@ body,input { font-size:10pt; }
 var d0=document.getElementById('d0'),
     d1=document.getElementById('d1'),
     d2=document.getElementById('d2'),
+    d3=document.getElementById('d3'),
     bu=document.getElementById('bu'),view=0;
 bu.onclick=function() {
-  view=(view+1)%4;var sa=['all','media','dev','gamenews'];
+  view=(view+1)%5;var sa=['all','media','dev','gamenews','comedy'];
   this.innerHTML='View '+sa[view]+'.';
   resize();
 }
@@ -80,10 +84,17 @@ function resize(e) {
   s.display=(view!=0&&view!=3)?'none':'';
   c=c.children[0];if (c) { s=c.style;s.width=(view==3?w-b*2:w/3-b-b/2)+'px';s.height=h-b2+'px'; }
 
+  c=d3;s=c.style;
+  s.position='absolute';s.top=b+'px';s.left=(view==4?b:3*w/3-b/4)+'px';s.width=(view==4?w-b*2:w/3-b-b/2)+'px';s.height=h-b2+'px';
+  s.display=(view!=0&&view!=4)?'none':'';
+  c=c.children[0];if (c) { s=c.style;s.width=(view==4?w-b*2:w/3-b-b/2)+'px';s.height=h-b2+'px'; }
+
+
+
   c=bu;s=c.style;s.position='absolute';
   var r=c.getBoundingClientRect();
 
-  s.top=(3*h/4-r.height/2)+'px';s.left=(w-r.width)+'px';
+  s.top=(h/2-r.height/2)+'px';s.left=(w-r.width)+'px';
 }
 window.addEventListener('resize',resize);
 resize();

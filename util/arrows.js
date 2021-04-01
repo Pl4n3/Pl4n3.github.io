@@ -16,20 +16,43 @@ var Arrows=function(gps) {
     if (!v0.linear) f1=Math.sqrt(f1);//f1*=f1;
     var f0=1-f1,v1=views[(viewi+1)%views.length];
     
-    var s=v0.s*f0+v1.s*f1;
+    //var s=v0.s*f0+v1.s*f1;
     if ((v0.t!==undefined)&&(v1.t!==undefined)) {
       var t=v0.t*f0+v1.t*f1;
       showTime(t);
     }
     
     //cont.style.transform='scale('+s+','+s+')';
-    setScale(s);
-    cont0.scrollLeft=v0.x*f0+v1.x*f1;
-    cont0.scrollTop=v0.y*f0+v1.y*f1;
+    if (v0.s!==undefined) setScale(v0.s*f0+v1.s*f1);
+    if (v0.x!==undefined) cont0.scrollLeft=v0.x*f0+v1.x*f1;
+    if (v0.y!==undefined) cont0.scrollTop=v0.y*f0+v1.y*f1;
     //setScale(s,(-1)*(v0.x*f0+v1.x*f1),(-1)*(v0.y*f0+v1.y*f1));
     
     //log('animate1 '+viewi+' '+f0);
     setTimeout(animateViews,10);
+  }
+  function checkEval(c) {
+    if (url.eval)
+    for (var j=c.childNodes.length-1;j>=0;j--) {
+      var cs=c.childNodes[j];
+      if (!(cs instanceof HTMLScriptElement)) continue;
+      //onsole.log(cs);
+      if (cs.text.length>0) {
+        //onsole.log('Arrows.div doing eval.');
+        try { 
+          eval(cs.text);
+        } catch (e) {
+          console.log(e);
+        }
+        continue;//return;
+      }
+      //var c2=document.createElement('script');
+      //c2.src=c.src;
+      //c2.async=c.async;
+      //c1.appendChild(c2);
+    }
+    
+    //...
   }
   function div(ps) {
     var c=document.createElement(ps.img?'img':'div'),s=c.style;
@@ -118,9 +141,14 @@ var Arrows=function(gps) {
     
     if (ps.maxWidth) s.maxWidth=ps.maxWidth;
     
+    if (ps.css) for (var k of Object.keys(ps.css)) s[k]=ps.css[k];
+    
     //if (ps.cont) ps.
     c._arrowsIndex=cont.childNodes.length;
     cont.appendChild(c);
+    
+    checkEval(c);
+    
     return c;
   }
   function elSel(e) {
@@ -207,10 +235,16 @@ var Arrows=function(gps) {
     while (last=cont.lastChild) cont.removeChild(last);
     //...
   }
-  function load(v) {
-    Conet.download({fn:v,f:function(v) {
+  function load(vfn) {
+    Conet.download({fn:vfn,f:function(v) {
       clear();
-      var q=JSON.parse(v);
+      var q;
+      try {
+        q=JSON.parse(v);
+      } catch (e) {
+        console.error('Error parsing '+vfn+'.',e);
+        return;
+      }
       var a=q.os;
       for (var i=0;i<a.length;i++) {
         var o=a[i];//o.cont=cont;o.bo=1;
@@ -220,7 +254,10 @@ var Arrows=function(gps) {
       if (q.bgcol) cont0.style.backgroundColor=q.bgcol;
       delete(q.os);delete(q.views);scene=q;
       if (q.tmin) mtime.range.min=q.tmin;
-      if (q.tmax) mtime.range.max=q.tmax;
+      
+      var max=q.tmax;
+      if (!max) if (views.length>0) max=views[views.length-1].t;
+      if (max) mtime.range.max=max;
       setScale(1);
       if (url.animate) animateViews();
     }
@@ -275,8 +312,10 @@ var Arrows=function(gps) {
       elSel(e);
     }
     if (e.which==2) setScale(1);//---190211 quick way to reset view, howto do similar with touch?
-    e.preventDefault();
-    e.stopPropagation();
+    
+    //210330 following commented out for /anim/arrows/webCryppto0.json input fields didnt work
+    //e.preventDefault();
+    //e.stopPropagation();
   }
   function mouseMove(e) {
     var ew1=e.which==1,ew3=e.which==3;
@@ -291,7 +330,7 @@ var Arrows=function(gps) {
       }
     }
     //onsole.log('mouseMove '+e);
-    e.preventDefault();
+    //e.preventDefault(); 210330 see above
   }
   function mouseUp(e) {
     //...
@@ -299,7 +338,9 @@ var Arrows=function(gps) {
       m0=undefined;
       //onsole.log('mouseUp '+e);
     //}
-    e.preventDefault();
+    
+    //210330 see above
+    //e.preventDefault();
   }
   function resize(e) {
     var s=cont0.style;
@@ -373,19 +414,32 @@ var Arrows=function(gps) {
   function serialize() {
     var sh='{"os":'//'';
     for (var i=0;i<cont.childNodes.length;i++) {
-      var c=cont.childNodes[i],s=c.style,o={};
-      o.s=c.innerHTML;
+      var c=cont.childNodes[i];
+      if (c.ps.transient) continue;
+      var s=c.style,o=Conet.hcopy(c.ps);//{};
+      o.s=c.ps.s;//c.innerHTML;
       o.x=s.left;o.y=s.top;o.c=s.backgroundColor;
       if (s.transform.length>0) o.t=s.transform;
       if (c.edge) o.edge=c.edge;
-      if (c.ps.src) o.src=c.ps.src;
-      if (c.ps.transformOrigin) o.transformOrigin=c.ps.transformOrigin;
-      if (c.ps.img) o.img=c.ps.img;
+      
+      //if (c.ps.src) o.src=c.ps.src;
+      //if (c.ps.transformOrigin) o.transformOrigin=c.ps.transformOrigin;
+      //if (c.ps.img) o.img=c.ps.img;
+      //if (c.ps.keyframes) o.keyframes=c.ps.keyframes;
+      
       if (s.width) o.w=s.width;
       sh+=(i==0?'[':'\n,')+JSON.stringify(o);
     }
     sh+=']';
-    sh+=',\n"views":'+JSON.stringify(views);
+    sh+=',\n"views":';
+    
+    sh+='[\n';
+    for (var i=0;i<views.length;i++) {
+      sh+=(i>0?',':' ')+JSON.stringify(views[i])+'\n';
+    }
+    sh+=']';
+    //sh+=JSON.stringify(views,undefined,' ');
+    
     for (var k in scene) if (scene.hasOwnProperty(k)) {
       sh+=',\n"'+k+'":'+JSON.stringify(scene[k]);
     }
@@ -394,8 +448,10 @@ var Arrows=function(gps) {
     //...
   }
   function showTime(v) {
-    mtime.value=v;
-    mtime.s=v;
+    if (mtime) {
+      mtime.value=v;
+      mtime.s=v;
+    }
     for (var i=0;i<cont.childNodes.length;i++) {
       var c=cont.childNodes[i],a=c.ps.keyframes,s=c.style;
       if (!a) continue;
@@ -412,10 +468,32 @@ var Arrows=function(gps) {
           f0=1-(t-k0.time)/(k1.time-k0.time);
         }
         var f1=1-f0;
-        s.opacity=k0.opacity*f0+k1.opacity*f1;
+        if (k0.opacity!==undefined) s.opacity=k0.opacity*f0+k1.opacity*f1;
+        if (k0.x!==undefined) s.left=(k0.x*f0+k1.x*f1)+'px';
+        if (k0.y!==undefined) s.top=(k0.y*f0+k1.y*f1)+'px';
         break;
       }
       //if (v<=a[0].time) s.opacity=a[0].opacity; else s.opacity=a[1].opacity;
+    }
+    
+    var e=document.getElementById(mtime.ctrlTextId);
+    if (e&&(views.length>0)) {
+      var vi,view,viewPrev,isview=false;
+      for (vi=0;vi<views.length;vi++) {
+        view=views[vi];
+        if (view.t<v) viewPrev=view;
+        if (view.t==v) isview=true;
+        if (view.t>v) break;
+      }
+      var s='';
+      if (view) {
+         
+        if (viewPrev) s=viewPrev.t;
+        if (isview) s+=(viewPrev?'-':'')+v;
+        if (view.t!=v) s+='-'+view.t;
+        s=', Views: '+s;
+      }
+      e.innerHTML='Time'+s;
     }
     //console.log('Time oninput '+v);
   }
@@ -428,7 +506,8 @@ var Arrows=function(gps) {
     
     var cfm=Conet.fileMenu({
     //curFn:'/anim/arrows/mercer.json.txt',
-    fn:'/test/divScaleFiles.json.txt',defFn:'/test/divScale0.json.txt',noStartLoad:gps.noStartLoad,loadf:load
+    fn:'/test/divScaleFiles.json.txt',defFn:'/test/divScale0.json.txt',
+    noStartLoad:gps.noStartLoad,loadf:load,loadUrlKey:'cfmload'
     ,savef:url.withSave?function(v) {
       //onsole.log(JSON.stringify(cont.children,undefined,' '));
       Conet.upload({fn:v,data:serialize(),log:log});
@@ -466,12 +545,16 @@ var Arrows=function(gps) {
     },
     
     {s:'Text..',doctrl:'Text',ta:1,r:1,valuef:function() {
-      return sel?sel.innerHTML:undefined;
+      //return sel?sel.innerHTML:undefined;
+      return sel?sel.ps.s:undefined;
       //if (!sel) { alert('No element selected.');return; }
       //sel.innerHTML=Math.random();
     }
     ,setfunc:function(v) {
+      sel.ps.s=v;
       sel.innerHTML=v;//...
+      
+      checkEval(sel);
     }
     },
     
@@ -494,6 +577,26 @@ var Arrows=function(gps) {
       sel.style.backgroundColor=v;//...
     }
     },
+    
+    {s:'KeyFrames..',ta:1,jsonCheck:1,doctrl:'KeyFrames',valuef:function() {
+      //onsole.log(sel);
+      return sel?JSON.stringify(sel.ps.keyframes||[],undefined,' '):undefined;
+      //if (!sel) { alert('No element selected.');return; }
+      //sel.innerHTML=Math.random();
+    }
+    ,setfunc:function(v) {
+      if (v===undefined) {
+        sel.ps.keyframes=undefined;
+        return;
+      }  
+      try { 
+        sel.ps.keyframes=JSON.parse(v);
+      } catch (err) { 
+        alert(err);
+      }
+    }
+    },
+    
     
     
     {s:'Add',ms:'Edge',actionf:function() {
@@ -535,39 +638,14 @@ var Arrows=function(gps) {
     
     ];
     
-    if (url.animate) ma.push(//m0.sub.push(
+    if (1||url.animate||url.mtime) ma.push(//m0.sub.push(
     
-    mtime={s:'500',r:1,close:1,ms:'Time',doctrl:'Time',range:{min:500,max:1300},value:500
+    mtime={s:'500',ctrlTextId:'mtimeS',close:1,ms:'Time',doctrl:'Time',range:{min:500,max:1300},value:500
+    //r:1 gives bug
     ,setfunc:function(v) {
       alert(v);
     }
-    ,oninput:function(v) {
-      mtime.value=v;
-      mtime.s=v;
-      for (var i=0;i<cont.childNodes.length;i++) {
-        var c=cont.childNodes[i],a=c.ps.keyframes,s=c.style;
-        if (!a) continue;
-        if (a.length==0) continue;
-        var t=Math.max(v,a[0].time);
-        //console.log(t);
-        for (var j=0;j<a.length;j++) {
-          var k0=a[j],f0,k1;
-          if (j==a.length-1) {
-            k1=k0;f0=1;
-          } else {
-            k1=a[j+1];
-            if (t>k1.time) continue;
-            f0=1-(t-k0.time)/(k1.time-k0.time);
-          }
-          var f1=1-f0;
-          s.opacity=k0.opacity*f0+k1.opacity*f1;
-          break;
-        }
-        //if (v<=a[0].time) s.opacity=a[0].opacity; else s.opacity=a[1].opacity;
-      }
-      //console.log('Time oninput '+v);
-    }
-    }
+    ,oninput:showTime}
     
     );
     
@@ -699,17 +777,78 @@ var Arrows=function(gps) {
   this.etScene=function() {
     return scene;//...
   }
-  this.version='1.58 ';//FOLDORUPDATEVERSION
+  this.hubFiles=function(ps) {
+    
+    //--- eventually later in an own script file for anim/arrows/hub.json
+    //--- or within that file where the func originated,
+    //--- for now for easy editing here
+    //---
+    
+    function pxval(s) {
+      return parseFloat(s.substr(0,s.length-2));
+    }
+    
+    
+    var c=ps.c,st=c.style,xc=pxval(st.left),yc=pxval(st.top);
+    //console.log(pxval(st.left)+' '+pxval(st.top));
+    //console.log(c.getBoundingClientRect());
+    
+    //---below cache:1 not needed anymore
+    Conet.download({fn:ps.fn,json:1,f:function(d) {
+      yc+=40;
+      for (var i=0;i<d.length;i++) {
+        var e=d[i];
+        if (e.h) continue;
+        var cn=arrows.div({
+          s:'',transient:1,
+          c:'rgba(0,250,0,0.1)',x:xc+'px',y:yc+'px'
+        });
+        var a=document.createElement('a'),fnh=e.fn;//,fn=e.fn;
+        a.href=ps.apref+fnh;
+        a.title=fnh;
+        //a.style.maxWidth='50px';
+        var ih=fnh.lastIndexOf('/');
+        if (ih!=-1) fnh=fnh.substr(ih+1);
+        a.innerHTML=fnh+'<br>';
+        cn.appendChild(a);
+        var st=cn.style;
+        st.maxWidth='75px';
+        st.overflow='hidden';
+        var sc=1/(i+1);
+        st.transform='scale('+sc+','+sc+')';
+        if (e.isrc) {
+          var img=new Image();
+          img.src=e.isrc;
+          img.width=50;
+          a.appendChild(img);
+          yc+=sc*70;
+        } else yc+=sc*16;
+      }
+    }
+    });
+    
+    //...
+  }
+  this.version='1.169 ';//FOLDORUPDATEVERSION
   console.log('Arrows '+this.version);
   //...
 }
 //---
 
 //fr o,1
-//fr o,1,3,33
-//fr o,1,20
-//fr o,1,20,9
-//fr o,1,20,11
-//fr o,1,20,17
-//fr o,1,20,23
-//fr p,8,45
+//fr o,1,4,33
+//fr o,1,9
+//fr o,1,9,0
+//fr o,1,11
+//fr o,1,12
+//fr o,1,13
+//fr o,1,21,10
+//fr o,1,21,12
+//fr o,1,21,18
+//fr o,1,21,24
+//fr o,1,21,36
+//fr o,1,21,37
+//fr o,1,21,42
+//fr o,1,78,6
+//fr o,1,78,14
+//fr p,38,74

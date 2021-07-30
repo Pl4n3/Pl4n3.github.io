@@ -137,7 +137,7 @@ function threeCreateMesh(lo,first,px,py,pz,scale,mat) {
   }
 }
 function threeSetMeshMaterial(m,lo) {
-  //onsole.log('threeSetMeshMaterial 0');
+  //onsole.log('threeSetMeshMaterial 0 '+lo.transparent);
   if (!lo.phong) {
   //onsole.log('threeSetMeshMaterial 1');
   var ambient = 0xffffff, diffuse = 0xffffff, specular = 0xffffff, shininess = 35;
@@ -174,12 +174,15 @@ function threeSetMeshMaterial(m,lo) {
       shininess:shininess,
       map:diff,specularMap:spec,normalMap:norm,
       reflectivity:0.2,
+      //transparent:true,
     };
-  
+    if (lo.transparent) ph.transparent=true;
+    
     
     if (lo.ps) {
       if (lo.ps.color!==undefined) ph.color=lo.ps.color;
       if (lo.ps.shininess!==undefined) ph.shininess=lo.ps.shininess;
+      //if (lo.ps.transparent) ph.transparent=true;
     }
     //onsole.log('threeSetMeshMaterial '+(lo.ps?'ps':'-'));
     m.material=new THREE.MeshPhongMaterial(ph);
@@ -216,7 +219,8 @@ function threeSetMeshMaterial(m,lo) {
   
   				var parameters={fragmentShader:shader.fragmentShader,vertexShader:shader.vertexShader,uniforms:uniforms,lights:true,fog:true};
   var ps=parameters;
-  if (lo.transparent) { 
+  if (lo.transparent) {
+    console.log('transparent!!!1'); 
     ps.transparent=true;
     //ps.depthWrite=false; 
     //ps.side=THREE.DoubleSide;
@@ -269,7 +273,7 @@ function threeRemoveObj(o) {
   if (o.bb) threeBbRemove(o.bb);
   //  threeEnv.base.remove(o.bb.threeMesh);
   //  threeEnv.billboards.splice(threeEnv.billboards.indexOf(o.bb),1);
-  
+  if (o.meshes)
   for (var mi=o.meshes.length-1;mi>=0;mi--) 
     threeEnv.base.remove(o.meshes[mi].tmesh);
   threeEnv.os.splice(threeEnv.os.indexOf(o),1);
@@ -546,7 +550,8 @@ function threeRender(dt) {
   //console.log('threeRender '+threeEnv.os.length);
   Pd5.os=threeEnv.os;//for animText.attack
   for (var obi=threeEnv.os.length-1;obi>=0;obi--) {
-    var lo=threeEnv.os[obi];
+    var lo=threeEnv.os[obi]; 
+    if (lo.stopAfterAnim&&lo.animStop) continue;
     
     if (threeEnv.aipos) {
       if (lo.ps.ai) {
@@ -880,9 +885,9 @@ function DungeonGeometry(ps,view) {
   //onsole.log('DungeonGeometry indices.len='+indices.length);
   
   this.setIndex( indices );
-  this.addAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 ) );
-  this.addAttribute( 'normal', new THREE.Float32BufferAttribute( normals, 3 ) );
-  this.addAttribute( 'uv', new THREE.Float32BufferAttribute( uvs, 2 ) );
+  this.setAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 ) );
+  this.setAttribute( 'normal', new THREE.Float32BufferAttribute( normals, 3 ) );
+  this.setAttribute( 'uv', new THREE.Float32BufferAttribute( uvs, 2 ) );
   
   if (view) {//view) {
     this.computeFaceNormals();
@@ -966,5 +971,11 @@ threeEnv.addQuad=function(ps) {
   //---
 }
 //fr o,9,33
+//fr o,10
+//fr o,11
+//fr o,12
+//fr o,13
+//fr o,14
 //fr o,19
-//fr p,7,127
+//fr o,25
+//fr p,6,118

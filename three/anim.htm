@@ -6,17 +6,23 @@
 <style>
 body { color:#000;background-color:#aaa;margin:0px;overflow:hidden;font-family:Sans-serif; }
 </style> 
-<script src="/three/r109/build/three.min.js"></script>
-<script src="/three/r109/examples/js/vr/WebVR.js"></script>
+<script src="/three/r124/build/three.min.js"></script>
 <script src="/three/r109/examples/js/libs/stats.min.js"></script>
-<script src="/three/v81/OrbitControls.js"></script>
+
+<script src="/three/r124/examples/js/shaders/CopyShader.js"></script>
+<script src="/three/r124/examples/js/shaders/DigitalGlitch.js"></script>
+<script src="/three/r124/examples/js/postprocessing/EffectComposer.js"></script>
+<script src="/three/r124/examples/js/postprocessing/ShaderPass.js"></script>
+<script src="/three/r124/examples/js/postprocessing/RenderPass.js"></script>
+<script src="/three/r124/examples/js/postprocessing/GlitchPass.js"></script>
+
+<script src="/three/v81/OrbitControlsPl.js"></script>
 <script src="/menu.js"></script>
 <script src="/conet.js"></script>
 <script src="/sound.js"></script>
 <script src="../vecmath.js"></script>
 <script src="../canvas/pd5.js"></script>
 <script src="threePd5.js"></script>
-<script src="/bulletjs/bullet.js"></script>
 </head><body oncontextmenu="return false;">
 <div id="container"></div>
 <script>
@@ -26,13 +32,17 @@ function Planim() {
     //!   stopped using this, since 27.3.2018 it has event.preventDefault in
     //!   touchStart which disables clickevents
     //...
+    //script src="/bulletjs/bullet.js">/script>
     //script src="https://threejs.org/build/three.min.js">/script>
     //script src="https://threejs.org/examples/js/vr/WebVR.js">/script>
     //script src="https://threejs.org/examples/js/libs/stats.min.js">/script>
     //--- 191029 using local r109 copies now, because bad internet currently
+    
+    //script src="/three/r109/examples/js/vr/WebVR.js">/script>
+    //--- 201230 using r124 for glitch, removed webvr because its in xr
   }
-  var scene,stats,views=[],oh={},ot=Date.now(),scra=[],scri=0,scrt=0,loopAfterLoaded,
-      base,debug='',version='1.1979 ',//FOLDORUPDATEVERSION
+  var scene,stats,views=[],oh={},ot=Date.now(),otscra=ot,scra=[],scri=0,scrt=0,loopAfterLoaded,
+      base,debug='',version='1.2208 ',//FOLDORUPDATEVERSION
       m0=new THREE.MeshPhongMaterial( { color:0x666666,flatShading:true } ),
       m1=new THREE.MeshPhongMaterial({color:0x77dd77,flatShading:true,
       transparent:true,opacity:0.5}),mray0=new THREE.MeshPhongMaterial({
@@ -45,8 +55,9 @@ function Planim() {
       fetchbp=new THREE.Vector3(),camv=0,cmenu,menui=0,rvr,vrd,vrUserHeight=0,
       mh0=new THREE.Matrix4(),ot=Date.now(),dtscale=1,
       egoi=-1,vh0=new THREE.Vector3(),vdef=0.001,vrbu,baseRot={x:0.3,y:0,z:0},
-      tIsoStrafe=0,uiMode=-1,mD=false,inp={x:0,y:0},controls,pts=[],pts2=[],
-      vrButtonShown=false,vrY=0,attackMarks=[];//,urlfiles={};
+      tIsoStrafe=0,uiMode=-1,mD=false,inp={x:0,y:0},controls,pts=[],//pts2=[],
+      vrButtonShown=false,vrY=0,attackMarks=[],psHash={},tweens=[];//,urlfiles={};
+      //textures={};
   function updateHud(view) {
     if (!view) view=views[0];
     var hud=view.hud;
@@ -112,6 +123,10 @@ function Planim() {
       controls.zoomSpeed=v.zoomSpeed||0.5;
       //controls.distance=2;
       if (v.target) controls.target.copy(v.target);
+      //onsole.log('controls inited.');
+      //controls.mouseButtons={ORBIT:THREE.MOUSE.LEFT,ZOOM:THREE.MOUSE.MIDDLE,PAN:THREE.MOUSE.RIGHT};
+      ////controls.mouseButtons={ORBIT:THREE.MOUSE.RIGHT,ZOOM:THREE.MOUSE.MIDDLE,PAN:THREE.MOUSE.LEFT};
+      
     }
     //controls.rotateLeft(0.5);
     v.renderer=renderer;v.camera=camera;v.controls=controls;
@@ -198,6 +213,16 @@ function Planim() {
       //  renderer.animate(animate);
       //else setInterval(animate,10);
     }
+    
+    
+    var composer = new THREE.EffectComposer( renderer );
+    composer.addPass( new THREE.RenderPass( scene, camera ) );
+    
+    //var glitchPass=new THREE.GlitchPass();glitchPass.goWild=true;
+    //composer.addPass(glitchPass);
+    
+    v.composer=composer;
+    
     return v;
   }
   function box(x,y,z,w,h,b,m) {
@@ -280,6 +305,7 @@ function Planim() {
       }
       camera.updateProjectionMatrix();
       renderer.setSize(w,h);//window.innerWidth,window.innerHeight);
+      if (v.composer) v.composer.setSize(w,h);
       v.wh=w;v.hh=h;
       //var s=renderer.domElement.style;
       s.position='absolute';
@@ -298,10 +324,25 @@ function Planim() {
     }
   }
   function setTargetCampos(tx,ty,tz,cx,cy,cz) {
-    //onsole.log('setTargetCampos');
+    //console.log('setTargetCampos');
     var v=views[0];
-    aa.c0.copy(v.vr?base.position:v.camera.position);
-    if (v.controls) aa.t0.copy(v.controls.target);
+    //onsole.log('setTargetCampos v.vr='+v.vr);
+    aa.c0.copy(v.vr||self.targetCamBase?base.position:v.camera.position);
+    if (v.controls) {
+      aa.t0.copy(v.controls.target);
+      aa.t1.x=tx;aa.t1.y=ty;aa.t1.z=tz;
+    } else {
+      var r=v.camera.rotation;
+      //onsole.log(r);
+      aa.t0.set(r.x,r.y,r.z);
+      mh0.lookAt(new THREE.Vector3(cx,cy,cz),new THREE.Vector3(tx,ty,tz),new THREE.Vector3(0,1,0));
+      //onsole.log(mh0);
+      var r1=new THREE.Euler();
+      r1.setFromRotationMatrix(mh0,'YXZ');
+      aa.t1.x=r1.x;aa.t1.y=r1.y;aa.t1.z=r1.z;
+      //var r=new THREE.Euler();
+      //r.setFromRotationMatrix(mh0,'XYZ');
+    }
     if (v.vr) { 
       var rvr=v.renderer.vr;
       //onsole.log('setTargetcampos '+rvr.getDevice());
@@ -311,7 +352,7 @@ function Planim() {
        )-cy;cz=-cz; //1.6
     }
     aa.c1.x=cx;aa.c1.y=cy;aa.c1.z=cz;
-    aa.t1.x=tx;aa.t1.y=ty;aa.t1.z=tz;
+    //aa.t1.x=tx;aa.t1.y=ty;aa.t1.z=tz;
     
     //aa.c1.x=a.cx;aa.c1.y=a.cy;aa.c1.z=a.cz;
     //aa.t1.x=a.tx;aa.t1.y=a.ty;aa.t1.z=a.tz;
@@ -322,6 +363,7 @@ function Planim() {
     //...
   }
   function viewAnchor(a) {
+    //onsole.log('viewAnchor 0');
     //
     var v=views[0];
     if (canch) {
@@ -382,9 +424,18 @@ function Planim() {
   }
   
   function ps(ps) {
-    var dy=ps.dy||0.6;
+    if (ps.o) {
+      var o=ps.o,sc=o.scale||1;
+      Conet.hcopy({x:o.pos.x,y:o.pos.y,z:o.pos.z,dy:0.8*sc,size:(o.psSize||1.5)*sc},
+        ps,undefined,undefined,undefined,{logOverwrite:1});
+    }
     
-    var o=pts2.pop();
+    var dy=ps.dy||0.6,color=ps.color||'#f00',
+        key='boom'+ps.size+'_'+ps.dy+'_'+color;
+    
+    if (!psHash[key]) psHash[key]=[];
+    
+    var o=psHash[key].pop();//pts2.pop();
     if (o) {
       //for (var v of o.verts) { v.ox=ps.x;v.oy=ps.y+dy;v.os=ps.z; }
       o.t=0;
@@ -400,7 +451,17 @@ function Planim() {
     //onsole.log(ps);
     var geometry=new THREE.BufferGeometry();
     var vertices=[],verts=[];
-    var sprite=new THREE.TextureLoader().load('/shooter/boom.png'),size=ps.size||1.5;
+    
+    var fn='/shooter/boom.png',size=ps.size||1.5;
+    
+    
+    //--- below: caching gives no boost, its probably cached in textureloader
+    //sprite=textures[fn];
+    //if (!sprite) {
+    var sprite=new THREE.TextureLoader().load(fn);
+    //  textures[fn]=sprite;}
+    
+    
     for (var i=0;i<50;i++) {
       var vx=(Math.random()-0.5),vz=(Math.random()-0.5),vl=Math.sqrt(vx*vx+vz*vz)/(Math.random()*size);
       //var v={ox:ps.x,oy:ps.y+dy,oz:ps.z,vx:vx/vl,vz:vz/vl};
@@ -413,13 +474,17 @@ function Planim() {
     }
     var ba=new THREE.Float32BufferAttribute(vertices,3);
     geometry.addAttribute('position',ba);
-    material=new THREE.PointsMaterial({size:3,sizeAttenuation:true,map:sprite,transparent:true,color:'#f00'});
+    material=new THREE.PointsMaterial({size:3,sizeAttenuation:true,map:sprite,transparent:true,color:color});
     //material.color.setHSL( 1.0, 0.3, 0.7 );
     var ps=new THREE.Points(geometry,material);
     //particles.sortParticles=true;
-    ps.position.set(ps.x,ps.y,ps.z);
-    base.add(ps);
-    pts.push({ps:ps,ba:ba,mat:material,verts:verts,t:0,mt:500,dy:dy,size:size});
+    if (ps.onlyCache) {
+      psHash[key].push(ps);
+    } else {
+      ps.position.set(ps.x,ps.y,ps.z);
+      base.add(ps);
+      pts.push({ps:ps,ba:ba,mat:material,verts:verts,t:0,mt:500,dy:dy,size:size,key:key});
+    }
     //...
   }
   function psCalc(dt) {
@@ -430,7 +495,7 @@ function Planim() {
       if (o.t>o.mt) {
         pts.splice(j,1);
         base.remove(o.ps);
-        pts2.push(o);
+        psHash[o.key].push(o);//pts2.push(o);
         continue;
       }
       var f=o.t/o.mt,ba=o.ba,a=ba.array,verts=o.verts;
@@ -484,9 +549,19 @@ function Planim() {
           
           var d2=dist2(o.pos,ofoc.pos);
           var wp=(ofoc.health===undefined);
-          if (!wp&&((d2>(o.distUnfocus||30))||(ofoc.health<=0))) delete(o.focus); else {
+          if (!wp&&((d2>(o.distUnfocus||30))||(ofoc.health<=0))) { 
+            //onsole.log('unfocus');
+            delete(o.focus); 
+          } else {
           
-            var da=dAng(o.roty,angle(o.pos,ofoc.pos));
+            let a0=angle(o.pos,ofoc.pos),flee=false;
+            if (o.fleeIfFaced) {
+              //onsole.log('fleeIfFaced');
+              var faceA=dAng(ofoc.roty,a0+Math.PI);
+              if (Math.abs(faceA)<1.58) { a0+=Math.PI;flee=true; }
+            }
+          
+            var da=dAng(o.roty,a0);
             if (da<-0.1) o.turnLeft=true;
             if (da>0.1) o.turnRight=true;
           
@@ -496,7 +571,7 @@ function Planim() {
                 //da=o.collr+(ofoc.collr||0);da=da*da+1; 
                 da=(o.attackr||o.collr)+(ofoc.hitr||ofoc.collr||0);da=da*da+0.3; 
               }
-              if (d2<=da) {
+              if ((d2<=da)&&!flee) {
                 if (wp) {
                   delete(o.focus); 
                   o.turnLeft=false;o.turnRight=false;
@@ -520,7 +595,7 @@ function Planim() {
               for (var j=os.length-1;j>=0;j--) {
                 var o5j=os[j],oj=o5j.ps;
                 if ((oj.party===undefined)||(oj.party==o.party)||(oj.health<=0)) continue;
-                if (dist2(o.pos,oj.pos)<(o.collr+oj.collr+5)) {
+                if (dist2(o.pos,oj.pos)<(o.collr+oj.collr+15)) {
                   o.focus=oj;
                   o.focust=0;
                   done=true;
@@ -528,15 +603,17 @@ function Planim() {
                 }
               }
             }
-            if (1&&controlo&&(controlo.health>0)&&(dist2(o.pos,controlo.pos)<(o.collr+controlo.collr+(o.distUnfocus||5)))&&!o.noRangeFocus) {
+            if (1&&controlo&&(controlo.health>0)&&(dist2(o.pos,controlo.pos)<(o.collr+controlo.collr+(o.distFocus||o.distUnfocus||5)))&&!o.noRangeFocus) {
               if (o.aFocus) {
                 var a=angle(o.pos,controlo.pos);
                 var da=dAng(a,o.roty);
                 if (Math.abs(da)<o.aFocus) {
+                  //onsole.log('focus with a');
                   o.focus=controlo;o.focust=0;done=true;
                 }
                 //onet.log('da='+f4(da));
               } else {
+                //onsole.log('focus without a');
                 o.focus=controlo;o.focust=0;done=true;
               }
             }
@@ -561,7 +638,8 @@ function Planim() {
         Pd5.animStart(o5,o5.animh[o.animHit]);
         o.hitt+=dt;
         if (!o.hite.psDone) {
-          ps({x:o.pos.x,y:o.pos.y,z:o.pos.z,dy:0.8,size:o.psSize||1.5});
+          ps({o:o});
+          //ps({x:o.pos.x,y:o.pos.y,z:o.pos.z,dy:0.8,size:o.psSize||1.5});
           o.hite.psDone=true;
         }
         if (o.hitt>250) {
@@ -676,8 +754,8 @@ function Planim() {
       if ((kL||kR||kU||kDn)&&!strafe) {
         //if (strafe) { o.turnLeft=kL;o.turnRight=kR; } else {
         var dry=((kL?-1:0)+(kR?1:0))*dto*0.003;
-        baseRot.y+=dry;
-        var drx=((kU?-1:0)+(kDn?1:0))*dto*0.003;
+        baseRot.y+=dry;//onsole.log('baseRot.x='+baseRot.y);
+        var drx=((kU?-1:0)+(kDn?1:0))*dto*0.0005;
         var a=Math.min(1.0,Math.max(-0.4,baseRot.x+drx));
         baseRot.x=a;
         if (uiMode==3) {
@@ -693,7 +771,10 @@ function Planim() {
         if (da>PI/18) o.turnRight=true;
         //tIsoStrafe=0;
       }
-      if (kL||kR) o.lastAttacked=undefined;//to loose lockon, maybe rename flag to 'lockedObj'?
+      if ((kL||kR)&&o.lastAttacked) {
+        o.lastAttacked=undefined;//to loose lockon, maybe rename flag to 'lockedObj'?
+        //if (self.onUnlockUimode3) self.uiSet(3);
+      }
       if (!ip&&strafe&&(kU||kDn)&&!planim.noKeyRotX&&!(uiMode==3)) {
         //onsole.log('nao kU kDn');
         var v0=views[0],r=v0.camera.rotation;
@@ -751,6 +832,8 @@ function Planim() {
     if (game.defMoves) animDefMoves(dt);
     
     if (Pd5.dynamicsWorld) Pd5.dynamicsWorld.stepSimulation1(dt/1000);
+    
+    if (game.calcMid) game.calcMid(dt);
     
     psCalc(dt);
     //hreePsCalc();
@@ -810,7 +893,7 @@ function Planim() {
     var raremt=300;
     raret+=dt;
     if (raret>=raremt) { raret=0;var v0=views[0];if (v0) {
-      rvr=v0.renderer.vr;vrd=undefined;//rvr.getDevice();
+      rvr=v0.renderer.xr;vrd=undefined;//rvr.getDevice(); //pl201230 .vr -> .xr for r124
       //console.log('rvr.userHeight='+rvr.userHeight);
       //if (vrd!=vrdevice) 
       {
@@ -855,15 +938,16 @@ function Planim() {
     if (taa>0) {
       taa=Math.max(0,taa-dt);
       var f0=taa/tam,f1=1-f0,v=views[0];
-      var o3d=v.vr?base:v.camera;
+      var o3d=(v.vr||self.targetCamBase)?base:v.camera;
       //if (!v.vr) {
         //v.camera.
         o3d.position.set(aa.c0.x*f0+aa.c1.x*f1,aa.c0.y*f0+aa.c1.y*f1,aa.c0.z*f0+aa.c1.z*f1);
-        if (v.controls) v.controls.target.set(aa.t0.x*f0+aa.t1.x*f1,aa.t0.y*f0+aa.t1.y*f1,aa.t0.z*f0+aa.t1.z*f1); 
+        if (v.controls) v.controls.target.set(aa.t0.x*f0+aa.t1.x*f1,aa.t0.y*f0+aa.t1.y*f1,aa.t0.z*f0+aa.t1.z*f1);
+        else v.camera.rotation.set(aa.t0.x*f0+aa.t1.x*f1,aa.t0.y*f0+aa.t1.y*f1,aa.t0.z*f0+aa.t1.z*f1); 
       //}
     }
     
-    if (self.vrkeys&&(views.length>0)&&!cmenu) {//&&!self.ego) {
+    if (self.vrkeys&&(views.length>0)&&!cmenu&&!Menu.mcontrol) {//&&!self.ego) {
       var cam=views[0].camera,rf=0.003;
       if (keys[38]) cam.rotation.x+=rf*dto;
       if (keys[40]) cam.rotation.x-=rf*dto;
@@ -886,7 +970,8 @@ function Planim() {
       if (!self.ego) {
       var kleft=keys[65],kright=keys[68],kfore=keys[87],kback=keys[83],kup=keys[81],kdown=keys[69],
           tsd0change=tsd0?(Math.abs(tsd0.dx)>0.1||Math.abs(tsd0.dy)>0.1||(fetch&&Math.abs(tsd1.dy)>0.1)):false;
-      if (kleft||kright||kfore||kback||kup||kdown||tsd0change) {
+      if (kleft||kright||kfore||kback||kup||kdown||tsd0change||self.camFloatUpdate) {
+        self.camFloatUpdate=false;
         camv+=0.000001*dto;camkt+=dto;
         //out('camv '+f4(camv));
         var v=new THREE.Vector3();//,f=0.003;
@@ -1029,12 +1114,17 @@ function Planim() {
       }
     }
     
+    calcTweens(dt);
+    
     if (game.calcLater) game.calcLater(dt);
     
     for (var i=views.length-1;i>=0;i--) {
       var view=views[i];
       if (view.controls) view.controls.update();
-      view.renderer.render(scene,view.camera);
+      if (view.composer) 
+        view.composer.render();
+      else
+        view.renderer.render(scene,view.camera);
     }
   }
   function loadInit(o,ps) {
@@ -1053,7 +1143,7 @@ function Planim() {
     
     //if (ps.ego) { self.controlo=planim.ego=o.ps; }
     
-    //console.log(o);//Object.assign({},o));
+    //onsole.log(o);//Object.assign({},o));
     
     //Pd5.animStart(o,o.animh[ps.animIdle||ps.anim]);
     Pd5.animStart(o,ps.animIdle||ps.anim);
@@ -1155,17 +1245,19 @@ function Planim() {
     //console.log(ch);
   }
   function calcScra() {
-    var t=Date.now(),dt=t-ot;ot=t;
+    var t=Date.now(),dt=t-otscra;otscra=t;
     //onsole.log(dt);
-    scrt=Math.min(2500,scrt+dt);
-    while (true) {
-      var scr=scra[scri];
-      if (scrt<scr.t) break;
-      scr.f();
-      scrt-=scr.t;
-      scri=(scri+1)%scra.length;
+    if (scra.length>0) {
+      if (scri>=scra.length) scri=0;
+      scrt=Math.min(25000,scrt+dt);//war 2500
+      while (true) {
+        var scr=scra[scri];
+        if (scrt<scr.t) break;
+        scr.f();
+        scrt-=scr.t;
+        scri=(scri+1)%scra.length;
+      }
     }
-    
     //console.log('anim.calc '+(oh.templar?'1':'0'));
     //var ot=oh.templar,ob=oh.bot;
     //if (ot&&ob) {
@@ -1180,6 +1272,26 @@ function Planim() {
     //  //Pd5.animStart(o,o.anim===a0?o.animh.speak:a0);
     //}
     setTimeout(calcScra,20);
+  }
+  function calcTweens(dt) {
+    //---
+    for (var i=tweens.length-1;i>=0;i--) {
+      var tw=tweens[i];
+      tw.tc=Math.min(tw.t,(tw.tc||0)+dt);
+      if (tw.x0===undefined) {
+        tw.x0=tw.o.x;tw.y0=tw.o.y;tw.z0=tw.o.z;
+      }
+      var f1=tw.tc/tw.t;
+      f1=0.5-Math.cos(f1*Math.PI)/2;
+      var f0=1-f1;
+      tw.o.set(
+        f1*tw.x+f0*tw.x0,
+        f1*tw.y+f0*tw.y0,
+        f1*tw.z+f0*tw.z0,
+      );
+      if (tw.t==tw.tc) tweens.splice(i,1);
+    }
+    //...
   }
   function viewText(i,sh) {
     var v=views[i],c=v.textc,s=c.style;
@@ -1218,7 +1330,8 @@ function Planim() {
     for (var i=0;i<a.length;i++) {
       var ps=a[i];
       ps.loadIndex=i;
-      loadObj(ps);
+      var ret=loadObj(ps);
+      if (ps.objs) ps.o=ret;
     }
     //...
   }
@@ -1261,7 +1374,12 @@ function Planim() {
     //cam.rotation.x=0;cam.rotation.y=0;
     //console.log(threeEnv.os);
     if (planim.ego) { //base.position.set(0,0,0);
-      planim.ego.ego=1;if (self.vrkeysAuto||self.vrkeys) { self.vrkeys=0;cam.rotation.set(0,0,0); }
+      planim.ego.ego=1;
+      if (self.vrkeysAuto||self.vrkeys) { 
+        self.vrkeys=0;cam.rotation.set(0,0,0); 
+        if (self.wasFog) { scene.fog=self.wasFog;delete(self.wasFog); }
+        cam.far=self.wasFar;cam.updateProjectionMatrix();
+      }
       if (planim.egoSwitchWasBaseRot) threeEnv.useBaseRot=1;
     }
     else if (!self.vrkeys) { 
@@ -1270,6 +1388,12 @@ function Planim() {
         planim.egoSwitchWasBaseRot=1;
         threeEnv.useBaseRot=undefined; 
       }
+      if (scene.fog) { 
+        self.wasFog=scene.fog;
+        delete(scene.fog);
+      }
+      self.camFloatUpdate=1;
+      self.wasFar=cam.far;cam.far=1000;cam.updateProjectionMatrix();
     }
     //if (!planim.game.defMoves) {
     //  planim.vrkeys=!planim.ego;
@@ -1279,6 +1403,7 @@ function Planim() {
     //...
   }
   function keyDown(e) {
+    if (Menu.mcontrol) return;
     //console.log('');
     if (vrbu) { vrbu.parentNode.removeChild(vrbu);vrbu=undefined; }
     
@@ -1306,8 +1431,12 @@ function Planim() {
     dtscale=vh;//gamespeed=vh;
     }
     
-    //if (kc==32) { var v=views[0];console.log('keyDown campos,conroltarget');
-    //console.log(v.camera.position);if (v.controls) console.log(v.controls.target); }
+    if (kc==32) { var v=views[0];console.log('planim.keydown cam.pos, base.pos (, controls.target)');
+      console.log(v.camera.position);
+      console.log(base.position);
+      if (v.controls) console.log(v.controls.target); 
+      //self.toggleGlitch();  
+    }
     
     if ((kc==77)&&self.menu) {
       if (cmenu) cmenu=undefined; else { 
@@ -1384,7 +1513,7 @@ function Planim() {
     if (game.keyUp) game.keyUp(e);
   }
   function rani(n) {
-    return Math.floor(Math.random()*n);
+    return Conet.rani(n);//Math.floor(Math.random()*n);
   }
   function onClick(e) {
     //onsole.log('planim.onClick');
@@ -1408,6 +1537,16 @@ function Planim() {
     var a=Math.atan2(dx,dz);
     return a;//...
   }
+  
+  function angleZX(o,pos) {
+    var dx=pos.x-o.x;
+    var dz=pos.z-o.z;
+    //var l=Math.sqrt(dx*dx+dz*dz);
+    var a=Math.atan2(dz,dx);
+    return a;//...
+  }
+  
+  
   function dAng(a0,a1) {
     var da=a0-a1;
     while (da>PI) da-=PI*2;
@@ -1487,6 +1626,8 @@ function Planim() {
       inp.x*=iw/ih;inp.e=e;
       inp.dx=inp.x-inp.ox;
       inp.dy=inp.y-inp.oy;
+      var dx=inp.x-inp.x0,dy=inp.y-inp.y0;
+      inp.maxdrag=Math.max(inp.maxdrag,Math.sqrt(dx*dx+dy*dy))
       //...
     }
     
@@ -1512,7 +1653,7 @@ function Planim() {
       
       //var iw=window.innerWidth,ih=window.innerHeight,x=2*e.clientX/iw-1,y=2*e.clientY/ih-1;
       //x*=iw/ih;
-      coords(e);inp.x0=inp.x;inp.y0=inp.y;
+      coords(e);inp.x0=inp.x;inp.y0=inp.y;inp.maxdrag=0;
       var cam=views[0].camera;inp.camx=cam.rotation.x;inp.camy=cam.rotation.y;
       inp.button=e.button;inp.lastButton=e.button;
       //onsole.log(inp);
@@ -1530,7 +1671,10 @@ function Planim() {
       //    used much anymore (instead: vrkeys/touchstick/rightdrag)
       //--- 190512 removed comments, conditioned on oribitalcontrols
       
-      if (controls) if (Date.now()-tapstart>300) skipClick=true;
+      if (controls) {
+        if (Date.now()-tapstart>300) skipClick=true;
+        if (self.longClick&&(inp.maxdrag<0.1)) { onClick(e); }
+      }
       
       mD=false;
     }
@@ -1597,7 +1741,7 @@ function Planim() {
       if (!self.inpMove) return;
       if (l==1) {
         touchClick=et[0];
-        coords(et[0]);
+        coords(et[0]);inp.x0=inp.x;inp.y0=inp.y;inp.maxdrag=0;
         self.inpMove(inp);
         //if (self.dragRays) onClick(et[0]);
       } else if (l==2) {
@@ -1617,8 +1761,8 @@ function Planim() {
     c.addEventListener('touchend',function(e) {
       var et=touchClick,t=Date.now(),dt=t-tst;
       //onsole.log('planim.touchend dt='+dt);
-      if (et&&(dt<200)) { 
-        dt=t-tct;if (dt<500) et.detail=2; 
+      if (et&&((dt<200)||(self.longClick&&(inp.maxdrag<0.1)))) { 
+        dt=t-tct;if ((dt<500)&&!self.longClick) et.detail=2; 
         tct=t;
         et.type='touchend';onClick(et);//191021 was 'touchstart', caused double voxel additions in voxed.js
       }
@@ -1658,6 +1802,7 @@ function Planim() {
       loada.push(h7={fn:url[k]});
       self.urlfiles[k]=h7;
     }
+    self.scriptH=scriptH;
     //onsole.log(ka);
     
     if (loada.length>0) {
@@ -1825,7 +1970,7 @@ function Planim() {
     
     }
     
-    uiMode=i;
+    uiMode=i;planim.uiMode=i;
     //...
   }
   //---
@@ -1906,6 +2051,28 @@ function Planim() {
     ip.y=(self.uiY||-1.5)-(a-0.3)*1;//0.7;
     //...
   }
+  this.tweenAdd=function(tw) {
+    //--- todo: check if tw.o exists and probably delete those tw
+    tweens.push(tw);
+    //...
+  }
+  this.toggleGlitch=function(on) {
+    
+    var v0=views[0];
+    if (on===undefined) on=!v0.glitchPass;
+    
+    if (v0.glitchPass&&!on) {
+      v0.composer.removePass(v0.glitchPass);
+      v0.glitchPass=undefined;
+    } 
+    
+    if (on&&!v0.glitchPass) {
+      v0.glitchPass=new THREE.GlitchPass();v0.glitchPass.goWild=true;
+      v0.composer.addPass(v0.glitchPass);
+    } 
+    
+    //...
+  }
   this.addView=addView;this.box=box;this.defaultLights=defaultLights;
   this.loadObjsThenLoop=loadObjsThenLoop;this.game=game;this.animate=animate;
   this.views=views;this.version=version;this.m0=m0;this.m1=m1;this.out=out;
@@ -1918,7 +2085,9 @@ function Planim() {
   this.uiToggle=uiToggle;this.uiSet=uiSet;//this.scene=scene;
   this.defMoveAi=true;this.scriptsLoaded=[];this.startCamV=0.001;
   this.loadObj=loadObj;this.scra=scra;this.calcScra=calcScra;
-  this.skipUis={};this.angle=angle;
+  this.skipUis={};this.angle=angle;this.ps=ps;this.angleZX=angleZX;
+  this.dist2=dist2;
+  //this.longClick; if true click is done also after long press with maxdrag<0.1, used in deep8
   //---waypoint stuff
   var y0=-1.80,tsc=1.8*1.2,ty0=y0/tsc,mh0=new THREE.Matrix4();//,vh0=new THREE.Vector3();
   this.waypoints=[
@@ -2151,10 +2320,10 @@ function Planim() {
     };
     //self.mtsd0y={checkbox:1,r:1,ms:'touch y'};
     self.mfullscreen={s:'Fullscreen',vertCenter:1,actionf:function() {
-      var c=document.body;
-      if (c.requestFullscreen) c.requestFullscreen();
-      else if (c.mozRequestFullScreen) c.mozRequestFullScreen();
-      else if (c.webkitRequestFullScreen) c.webkitRequestFullscreen();
+      var c=document.body,h={navigationUI:'hide'};
+      if (c.requestFullscreen) c.requestFullscreen(h);
+      else if (c.mozRequestFullScreen) c.mozRequestFullScreen(h);
+      else if (c.webkitRequestFullScreen) c.webkitRequestFullscreen(h);
       //---
     }
     };
@@ -2189,25 +2358,105 @@ function Planim() {
     
   }
   )();
+  
+  this.circolInit=function(ps) {
+    var bw=ps.bw;
+    
+    if (!self.scriptH[s='anim/data/objs.js']) { Conet.log('Error: need to load '+s);return; }
+    if (ps.objsh) if (!self.scriptH[s='anim/data/objsh.js']) { Conet.log('Error: need to load '+s);return; }
+    
+    //...
+    planim.addView({w:1,h:1,x:0,y:0,cam_:new THREE.Vector3(0,-0.10,2.50),bg:1,noOrbitControls:1
+      ,target:new THREE.Vector3(0,-0.40,-1.00),fov:60,bgcol:ps.bgcol||0x333333,vr_:1,camNear:0.2});
+    
+    planim.box(0,-1.9,0,bw*2,0.2,bw*2,
+    new THREE.MeshPhongMaterial( { color:0x332200,flatShading:true } )
+    ).castShadow=false;
+    
+    //planim.base.add(l0=new THREE.AmbientLight(0xffffff,0.5));//0.3
+    //l1=planim.pointLight({x:-1,y:2,z:1,col:0xffffaa,dist:10,int:2});
+    //l2=planim.pointLight({x:5,y:-5,z:-5,col:0xaaffff,dist:100,int:0.5,castShadow:false});
+    
+    if (!ps.noLights) {
+    var dl=new THREE.DirectionalLight(0xffffee,1.5);//ffe
+    //var dl=new THREE.PointLight(0xffffee,1.5,150,1);//ffe
+    dl.position.set(10,100,50);
+    if (1) {
+    dl.castShadow=true;
+    var c=dl.shadow.camera;
+    c.near=1;//100;
+    c.far=500;//1000;
+    c.left=c.bottom=-20;
+    c.right=c.top=20;
+    dl.shadow.mapSize.width=4*1024;//2048;
+    dl.shadow.mapSize.height=4*1024;
+    }
+    planim.base.add(dl);
+    
+    
+    if (1) {
+    var l=new THREE.HemisphereLight(0x000000,0xeeeeff,1);
+    l.position.set(10,100,50);
+    planim.base.add(l);
+    }
+    }
+    
+    Conet.seed(1);
+    
+    
+    //...
+  }
+  
+  this.areaLoad=function(v) {
+    var ps=this,area=ps.area,
+        mx=area.bw,mz=area.bw;//10
+    //var o=Pd5.load(v);planim.loadInit(o,ps);
+    Conet.seed(1);
+    var sc=area.count;//ps.shrubCount;//5;//20;
+    for (var i=0;i<sc;i++) {
+      var ps0=Pd5.hcopy(ps),rs=Conet.rand();
+      if (!area.linearScales) rs=rs*rs*rs;
+      ps0=Pd5.hcopy({
+        pos:new THREE.Vector3(Conet.rand()*2*mx-mx,-1.9,Conet.rand()*2*mz-mz),
+        scale:ps.scale+(area.scale2||ps.scale)*rs,
+        collr:(ps.scale+(area.scale2||ps.scale)*rs)*(area.collr||50),
+        //r_oty:Conet.rand()*2*Math.PI,
+      },ps0);
+      var o=Pd5.load(v);
+      if (ps.transparent) o.transparent=1;
+      //o.castShadow=0;
+      planim.loadInit(o,ps0);
+      var m=o.meshes[0].tmesh;
+      m.rotation.order='YXZ'
+      m.rotation.y=Conet.rand()*2*Math.PI;
+      o.t=planim.rani(500);o.shake=false;o.amp=0;o.animStop=true;
+      area.a.push(o);//scrubs
+    }
+  }
+  
   //---
 }
 var planim=new Planim();
 </script></body>
 </html><script>
-//fr o,22
-//fr o,22,18,96
-//fr o,22,31
-//fr o,22,44
-//fr o,22,44,63
-//fr o,22,52,43
-//fr o,22,52,46
-//fr o,22,52,48
-//fr o,22,52,84
-//fr o,22,53,11,1
-//fr o,22,53,13,2
-//fr o,22,63
-//fr o,22,67
-//fr o,22,95
-//fr o,22,95,11
-//fr o,22,95,15
-//fr p,30,111
+//fr o,28
+//fr o,28,19,100
+//fr o,28,27
+//fr o,28,46,68
+//fr o,28,58,32
+//fr o,28,58,38
+//fr o,28,58,40
+//fr o,28,58,43
+//fr o,28,58,46
+//fr o,28,58,48
+//fr o,28,58,50
+//fr o,28,58,85
+//fr o,28,58,90
+//fr o,28,59,11,1
+//fr o,28,59,13,2
+//fr o,28,105,3
+//fr o,28,105,11
+//fr o,28,105,15
+//fr o,28,108
+//fr o,28,110
+//fr p,17,124

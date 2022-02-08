@@ -1,7 +1,7 @@
 var Conet={};
 (function(Conet) {
   Conet.offline=false;
-  Conet.version='1.442 ';//FOLDORUPDATEVERSION
+  Conet.version='1.453 ';//FOLDORUPDATEVERSION
   Conet.files={};
   var uploads={},fns,logc,logs=[],//fn=>data,first
       logSameLineCount=0,ac,downloads={};
@@ -22,8 +22,8 @@ var Conet={};
     return x;
   }
   function upload(p) {
-    //onsole.log('Conet.upload 0');
-    //onsole.trace();
+    console.log('Conet.upload 0');
+    console.trace();
     if (Conet.offline) {
       //onsole.log('Conet.upload 1');
       localStorage['conetd'+p.fn]=p.data;
@@ -167,6 +167,7 @@ var Conet={};
   }
   Conet.fileMenu=function(p) {
     //---m.a are set only for compatibility (e.g. in paint Load,Save else trigger localStorage io)
+    //onsole.trace();//('fileMenu 0');
     //---
     function setCurFn(v) {
       m.curFn=v;
@@ -452,7 +453,7 @@ var Conet={};
     if (!logc) {
       var c=document.createElement('div'),s=c.style;s.fontSize='10px';s.fontFamily='Sans-serif';s.paddingLeft='2px';
       s.position='absolute';c.innerHTML='Log:<br>123...';s.left='2px';s.top='50px';
-      s.backgroundColor='rgba(200,200,200,0.8)';//'rgba(255,255,255,0.2)';
+      s.backgroundColor='rgba(250,250,250,0.3)';//'rgba(255,255,255,0.2)';
       s.userSelect=s.MozUserSelect=s.WebkitUserSelect='none';
       document.body.appendChild(c);Conet.logc=logc=c;
     }
@@ -471,7 +472,7 @@ var Conet={};
       }
     }
     if (!done) {
-      var ml=20;
+      var ml=5;//20
       //ogs.splice(0,0,sh);if (logs.length>ml) logs.length=ml;
       logs.push(sh);while (logs.length>ml) logs.splice(0,1);
       logSameLineCount=0;
@@ -525,6 +526,9 @@ var Conet={};
     //       e.g. hcopy(h,h,undef,{deleteThisKey:1},undefined,{delwo:1});
     //(keep it) same as Pd5.hcopy, this is just needed often
     if (!to) to={};
+    
+    if (ps&&ps.delall) for (var k in to) if (to.hasOwnProperty(k)) delete(to[k]);
+    
     if (ka===undefined) {
       for (var k in from) if (from.hasOwnProperty(k)) {
         if (keep) if (to[k]!==undefined) continue;
@@ -600,6 +604,7 @@ var Conet={};
   }
   //---
   Conet.beep=function(ps) {
+    try {
     if (!ps) ps={};
     if (!ac) ac=new(window.AudioContext||window.webkitAudioContext)();
     var os=ac.createOscillator(),gn=ac.createGain();
@@ -617,6 +622,7 @@ var Conet={};
     }
     ,ps.time||100);
     
+    } catch (e) { Conet.log(''+e); }
     //...
   }
   //---
@@ -650,20 +656,19 @@ var Conet={};
 console.log('Conet '+Conet.version);
 //fr o,1
 //fr o,1,5,4
-//fr o,1,7
+//fr o,1,6
 //fr o,1,7,22
-//fr o,1,10,2
 //fr o,1,10,3
 //fr o,1,10,4
 //fr o,1,10,5
 //fr o,1,10,6
-//fr o,1,10,18
+//fr o,1,10,7
 //fr o,1,10,19
-//fr o,1,10,60
+//fr o,1,10,20
 //fr o,1,11,1
-//fr o,1,14
 //fr o,1,18,4
 //fr o,1,35
-//fr o,1,47,12
+//fr o,1,47
+//fr o,1,47,13
 //fr o,1,49
-//fr p,34,87
+//fr p,1,10

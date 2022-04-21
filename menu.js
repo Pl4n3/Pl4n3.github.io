@@ -6,7 +6,7 @@ var Menu={};
   Menu.cmenu=undefined;
   var menus,tfid='menutf',mok,mcancel,lsx=0,lsy=0,touchms=[],keym={},gpbum={},gppress=new Array(16),
       nomouse=false,ccw=1,cch=1,pressed=[],pressids={},ps,mD=false,sx=0,sy=0,
-      tsd=[],tsw=100,tsb=50,tsw0=50,oncome,gamepad;//tsw=125,tsb=25
+      tsd=[],tsw=100,tsb=50,tsw0=50,oncome,gamepad,tsdPs;//tsw=125,tsb=25
   Menu.mcontrol=undefined;
   Menu.color='rgba(0,0,0,1)';
   Menu.borderColor='rgba(0,0,0,1)';
@@ -21,7 +21,7 @@ var Menu={};
   Menu.soff='[ ]';//'\u2610';
   Menu.son='[x]';//'\u2611';
   Menu.pressed=pressed;
-  Menu.version='1.339 ';//FOLDORUPDATEVERSION
+  Menu.version='1.361 ';//FOLDORUPDATEVERSION
   function mCloseAll(a) {
     for (var i=0;i<a.length;i++) {
       var mh=a[i];
@@ -344,8 +344,10 @@ var Menu={};
       var mco=m.mctrl;
       var cos=mco?mco.cos:undefined;
       var mfs=Math.floor(ch*0.25*(m.mfs||1));
+      if (!c) { c=m.canvc;m.c=c; }
       if (!c) {
         c=document.createElement(m.canv?'canvas':'div');
+        if (m.canv) m.canvc=c;
         var s=c.style;
         s.zIndex=5;
         c.style.position='absolute';
@@ -583,7 +585,7 @@ var Menu={};
         c.appendChild(c2);
       }
     
-    
+      if (m.ondraw) m.ondraw();
     
     }
     var e=document.getElementById(tfid);
@@ -909,6 +911,7 @@ var Menu={};
   }
   Menu.touchMoves=function(e) {
     var ret=undefined;
+    //onsole.log(tsdPs);
     for (var h=0;h<e.touches.length;h++) {
       var t=e.touches[h];
       var c=pressids[t.identifier];
@@ -916,8 +919,14 @@ var Menu={};
       if (c.tident===undefined) continue;//no tsd
       var x=t.pageX-sx,y=t.pageY-sy;
       var c0=c.tc1,s=c0.style;
-      s.left=(x-tsw0/2)+'px';s.top=(y-tsw0/2)+'px';s.display='';
-      c.dx=2*(x-c.x0)/tsw;c.dy=2*(y-c.y0)/tsw;
+      if (tsdPs.lronlyx&&(c===tsd[1])&&(tsd[0].tident!==undefined)) {
+        //onsole.log('1');
+        y=c.y0;
+      }
+      s.left=(x-tsw0/2)+'px';
+      s.top=(y-tsw0/2)+'px';s.display='';
+      c.dx=2*(x-c.x0)/tsw;
+      c.dy=2*(y-c.y0)/tsw;
       //c.style.borderColor='#00f';
       ret=1;
     }
@@ -985,7 +994,8 @@ var Menu={};
     return ret;
   }
   Menu.touchSticksInit=function(ps) {
-    if (!ps) ps={};
+    if (!ps) ps={};tsdPs=ps;
+    //console.log(tsdPs);
     
     for (var i=0;i<2;i++) {
       var c=document.createElement('div'),s=c.style;
@@ -1060,6 +1070,8 @@ var Menu={};
 //fr o,2,26
 //fr o,2,30
 //fr o,2,40
-//fr o,2,42
+//fr o,2,55
+//fr o,2,56
+//fr o,2,58
 //fr o,2,59
-//fr p,40,120
+//fr p,2,338

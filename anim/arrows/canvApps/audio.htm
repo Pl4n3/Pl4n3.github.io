@@ -1,1 +1,128 @@
-123
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+<style>
+html, body { border:0;margin:0;width:100%;height:100%;font-family:arial; }
+</style>
+<script src="/conet.js"></script>
+<script src="/menu.js"></script>
+<script src="/anim/arrows/canvNotes.js"></script>
+<script src='https://surikov.github.io/webaudiofont/npm/dist/WebAudioFontPlayer.js'></script>
+<script src='https://surikov.github.io/webaudiofontdata/sound/0520_FluidR3_GM_sf2_file.js'></script>
+<script src='https://surikov.github.io/webaudiofontdata/sound/0550_FluidR3_GM_sf2_file.js'></script>
+<script src='https://surikov.github.io/webaudiofontdata/sound/12835_6_FluidR3_GM_sf2_file.js'></script>
+<script src='https://surikov.github.io/webaudiofontdata/sound/12840_6_FluidR3_GM_sf2_file.js'></script>
+<script src='https://surikov.github.io/webaudiofontdata/sound/12842_6_FluidR3_GM_sf2_file.js'></script>
+</head>
+<body bgcolor="#aaaaaa">
+<script>
+(function() {
+  //----
+  var url=Conet.parseUrl(),
+      cano=new CanvNotes({_nomenu:1}),objs=cano.objs,sels=cano.sels,view=cano.view,
+      audioContext,player,presets;
+  
+  function scriptUrls() {
+    //---
+    //script src='/sound/webaudiofont/WebAudioFontPlayer.js'>/script>
+    //script src='/sound/webaudiofont/0520_FluidR3_GM_sf2_file.js'>/script>
+    //script src='/sound/webaudiofont/0550_FluidR3_GM_sf2_file.js'>/script>
+    //script src='/sound/webaudiofont/12835_6_FluidR3_GM_sf2_file.js'>/script>
+    //script src='/sound/webaudiofont/12840_6_FluidR3_GM_sf2_file.js'>/script>
+    //script src='/sound/webaudiofont/12842_6_FluidR3_GM_sf2_file.js'>/script>
+    //...
+  }
+  
+  function queueNode(o,ph,depth) {
+    //...
+    
+    var h,parseErr=undefined;
+    depth=depth||0;
+    
+    try {
+    h=JSON.parse(o.sa.join(''));
+    } catch (e) { h={};parseErr=1; }
+    
+    if (ph) {
+      //if (ph.whenAdd&&h.whenAdd) ph.whenAdd+=h.whenAdd;
+      Conet.hcopy(ph,h,undefined,{whenAdd:1});//,undefined,undefined,1);
+      h.whenAdd=(ph.whenAdd||0)+(h.whenAdd||0);
+    }
+    
+    if (!parseErr) {
+    var selectedPreset=presets[h.preset]||window[h.preset]||presets.ahhs;
+    //player.adjustPreset(audioContext,selectedPreset);
+    //var audioBufferSourceNode=player.queueWaveTable(audioContext,audioContext.destination,selectedPreset,audioContext.currentTime+0,h.pitch,0.4);
+    //var audioBufferSourceNode=player.queueWaveTable(audioContext,audioContext.destination,selectedPreset,audioContext.currentTime+0.4,h.pitch,0.2);
+    //var audioBufferSourceNode=player.queueWaveTable(audioContext,audioContext.destination,selectedPreset,audioContext.currentTime+0.6,h.pitch,0.2);
+    //var audioBufferSourceNode=player.queueWaveTable(audioContext,audioContext.destination,selectedPreset,audioContext.currentTime+0.8,h.pitch,4);
+    var pitch=h.pitch;
+    if (pitch!==undefined) {
+      if (Array.isArray(pitch)) pitch=pitch[0]+pitch[1]*12;
+      if (h.pitchAdd) pitch+=h.pitchAdd;
+      var when=h.when||0;
+      if (h.whenAdd) {//&&(depth!=2)) { 
+        when+=h.whenAdd;
+        //console.log('Doing whenAdd depth='+depth); 
+      }
+      if (h.whenMul) when*=h.whenMul;
+      if (1) 
+        var audioBufferSourceNode=player.queueWaveTable(audioContext,audioContext.destination,selectedPreset,audioContext.currentTime+when,pitch,h.duration||1);
+      else { //following maybe with param like node.times4
+        player.queueWaveTable(audioContext,audioContext.destination,selectedPreset,audioContext.currentTime+when    ,pitch,0.4);
+        player.queueWaveTable(audioContext,audioContext.destination,selectedPreset,audioContext.currentTime+when+0.4,pitch,0.2);
+        player.queueWaveTable(audioContext,audioContext.destination,selectedPreset,audioContext.currentTime+when+0.6,pitch,0.2);
+        player.queueWaveTable(audioContext,audioContext.destination,selectedPreset,audioContext.currentTime+when+0.8,pitch,4);
+      }
+    }
+    }
+    
+    if (o.children) for (var oh of o.children) queueNode(oh,h,depth+1);
+    
+    //---
+  }
+  function init() {
+    //---
+    
+    //Conet.hcopy({scx:1,scy:1},view);
+    cano.smallScale=0.5;
+    
+    cano.onUp=function(o) {
+      //...
+      player.cancelQueue(audioContext);
+      queueNode(o);
+      //---
+    }
+    
+    var AudioContextFunc=window.AudioContext||window.webkitAudioContext;
+    audioContext=new AudioContextFunc();
+    player=new WebAudioFontPlayer();
+    
+    presets={
+      ahhs:_tone_0520_FluidR3_GM_sf2_file,
+      ohit:_tone_0550_FluidR3_GM_sf2_file,
+      bassdrum2:_drum_35_6_FluidR3_GM_sf2_file,
+      snaredrum2:_drum_40_6_FluidR3_GM_sf2_file,
+      closedhihat:_drum_42_6_FluidR3_GM_sf2_file
+    };
+    
+    for (var preset of Object.values(presets)) player.adjustPreset(audioContext,preset);
+    
+    //player.adjustPreset(audioContext,_tone_0520_FluidR3_GM_sf2_file);
+    //player.adjustPreset(audioContext,_tone_0550_FluidR3_GM_sf2_file);
+    
+    //...
+  }
+  init();
+  //...
+}
+)()
+//onsole.log(cano);
+</script>
+</body>
+</html><script>
+//fr o,19
+//fr o,19,5
+//fr o,19,8,5
+//fr p,62,15

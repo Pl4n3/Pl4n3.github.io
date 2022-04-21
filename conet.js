@@ -1,7 +1,7 @@
 var Conet={};
 (function(Conet) {
   Conet.offline=false;
-  Conet.version='1.453 ';//FOLDORUPDATEVERSION
+  Conet.version='1.454 ';//FOLDORUPDATEVERSION
   Conet.files={};
   var uploads={},fns,logc,logs=[],//fn=>data,first
       logSameLineCount=0,ac,downloads={};
@@ -22,8 +22,8 @@ var Conet={};
     return x;
   }
   function upload(p) {
-    console.log('Conet.upload 0');
-    console.trace();
+    //onsole.log('Conet.upload 0');
+    //onsole.trace();
     if (Conet.offline) {
       //onsole.log('Conet.upload 1');
       localStorage['conetd'+p.fn]=p.data;
@@ -671,4 +671,4 @@ console.log('Conet '+Conet.version);
 //fr o,1,47
 //fr o,1,47,13
 //fr o,1,49
-//fr p,1,10
+//fr p,2,9

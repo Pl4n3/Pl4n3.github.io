@@ -3,9 +3,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 <style>
-html, body { border:0;margin:0;width: 100%;height:100%; }
+html, body { border:0;margin:0;width:100%;height:100%;font-family:sans-serif; }
 </style>
 <script src="/conet.js"></script>
+<script src="/menu.js"></script>
 </head>
 <body bgcolor="#aaaaaa">
 <canvas id="canvas"></canvas>
@@ -16,7 +17,7 @@ html, body { border:0;margin:0;width: 100%;height:100%; }
   //meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height, target-densityDpi=device-dpi" 
   var logs=[],ot,canvas,cont,width,height,tparts=[],first=true,canv,
       fpst=0,fpsc=0,fpss='',dpr,tw,th,gw,ta=[],colors=new Array(5),ox,oy,
-      inpDown=false,sela=[],tickt=0,score=0;
+      inpDown=false,sela=[],tickt=0,score=0,tileWidth=50;
   //----
   function log(s) {
     logs.splice(0,0,s);
@@ -26,7 +27,8 @@ html, body { border:0;margin:0;width: 100%;height:100%; }
     
     //var docElm = document.getElementById('canvas');
     //var ret;
-    var c=canvas,h={navigationUI:'hide'};
+    var c=document.body,//canvas,
+        h={navigationUI:'hide'};
     if (c.requestFullscreen) c.requestFullscreen(h);
     else if (c.mozRequestFullScreen) c.mozRequestFullScreen(h);
     else if (c.webkitRequestFullScreen) c.webkitRequestFullScreen(h);
@@ -38,7 +40,7 @@ html, body { border:0;margin:0;width: 100%;height:100%; }
     //log
     var x=e.pageX,y=e.pageY;
     if ((x<20)&&(y<20)) {
-      tryFullscreen();
+      //tryFullscreen();
     }
     
     //onsole.log('click '+x*dpr+' '+y*dpr);
@@ -175,6 +177,24 @@ html, body { border:0;margin:0;width: 100%;height:100%; }
     var dpr=window.devicePixelRatio || 1;
     //log('DevicePixelRatio '+dpr);
     Conet.vol=0.1;
+    
+    Menu.init([{s:'Menu',sub:[
+    
+    
+    {s:'Fullscreen',actionf:tryFullscreen},
+    
+    {s:'Tile<br>width',fs:0.9,ms:tileWidth,autoval:2,sub:[{s:'20'},{s:'50'},{s:'100'}],
+    setfunc:function(v) {
+      //---
+      tileWidth=parseInt(v);
+      canv.width=1;
+      //...
+    }
+    }
+    
+    
+    ]}],{listen:1});
+    
     ot=new Date().getTime();
     draw();
   }
@@ -196,6 +216,7 @@ html, body { border:0;margin:0;width: 100%;height:100%; }
   function calcTick() {
     //...
     var checkChains=true;
+    //var justMove=false;
     if (sela.length>=2) {
     
       var p0=sela[0],p1=sela[1],
@@ -232,7 +253,9 @@ html, body { border:0;margin:0;width: 100%;height:100%; }
       
       
       
-      if ((mlen<3)||((Math.abs(p0.x-p1.x)+Math.abs(p0.y-p1.y))>1)) {
+      if (
+       (mlen<3)||
+       ((Math.abs(p0.x-p1.x)+Math.abs(p0.y-p1.y))>1)) {
         t1.c=t0.c;
         t0.c=c;
         Conet.beep({vol:0.2,"time":360,"freqAtTime":[[940,10.5],[1040,43.5],[420,63],[1160,90],[400,112.5],[1280,133.5],[1420,196.5],[2620,222],[820,241.5],[2980,271.5],[560,303],[3060,331.5],[360,354]],"gainAtTime":[[0,7.5],[0.8986,34.5],[0.9269,325.5],[0,360]]}
@@ -254,6 +277,7 @@ html, body { border:0;margin:0;width: 100%;height:100%; }
     
     //check falls
     //for (var y=0;y<th;y++)
+    if (1) {
     var falls=0; 
     for (var y=th-1;y>=0;y--) 
     for (var x=0;x<tw;x++) {
@@ -287,7 +311,7 @@ html, body { border:0;margin:0;width: 100%;height:100%; }
       for (var f of fa) ta[f.y][f.x].c=undefined;
       score++;
     }
-    }
+    }}
     //---
   }
   function draw() {
@@ -310,7 +334,8 @@ html, body { border:0;margin:0;width: 100%;height:100%; }
       style.width=canv.width+'px';style.height=canv.height+'px';
       console.log('draw canvas:'+canvas.width+'x'+canvas.height+' dpr:'+dpr);
       
-      gw=50*dpr;th=Math.floor(canvas.height/gw);tw=Math.floor(canvas.width/gw);
+      gw=tileWidth*dpr;//50
+      th=Math.floor(canvas.height/gw);tw=Math.floor(canvas.width/gw);
       ox=(canvas.width-tw*gw)/2;oy=(canvas.height-th*gw)/2;
       
       Conet.seed(100);
@@ -320,9 +345,10 @@ html, body { border:0;margin:0;width: 100%;height:100%; }
       for (var i=0;i<colors.length;i++) {
         //colors[i]='rgb('+Math.floor(Conet.rand()*255)
         //+','+Math.floor(Conet.rand()*255)+','+Math.floor(Conet.rand()*255)+')';
-        var a=ca[i];
+        var a=ca[i+5];
         colors[i]='rgb('+a[0]+','+a[1]+','+a[2]+')';
       }
+      //colors=['#aaa','#777','#222','#ff0','#00f'];
       ta=new Array(th);
       for (var y=0;y<th;y++) {
         ta[y]=new Array(tw);
@@ -354,7 +380,7 @@ html, body { border:0;margin:0;width: 100%;height:100%; }
     
     
     width=canvas.width;height=canvas.height;
-    ctx.fillStyle='#888';
+    ctx.fillStyle='#888';//'#888';
     ctx.fillRect(0,0,width,height);
     //ctx.strokeStyle='#000000';ctx.lineWidth=1;ctx.strokeRect(5,5,width-10,height-10);
     
@@ -400,7 +426,7 @@ html, body { border:0;margin:0;width: 100%;height:100%; }
     ct.fillStyle='#000000';
     var fs=10*dpr;
     ct.font=fs+'px sans-serif';
-    var version=' v.0.168 ';//FOLDORUPDATEVERSION
+    var version=' v.0.209 ';//FOLDORUPDATEVERSION
     ct.fillText('3inarow'+version+'- '+fpss,10*dpr,fs*1.2);
     //for (var h=0;h<logs.length;h++)
     //  ct.fillText(logs[h],10,(3+h)*fs);
@@ -422,9 +448,11 @@ html, body { border:0;margin:0;width: 100%;height:100%; }
 
 </body>
 </html><script>
-//fr o,13
-//fr o,13,21
-//fr o,13,22
-//fr o,13,23
-//fr o,13,24
-//fr p,19,142
+//fr o,14
+//fr o,14,7
+//fr o,14,9
+//fr o,14,21
+//fr o,14,21,39
+//fr o,14,23
+//fr o,14,24
+//fr p,22,26

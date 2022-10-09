@@ -116,11 +116,18 @@ function threeCreateMesh(lo,first,px,py,pz,scale,mat) {
   //if (ge.faces.length==4)  { console.log(ge.faces[0].vertexNormals[0]);console.log(fa[0].nx+' '+fa[0].ny+' '+fa[0].nz); }
   //console.log(ge.faceVertexUvs[0][0]);
   
+  //onsole.log('mesh create nao '+lo.instances);
   
-  		  		var mesh1=new THREE.Mesh(ge,
+  //ge=new THREE.BufferGeometry().fromGeometry(ge);
+  
+  var mesh1=lo.instances?
+    new THREE.InstancedMesh(ge,mat?mat:m.material,lo.instances):
+    new THREE.Mesh(ge,
       //(threeEnv.wireMat&&(Math.random()<0.5))?threeEnv.wireMat:
       mat?mat:
       m.material);
+      
+      
   	  			mesh1.position.x=px;
   	  			mesh1.position.y=py;
   	  			mesh1.position.z=pz;
@@ -132,7 +139,10 @@ function threeCreateMesh(lo,first,px,py,pz,scale,mat) {
   			//  if (!notAdd) 
   //console.log('threeCreateMesh ');
   //console.log(ge);
-  if (!lo.noSceneAdd) threeEnv.base.add(mesh1);
+  if (!lo.noSceneAdd) {
+    threeEnv.base.add(mesh1);
+    //console.log('base add');
+  }
   m.tmesh=mesh1;
   }
 }
@@ -575,26 +585,36 @@ function threeRender(dt) {
       var m=lo.meshes[mi];
       var mesh1=m.tmesh;
       if (!mesh1) continue;
-      //					mesh1.rotation.y=ry;
-      					//mesh1.rotation.x=rx;
-      					var mgv=mesh1.geometry.vertices;
-      					var ve2=m.ve2;//lo.verts;
-      					for (var h=0;h<ve2.length;h++) {
-        						var v=ve2[h];
-      	  					var p=v.p1;
-      	  					var mp=mgv[h];
-      	  					mp.x=p.x;mp.y=-p.y;mp.z=p.z;
-      					}
-      					var fa=m.fa;
-      					//for (var h=fa.length-1;h>=0;h--) {
-      			//  			var t=fa[h];
-      					for (var h=mesh1.geometry.faces.length-1;h>=0;h--) {
-        var tf=	mesh1.geometry.faces[h],t=tf.o5t;
-      			  			tf.normal.set(t.nx,t.ny,t.nz);
-      					}
+      //mesh1.rotation.y=ry;
+      //mesh1.rotation.x=rx;
+      var mgv=mesh1.geometry.vertices;
+      //if (!mgv) continue;
+      var ve2=m.ve2;//lo.verts;
+      for (var h=0;h<ve2.length;h++) {
+        var v=ve2[h];
+        var p=v.p1;
+        var mp=mgv[h];
+        mp.x=p.x;mp.y=-p.y;mp.z=p.z;
+      }
+      var fa=m.fa;
+      //for (var h=fa.length-1;h>=0;h--) {
+      //  var t=fa[h];
+      for (var h=mesh1.geometry.faces.length-1;h>=0;h--) {
+        var tf=mesh1.geometry.faces[h],t=tf.o5t;
+        tf.normal.set(t.nx,t.ny,t.nz);
+      }
       
       var g=mesh1.geometry;
       g.computeVertexNormals();
+      
+      //onsole.log(g);
+      //for (var f of g.faces) {
+      //  for (var n of f.vertexNormals) n.set(0,1,0);
+      //  //console.log(v);
+      //  //v.normal.set(0,1,0);
+      //}
+      if (lo.renderNV) lo.renderNV(mi); //---used in voxed.js
+      
       g.verticesNeedUpdate = true;
       g.normalsNeedUpdate = true;
       //g.computeBoundingBox();
@@ -851,7 +871,7 @@ function DungeonGeometry(ps,view) {
     }
     //if (a.view^view) continue;
     if (view&&!a.view) continue;
-    if (!view&&(a.view||!a.wview
+    if (!view&&(a.view||!(a.wview||ps.allwview)
       )) continue;
     if (!rH[key(x,y-1,z)]) {
       var i0=vert(x*b,y*b,z*b,0,0),i1=vert((x+1)*b,y*b,z*b,1,0),i2=vert(x*b,y*b,(z+1)*b,0,1),i3=vert((x+1)*b,y*b,(z+1)*b,1,1);
@@ -935,9 +955,9 @@ threeEnv.addTri=function(ps) {
   //var i2=v2.flat?-1:ge.vertices.indexOf(v2);if (i2==-1) { ge.vertices.push(v2);i2=ge.vertices.length-1; }
   
   //--- lots faster than above
-  var i0=v0.flat?-1:v0.vi||-1;if (i0==-1) { ge.vertices.push(v0);i0=ge.vertices.length-1;v0.vi=i0; }
-  var i1=v1.flat?-1:v1.vi||-1;if (i1==-1) { ge.vertices.push(v1);i1=ge.vertices.length-1;v1.vi=i1; }
-  var i2=v2.flat?-1:v2.vi||-1;if (i2==-1) { ge.vertices.push(v2);i2=ge.vertices.length-1;v2.vi=i2; }
+  var i0=v0.flat?-1:((v0.vi===undefined)?-1:v0.vi);if (i0==-1) { ge.vertices.push(v0);i0=ge.vertices.length-1;v0.vi=i0; }
+  var i1=v1.flat?-1:((v1.vi===undefined)?-1:v1.vi);if (i1==-1) { ge.vertices.push(v1);i1=ge.vertices.length-1;v1.vi=i1; }
+  var i2=v2.flat?-1:((v2.vi===undefined)?-1:v2.vi);if (i2==-1) { ge.vertices.push(v2);i2=ge.vertices.length-1;v2.vi=i2; }
   
   //var i0=v0.flat?undefined:vis[v0];if (i0===undefined) { ge.vertices.push(v0);i0=ge.vertices.length-1;vis[v0]=i0; }
   //var i1=v1.flat?undefined:vis[v1];if (i1===undefined) { ge.vertices.push(v1);i1=ge.vertices.length-1;vis[v1]=i1; }
@@ -971,11 +991,6 @@ threeEnv.addQuad=function(ps) {
   //---
 }
 //fr o,9,33
-//fr o,10
-//fr o,11
-//fr o,12
-//fr o,13
-//fr o,14
+//fr o,16
 //fr o,19
-//fr o,25
-//fr p,6,118
+//fr p,2,167

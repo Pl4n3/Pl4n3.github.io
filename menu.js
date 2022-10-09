@@ -6,7 +6,7 @@ var Menu={};
   Menu.cmenu=undefined;
   var menus,tfid='menutf',mok,mcancel,lsx=0,lsy=0,touchms=[],keym={},gpbum={},gppress=new Array(16),
       nomouse=false,ccw=1,cch=1,pressed=[],pressids={},ps,mD=false,sx=0,sy=0,
-      tsd=[],tsw=100,tsb=50,tsw0=50,oncome,gamepad,tsdPs;//tsw=125,tsb=25
+      tsd=[],tsw=100,tsb=50,tsw0=50,oncome,gamepad,tsdPs,keys=[];//tsw=125,tsb=25
   Menu.mcontrol=undefined;
   Menu.color='rgba(0,0,0,1)';
   Menu.borderColor='rgba(0,0,0,1)';
@@ -21,7 +21,7 @@ var Menu={};
   Menu.soff='[ ]';//'\u2610';
   Menu.son='[x]';//'\u2611';
   Menu.pressed=pressed;
-  Menu.version='1.361 ';//FOLDORUPDATEVERSION
+  Menu.version='1.398 ';//FOLDORUPDATEVERSION
   function mCloseAll(a) {
     for (var i=0;i<a.length;i++) {
       var mh=a[i];
@@ -76,6 +76,21 @@ var Menu={};
   }
   function within(m,x,y) {
     return x>=m.cx&&x<m.cx+m.cw&&y>=m.cy&&y<m.cy+m.ch;
+  }
+  function tsdAutoKeys() {
+    //---
+    //onsole.log('naoooo kc'+kc);
+    var c=tsd[0],s=c.tc0.style;
+    c.dx=0;
+    c.dy=0;
+    if (keys[65]||keys[37]) c.dx-=1;
+    if (keys[68]||keys[39]) c.dx+=1;
+    if (keys[87]||keys[38]) c.dy-=1;
+    if (keys[83]||keys[40]) c.dy+=1;
+    s.display='';
+    s.left=(c.cx+tsw/2-tsw0/2+c.dx*tsw/2)+'px';
+    s.top =(c.cy+tsw/2-tsw0/2+c.dy*tsw/2)+'px';
+    //...
   }
   Menu.action=function() {
     //onsole.log('Menu.action');
@@ -549,7 +564,10 @@ var Menu={};
           +' oninput="var m=Menu.mcontrol;if (m.oninput) m.oninput(this.value);"'
           +'></input>'
           +sels//'<select style="width:30px;"><option value="n1">Nummer eins</option><option value="n2">Nummer zwei</option></select>'
-          +(mco.range?'<br><input type="range" min="'+mco.range.min+'" max="'+mco.range.max+'"'
+          +(mco.range?
+            ' Animate <input type=checkbox oninput="Menu.mcontrol.animate=this.checked;" />'
+            //+'<input type=text value="1x" size=3 />'
+            +'<br><input type="range" min="'+mco.range.min+'" max="'+mco.range.max+'"'
             +' style="width:300px;"'
             +' oninput='//mco==m.mctrl
             +'"var e=document.getElementById(\''+tfid+'\');e.value=this.value;'
@@ -731,12 +749,18 @@ var Menu={};
       //ev.preventDefault();
       //ev.stopPropagation();
     }
+    keys[kc]=1;
+    //onsole.log('kc='+kc);
+    if (tsdPs&&tsdPs.autoKeys) tsdAutoKeys();
     return ret;
     //alert(kc);
   }
   Menu.keyUp=function(ev) {
     var kc=ev.keyCode;
-    var m=keym[kc+(ev.ctrlKey?'_c':0)];if (m) { m.on=false;if (m.c) m.c.style.backgroundColor=m.bgcol?m.bgcol:Menu.colBg; }
+    var m=keym[kc+(ev.ctrlKey?'_c':0)];
+    if (m) { m.on=false;if (m.c) m.c.style.backgroundColor=m.bgcol?m.bgcol:Menu.colBg; }
+    keys[kc]=0;
+    if (tsdPs&&tsdPs.autoKeys) tsdAutoKeys();
   }
   Menu.mouseDown=function() {
     //console.log('Menu.mouseDown 0');
@@ -1052,7 +1076,7 @@ var Menu={};
   }
   
   //--- often used menus:
-  Menu.mFullscreen={s:'Fullscreen',actionf:function() {
+  Menu.mFullscreen={s:'Fullscreen',vertCenter:1,actionf:function() {
     var c=document.body,h={navigationUI:'hide'};
     if (c.requestFullscreen) c.requestFullscreen(h);
     else if (c.mozRequestFullScreen) c.mozRequestFullScreen(h);
@@ -1067,11 +1091,13 @@ var Menu={};
 
 //--
 //fr o,2
-//fr o,2,26
 //fr o,2,30
+//fr o,2,38
 //fr o,2,40
-//fr o,2,55
-//fr o,2,56
+//fr o,2,53
+//fr o,2,57
 //fr o,2,58
 //fr o,2,59
-//fr p,2,338
+//fr o,2,60
+//fr o,2,62
+//fr p,33,531

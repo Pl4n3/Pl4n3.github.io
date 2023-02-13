@@ -1,7 +1,7 @@
 var Conet={};
 (function(Conet) {
   Conet.offline=false;
-  Conet.version='1.455 ';//FOLDORUPDATEVERSION
+  Conet.version='1.459 ';//FOLDORUPDATEVERSION
   Conet.files={};
   var uploads={},fns,logc,logs=[],//fn=>data,first
       logSameLineCount=0,ac,downloads={};
@@ -51,6 +51,7 @@ var Conet={};
         return;
       }
       if (p.log&&p.logChunk) p.log('conet-sendChunk '+uh.data.length);
+      if (uh.data===undefined) { console.log('uh.data undefined');return; } //---unclear how
       console.log('conet-sendChunk '+uh.data.length);
       
       var sh,clen=100000;//200000 was ok,400000 err;
@@ -657,6 +658,7 @@ console.log('Conet '+Conet.version);
 //fr o,1
 //fr o,1,5,4
 //fr o,1,6
+//fr o,1,6,18
 //fr o,1,7,22
 //fr o,1,10,3
 //fr o,1,10,4
@@ -671,4 +673,4 @@ console.log('Conet '+Conet.version);
 //fr o,1,47
 //fr o,1,47,13
 //fr o,1,49
-//fr p,2,9
+//fr p,2,10

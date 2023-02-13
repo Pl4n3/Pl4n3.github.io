@@ -1,0 +1,48 @@
+<!doctype html><html><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, user-scalable=yes, minimum-scale=1.0, maximum-scale=10.0">
+<script src="/conet.js"></script>
+<script src="/canvas/bod2/bod2.js"></script>
+</head>
+<body bgcolor="#aaa" style="font-family:sans-serif;">
+<div id="div0" style="width:fit-content;margin:auto;background-color:#bbb;padding:4px;margin-top:10px;position:relative;";>
+<h1 style="text-align:center;">Reacting GUI</h1>
+<fieldset>
+<legend>Enter a number</legend>
+<input id="inp0"></input>
+<button>Ok</button>
+</fieldset>
+</div>
+<script type="text/javascript">
+/* main */ {
+  //--- reacting gui, where a character reacts to your inputs
+  let ps={
+    fnObj:'/canvas/bod2/objs/frogface/o.json',
+    fnSkin:'/canvas/bod2/objs/frogface/skin.json',
+    w:160,h:220,x:220,y:4,//x:220
+    cont:document.getElementById('div0'),
+    ox:85,oy:87,oscale:1.3,
+  };
+  Bod2.createCanvas(ps);
+  document.getElementById('inp0').oninput=function() {
+    //---
+    let c=this,v=c.value,st=c.style,bod2=ps.bod2,u=ps.u;
+    
+    if (v.length==0) {
+      st.backgroundColor='#fff';bod2.setFc(u,'idle');
+    } else if (isNaN(v)) {
+      st.backgroundColor='#faa';bod2.setFc(u,'aggro');
+    } else {
+      st.backgroundColor='#afa';bod2.setFc(u,'chill');
+    }
+    //...
+  }
+  //...
+}
+</script>
+
+</body>
+</html><script>
+//fr o,16
+//fr o,16,9
+//fr p,19,21

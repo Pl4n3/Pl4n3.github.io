@@ -71,6 +71,30 @@ var Voxed;
     return '{"voxels":[{"c":18,"x":-8,"y":1,"z":22},{"c":18,"x":-7,"y":1,"z":22},{"c":18,"x":-3,"y":1,"z":22},{"c":18,"x":-2,"y":1,"z":22},{"c":9,"x":0,"y":1,"z":22},{"c":18,"x":1,"y":1,"z":22},{"c":18,"x":2,"y":1,"z":22},{"c":18,"x":5,"y":1,"z":22},{"c":18,"x":6,"y":1,"z":22},{"c":18,"x":7,"y":1,"z":22},{"c":18,"x":8,"y":1,"z":22},{"c":18,"x":9,"y":1,"z":22},{"c":18,"x":12,"y":1,"z":22},{"c":18,"x":13,"y":1,"z":22},{"c":18,"x":-8,"y":2,"z":22},{"c":18,"x":-7,"y":2,"z":22},{"c":18,"x":-4,"y":2,"z":22},{"c":18,"x":-3,"y":2,"z":22},{"c":18,"x":-2,"y":2,"z":22},{"c":18,"x":1,"y":2,"z":22},{"c":18,"x":2,"y":2,"z":22},{"c":18,"x":5,"y":2,"z":22},{"c":18,"x":6,"y":2,"z":22},{"c":18,"x":12,"y":2,"z":22},{"c":18,"x":13,"y":2,"z":22},{"c":18,"x":-8,"y":3,"z":22},{"c":18,"x":-7,"y":3,"z":22},{"c":18,"x":-5,"y":3,"z":22},{"c":18,"x":-4,"y":3,"z":22},{"c":18,"x":-3,"y":3,"z":22},{"c":18,"x":-2,"y":3,"z":22},{"c":18,"x":1,"y":3,"z":22},{"c":18,"x":2,"y":3,"z":22},{"c":18,"x":5,"y":3,"z":22},{"c":18,"x":6,"y":3,"z":22},{"c":18,"x":7,"y":3,"z":22},{"c":18,"x":8,"y":3,"z":22},{"c":18,"x":12,"y":3,"z":22},{"c":18,"x":13,"y":3,"z":22},{"c":18,"x":-8,"y":4,"z":22},{"c":18,"x":-7,"y":4,"z":22},{"c":18,"x":-6,"y":4,"z":22},{"c":18,"x":-5,"y":4,"z":22},{"c":18,"x":-3,"y":4,"z":22},{"c":18,"x":-2,"y":4,"z":22},{"c":18,"x":1,"y":4,"z":22},{"c":18,"x":2,"y":4,"z":22},{"c":18,"x":5,"y":4,"z":22},{"c":18,"x":6,"y":4,"z":22},{"c":18,"x":7,"y":4,"z":22},{"c":18,"x":8,"y":4,"z":22},{"c":18,"x":12,"y":4,"z":22},{"c":18,"x":13,"y":4,"z":22},{"c":18,"x":-8,"y":5,"z":22},{"c":18,"x":-7,"y":5,"z":22},{"c":18,"x":-6,"y":5,"z":22},{"c":18,"x":-3,"y":5,"z":22},{"c":18,"x":-2,"y":5,"z":22},{"c":18,"x":1,"y":5,"z":22},{"c":18,"x":2,"y":5,"z":22},{"c":18,"x":5,"y":5,"z":22},{"c":18,"x":6,"y":5,"z":22},{"c":18,"x":12,"y":5,"z":22},{"c":18,"x":13,"y":5,"z":22},{"c":18,"x":-8,"y":6,"z":22},{"c":18,"x":-7,"y":6,"z":22},{"c":18,"x":-3,"y":6,"z":22},{"c":18,"x":-2,"y":6,"z":22},{"c":18,"x":1,"y":6,"z":22},{"c":18,"x":2,"y":6,"z":22},{"c":18,"x":5,"y":6,"z":22},{"c":18,"x":6,"y":6,"z":22},{"c":18,"x":7,"y":6,"z":22},{"c":18,"x":8,"y":6,"z":22},{"c":18,"x":9,"y":6,"z":22},{"c":18,"x":12,"y":6,"z":22},{"c":18,"x":13,"y":6,"z":22}]}';
     //...
   }
+  function scriptSphere() {
+    //---
+    //---fullsphere
+    
+    planim.putVoxels({x:-20,y:-10,z:-20,dx:40,dy:40,dz:40,c:0,f:function(x,y,z) {
+      return Math.sqrt(x*x+y*y+z*z)<=1;
+    }
+    });
+    
+    //---hollow 1/4 sphere
+    planim.putVoxels({x:-20,y:-10,z:-10,dx:40,dy:20,dz:20,c:0,f:function(x,y,z) {
+      y=(y+1)/2;z=(z+1)/2;var v=Math.sqrt(x*x+y*y+z*z); return (v<=1)&&(v>=0.9);
+    }
+    });
+    
+    //--- same with color grades
+    planim.putVoxels({x:-20,y:-10,z:-10,dx:40,dy:20,dz:20,c:0,f:function(x,y,z) {
+      y=(y+1)/2;z=(z+1)/2;var v=Math.sqrt(x*x+y*y+z*z); return (v<=1)&&(v>=0.9)?{col:{g:Math.min(1,Conet.rani(10)/10*0.35+y),r:y,b:0}}:undefined;
+    }
+    });
+    
+    
+    //...
+  }
   
   function etV(x,y,z,v) {
     var k=x+'_'+y+'_'+z;
@@ -558,13 +582,15 @@ var Voxed;
   function generateLandscape(ps) {
     if (!ps) ps={};
     
+    //onsole.log(ps);
+    
     va=[];vh={};
     
     
     function mid(p0,p1) {
       var p={x:(p0.x+p1.x)/2,y:(p0.y+p1.y)/2,z:(p0.z+p1.z)/2};
       
-      Conet.seed(Math.floor(p.x)+Math.floor(p.z)*100);
+      Conet.seed((ps.seed||0)+Math.floor(p.x)+Math.floor(p.z)*100);
       p.y+=(Conet.rand()-0.5)*Math.max(p1.x-p0.x,p1.z-p0.z)*0.5;
       
       return p;
@@ -578,8 +604,15 @@ var Voxed;
       var x=Math.floor(p.x+0.5),
           y=Math.floor(p.y+0.5),
           z=Math.floor(p.z+0.5);
-      if (!etV(x,y,z))
-        etV(x,y,z,{c:((p.c!==undefined?Math.floor(p.c+0.5):y)+1000)%colors.length});
+      if (!etV(x,y,z)) {
+        let h;
+        //p.c=undefined;
+        etV(x,y,z,h={
+          c:(((p.c!==undefined)&&!ps.color3dy?Math.floor(p.c+0.5):
+            (((p.c===undefined)?0:Math.floor(p.c+0.5))+y+Math.floor(colors.length/2)))+colors.length*1000)%colors.length});
+        //onsole.log(y);
+        //onsole.log(h);
+      }
       //etV(p.x,p.y,p.z,{c:1});
       //...
     }
@@ -615,7 +648,7 @@ var Voxed;
     function midc(p0,p1) {
       var p={x:(p0.x+p1.x)/2,y:(p0.y+p1.y)/2,z:(p0.z+p1.z)/2,c:(p0.c+p1.c)/2};
       
-      Conet.seed(Math.floor(p.x)+Math.floor(p.z)*100+Math.floor(p.y)*10000);
+      Conet.seed((ps.seed||0)+Math.floor(p.x)+Math.floor(p.z)*100+Math.floor(p.y)*10000);
       p.c+=(Conet.rand()-0.5)*Math.min(20,Math.max(Math.max(Math.abs(p1.x-p0.x),Math.abs(p1.z-p0.z)),Math.abs(p1.y-p0.y)))*0.5;
       
       return p;
@@ -689,32 +722,84 @@ var Voxed;
     }
     
     
-    colors=new Array(6);
+    colors=new Array(ps.colorCount||6);
+    let gradient=ps.colorGradient||[
+      {r:1,g:0,b:0,w:0},
+      {r:0,g:1,b:0,w:1}
+    ],gw=0;
+    for (let g of gradient) { if (g.w===undefined) g.w=1;gw+=g.w; }
+    if (gw<=0) { console.error('sum of gradient.weights must be > 0.');return; }
     var cl=colors.length;
-    for (var i=0;i<cl;i++) {
-      var f=i/(cl-1);
-      //colors[i]=new THREE.Color(f*0.5,(1-f)*0.5+0.5,f*0.5);
-      //colors[i]=new THREE.Color(f,(1-f),0);
-      colors[i]=new THREE.Color(1-f,f,0);
+    for (let i=0;i<cl;i++) {
+      let f=i/(cl-1);
+      let gwi=f*gw;
+      let gi=0,g;
+      while (1) {
+        g=gradient[gi];
+        if ((gwi<g.w)
+          //||((g.w>0)&&(gwi==g.w))
+          ||(gi==gradient.length-1)
+          ) break;
+        gwi-=g.w;gi++;
+      }
+      let f1=gwi/g.w,f0=1-f1;
+      let g0=gradient[gi>0?gi-1:gradient.length-1];
+      //onsole.log(f0+' '+f1);
+      colors[i]=new THREE.Color(
+        g0.r*f0+g.r*f1,
+        g0.g*f0+g.g*f1,
+        g0.b*f0+g.b*f1
+      );
+      
+      
+      ////colors[i]=new THREE.Color(f*0.5,(1-f)*0.5+0.5,f*0.5);
+      ////colors[i]=new THREE.Color(f,(1-f),0);
+      //colors[i]=new THREE.Color(1-f,f,0);
     }
+    
+    //{
+    //  "count":30,
+    //  "seed":0,
+    //  "do2d":1,
+    //  "colorCount":16,
+    //  "colorGradient":[
+    //    {"r":0.3,"g":0.3,"b":0,"w":0},
+    //    {"r":0,  "g":0.8,"b":0},
+    //    {"r":0.4,"g":0.4,"b":0},
+    //    {"r":1,  "g":1,  "b":1}
+    ////    {"r":1,"g":0,"b":0,"w":0},
+    ////    {"r":0,"g":1,"b":0}
+    //  ]
+    //}
+    
     
     
     var v,g;
-    if (0) {
-      v=15;g=1;
+    if (ps.do2d) {
+      v=ps.count||30;//15
+      g=1;
       for (var gz=-g;gz<=g;gz++) for (var gx=-g;gx<=g;gx++)
-        q({x:(gx-1)*v,y:0,z:(gz-1)*v},{x:gx*v,y:0,z:(gz-1)*v},{x:(gx-1)*v,y:0,z:gz*v},{x:gx*v,y:0,z:gz*v},0);
+        q({x:(gx-1)*v,y:0,z:(gz-1)*v},
+          {x:gx*v,y:0,z:(gz-1)*v},
+          {x:(gx-1)*v,y:0,z:gz*v},
+          {x:gx*v,y:0,z:gz*v},0);
     //q({x:v,y:0,z:-v},{x:v*2,y:0,z:-v},{x:v,y:0,z:v},{x:v*2,y:0,z:v},0);
     //etV(-10,-10,-10,{c:1});
     //etV(-5,-5,-5,{c:1});
     } else {
-      var c0=0;
+      var c0=ps.c0||0,c1=ps.c1||0;
       v=ps.count||30;//30
       var v0=-v,v1=v;
       var v0=0,v1=2*v;
       c(
-      {x:v0,y:v0,z:v0,c:c0},{x:v1,y:v0,z:v0,c:c0},{x:v0,y:v0,z:v1,c:c0},{x:v1,y:v0,z:v1,c:c0},
-      {x:v0,y:v1,z:v0,c:-c0},{x:v1,y:v1,z:v0,c:-c0},{x:v0,y:v1,z:v1,c:-c0},{x:v1,y:v1,z:v1,c:-c0},0);
+      {x:v0,y:v0,z:v0,c:c0},
+      {x:v1,y:v0,z:v0,c:c0},
+      {x:v0,y:v0,z:v1,c:c0},
+      {x:v1,y:v0,z:v1,c:c0},
+      {x:v0,y:v1,z:v0,c:c1},
+      {x:v1,y:v1,z:v0,c:c1},
+      {x:v0,y:v1,z:v1,c:c1},
+      {x:v1,y:v1,z:v1,c:c1},0);
       //{x:v0,y:v0,z:v0,c:c0},{x:v1,y:v0,z:v0,c:c0},{x:-v,y:-v,z:v,c:c0},{x:v,y:-v,z:v,c:c0},
       //{x:v0,y:v,z:-v,c:-c0},{x:v,y:v,z:-v,c:-c0},{x:-v,y:v,z:v,c:-c0},{x:v,y:v,z:v,c:-c0},0);
     }
@@ -806,7 +891,7 @@ var Voxed;
     return blocks;
   }
   
-  console.log('Voxed 0.1903 ');//FOLDORUPDATEVERSION
+  console.log('Voxed 0.2037 ');//FOLDORUPDATEVERSION
   
   if (!window.planim) {
     //window.Voxed=this;
@@ -901,8 +986,14 @@ var Voxed;
       }
       for (var z=ps.z;z<ps.z+ps.dz;z++)
       for (var y=ps.y;y<ps.y+ps.dy;y++)
-      for (var x=ps.x;x<ps.x+ps.dx;x++)
+      for (var x=ps.x;x<ps.x+ps.dx;x++) {
+        if (ps.f) { 
+          var r=ps.f(2*(x-ps.x)/(ps.dx-1)-1,2*(y-ps.y)/(ps.dy-1)-1,2*(z-ps.z)/(ps.dz-1)-1);
+          if (!r) continue;
+          if (r.col) { checkIndexColor(r.col);c=r.col.ci; }
+        }
         etV(x,y,z,ps.null?null:{c:c});
+      }
     }
     
     if (!ps.nomesh) voxMesh();
@@ -2527,268 +2618,330 @@ var Voxed;
     planim.base.add(l);
     }
     
-    
-    
-    var msub=[
-    
-    cfm=Conet.fileMenu(cfmp={fn:'/three/anim/voxed/files'+(isConet?'':'NoConet')+'.txt',url:'fn',noStartLoad:app,
-    loadf:function(fn) {
-      if (1)
-      Conet.download({fn:fn,f:function(v) {
-        load(JSON.parse(v));
+    /* mlandscape */ {
+      //---
+      //let mwidth,mdo2d,mseed,
+      let mcfg;
+      
+      
+      var mlandscape=
+      /*
+      {s:'Caves',sub:[
+      
+      
+      mwidth={s:'Width',prompt:1,ms:20,stay:1,lskey:'voxedCavesWidth',doctrl:'Enter width',setfunc:function(v) {
+        this.ms=v;
+        //...
+      }
+      }
+      
+      ,mseed={s:'Seed',prompt:1,ms:0,stay:1,lskey:'voxedCavesSeed',doctrl:'Enter Seed',setfunc:function(v) {
+        this.ms=parseInt(v);
+        //...
+      }
+      }
+      
+      
+      ,mdo2d={s:'',ms:'2D, else 3D',checked:1,stay:1,lskey:'voxedCaves2d',checkbox:1,actionf:function(v) {
+        //----
         
-        //onsole.log(fn);
-        if (fn.indexOf('/tile')!=-1) {
-          //calcTiles();
-          isTiles=true;
-        } else isTiles=false;
+      }
+      },
+      
+      */
+      
+      mcfg={s:'Caves..',ms:'  ',doctrl:'Caves/Landscape config',value:'{\n  "count":20,\n  "seed":0,\n  "do2d":1\n}',lskey:'voxedCavesConfig',ta:1,jsonCheck:1,cstay:1,stay:1,okS:'Generate',cancelS:'Close',setfunc:function(v,onInit) {
+        //onsole.log('setfunc v='+v);
+        this.ms=v.length+' bytes';
+        this.value=v;
+        
+        if (onInit) return;
+        
+        generateLandscape(JSON.parse(mcfg.value));
+        //blocks=toBlocks();
+        
+        if (mgroundbox.checked) { 
+          mgroundbox.checked=0;
+          planim.base.remove(groundbox);
+        }
         
         voxMesh();
+        Conet.log('Generate done.');
+        
+        
       }
-      });
-    }
-    ,savef:!isConet?undefined:function(fn) {
-      Conet.upload({fn:fn,data:serialize(),log:Conet.log,logChunk:1});
-      //...
-    }
-    })
-    //medit1={checkbox:1,checked:1,ms:'1x edit per click'},
-    
-    ,{s:'View',sub:[planim.mfullscreen
-    ,mRotate={s:'Rotate',r:1,actionf:function() {
-      //...
-      planim.views[0].controls.autoRotate=!planim.views[0].controls.autoRotate;
-      //...
-    }
-    }
-    
-    ,mplaney={s:'Plane Y',ms:planeY,r:1,sub:[
-    
-    mpyshow={checkbox:1,ms:'Show plane y',actionf:voxMesh}
-    ,{s:'+10',actionf:planeChange,_dy:10}
-    ,{s:'+1',actionf:planeChange,_dy:1}
-    ,{s:'-1',actionf:planeChange,_dy:-1}
-    ,{s:'-10',actionf:planeChange,_dy:-10}
-    
-    ]}
-    
-    ,{s:'Docs',doctrl:'Docs',mcfs:0.07,wrap:0,ta:true,tacols:60,tarows:20
-    ,valuef:function() {
-      
-      return ''+
-      '2020-08-18 v.0.792 ... Added color and brush-width menu.\n'+
-      '2019-10-16 v.0.423 ... First version online.';
-      //...
-    }
-    }
-    
-    ]}
-    
-    ,{s:'Config',sub:[
-    
-    
-    mbackground={s:'Background',doctrl:'Pick color',color:1,bgcol:colIToS(planim.views[0].bgcol),ms:colIToS(planim.views[0].bgcol),oninput:function(v) {
-      //var col='0x'+v.substr(1);
-      //console.log(col);
-      var col=parseInt(v.substr(1),16);
-      
-      planim.views[0].bgcol=col;
-      planim.views[0].renderer.setClearColor(col);
-      
-      this.bgcol=v;
-      this.ms=v;
-      
-      
-      //data.colors[sel.col]=col;
-      //mat.needsUpdate=true;
-      //console.log(parseInt(col));
-    }
-    ,valuef:function() {
-      return colIToS(planim.views[0].bgcol);
-    }
-    }
-    
-    ,mgroundbox={ms:'GroundBox',checkbox:1,checked:1,actionf:function() {
-      if (this.checked) {
-        planim.base.add(groundbox);
-      } else {
-        planim.base.remove(groundbox);
-      }
-    }
-    }
-    
-    ,{s:'Brush',r:1,doctrl:'Set brush (x-width,y-width,z-width)',lskey:'voxbrush',ms:brush,setfunc:function(v) {
-      var a=v.split(',');
-      for (var i=0;i<a.length;i++) a[i]=parseInt(a[i]);
-      brusha=a;brush=v;
-      //onsole.log(a);
-      this.ms=v;
-      //...
-    }
-    ,valuef:function() {
-      return brush;
-    }
-    }
-    
-    ]}
-    
-    ];
-    
-    cfm.sub.splice(0,0,{s:'New',sub:[
-    
-    {s:'plain',
-    actionf:function() {
-      
-      vh={};va=[];vw=0.03;
-      var b=10,by=1;
-      for (var z=-b;z<=b;z++) for (var y=-by;y<=by;y++) for (var x=-b;x<=b;x++)
-        //if ((x+b*3+y+z)>2)
-        if ((x==0)||(y==0)||(z==0))
-          etV(x,y,z,{x:x,y:y,z:z,c:0});
-      colors=[new THREE.Color(0.5,0.5,0.5),new THREE.Color(0.2,0.8,0.2)]
-      
-      voxMesh();//planim.box(0,-0.4,0,1,1,1);
-      
-      //...
-    }
-    }
-    
-    //,{s:'chess-like',actionf:app.newRandom}
-    
-    ]});
-    
-    cfm.sub.push(
-    
-    {s:'Json',ms:'import/export',doctrl:'Json data',mcfs:0.07,ta:true,jsonCheck:1,wrap:0,tacols:30,tarows:20,setfunc:function(v,initLoad) {
-      load(v);
-      //...
-    }
-    ,valuef:function() {
-      return serialize();
-    }
-    }
-    
-    ,{s:'Vox',ms:'export',doctrl:'Download vox file.',mcfs:0.07,wrap:1,text:1,_ta:true,tacols:30,tarows:20
-    ,valuef:function() {
-      
-      var s=vox();//'VOX \u0096\u0097\u0001\u0002'+String.fromCharCode(150);//+'\u2013';
-      
-      //Conet.upload({fn:'/three/anim/voxed/export.vox',data:btoa(s),log:Conet.log});
-      //var b=new Blob([s],{type:'text/plain'});
-      //console.log(b);
-      //var w=window.open('');
-      //w.document.write(s);
-      //console.log({s:s});
-      //console.log(btoa(s));
-      //this.s='2323232';
-      //return s;//JSON.stringify(s);
-      
-      var fn=cfm.curFn,i=fn.lastIndexOf('/');
-      if (i!=-1) fn=fn.substr(i+1);
-      i=fn.lastIndexOf('.');
-      if (i!=-1) fn=fn.substr(0,i);
-      fn+='.vox';
-      
-      return ' <a download="'+fn+'" href="data:application/octet-stream;base64,'+s+'">'+fn+'</a>';
-    }
-    }
-    
-    /*
-    ,{s:'Obj',ms:'export',doctrl:'Obj data',mcfs:0.07,ta:true,wrap:0,tacols:30,tarows:20
-    ,valuef:function() {
-      
-      var exp=new THREE.OBJExporter();
-      var result=exp.parse(mesh);
-      
-      return result;
-    }
-    }
-    */
-    
-    );
-    
-    
-    var startEditing=app;//for mib4
-    Menu.init([{s:'Voxed',ms:planim.version+'- 0.2860 ',sub:msub}//FOLDORUPDATEVERSION
-    
-    ,medit={s:'Edit',checked:startEditing,checkbox:1,ms:'Edit',actionf:function(v) {
-      planim.views[0].controls.enabled=!this.checked;
-      mtool.bgcol=this.checked?'#fff':undefined;
-    }
-    }
-    ,mtool={s:'Add 1',ms:'Edit-tool',autoval:1,setfunc:function(v) {
-      this.s=v;
-      if (!medit.checked) {
-        Menu.setChecked(medit,1);
-        medit.actionf();
-      }
-      //Conet.log('edittool setfunc v='+v);
-    }
-    ,sub:[{s:'Add 1'},{s:'Add N'},{s:'Sub 1'},{s:'Sub N'},{s:'Paint'},{s:'Pick<span style="font-size:0.5em;">Color</span>'}
-    ,{s:'Paint range'}]}
-    
-    /*
-    
-    ,mcolor={s:'Color',initLoadVal:ccol.r+','+ccol.g+','+ccol.b,doctrl:'r,g,b e.g. 1,1,0 is yellow',setfunc:function(v,initLoad) {
-      //console.log('mcolor.setfunc '+v+' '+initLoad);
-      if (!v) return;
-      var a=v.split(',');
-      ccol=new THREE.Color(parseFloat(a[0]),parseFloat(a[1]),parseFloat(a[2]));
-      this.bgcol='rgb('+round(ccol.r*256)+','+round(ccol.g*256)+','+round(ccol.b*256)+')';
-      this.ms=v;this.vertCenter=undefined;
-      //...
-    }
-    ,valuef:function() {
-      return ccol.r+','+ccol.g+','+ccol.b;
-    }
-    }
-    
-    */
-    
-    
-    ,mcolor2={s:'Color',doctrl:'Pick color',color:1,bgcol:colToHex(ccol),ms:colToHex(ccol),oninput:function(v) {
-      var col='0x'+v.substr(1);
-      console.log(col);
-      ccol=new THREE.Color(parseInt(v.substr(1),16));
-      
-      this.bgcol=v;
-      this.ms=v;this.vertCenter=undefined;
-      
-      
-      //data.colors[sel.col]=col;
-      //mat.needsUpdate=true;
-      //console.log(parseInt(col));
-    }
-    ,valuef:function() {
-      var v=colToHex(ccol);
-      console.log('v='+v);
-      return v;
-    }
-    }
-    
-    /*
-    
-    ,{s:'Landscape',actionf:function() {
-      generateLandscape({count:20});
-      
-      blocks=toBlocks();
-      
-      if (mgroundbox.checked) { 
-        mgroundbox.checked=0;
-        planim.base.remove(groundbox);
       }
       
-      voxMesh();
-      Conet.log('Generate done.');
+      /*
       
+      ,{s:'Generate',stay:1,actionf:function() {
+        //generateLandscape(Conet.hcopy(JSON.parse(mcfg.value),{count:mwidth.ms,do2d:mdo2d.checked,seed:mseed.ms}));//20
+        generateLandscape(JSON.parse(mcfg.value));
+        //blocks=toBlocks();
+        
+        if (mgroundbox.checked) { 
+          mgroundbox.checked=0;
+          planim.base.remove(groundbox);
+        }
+        
+        voxMesh();
+        Conet.log('Generate done.');
+        
+        //...
+      }
+      }
+      ]};
+      */
       //...
     }
+    
+    /* Menu */ {
+      
+      var msub=[
+      
+      cfm=Conet.fileMenu(cfmp={fn:'/three/anim/voxed/files'+(isConet?'':'NoConet')+'.txt',url:'fn',noStartLoad:app,
+      loadf:function(fn) {
+        if (1)
+        Conet.download({fn:fn,f:function(v) {
+          load(JSON.parse(v));
+          
+          //onsole.log(fn);
+          if (fn.indexOf('/tile')!=-1) {
+            //calcTiles();
+            isTiles=true;
+          } else isTiles=false;
+          
+          voxMesh();
+        }
+        });
+      }
+      ,savef:!isConet?undefined:function(fn) {
+        Conet.upload({fn:fn,data:serialize(),log:Conet.log,logChunk:1});
+        //...
+      }
+      })
+      //medit1={checkbox:1,checked:1,ms:'1x edit per click'},
+      
+      ,{s:'View',sub:[planim.mfullscreen
+      ,mRotate={s:'Rotate',r:1,actionf:function() {
+        //...
+        planim.views[0].controls.autoRotate=!planim.views[0].controls.autoRotate;
+        //...
+      }
+      }
+      
+      ,mplaney={s:'Plane Y',ms:planeY,r:1,sub:[
+      
+      mpyshow={checkbox:1,ms:'Show plane y',actionf:voxMesh}
+      ,{s:'+10',actionf:planeChange,_dy:10}
+      ,{s:'+1',actionf:planeChange,_dy:1}
+      ,{s:'-1',actionf:planeChange,_dy:-1}
+      ,{s:'-10',actionf:planeChange,_dy:-10}
+      
+      ]}
+      
+      ,{s:'Docs',doctrl:'Docs',mcfs:0.07,wrap:0,ta:true,tacols:60,tarows:20
+      ,valuef:function() {
+        
+        return ''+
+        '2020-08-18 v.0.792 ... Added color and brush-width menu.\n'+
+        '2019-10-16 v.0.423 ... First version online.';
+        //...
+      }
+      }
+      
+      ]}
+      
+      ,{s:'Config',sub:[
+      
+      
+      mbackground={s:'Background',doctrl:'Pick color',color:1,bgcol:colIToS(planim.views[0].bgcol),ms:colIToS(planim.views[0].bgcol),oninput:function(v) {
+        //var col='0x'+v.substr(1);
+        //console.log(col);
+        var col=parseInt(v.substr(1),16);
+        
+        planim.views[0].bgcol=col;
+        planim.views[0].renderer.setClearColor(col);
+        
+        this.bgcol=v;
+        this.ms=v;
+        
+        
+        //data.colors[sel.col]=col;
+        //mat.needsUpdate=true;
+        //console.log(parseInt(col));
+      }
+      ,valuef:function() {
+        return colIToS(planim.views[0].bgcol);
+      }
+      }
+      
+      ,mgroundbox={ms:'GroundBox',checkbox:1,checked:1,actionf:function() {
+        if (this.checked) {
+          planim.base.add(groundbox);
+        } else {
+          planim.base.remove(groundbox);
+        }
+      }
+      }
+      
+      ,{s:'Brush',r:1,doctrl:'Set brush (x-width,y-width,z-width)',lskey:'voxbrush',ms:brush,setfunc:function(v) {
+        var a=v.split(',');
+        for (var i=0;i<a.length;i++) a[i]=parseInt(a[i]);
+        brusha=a;brush=v;
+        //onsole.log(a);
+        this.ms=v;
+        //...
+      }
+      ,valuef:function() {
+        return brush;
+      }
+      }
+      
+      ]}
+      
+      ];
+      
+      cfm.sub.splice(0,0,{s:'New',sub:[
+      
+      {s:'plain',
+      actionf:function() {
+        
+        vh={};va=[];vw=0.03;
+        var b=10,by=1;
+        for (var z=-b;z<=b;z++) for (var y=-by;y<=by;y++) for (var x=-b;x<=b;x++)
+          //if ((x+b*3+y+z)>2)
+          if ((x==0)||(y==0)||(z==0))
+            etV(x,y,z,{x:x,y:y,z:z,c:0});
+        colors=[new THREE.Color(0.5,0.5,0.5),new THREE.Color(0.2,0.8,0.2)]
+        
+        voxMesh();//planim.box(0,-0.4,0,1,1,1);
+        
+        //...
+      }
+      }
+      
+      //,{s:'chess-like',actionf:app.newRandom}
+      
+      ]});
+      
+      cfm.sub.push(
+      
+      {s:'Json',ms:'import/export',doctrl:'Json data',mcfs:0.07,ta:true,jsonCheck:1,wrap:0,tacols:30,tarows:20,setfunc:function(v,initLoad) {
+        load(v);
+        //...
+      }
+      ,valuef:function() {
+        return serialize();
+      }
+      }
+      
+      ,{s:'Vox',ms:'export',doctrl:'Download vox file.',mcfs:0.07,wrap:1,text:1,_ta:true,tacols:30,tarows:20
+      ,valuef:function() {
+        
+        var s=vox();//'VOX \u0096\u0097\u0001\u0002'+String.fromCharCode(150);//+'\u2013';
+        
+        //Conet.upload({fn:'/three/anim/voxed/export.vox',data:btoa(s),log:Conet.log});
+        //var b=new Blob([s],{type:'text/plain'});
+        //console.log(b);
+        //var w=window.open('');
+        //w.document.write(s);
+        //console.log({s:s});
+        //console.log(btoa(s));
+        //this.s='2323232';
+        //return s;//JSON.stringify(s);
+        
+        var fn=cfm.curFn,i=fn.lastIndexOf('/');
+        if (i!=-1) fn=fn.substr(i+1);
+        i=fn.lastIndexOf('.');
+        if (i!=-1) fn=fn.substr(0,i);
+        fn+='.vox';
+        
+        return ' <a download="'+fn+'" href="data:application/octet-stream;base64,'+s+'">'+fn+'</a>';
+      }
+      }
+      
+      /*
+      ,{s:'Obj',ms:'export',doctrl:'Obj data',mcfs:0.07,ta:true,wrap:0,tacols:30,tarows:20
+      ,valuef:function() {
+        
+        var exp=new THREE.OBJExporter();
+        var result=exp.parse(mesh);
+        
+        return result;
+      }
+      }
+      */
+      
+      );
+      
+      
+      var startEditing=app;//for mib4
+      Menu.init([{s:'Voxed',ms:planim.version+'- 0.2994 ',sub:msub}//FOLDORUPDATEVERSION
+      
+      ,medit={s:'Edit',checked:startEditing,checkbox:1,ms:'Edit',actionf:function(v) {
+        planim.views[0].controls.enabled=!this.checked;
+        mtool.bgcol=this.checked?'#fff':undefined;
+      }
+      }
+      ,mtool={s:'Add 1',ms:'Edit-tool',autoval:1,setfunc:function(v) {
+        this.s=v;
+        if (!medit.checked) {
+          Menu.setChecked(medit,1);
+          medit.actionf();
+        }
+        //Conet.log('edittool setfunc v='+v);
+      }
+      ,sub:[{s:'Add 1'},{s:'Add N'},{s:'Sub 1'},{s:'Sub N'},{s:'Paint'},{s:'Pick<span style="font-size:0.5em;">Color</span>'}
+      ,{s:'Paint range'}]}
+      
+      /*
+      
+      ,mcolor={s:'Color',initLoadVal:ccol.r+','+ccol.g+','+ccol.b,doctrl:'r,g,b e.g. 1,1,0 is yellow',setfunc:function(v,initLoad) {
+        //console.log('mcolor.setfunc '+v+' '+initLoad);
+        if (!v) return;
+        var a=v.split(',');
+        ccol=new THREE.Color(parseFloat(a[0]),parseFloat(a[1]),parseFloat(a[2]));
+        this.bgcol='rgb('+round(ccol.r*256)+','+round(ccol.g*256)+','+round(ccol.b*256)+')';
+        this.ms=v;this.vertCenter=undefined;
+        //...
+      }
+      ,valuef:function() {
+        return ccol.r+','+ccol.g+','+ccol.b;
+      }
+      }
+      
+      */
+      
+      
+      ,mcolor2={s:'Color',doctrl:'Pick color',color:1,bgcol:colToHex(ccol),ms:colToHex(ccol),oninput:function(v) {
+        var col='0x'+v.substr(1);
+        console.log(col);
+        ccol=new THREE.Color(parseInt(v.substr(1),16));
+        
+        this.bgcol=v;
+        this.ms=v;this.vertCenter=undefined;
+        
+        
+        //data.colors[sel.col]=col;
+        //mat.needsUpdate=true;
+        //console.log(parseInt(col));
+      }
+      ,valuef:function() {
+        var v=colToHex(ccol);
+        console.log('v='+v);
+        return v;
+      }
+      }
+      
+      ,mlandscape
+      
+      ],{listen:1,nobeep:1,prompt:1});
+      
+      
+      Menu.cpy=0.08;//--- controls down from stats
+      
     }
-    
-    */
-    
-    ],{listen:1,nobeep:1});
-    Menu.cpy=0.08;//--- controls down from stats
     
     if (app) app.init();
     
@@ -2809,30 +2962,24 @@ var Voxed;
 )();
 //console.log('YOIUOkokooko');
 //fr o,2
-//fr o,2,35,7
-//fr o,2,35,9
-//fr o,2,35,12
-//fr o,2,35,15
-//fr o,2,84,16,7
-//fr o,2,84,64,1
-//fr o,2,85,3,10
-//fr o,2,86
-//fr o,2,86,2
-//fr o,2,86,4
-//fr o,2,86,32,74
-//fr o,2,86,32,74,15
-//fr o,2,86,32,83
-//fr o,2,86,43
-//fr o,2,97
-//fr o,2,97,41
-//fr o,2,97,41,1
-//fr o,2,97,42
-//fr o,2,97,61
-//fr o,2,97,73
-//fr o,2,97,76
-//fr o,2,97,77
-//fr o,2,97,97
-//fr o,2,97,124
-//fr o,2,97,147
-//fr o,2,97,148
-//fr p,111,242
+//fr o,2,13,3
+//fr o,2,13,7
+//fr o,2,13,11
+//fr o,2,36
+//fr o,2,36,7
+//fr o,2,36,9
+//fr o,2,36,11
+//fr o,2,36,14
+//fr o,2,36,17
+//fr o,2,85,16,7
+//fr o,2,85,64,1
+//fr o,2,86,3,10
+//fr o,2,87,2
+//fr o,2,87,4
+//fr o,2,87,32,74
+//fr o,2,87,32,74,15
+//fr o,2,87,32,83
+//fr o,2,98
+//fr o,2,98,36
+//fr o,2,98,36,31
+//fr p,39,68

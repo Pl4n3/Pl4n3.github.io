@@ -21,7 +21,7 @@ var Menu={};
   Menu.soff='[ ]';//'\u2610';
   Menu.son='[x]';//'\u2611';
   Menu.pressed=pressed;
-  Menu.version='1.398 ';//FOLDORUPDATEVERSION
+  Menu.version='1.425 ';//FOLDORUPDATEVERSION
   function mCloseAll(a) {
     for (var i=0;i<a.length;i++) {
       var mh=a[i];
@@ -174,13 +174,15 @@ var Menu={};
         m.valuefval=m.valuef();
         if (m.valuefval===undefined) skip=true;
       }
-      //onsole.log('menu.action doctrl skip='+skip);
+      //onsole.log('menu.action doctrl skip='+skip+' m.close='+m.close+' ps.prompt='+ps.prompt);
       if (!skip) {
-        if (ps.prompt&&!m.ta&&!m.close) {
-          var v=prompt(m.doctrl,m.valuefval);
-          menus=Menu.roots.concat(Menu.recent);
+        if (ps.prompt&&!m.ta&&!m.close&&!m.color) {
+          var v=prompt(m.doctrl,('valuefval' in m)?m.valuefval:m.ms);
+          
+          if (!m.stay) { menus=Menu.roots.concat(Menu.recent); }
           mCloseAll(menus);
           if (v&&m.setfunc) m.setfunc(v);
+          if (v&&m.lskey) localStorage[m.lskey]=v;
         } else {
         if (!mok) {
           mok={s:m.okS||'Ok',keys:m.ta?[]:[13]};Menu.initLoad([mok]);
@@ -536,7 +538,7 @@ var Menu={};
           c.innerHTML=m.s+'<br><textarea id="'+tfid+'" '+(mco.wrap?'':'wrap="off" ')+'style="'+(mco.wrap?'':
             //-> in firefox this made \n not do wrap, therfore commented out: 'white-space:nowrap;'+
             'overflow:auto;')
-            +'width:'+(ccw*0.8)+'px;'
+            +'width:min(400px,'+(ccw*0.8)+'px);'
             +'font-size:'+c.style.fontSize+'" '+
           'cols='+(mco.tacols?mco.tacols:36)+' rows='+(mco.tarows?mco.tarows:15)+'>'+value+'</textarea>';
           //tacols:36,tarows:15 frueher 20,8
@@ -688,6 +690,7 @@ var Menu={};
     }
   }
   Menu.initLoad=function(a) {
+    //onsole.log('initLoad');
     for (var i=0;i<a.length;i++) {
       var m=a[i];
       if ((m.ms===undefined)&&m.keys) { m.ms='<span style="color:#338;">Key:</span> '+String.fromCharCode(m.keys[0]); } 
@@ -931,6 +934,7 @@ var Menu={};
     if (!ps.touchEndsPropagation) { //---used in /anim/cannon/builder.htm otherwise mdiv inputs dont get focus
       e.preventDefault();
       e.stopPropagation();
+      //onsole.log('propag stopped');
     }
   }
   Menu.touchMoves=function(e) {
@@ -958,6 +962,7 @@ var Menu={};
     //...
   }
   Menu.touchStart=function(x,y,multiple) {
+    //onsole.log('0');
     nomouse=true;
     var cm=Menu.search(x,y,multiple);
     if (cm) {
@@ -1014,6 +1019,7 @@ var Menu={};
     if (ret) {
       e.preventDefault();
       e.stopPropagation();
+      //onsole.log('propag stopped');
     }
     return ret;
   }
@@ -1091,13 +1097,8 @@ var Menu={};
 
 //--
 //fr o,2
-//fr o,2,30
+//fr o,2,31
 //fr o,2,38
-//fr o,2,40
-//fr o,2,53
-//fr o,2,57
-//fr o,2,58
-//fr o,2,59
-//fr o,2,60
-//fr o,2,62
-//fr p,33,531
+//fr o,2,41
+//fr o,2,42
+//fr p,19,438

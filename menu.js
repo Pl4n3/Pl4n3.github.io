@@ -21,7 +21,7 @@ var Menu={};
   Menu.soff='[ ]';//'\u2610';
   Menu.son='[x]';//'\u2611';
   Menu.pressed=pressed;
-  Menu.version='1.425 ';//FOLDORUPDATEVERSION
+  Menu.version='1.452 ';//FOLDORUPDATEVERSION
   function mCloseAll(a) {
     for (var i=0;i<a.length;i++) {
       var mh=a[i];
@@ -141,7 +141,7 @@ var Menu={};
         //if (Menu.mcontrol.lskey) localStorage[Menu.mcontrol.lskey]=tf?tf.value:undefined;
         //console.log(Menu.mcontrol);
         if (tf) {
-          var k='menuTfpd'+Menu.mcontrol.s,
+          var k='menuTfpd'+(Menu.mcontrol.tfHistLskey||Menu.mcontrol.s),
               sh=localStorage[k],a=(sh===undefined)?[]:JSON.parse(sh);
           sh=tf.value;
           for (var i=a.length-1;i>=0;i--) if (a[i]==sh) a.splice(i,1);    
@@ -197,7 +197,7 @@ var Menu={};
           pw:m.mcpw?m.mcpw:(ps.diw?0.51:(1-0.49)),
           ph:m.mcph?m.mcph:(m.ta?(ps.diw?0.3:0.44):0.14),tf:1,
           fs:(m.mcfs?m.mcfs:(m.ta?Menu.tafs:0.75)),mctrl:m,yvh:m.mcyvh});
-        //console.log(menus);
+        //onsole.log(menus);
         Menu.mcontrol=m;
       }}
     } else if (m.sub) {
@@ -543,16 +543,28 @@ var Menu={};
           'cols='+(mco.tacols?mco.tacols:36)+' rows='+(mco.tarows?mco.tarows:15)+'>'+value+'</textarea>';
           //tacols:36,tarows:15 frueher 20,8
           //'cols='+(mco.tacols?mco.tacols:Math.floor(3/fs+0.5))+' rows='+(mco.tarows?mco.tarows:Math.floor(1.2/fs+0.5))+'>'+value+'</textarea>';
-          if (mco.jsonCheck) Conet.initJsonTa({c:document.getElementById(tfid)});
+          if (mco.jsonCheck) {
+            let ta=document.getElementById(tfid);
+            Conet.initJsonTa({c:ta});
+            if (0&&window.Frog) {
+              console.log('Init frog nao.');
+              Frog.draw({ta:ta,_c:c,showTa:true,alwaysTf:1,imgPath:'/test/',w:15,
+                ops:[{op:'{}',color:'#ba3',line1:1,line1h:1},{op:'[]',color:'#7c7'}],menus:{},json:1,resetOps:1});
+            }
+          }
         } else {
-          var k='menuTfpd'+m.mctrl.s,lsv=localStorage[k],sels='';
+          var k='menuTfpd'+(m.mctrl.tfHistLskey||m.mctrl.s),lsv=localStorage[k],sels='';
+          //onsole.log('k='+k+' lsv='+lsv);
           if (lsv!==undefined) {
             var a=JSON.parse(lsv);
-            sels='<select oninput="document.getElementById(\''+tfid+'\').value=this.value;" style="width:30px;">';
+            sels='<select oninput="document.getElementById(\''+tfid+'\').value=this.value;" style="width:30px;margin:4px;">';
             a.splice(0,0,'');//--- empty selected value at start, else on mobile first value is selected, no input event
             //for (var v of a) sels+='<option>'+v+'</option>';
             for (var i=0;i<a.length;i++) sels+='<option'+(i==0?' selected':'')+'>'+a[i]+'</option>';
             sels+='</select>';
+          }
+          if (m.mctrl.tfDir) {
+            sels+='Dir:'+m.mctrl.tfDir;
           }
           //onsole.log(m);
           
@@ -805,12 +817,14 @@ var Menu={};
   Menu.remove=function() {
     //Paint.stacktrace();
     if (!menus) return;
+    try {
     for (var h=0;h<menus.length;h++) {
       var mh=menus[h],c=mh.c;
       //console.log('Menu.remove '+
       document.body.removeChild(c);//);
       mh.shown=false; 
     }
+    } catch (e) {}
   }
   Menu.search=function(x,y,justreturn) {
     //onsole.log('Menu.search 0');
@@ -1097,8 +1111,7 @@ var Menu={};
 
 //--
 //fr o,2
-//fr o,2,31
 //fr o,2,38
-//fr o,2,41
-//fr o,2,42
-//fr p,19,438
+//fr o,2,48
+//fr o,2,53
+//fr p,13,296

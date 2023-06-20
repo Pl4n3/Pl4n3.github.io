@@ -1,10 +1,10 @@
 var Conet={};
 (function(Conet) {
   Conet.offline=false;
-  Conet.version='1.459 ';//FOLDORUPDATEVERSION
+  Conet.version='1.467 ';//FOLDORUPDATEVERSION
   Conet.files={};
   var uploads={},fns,logc,logs=[],//fn=>data,first
-      logSameLineCount=0,ac,downloads={};
+      logSameLineCount=0,ac,downloads={},PI=Math.PI;
   function xhr(p) {
     var x=new XMLHttpRequest(),ps=p.ps||{},omt;
     x.overrideMimeType(omt=(ps.overrideMimeType||'text/plain'));
@@ -241,7 +241,7 @@ var Conet={};
     
     if (p.newf) m.sub.push({s:'New',actionf:p.newf});
     
-    m.sub.push(mload={s:'Load',noa:1,a:'conetLoad',sub:[{s:'...',doctrl:'Load'
+    m.sub.push(mload={s:'Load',noa:1,a:'conetLoad',sub:[{s:'...',tfHistLskey:p.tfHistLskey,tfDir:p.tfDir,doctrl:'Load'
     
     ,valuef:function() {
       return m.curFn||p.defFn||'';
@@ -651,6 +651,44 @@ var Conet={};
     }
     //...
   }
+  Conet.calcTweens=function(tweens,dt) {
+    //---
+    for (var i=tweens.length-1;i>=0;i--) {
+      var tw=tweens[i];
+      tw.tc=Math.min(tw.t,(tw.tc||0)+dt);
+      //if (tw.x0===undefined) { tw.x0=tw.o.x;tw.y0=tw.o.y;tw.z0=tw.o.z; }
+      var f1=tw.tc/tw.t;
+      f1=0.5-Math.cos(f1*Math.PI)/2;
+      var f0=1-f1;
+      
+      if (tw.key) {
+        if (tw.value0===undefined) tw.value0=tw.o[tw.key];
+        tw.o[tw.key]=f1*tw.value+f0*tw.value0;
+      } else {  
+      if (tw.x0===undefined) { tw.x0=tw.o.x;tw.y0=tw.o.y;tw.z0=tw.o.z; }
+      tw.o.set(
+        f1*tw.x+f0*tw.x0,
+        f1*tw.y+f0*tw.y0,
+        f1*tw.z+f0*tw.z0,
+      );
+      }
+      
+      if (tw.t==tw.tc) {
+        if (tw.onend) tw.onend();
+        tweens.splice(i,1);
+      }
+    }
+    //...
+  }
+  
+  Conet.dAng=function(a0,a1) {
+    var da=a0-a1;
+    while (da>PI) da-=PI*2;
+    while (da<-PI) da+=PI*2;
+    return da;
+  }
+  
+  
   //---
 }
 )(Conet);
@@ -662,7 +700,6 @@ console.log('Conet '+Conet.version);
 //fr o,1,7,22
 //fr o,1,10,3
 //fr o,1,10,4
-//fr o,1,10,5
 //fr o,1,10,6
 //fr o,1,10,7
 //fr o,1,10,19
@@ -670,7 +707,6 @@ console.log('Conet '+Conet.version);
 //fr o,1,11,1
 //fr o,1,18,4
 //fr o,1,35
-//fr o,1,47
 //fr o,1,47,13
-//fr o,1,49
-//fr p,2,10
+//fr o,1,52
+//fr p,49,6

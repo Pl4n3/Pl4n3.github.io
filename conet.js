@@ -1,7 +1,7 @@
 var Conet={};
 (function(Conet) {
   Conet.offline=false;
-  Conet.version='1.467 ';//FOLDORUPDATEVERSION
+  Conet.version='1.468 ';//FOLDORUPDATEVERSION
   Conet.files={};
   var uploads={},fns,logc,logs=[],//fn=>data,first
       logSameLineCount=0,ac,downloads={},PI=Math.PI;
@@ -682,7 +682,7 @@ var Conet={};
   }
   
   Conet.dAng=function(a0,a1) {
-    var da=a0-a1;
+    var da=a0-a1; 
     while (da>PI) da-=PI*2;
     while (da<-PI) da+=PI*2;
     return da;
@@ -709,4 +709,4 @@ console.log('Conet '+Conet.version);
 //fr o,1,35
 //fr o,1,47,13
 //fr o,1,52
-//fr p,49,6
+//fr p,14,108

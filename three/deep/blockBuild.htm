@@ -1,0 +1,942 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+<style>
+body { color:#000;background-color:#fff;margin:0px;overflow:hidden;font-family:Arial; }
+</style>
+<script src="/three/r143/build/three.min.js"></script>
+<script src="/three/r143/examples/js/libs/stats.min.js"></script>
+<script src="/three/r143/examples/js/controls/OrbitControls.js"></script>
+<script src="/conet.js"></script>
+<script src="/menu.js"></script>
+</head><body>
+<div id="container"></div>
+<script>
+(function() {
+  let scene,gw=60,border=5,m0,m1,m2,blocks={},
+      renderer,stats,mbullet,
+      mAddDel,mSpeed,raycaster,camera,
+      lskey='blockBuild0',blocksOfMesh=[],
+      sceneh,mMeshes,controls,ot=Date.now(),game={};
+  const vertices=[],indices=[],
+      objs=[],units=[],//--- threejs object3d
+      tweens=[],PI=Math.PI; 
+  
+  /* history */ {
+    //---
+    
+    //230807 added randomly walking units and made twwet/troet. Added scene param 'noVoxelGroupMeshes'
+    //  to be able to remove all voxels. Probably ext: make a (special) block 
+    //  draggable via mouse/touch  (then orbitcontrols must be temporally disabled). With 2 draggable
+    //  blocks an area can be defined, to add or emove blocks or scriptModules.. 
+    
+    //230804 started scene with flag scriptModules, which runs scriptModules on load. building architecture
+    //  with commands isnt that great though, it would be better to have visible surrounding around modules,
+    //  which can be drag-positioned and -resized and which can be parametrized from within the editor (e.g. for
+    //  a walled room have params for windows,doors). Surrounding boxes would be also nice to select multiple
+    //  voxels. Maybe start with them first, module implementation second.
+    // Or next: continue with room module and its params (windows,doors,not existent walls(=big door)), first
+    //  via coding later via visual edit.
+    // Edit: scriptModules0.json now generates level, also sets voxelGroups. Saved to scriptModules1 voxelGroups
+    //  work (scriptModules flag is removed on save). Next: extend scriptModules0 with more floors and voxelGroups
+    
+    //230803 voxelGroups added, currently defined via p0(x,y,z)-p1(x,y,z), all voxels insided that 
+    //  range get into one mesh, visibility of meshes can be toggled on/off
+    //  next: eruate how to go from here, how to make bigger architectures with multiple (automatic?) voxelgroups
+    
+    //230802 started adding blocks to scene with combined mesh. Next: Indices not working correctly
+    //  try load simple scene
+    
+    //230801 scene loads into single geometry, lots faster. Next: again test scene load with
+    //  multiple but buffergeometry, make editing work (fix face order). Then check editing with
+    //  a combined geometry. Check geometries for y-layers to blend them out during iso gameplay.
+    
+    //230728 rendering big voxel files is slow. try to use single geometry.
+    
+    //230727: filemenu is there, made simple scenes to test shadows and started a more complex
+    //  architecture with inner structure (stairs,doors,windows), looks nice especially max zoomed
+    //  out when small architecture reminds on syndicate. Should be fun moving inside it isoview, with
+    //  upper floors blended out diablostyle, shooting at mobs while exploiting narrow architecture 
+    //  to trap mobs or to avoid too many mob approaches.. or to do same firstperson.
+    //    Next: For blending out floors: it should be nice if voxed format is used, because there editing
+    //  is possible in one plane with blended out floors, try that.
+    
+    //230726: add/del menu and localStorage added, already made nice building
+    /* first building */ {
+      //
+      //{"blocks":[{"x":1,"y":0,"z":4},{"x":2,"y":0,"z":4},{"x":3,"y":0,"z":4},{"x":4,"y":0,"z":1},{"x":4,"y":0,"z":2},{"x":4,"y":0,"z":3},{"x":4,"y":0,"z":4},{"x":4,"y":1,"z":4},{"x":4,"y":2,"z":4},{"x":4,"y":0,"z":5},{"x":4,"y":0,"z":6},{"x":6,"y":0,"z":8},{"x":7,"y":0,"z":8},{"x":8,"y":0,"z":8},{"x":8,"y":0,"z":7},{"x":8,"y":0,"z":6},{"x":5,"y":0,"z":4},{"x":6,"y":0,"z":4},{"x":7,"y":0,"z":7},{"x":6,"y":0,"z":7},{"x":5,"y":0,"z":5},{"x":5,"y":0,"z":6},{"x":6,"y":0,"z":5},{"x":6,"y":0,"z":6},{"x":7,"y":0,"z":6},{"x":6,"y":1,"z":6},{"x":4,"y":3,"z":4},{"x":6,"y":2,"z":6},{"x":6,"y":3,"z":6},{"x":3,"y":0,"z":3},{"x":2,"y":0,"z":3},{"x":1,"y":0,"z":3},{"x":3,"y":0,"z":2},{"x":2,"y":0,"z":2},{"x":1,"y":0,"z":2},{"x":3,"y":0,"z":1},{"x":2,"y":0,"z":1},{"x":1,"y":0,"z":1},{"x":9,"y":0,"z":8},{"x":9,"y":0,"z":7},{"x":9,"y":0,"z":6},{"x":9,"y":0,"z":9},{"x":8,"y":0,"z":9},{"x":7,"y":0,"z":9},{"x":6,"y":0,"z":9},{"x":5,"y":1,"z":5},{"x":5,"y":2,"z":5},{"x":5,"y":3,"z":5}]}
+      //...
+    }
+    //  - now want to try other buildings, menu to load/store different, best with picture, needed
+    //  - also add controls config to storage
+    //  - current architecture tests with default light, at some point make light editable (light blocks probably?)
+    //  - at later point it should be fun to add cannonjs and let marbles run through architecture
+    
+    //230725: next add menu to toggle del/add
+    
+    
+    //...
+  }
+  function animate() {
+    requestAnimationFrame( animate );
+    
+    const t=Date.now(),dt=Math.min(100,(t-ot));ot=t;
+    
+    for (const u of units) {
+      //u.mesh.position.x+=1;
+      if (u.tweenRuns) continue;
+      
+      let dx=0,dy=0,dz=0;
+      switch (Conet.rani(4)) {
+        case 0:dx=1;break;
+        case 1:dx=-1;break;
+        case 2:dz=1;break;
+        case 3:dz=-1;break;
+      }
+      let x=u.x+dx,y=u.y+dy,z=u.z+dz;
+      
+      if (!walkAble(x,y,z)) {
+        if (walkAble(x,y+1,z)) y++;
+        else if (walkAble(x,y-1,z)) y--;
+        else continue;
+      }
+      
+      u.x=x;u.y=y;u.z=z;
+      
+      //u.x+=dx;u.y+=dy;u.z+=dz;
+      u.tweenRuns=true;const t=mSpeed.checked?10:100;
+      tweens.push({unit:u,o:u.mesh.position,key:'x',value:u.x*gw,t:t});
+      tweens.push({unit:u,o:u.mesh.position,key:'y',value:(u.y+0.5)*gw,t:t});
+      tweens.push({unit:u,o:u.mesh.position,key:'z',value:u.z*gw,t:t,onend:tweenEnd});
+    }
+    
+    if (game.animate) game.animate(dt);
+    
+    Conet.calcTweens(tweens,dt);
+    
+    if (controls) controls.update(); // required if controls.enableDamping = true, or if controls.autoRotate = true
+    stats.update();
+    //render();
+    renderer.render(scene,camera);
+  }
+  function arraysToMesh(ps) {
+    //---
+    const ge=new THREE.BufferGeometry();
+    const vertices=new Float32Array(ps.vertices);
+    
+    ge.setIndex(ps.indices);
+    ge.setAttribute('position',new THREE.BufferAttribute( vertices, 3 ));
+    ge.computeVertexNormals();
+    ge.computeBoundingSphere();
+    
+    mesh=new THREE.Mesh(
+      ge,//new THREE.BoxGeometry(w,h,b)
+      ps.m);
+    mesh.position.set(0,0,0);  
+    mesh.updateMatrix();
+    mesh.matrixAutoUpdate=false;
+    mesh.castShadow=true;
+    mesh.receiveShadow=true;
+    scene.add(mesh);
+    return mesh;
+    //...
+  }
+  function arraysToObjsMesh(ps) {
+    //---
+    const mesh=arraysToMesh({vertices:vertices,indices:indices,m:m0});
+    mesh.userData.blocksOfMesh=blocksOfMesh;blocksOfMesh=[];
+    objs.push(mesh);
+    vertices.length=0;
+    indices.length=0;
+    //...
+  }
+  function box(x,y,z,w,h,b,m,ps) {
+    let mesh;
+    
+    if (1) {
+    const w2=w/2,h2=h/2,b2=b/2,
+        x0=x-w2,y0=y-h2,z0=z-b2,
+        x1=x+w2,y1=y+h2,z1=z+b2;
+    
+    //x-=w;y-=w;z-=w;
+    
+    //const vertices=new Float32Array([
+    if (!ps.buffer) {
+      vertices.length=0;indices.length=0;
+    }
+    const i=vertices.length/3;
+    vertices.push(
+      x0,y0,z1,  x1,y0,z1,  x1,y1,z1,  x0,y1,z1,//0
+      x1,y0,z0,  x0,y0,z0,  x0,y1,z0,  x1,y1,z0,//4
+      
+      //x0,y0,z0, x1,y0,z0, x1,y0,z1, x0,y0,z1,//8
+      //x1,y1,z0, x0,y1,z0, x0,y1,z1, x1,y1,z1,//12
+      
+      //x1,y0,z0, x1,y1,z0, x1,y1,z1, x1,y0,z1,//16
+      //x0,y1,z0, x0,y0,z0, x0,y0,z1, x0,y1,z1,//20
+      ////-1.0, -1.0,  1.0, // v0
+      //// 1.0, -1.0,  1.0, // v1
+      //// 1.0,  1.0,  1.0, // v2
+      ////-1.0,  1.0,  1.0, // v3
+    );
+    
+    indices.push(
+      i+4,i+7,i+2, i+2,i+1,i+4,
+      //i+16+0,i+16+1,i+16+2, i+16+2,i+16+3,i+16+0,
+      i+6,i+5,i+0, i+0,i+3,i+6,
+      //i+20+0,i+20+1,i+20+2, i+20+2,i+20+3,i+20+0,
+      i+7,i+6,i+3, i+3,i+2,i+7,
+      //i+12+0,i+12+1,i+12+2, i+12+2,i+12+3,i+12+0,
+      i+5,i+4,i+1, i+1,i+0,i+5,
+      //i+8+0,i+8+1,i+8+2, i+8+2,i+8+3,i+8+0,
+      i+0,i+1,i+2, i+2,i+3,i+0,
+      i+4+0,i+4+1,i+4+2, i+4+2,i+4+3,i+4+0,
+    );
+    
+    if (ps.buffer) 
+      blocksOfMesh.push(ps);
+    else {
+      mesh=arraysToMesh({vertices:vertices,indices:indices,m:m});
+    }
+    
+    }
+    
+    if (0) {
+    
+    mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,b),m);
+    mesh.position.set(x,y,z);
+    mesh.updateMatrix();
+    mesh.matrixAutoUpdate=false;
+    mesh.castShadow=true;
+    mesh.receiveShadow=true;
+    scene.add(mesh);
+    
+    }
+    return mesh;
+  }
+  function blockAt(x,y,z) {
+    //--- without hash thus faster (?)
+    let k=x+'_'+y+'_'+z;
+    return blocks[k];
+    //...
+  }
+  function blockEt(ps) {
+    //---
+    let k=ps.x+'_'+ps.y+'_'+ps.z,m=blocks[k];
+        add=ps.add,del=ps.del;
+    if (ps.addDel) {
+      if (m) del=1; else add=1;
+    }
+    if (ps.addIfEmpty) {
+      if (m) console.log('Didnt add, not empty.'); else add=1;
+    }
+    
+    delete(ps.add);
+    delete(ps.addIfEmpty);
+    delete(ps.addDel);
+    
+    if (del) {
+      //onsole.log('removing '+m.mesh+' '+scene.children.length);
+      //console.log(m.mesh);
+      if (!m) { console.log('Didnt del, empty.');return; }
+      const mr=scene.remove(m.mesh);
+      //onsole.log('removed '+mr+', now '+scene.children.length);
+      //console.log(mr);
+      delete(blocks[k]);
+      return;
+    }
+    if (add) {
+      let w=gw-border;
+      //onsole.log('adding '+scene.children.length);
+      let mesh=box(ps.x*gw,ps.y*gw-0,ps.z*gw,w,w,w,m0,ps);
+      if (mesh) {
+        //onsole.log('added, now '+scene.children.length);
+        mesh.userData=ps;
+        //blocks[k]=mesh;
+        ps.mesh=mesh;
+      } //else 
+      delete(ps.buffer);
+      blocks[k]=ps;
+      return mesh;
+    }
+    return m;
+    //...
+  }
+  function click(e) {
+    //---
+    let click=new THREE.Vector2(2*e.clientX/window.innerWidth-1,-2*e.clientY/window.innerHeight+1);
+    raycaster.setFromCamera(click,camera);
+    let a=raycaster.intersectObjects(scene.children);
+    //console.log(a);
+    //Conet.log('click count:'+a.length+(a.length>0?' index0:'+scene.children.indexOf(a[0].object)
+    //  +' faceIndex:'+a[0].faceIndex:''));
+    if (a.length>0) {
+      let ps=a[0].object.userData;
+      //console.log(ps);
+      if (ps.blocksOfMesh) {
+        let bi=Math.floor(a[0].faceIndex/12);
+        //onet.log('blocksOfMesh bi='+bi);
+        ps=ps.blocksOfMesh[bi];
+        //onsole.log(ps);
+        if (!mAddDel.checked) { Conet.log('Cant del blocks from combined mesh ('+ps.x+','+ps.y+','+ps.z+').');return; }
+      }
+      if (ps.x===undefined) 
+        Conet.log('ps.x is undefined');
+      else {
+      if (mAddDel.checked) {
+        let fi=Math.floor((a[0].faceIndex%12)/2);
+        let h={};
+        if      (fi==0) h.x=1;
+        else if (fi==1) h.x=-1;
+        else if (fi==2) h.y=1;
+        else if (fi==3) h.y=-1;
+        else if (fi==4) h.z=1;
+        else            h.z=-1; 
+        //Conet.log('fi='+fi);
+        blockEt({x:ps.x+(h.x||0),y:ps.y+(h.y||0),z:ps.z+(h.z||0),addIfEmpty:1});
+      } else 
+        blockEt({x:ps.x,y:ps.y,z:ps.z,del:1});
+      //serialize();
+      }
+    }
+    //...
+  }
+  //---
+  function init() {
+    
+    //script src="https://threejs.org/build/three.min.js">/script>  //r124
+    //script src="https://threejs.org/examples/js/libs/stats.min.js">/script> //r109
+    //script src="https://threejs.org/examples/js/controls/OrbitControls.js">/script>  //v81
+    
+    Conet.log('v.0.546 ');//FOLDORUPDATEVERSION
+    
+    //let renderer,stats;
+    
+    scene = new THREE.Scene();
+    renderer = new THREE.WebGLRenderer({antialias:true});
+    renderer.setClearColor( 0x888888 );
+    renderer.shadowMap.enabled=true;
+    renderer.shadowMap.type=THREE.BasicShadowMap;
+    //renderer.outputEncoding=THREE.sRGBEncoding;
+    //				renderer.shadowMapEnabled=true;
+    //				renderer.shadowMapType=THREE.PCFShadowMap;//PCFShadowMap;
+    
+    renderer.setPixelRatio( window.devicePixelRatio );
+    renderer.setSize( window.innerWidth, window.innerHeight );
+    
+    var container=document.body//document.getElementById('container')
+      ,ms=[];
+    container.appendChild( renderer.domElement );
+    
+    camera=new THREE.PerspectiveCamera(60,window.innerWidth/window.innerHeight,1,10000);
+    camera.position.z=500;
+    
+    if (1) {
+    controls=new THREE.OrbitControls(camera,renderer.domElement);
+    //controls.enableDamping=true;
+    //controls.dampingFactor=0.25;
+    controls.enableZoom=true;
+    controls.enablePan=true;
+    controls.maxDistance=5000;
+    //controls.rotateSpeed=0.4;
+    //onsole.log(controls);
+    }
+    
+    m0=new THREE.MeshPhongMaterial( { color:0x666666,flatShading:true } );
+    m1=new THREE.MeshPhongMaterial({color:0x77dd77,flatShading:true,
+      transparent:true,opacity:0.7});
+    m2=new THREE.MeshPhongMaterial( { color:0x33ee33,flatShading:true } );
+    mbullet=new THREE.MeshPhongMaterial( { color:0xee8833,flatShading:true } );
+    
+    var bw=20;//,sw=15,sw2=(sw-1)/2,bh=bw/2;//20,15
+    
+    function _box(x,y,z,w,h,b,m) {
+      mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,b),m);
+      mesh.position.set(x,y,z);
+      mesh.updateMatrix();
+      mesh.matrixAutoUpdate = false;
+      mesh.castShadow=true;
+      mesh.receiveShadow=true;
+      scene.add(mesh);
+      return mesh;
+    }
+    
+    
+    function resize() {
+      camera.aspect=window.innerWidth/window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth,window.innerHeight);
+    }
+    
+    
+    //if (1) { box0(-1,0,-1,1,1,1,m1);box0(15,0,-1,1,1,1,m1);
+    //         box0(-1,0,15,1,1,1,m1);box0(15,0,15,1,1,1,m1); }
+    
+    //let sc=localStorage[lskey];
+    //if (sc) {
+    //  console.log(sc);
+    //  loadScene(JSON.parse(sc));
+    //}
+    
+    //if (blocks.length==0) {
+      //box(0,-80,0,50,50,50,m0);
+      //box(60,-80,0,50,50,50,m0);
+      //box(0,-80,60,50,50,50,m0);
+    if (1) {
+      blockEt({x:0,y:0,z:0,add:1});
+      blockEt({x:1,y:0,z:0,add:1});
+      blockEt({x:0,y:0,z:1,add:1});
+    }
+    //}
+    
+    //box(0,-150,0,600,bw,600,m0).castShadow=false;
+    
+    var l=new THREE.AmbientLight(0x555555),f=3;scene.add(l);
+    l=new THREE.PointLight(0xffffff,1,0);l.position.set(-100*f,200*f,100*f);scene.add(l);
+    l=new THREE.PointLight(0xffffaa,1,0);l.position.set(100*f,100*f,100*f);
+    l.castShadow=true;
+    l.shadow.camera.near=100;
+    l.shadow.camera.far=1000;
+    l.shadow.mapSize.width=1024;//2048;
+    l.shadow.mapSize.height=1024;
+    scene.add(l);
+    l=new THREE.PointLight(0xaaffff,1,0);l.position.set(100*f,-200*f,-100*f);scene.add(l);
+    
+    
+    stats = new Stats();
+    stats.domElement.style.position = 'absolute';
+    stats.domElement.style.top = '0px';
+    stats.domElement.style.zIndex = 100;
+    container.appendChild(stats.domElement);
+    
+    window.addEventListener('resize',resize,false);
+    
+    raycaster=new THREE.Raycaster();
+    window.addEventListener('click',click,false);
+    
+    let cfm=Conet.fileMenu({fn:'/anim/blockBuild/files.txt',url:'fn',noStartLoad:undefined,loadList:1,
+    loadf:function(fn) {
+      if (1)
+      Conet.download({fn:fn,f:function(v) {
+        loadScene(JSON.parse(v));
+      }
+      });
+    }
+    ,savef:function(fn) {
+      Conet.upload({fn:fn,data:serialize(),log:Conet.log,logChunk:1});
+      //...
+    }
+    })
+    
+    
+    
+    Menu.init([
+    {s:'&#9776;',noTri:true,fs:1.4,pw:0.05,sub:[
+    Menu.mFullscreen,
+    {s:'Serialze',ms:'to console',actionf:function() {
+      //---
+      console.log(serialize());
+      //...
+    }
+    }
+    
+    ,mMeshes={s:'Meshes'}
+    
+    ,mSpeed={checkbox:1,ms:'anim speed x10'}
+    
+    ,{s:'Add..',ms:'units',doctrl:'Add units',value:'-4,4,1',setfunc:function(v) {
+      //---
+      this.value=v;
+      const a=v.split(',');
+      unitsAdd({x:parseFloat(a[0]),y:parseFloat(a[1]),z:parseFloat(a[2])});
+      //onsole.log(a);
+      //...
+    }
+    }
+    
+    ]},
+    
+    cfm,
+    
+    mAddDel={checkbox:1,ms:'Add or Del',checked:1}
+    ],{listen:1});
+    //Menu.draw();
+    
+    Menu.cpy=0.2;
+    
+    animate();
+    //---
+  }
+  function initMenuMeshes() {
+    //---
+    mMeshes.sub=[];
+    for (let i=0;i<objs.length;i++) {
+      mMeshes.sub.push({stay:1,meshIndex:i,checkbox:1,checked:1,ms:'Mesh '+i,actionf:meshf});
+    }
+    Menu.initLoad(mMeshes.sub);
+    //...
+  }
+  function loadScene(h) {
+    //---
+    //onsole.log('loadScene 0 '+scene.children.length);
+    for (let m of Object.values(blocks)) {
+      let ps=m;//.userData;
+      ps.del=1;//ps.buffer=1;
+      blockEt(ps);
+    }
+    //onsole.log('loadScene 1 '+scene.children.length);
+    //onet.log('LoadScene: removing '+objs.length+' objs.');
+    for (const o of objs) scene.remove(o);
+    objs.length=0;
+    vertices.length=0;
+    indices.length=0;
+    
+    //if (1) return;
+    
+    //onsole.log(h);
+    if (h.voxels) {
+    
+    const vl=h.voxels.length;
+    
+    if (h.scriptModules) h.voxels.length=0;//scriptModules(h);
+    
+    const useBuffer=!h.noVoxelGroupMeshes;
+    mMeshes.sub=[];
+    
+    if (useBuffer&&h.voxelGroups) for (const vg of h.voxelGroups) {
+      //onsole.log(vg);
+      const p0=vg.p0,p1=vg.p1,
+        x0=p0[0],y0=p0[1],z0=p0[2],
+        x1=p1[0],y1=p1[1],z1=p1[2];
+      let i=0,c=0;
+      while (true) {
+        if (i>=h.voxels.length) break;
+        let v=h.voxels[i];
+        if ((v.x>=x0)&&(v.x<=x1)&&(v.y>=y0)&&(v.y<=y1)&&(v.z>=z0)&&(v.z<=z1)) {
+          v.add=1;v.buffer=1;blockEt(v);
+          c++;
+          h.voxels.splice(i,1);
+        } else
+          i++;
+      }
+      //onsole.log('voxelGroup c='+c);
+      //const mesh=arraysToMesh({vertices:vertices,indices:indices,m:m0});
+      //mesh.userData.blocksOfMesh=blocksOfMesh;blocksOfMesh=[];
+      //objs.push(mesh);
+      //vertices.length=0;
+      //indices.length=0;
+      arraysToObjsMesh();
+    }
+    
+    for (let b of h.voxels) {
+      b.add=1;if (useBuffer) b.buffer=1;
+      blockEt(b);
+    }
+    if (useBuffer) {
+      //const mesh=arraysToMesh({vertices:vertices,indices:indices,m:m0});
+      //mesh.userData.blocksOfMesh=blocksOfMesh;blocksOfMesh=[];
+      //objs.push(mesh);
+      arraysToObjsMesh();
+      
+      initMenuMeshes();
+    }
+    
+    //onsole.log(objs);
+    delete(h.voxels);
+    sceneh=h;//console.log(sceneh);
+    
+    const oc=h.orbitControls;if (oc) {
+      const p0=oc.object,p1=oc.target;
+      controls.object.position.set(p0.x,p0.y,p0.z);
+      controls.target.set(p1.x,p1.y,p1.z);
+    }
+    
+    if (0) //!h.scriptModules)
+      unitsAdd({x:-4,y:4,z:1});
+    if (h.scriptModules) scriptModules();
+    
+    if (game.onLoadScene) game.onLoadScene();
+    
+    //if (1) {
+    //  const tsd=Menu.touchSticksInit({autoKeys:2});
+    //  const ps={x:-4,y:4,z:1},m=box(0,0,0,1*gw-border,2*gw-border,1*gw-border,m1,{});
+    //  m.matrixAutoUpdate=true;
+    //  m.position.set(ps.x*gw,(ps.y+0.5)*gw,ps.z*gw);
+    //  scene.add(m);
+    //  //units.push({x:ps.x,y:4,z:1,mesh:m});
+    //}
+    
+    Conet.log('Scene loaded ('+vl+' voxels, useBuffer:'+useBuffer+', meshes:'+objs.length+').');
+    
+    
+    } else {
+      for (let b of h.blocks) {
+        b.add=1;
+        blockEt(b);
+      }
+      Conet.log('Scene loaded ('+h.blocks.length+' blocks).');
+      sceneh=undefined;
+    }
+    //...
+  }
+  function meshf() {
+    //---
+    let m=this;
+    objs[m.meshIndex].visible=m.checked;
+    //console.log(m.meshIndex+' '+m.checked);
+    //...
+  }
+  function scriptModules() {
+    //---
+    
+    function wallxz(ps) {
+      for (let x=0;x<ps.xl;x++) for (let z=0;z<ps.zl;z++) blockEt({addIfEmpty:!ps.del,del:ps.del,x:ps.x+x,y:ps.y,z:ps.z+z});
+      //...
+    }
+    
+    function wallxy(ps) {
+      for (let x=0;x<ps.xl;x++) for (let y=0;y<ps.yl;y++) blockEt({addIfEmpty:!ps.del,del:ps.del,x:ps.x+x,y:ps.y+y,z:ps.z});
+      //...
+    }
+    
+    function wallyz(ps) {
+      for (let y=0;y<ps.yl;y++) for (let z=0;z<ps.zl;z++) blockEt({addIfEmpty:!ps.del,del:ps.del,x:ps.x,y:ps.y+y,z:ps.z+z});
+      //...
+    }
+    
+    
+    function stairsxy(ps) {
+      //---
+      for (let x=0;x<ps.xl;x++) for (let z=0;z<ps.zl;z++) {
+        blockEt({add:1,x:ps.x+x,y:ps.y+x*ps.dy,z:ps.z+z});
+        if (x<ps.xl-1) blockEt({addIfEmpty:1,x:ps.x+x+1,y:ps.y+x*ps.dy,z:ps.z+z});
+      }
+      //...
+    }
+    
+    function room(ps) {
+      //---
+      wallxz({x:ps.x,y:ps.y,z:ps.z,xl:ps.xl,zl:ps.zl});
+      //wallxz({x:ps.x+1,y:ps.y+ps.yl-1,z:ps.z+1,xl:ps.xl-2,zl:ps.zl-2});
+      wallxy({x:ps.x,y:ps.y+1,z:ps.z,xl:ps.xl,yl:ps.yl-1});
+      wallxy({x:ps.x,y:ps.y+1,z:ps.z+ps.zl-1,xl:ps.xl,yl:ps.yl-1});
+      wallyz({x:ps.x,y:ps.y+1,z:ps.z+1,yl:ps.yl-1,zl:ps.zl-2});
+      wallyz({x:ps.x+ps.xl-1,y:ps.y+1,z:ps.z+1,yl:ps.yl-1,zl:ps.zl-2});
+      
+      if (ps.ext) for (const h of ps.ext) {
+        const h2=Conet.hcopy(h);
+        h2.x+=ps.x;h2.y+=ps.y,h2.z+=ps.z;  
+        h2.f(h2);
+      }
+      
+      //...
+    }
+    
+    //wallxz({x:0,y:0,z:0,xl:4,zl:4});
+    
+    room({x:-10,y:0,z:-5,xl:14,zl:14,yl:4
+      ,ext:[{f:wallyz,x:13,y:1,z:6,yl:2,zl:2,del:1}]});
+    
+    stairsxy({x:-7,y:1,z:-4,xl:3,dy:1,zl:2});
+    
+    //room({x:-10,y:0,z:5,xl:4,zl:4,yl:4});
+    //room({x:-7,y:0,z:5,xl:4,zl:4,yl:4});
+    
+    //room({x:-3,y:0,z:0,xl:4,zl:4,yl:4
+    //  ,ext:[{f:wallyz,x:3,y:1,z:1,yl:2,zl:1,del:1}]});
+    
+    //wallyz({x:3,y:1,z:1,yl:2,zl:1,del:1});
+    
+    
+    
+    room({x:7,y:5,z:-14,xl:15,yl:5,zl:15});
+    wallxy({x:9,y:6,z:0,xl:1,yl:2,del:1});
+    //wallxy({x:0,y:1,z:-1,xl:4,yl:2});
+    
+    stairsxy({x:4,y:0,z:1,xl:13,dy:1,zl:2});
+    
+    //wallyz({x:-1,y:1,z:0,yl:2,zl:4});
+    wallyz({x:14,y:1,z:1,yl:8,zl:2});
+    wallxz({x:6,y:0,z:1,xl:9,zl:2});
+    
+    if (1) {
+    room({x:-10,y:3,z:-5,xl:14,zl:14,yl:4
+      ,ext:[
+        {f:wallyz,x:13,y:2,z:2,yl:1,zl:10,del:1},
+        {f:wallxy,x:7,y:1,z:0,xl:2,yl:2,del:1}
+      ]});
+    
+    wallxz({x:-8,y:3,z:-4,xl:3,zl:2,del:1});
+    sceneh.voxelGroups=[{p0:[-10,3,-5],p1:[4,7,9]}];
+    }
+    wallxz({x:-3,y:3,z:-7,xl:7,zl:2});
+    stairsxy({x:4,y:3,z:-7,xl:3,dy:1,zl:2});
+    wallyz({x:7,y:6,z:-7,yl:2,zl:2,del:1});
+    
+    delete(sceneh.scriptModules);
+    
+    
+    //...
+  }
+  function serialize() {
+    //---
+    let a0=Object.values(blocks),a1=[],sc;
+    if (1) {
+    
+    for (let m of a0) {
+      let ps=m;//.userData;
+      if (ps.c===undefined) ps.c=0;
+      a1.push(Conet.hcopy(ps,undefined,undefined,{mesh:1}));
+    }
+    sc=sceneh||{
+      vw:0.03,colors:[[0.5,0.5,0.5]],
+      backgroundColor:'#666666',
+      groundbox:1,
+    };
+    sc.voxels=a1;
+    sc.orbitControls={object:controls.object.position,target:controls.target};
+    
+    } else {
+    for (let m of a0) a1.push(m.userData);
+    sc={blocks:a1};
+    }
+    
+    
+    sc=JSON.stringify(sc);
+    //localStorage[lskey]=sc;
+    return sc;
+    //...
+  }
+  function tweenEnd() {
+    //---
+    //onsole.log(this);
+    this.unit.tweenRuns=false;
+    //...
+  }
+  function unitsAdd(ps) {
+    //---
+    for (let i=0;i<20;i++) {
+      const m=box(0,0,0,1*gw-border,2*gw-border,1*gw-border,m2,{});
+      m.matrixAutoUpdate=true;
+      m.position.set(ps.x*gw,(ps.y+0.5)*gw,ps.z*gw);
+      scene.add(m);
+      units.push({x:ps.x,y:4,z:1,mesh:m});
+    }
+    //...
+  }
+  function walkAble(x,y,z) {
+    //--- later differnt unit dimensions..
+    if ((blockAt(x,y+1,z))||(blockAt(x,y,z))||(!blockAt(x,y-1,z))) return false;
+    return true;
+    //...
+  }
+  
+  if (1)
+  (function() {
+    let tsd,tsd0,tsd1,m,l,time=0,
+      clipr={x0:-540,y0:90,z0:-240,x1:250,y1:210,z1:420},
+      tbullet=0,gunits=[],player,firstLights=15;
+    //---
+    function dirmesh(x,y,z,w,h,b,m,ps) {
+      let mesh;
+      
+      const w2=w/2,h2=h/2,b2=b/2,
+          x0=x-w2,y0=y-h2,z0=z-b2,
+          x1=x+w2,y1=y+h2,z1=z+b2;
+      
+      if (!ps.buffer) {
+        vertices.length=0;indices.length=0;
+      }
+      const i=vertices.length/3;
+      vertices.push(
+        x0,y0,z1,  x1,y0,z1,  x1,y1,z1,  x0,y1,z1,
+        x,y,z0,
+        //x1,y0,z0,  x0,y0,z0,  x0,y1,z0,  x1,y1,z0,
+        
+        //x0,y0,z0, x1,y0,z0, x1,y0,z1, x0,y0,z1,
+        //x1,y1,z0, x0,y1,z0, x0,y1,z1, x1,y1,z1,
+        
+        //x1,y0,z0, x1,y1,z0, x1,y1,z1, x1,y0,z1,
+        //x0,y1,z0, x0,y0,z0, x0,y0,z1, x0,y1,z1,
+      );
+      
+      indices.push(
+        //i+16+0,i+16+1,i+16+2, i+16+2,i+16+3,i+16+0,
+        //i+20+0,i+20+1,i+20+2, i+20+2,i+20+3,i+20+0,
+        //i+12+0,i+12+1,i+12+2, i+12+2,i+12+3,i+12+0,
+        //i+8+0,i+8+1,i+8+2, i+8+2,i+8+3,i+8+0,
+        i+0,i+1,i+2, i+2,i+3,i+0,
+        i,i+4,i+1, i+1,i+4,i+2, i+2,i+4,i+3, i+3,i+4,i,
+        //i+4+0,i+4+1,i+4+2, i+4+2,i+4+3,i+4+0,
+      );
+      
+      mesh=arraysToMesh({vertices:vertices,indices:indices,m:m});
+      mesh.matrixAutoUpdate=true;
+      
+      
+      return mesh;
+    }
+    function checkWalk(u,dx,dz) {
+      //---
+      const pos=u.m.position,x=pos.x+dx,z=pos.z+dz;
+      const xi=Math.floor(x/gw+0.5+(dx>0?0.5:-0.5)),
+            yi=Math.floor(pos.y/gw-0.5),
+            zi=Math.floor(z/gw+0.5+(dz>0?0.5:-0.5));
+      const xj=Math.floor(x/gw+0.5),
+            yj=Math.floor(pos.y/gw-0.5),
+            zj=Math.floor(z/gw+0.5);
+      let ret=!blockAt(xi,yi,zi)&&!blockAt(xj,yj,zj);
+      if (!u.bullet) {
+      if (ret) { 
+        if (!blockAt(xi,yi-1,zi)&&!blockAt(xj,yj-1,zj)) {
+          if (blockAt(xj,yj-2,zj)) {//dont fall down
+            pos.y=(yj-1+0.5)*gw;
+            //posyt=0;
+          } else 
+            ret=false;
+        }
+      } 
+      else //if (!ret) 
+      if (!blockAt(xi,yi+1,zi)&&!blockAt(xj,yj+1,zj)&&!blockAt(xi,yi+2,zi)&&!blockAt(xj,yj+2,zj)) {
+        pos.y=(yj+1+0.5)*gw;
+        //posyt=0;
+        ret=true;
+      }
+      }
+      if (ret) {
+        pos.x=x;pos.z=z; 
+        if (u===player) {
+          const r=clipr,y=pos.y;
+          objs[0].visible=!((r.x0<=x)&&(r.y0<=y)&&(r.z0<=z)&&(r.x1>=x)&&(r.y1>=y)&&(r.z1>=z));
+          const t=controls.target,p=controls.object.position,dx=p.x-t.x,dy=p.y-t.y,dz=p.z-t.z;
+        
+          t.set(pos.x,pos.y,pos.z);
+          p.set(pos.x+dx,pos.y+dy,pos.z+dz);
+        }
+      }
+      return ret;
+      //...
+    }
+    //---
+    game.onLoadScene=function() {
+      //---
+      tsd=Menu.touchSticksInit({autoKeys:2});
+      tsd0=tsd[0];tsd1=tsd[1];
+      const ps={x:-4,y:4,z:1};
+      m=dirmesh(0,0,0,1*gw-border,2*gw-border,1*gw-border,m1,{});
+      m.position.set(ps.x*gw,(ps.y+0.5)*gw,ps.z*gw);
+      
+      l=new THREE.PointLight(0x00ff00,1,4*gw);
+      l.castShadow=true;
+      l.shadow.camera.near=1*gw;
+      l.shadow.camera.far=4*gw;
+      l.shadow.mapSize.width=1024;//2048;
+      l.shadow.mapSize.height=1024;
+      m.add(l);
+      player={m:m,a:0,speed:0};
+      gunits.push(player);
+      
+      console.log(m.position);
+      scene.add(m);
+      //...
+    }
+    game.animate=function(dt) {
+      //---
+      if (!tsd1) return;
+      
+      tbullet+=dt;
+      if (tbullet>300) {
+        tbullet=0;
+        //if (firstLights>=0)
+        //for (let i=0;i<(firstLights>0?firstLights:1);i++) {
+          let mb=dirmesh(0,0,0,0.5*gw-border,0.5*gw-border,1*gw-border,mbullet,{});
+          mb.position.copy(m.position);
+          mb.rotation.copy(m.rotation);
+          const l=new THREE.PointLight(0xff5500,3,4*gw);mb.add(l);
+          scene.add(mb);
+          gunits.push({m:mb,a:m.rotation.y,speed:1,bullet:1,t:0});
+        //}
+        //if (firstLights>0) firstLights=-firstLights;
+        //if (firstLights<0) firstLights++;
+      }
+      let tsd1d=false;
+      if ((tsd1.dx!=0)||(tsd1.dy!=0)) {
+        m.rotation.y=controls.getAzimuthalAngle()-PI/2-Math.atan2(tsd1.dy,tsd1.dx);
+        tsd1d=true;
+      }
+      if ((tsd0.dx!=0)||(tsd0.dy!=0)) {
+        const a=controls.getAzimuthalAngle()+PI/2-Math.atan2(tsd0.dy,tsd0.dx)-PI,
+              speed=0.5,pos=m.position;
+        if (!tsd1d) m.rotation.y=a;
+        player.a=a;player.speed=speed;
+        
+        //const dx=speed*dt*Math.sin(a+PI);
+        //const dz=speed*dt*Math.cos(a+PI);
+        //if (!checkWalk(pos,dx,dz))
+        //  if (!checkWalk(pos,dx,0)) 
+        //    checkWalk(pos,0,dz);
+        ////const x=pos.x+dx;
+        ////const z=pos.z+dz;
+        ////const xi=Math.floor(x/gw+0.5),
+        ////      yi=Math.floor(pos.y/gw-0.5),
+        ////      zi=Math.floor(z/gw+0.5);
+        ////if (!blockAt(xi,yi,zi)) {
+        ////  pos.x=x;
+        ////  pos.z=z;
+        ////}
+      } else player.speed=0;
+      
+      for (let i=0;i<gunits.length;i++) {
+        const u=gunits[i];
+        let del=false;
+        if (u.bullet) {
+          u.t+=dt;
+          if (u.t>2000) del=true; 
+        }
+        if (u.speed>0) {
+          //const pos=u.m.position;
+          const dx=u.speed*dt*Math.sin(u.a+PI);
+          const dz=u.speed*dt*Math.cos(u.a+PI);
+          if (!checkWalk(u,dx,dz)) {
+            if (u.bullet) 
+              del=true;
+            else 
+              if (!checkWalk(u,dx,0)) 
+                checkWalk(u,0,dz);
+          }
+        }
+        if (del) {
+          scene.remove(u.m);
+          gunits.splice(i,1);
+          i--;
+        }
+      }
+      
+      time+=dt;
+      const f=(Math.sin(time*0.01)+1)/2;
+      l.distance=4*gw+6*gw*f;
+      l.intensity=1+2*f;
+        
+      //...
+    }
+    //...
+  }
+  )();
+  
+  init();
+  //...
+}
+)();
+</script></body>
+</html><script>
+//fr o,14
+//fr o,14,18
+//fr o,14,18,99,1
+//fr o,14,22,2
+//fr o,14,22,4
+//fr o,14,22,6
+//fr o,14,22,11
+//fr o,14,29
+//fr o,14,29,7
+//fr o,14,29,8
+//fr p,0,181

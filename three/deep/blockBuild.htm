@@ -1,114 +1,39 @@
 <!DOCTYPE html><html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+<link rel="shortcut icon" sizes="128x128" href="/anim/blockBuild/thirdPerson.jpg">
+<link rel="apple-touch-icon" href="/blog/img/dotAnim.gif">
 <style>
 body { color:#000;background-color:#fff;margin:0px;overflow:hidden;font-family:Arial; }
 </style>
 <script src="/three/r143/build/three.min.js"></script>
 <script src="/three/r143/examples/js/libs/stats.min.js"></script>
-<script src="/three/r143/examples/js/controls/OrbitControls.js"></script>
+<script src="/three/r143/examples/js/controls/OrbitControlsPl.js"></script>
 <script src="/conet.js"></script>
 <script src="/menu.js"></script>
+<script src="/vecmath.js"></script>
 </head><body>
 <div id="container"></div>
 <script>
 (function() {
   let scene,gw=60,border=5,m0,m1,m2,blocks={},
       renderer,stats,mbullet,
-      mAddDel,mSpeed,raycaster,camera,
+      mMode,raycaster,camera,
       lskey='blockBuild0',blocksOfMesh=[],
-      sceneh,mMeshes,controls,ot=Date.now(),game={};
-  const vertices=[],indices=[],
-      objs=[],units=[],//--- threejs object3d
-      tweens=[],PI=Math.PI; 
+      sceneh,mMeshes,controls,ot=Date.now(),game={},
+      selBox,mView;
+  const vertices=[],colors=[],indices=[],
+      objs=[],//--- threejs object3d
+      tweens=[],PI=Math.PI,mModes=[],
+      mat0=new Vecmath.Mat4(),mat1=new Vecmath.Mat4(),
+      url=Conet.parseUrl(),hooks=[]; 
   
-  /* history */ {
-    //---
-    
-    //230807 added randomly walking units and made twwet/troet. Added scene param 'noVoxelGroupMeshes'
-    //  to be able to remove all voxels. Probably ext: make a (special) block 
-    //  draggable via mouse/touch  (then orbitcontrols must be temporally disabled). With 2 draggable
-    //  blocks an area can be defined, to add or emove blocks or scriptModules.. 
-    
-    //230804 started scene with flag scriptModules, which runs scriptModules on load. building architecture
-    //  with commands isnt that great though, it would be better to have visible surrounding around modules,
-    //  which can be drag-positioned and -resized and which can be parametrized from within the editor (e.g. for
-    //  a walled room have params for windows,doors). Surrounding boxes would be also nice to select multiple
-    //  voxels. Maybe start with them first, module implementation second.
-    // Or next: continue with room module and its params (windows,doors,not existent walls(=big door)), first
-    //  via coding later via visual edit.
-    // Edit: scriptModules0.json now generates level, also sets voxelGroups. Saved to scriptModules1 voxelGroups
-    //  work (scriptModules flag is removed on save). Next: extend scriptModules0 with more floors and voxelGroups
-    
-    //230803 voxelGroups added, currently defined via p0(x,y,z)-p1(x,y,z), all voxels insided that 
-    //  range get into one mesh, visibility of meshes can be toggled on/off
-    //  next: eruate how to go from here, how to make bigger architectures with multiple (automatic?) voxelgroups
-    
-    //230802 started adding blocks to scene with combined mesh. Next: Indices not working correctly
-    //  try load simple scene
-    
-    //230801 scene loads into single geometry, lots faster. Next: again test scene load with
-    //  multiple but buffergeometry, make editing work (fix face order). Then check editing with
-    //  a combined geometry. Check geometries for y-layers to blend them out during iso gameplay.
-    
-    //230728 rendering big voxel files is slow. try to use single geometry.
-    
-    //230727: filemenu is there, made simple scenes to test shadows and started a more complex
-    //  architecture with inner structure (stairs,doors,windows), looks nice especially max zoomed
-    //  out when small architecture reminds on syndicate. Should be fun moving inside it isoview, with
-    //  upper floors blended out diablostyle, shooting at mobs while exploiting narrow architecture 
-    //  to trap mobs or to avoid too many mob approaches.. or to do same firstperson.
-    //    Next: For blending out floors: it should be nice if voxed format is used, because there editing
-    //  is possible in one plane with blended out floors, try that.
-    
-    //230726: add/del menu and localStorage added, already made nice building
-    /* first building */ {
-      //
-      //{"blocks":[{"x":1,"y":0,"z":4},{"x":2,"y":0,"z":4},{"x":3,"y":0,"z":4},{"x":4,"y":0,"z":1},{"x":4,"y":0,"z":2},{"x":4,"y":0,"z":3},{"x":4,"y":0,"z":4},{"x":4,"y":1,"z":4},{"x":4,"y":2,"z":4},{"x":4,"y":0,"z":5},{"x":4,"y":0,"z":6},{"x":6,"y":0,"z":8},{"x":7,"y":0,"z":8},{"x":8,"y":0,"z":8},{"x":8,"y":0,"z":7},{"x":8,"y":0,"z":6},{"x":5,"y":0,"z":4},{"x":6,"y":0,"z":4},{"x":7,"y":0,"z":7},{"x":6,"y":0,"z":7},{"x":5,"y":0,"z":5},{"x":5,"y":0,"z":6},{"x":6,"y":0,"z":5},{"x":6,"y":0,"z":6},{"x":7,"y":0,"z":6},{"x":6,"y":1,"z":6},{"x":4,"y":3,"z":4},{"x":6,"y":2,"z":6},{"x":6,"y":3,"z":6},{"x":3,"y":0,"z":3},{"x":2,"y":0,"z":3},{"x":1,"y":0,"z":3},{"x":3,"y":0,"z":2},{"x":2,"y":0,"z":2},{"x":1,"y":0,"z":2},{"x":3,"y":0,"z":1},{"x":2,"y":0,"z":1},{"x":1,"y":0,"z":1},{"x":9,"y":0,"z":8},{"x":9,"y":0,"z":7},{"x":9,"y":0,"z":6},{"x":9,"y":0,"z":9},{"x":8,"y":0,"z":9},{"x":7,"y":0,"z":9},{"x":6,"y":0,"z":9},{"x":5,"y":1,"z":5},{"x":5,"y":2,"z":5},{"x":5,"y":3,"z":5}]}
-      //...
-    }
-    //  - now want to try other buildings, menu to load/store different, best with picture, needed
-    //  - also add controls config to storage
-    //  - current architecture tests with default light, at some point make light editable (light blocks probably?)
-    //  - at later point it should be fun to add cannonjs and let marbles run through architecture
-    
-    //230725: next add menu to toggle del/add
-    
-    
-    //...
-  }
   function animate() {
     requestAnimationFrame( animate );
     
     const t=Date.now(),dt=Math.min(100,(t-ot));ot=t;
     
-    for (const u of units) {
-      //u.mesh.position.x+=1;
-      if (u.tweenRuns) continue;
-      
-      let dx=0,dy=0,dz=0;
-      switch (Conet.rani(4)) {
-        case 0:dx=1;break;
-        case 1:dx=-1;break;
-        case 2:dz=1;break;
-        case 3:dz=-1;break;
-      }
-      let x=u.x+dx,y=u.y+dy,z=u.z+dz;
-      
-      if (!walkAble(x,y,z)) {
-        if (walkAble(x,y+1,z)) y++;
-        else if (walkAble(x,y-1,z)) y--;
-        else continue;
-      }
-      
-      u.x=x;u.y=y;u.z=z;
-      
-      //u.x+=dx;u.y+=dy;u.z+=dz;
-      u.tweenRuns=true;const t=mSpeed.checked?10:100;
-      tweens.push({unit:u,o:u.mesh.position,key:'x',value:u.x*gw,t:t});
-      tweens.push({unit:u,o:u.mesh.position,key:'y',value:(u.y+0.5)*gw,t:t});
-      tweens.push({unit:u,o:u.mesh.position,key:'z',value:u.z*gw,t:t,onend:tweenEnd});
-    }
+    for (const hook of hooks) hook.animate(dt);
     
     if (game.animate) game.animate(dt);
     
@@ -125,7 +50,14 @@ body { color:#000;background-color:#fff;margin:0px;overflow:hidden;font-family:A
     const vertices=new Float32Array(ps.vertices);
     
     ge.setIndex(ps.indices);
-    ge.setAttribute('position',new THREE.BufferAttribute( vertices, 3 ));
+    ge.setAttribute('position',new THREE.BufferAttribute(vertices,3));
+    
+    //let a=[];
+    //for (let i=0;i<ps.vertices.length;i++) a.push(0.4);//Math.random());
+    const ca=new Float32Array(colors);
+    ge.setAttribute('color',new THREE.BufferAttribute(ca,3));
+    
+    
     ge.computeVertexNormals();
     ge.computeBoundingSphere();
     
@@ -147,6 +79,7 @@ body { color:#000;background-color:#fff;margin:0px;overflow:hidden;font-family:A
     mesh.userData.blocksOfMesh=blocksOfMesh;blocksOfMesh=[];
     objs.push(mesh);
     vertices.length=0;
+    colors.length=0;
     indices.length=0;
     //...
   }
@@ -154,17 +87,106 @@ body { color:#000;background-color:#fff;margin:0px;overflow:hidden;font-family:A
     let mesh;
     
     if (1) {
-    const w2=w/2,h2=h/2,b2=b/2,
-        x0=x-w2,y0=y-h2,z0=z-b2,
-        x1=x+w2,y1=y+h2,z1=z+b2;
-    
+    const w2=w/2,h2=h/2,b2=b/2;
+    let ca;
+    if (sceneh&&sceneh.colors&&(sceneh.colors.length>0))
+      ca=sceneh.colors[ps.c||0];//Math.floor(Math.random()*sceneh.colors.length)];
+    else
+      ca=[0.4,0.4,0.4];
     //x-=w;y-=w;z-=w;
     
     //const vertices=new Float32Array([
     if (!ps.buffer) {
-      vertices.length=0;indices.length=0;
+      vertices.length=0;colors.length=0;indices.length=0;
     }
     const i=vertices.length/3;
+    
+    if (ps.t=='ramp1') {
+      const x0=-w2,y0=-h2,z0=-b2,
+          x1=+w2,y1=+h2,z1=+b2;
+    
+      let pts=[
+        {x:x0,y:y0,z:z1},{x:x1,y:y0,z:z1},{x:x1,y:y1,z:z1},//{x:x0,y:y1,z:z1},
+        {x:x1,y:y0,z:z0},{x:x0,y:y0,z:z0}];
+      let ph={x:0,y:0,z:0};
+      mat0.setIdentity();
+      if (ps.ax!==undefined) { mat1.rotX(PI*ps.ax);mat0.mul1(mat1); }
+      if (ps.ay!==undefined) { mat1.rotY(PI*ps.ay);mat0.mul1(mat1); }
+      if (ps.az!==undefined) { mat1.rotZ(PI*ps.az);mat0.mul1(mat1); }
+      for (let p of pts) {
+        mat0.transformV3(p,ph);
+        vertices.push(x+ph.x,y+ph.y,z+ph.z);
+        colors.push(ca[0],ca[1],ca[2]);
+      }
+    
+      indices.push(
+        i+0,i+1,i+2, //i+2,i+3,i+0,
+        //i+0,i+3,i+5, 
+        i+1,i+3,i+2,
+        //i+5,i+3,i+2, 
+        i+2,i+3,i+4,
+        i+0,i+4,i+3, 
+        i+3,i+1,i+0,
+        i+0,i+2,i+4,
+      );
+    } 
+    
+    else if (ps.t=='ramp') {
+      const x0=-w2,y0=-h2,z0=-b2,
+          x1=+w2,y1=+h2,z1=+b2;
+    
+      let pts=[
+        {x:x0,y:y0,z:z1},{x:x1,y:y0,z:z1},{x:x1,y:y1,z:z1},{x:x0,y:y1,z:z1},
+        {x:x1,y:y0,z:z0},{x:x0,y:y0,z:z0}];
+      mat0.rotY(PI*(ps.ay||0));let ph={x:0,y:0,z:0};
+      mat1.rotZ(PI*(ps.az||0));
+      mat0.mul1(mat1);
+      for (let p of pts) {
+        mat0.transformV3(p,ph);
+        vertices.push(x+ph.x,y+ph.y,z+ph.z);
+        colors.push(ca[0],ca[1],ca[2]);
+      }
+    
+      indices.push(
+        i+0,i+1,i+2, i+2,i+3,i+0,
+        i+0,i+3,i+5, i+1,i+4,i+2,
+        i+5,i+3,i+2, i+2,i+4,i+5,
+        i+0,i+5,i+4, i+4,i+1,i+0,
+      );
+    } 
+    
+    else if (ps.t=='ramp3') {
+      const x0=-w2,y0=-h2,z0=-b2,
+          x1=+w2,y1=+h2,z1=+b2;
+    
+      let pts=[
+        {x:x0,y:y0,z:z1},{x:x1,y:y0,z:z1},{x:x1,y:y1,z:z1},{x:x0,y:y1,z:z1},
+        {x:x1,y:y0,z:z0},{x:x0,y:y0,z:z0},{x:x0,y:y1,z:z0}];
+      mat0.rotY(PI*(ps.ay||0));let ph={x:0,y:0,z:0};
+      mat1.rotZ(PI*(ps.az||0));
+      mat0.mul1(mat1);
+      for (let p of pts) {
+        mat0.transformV3(p,ph);
+        vertices.push(x+ph.x,y+ph.y,z+ph.z);
+        colors.push(ca[0],ca[1],ca[2]);
+      }
+    
+      indices.push(
+        i+0,i+1,i+2, i+2,i+3,i+0,
+        i+0,i+3,i+5, i+1,i+4,i+2,
+        //i+5,i+3,i+2, i+2,i+4,i+5,
+        i+0,i+5,i+4, i+4,i+1,i+0,
+        
+        i+5,i+3,i+6,i+4,i+3,i+2,
+        i+4,i+6,i+3,i+4,i+5,i+6,
+      );
+    } 
+    
+    
+    else {
+    const x0=x-w2,y0=y-h2,z0=z-b2,
+        x1=x+w2,y1=y+h2,z1=z+b2;
+    
     vertices.push(
       x0,y0,z1,  x1,y0,z1,  x1,y1,z1,  x0,y1,z1,//0
       x1,y0,z0,  x0,y0,z0,  x0,y1,z0,  x1,y1,z0,//4
@@ -179,6 +201,11 @@ body { color:#000;background-color:#fff;margin:0px;overflow:hidden;font-family:A
       //// 1.0,  1.0,  1.0, // v2
       ////-1.0,  1.0,  1.0, // v3
     );
+    colors.push(
+      ca[0],ca[1],ca[2], ca[0],ca[1],ca[2], ca[0],ca[1],ca[2], ca[0],ca[1],ca[2],
+      ca[0],ca[1],ca[2], ca[0],ca[1],ca[2], ca[0],ca[1],ca[2], ca[0],ca[1],ca[2]
+    );
+    
     
     indices.push(
       i+4,i+7,i+2, i+2,i+1,i+4,
@@ -192,6 +219,7 @@ body { color:#000;background-color:#fff;margin:0px;overflow:hidden;font-family:A
       i+0,i+1,i+2, i+2,i+3,i+0,
       i+4+0,i+4+1,i+4+2, i+4+2,i+4+3,i+4+0,
     );
+    }
     
     if (ps.buffer) 
       blocksOfMesh.push(ps);
@@ -215,7 +243,7 @@ body { color:#000;background-color:#fff;margin:0px;overflow:hidden;font-family:A
     return mesh;
   }
   function blockAt(x,y,z) {
-    //--- without hash thus faster (?)
+    //--- without ps hash thus faster (?)
     let k=x+'_'+y+'_'+z;
     return blocks[k];
     //...
@@ -264,6 +292,8 @@ body { color:#000;background-color:#fff;margin:0px;overflow:hidden;font-family:A
   }
   function click(e) {
     //---
+    //onsole.log(e);
+    //if (e.target!==renderer.domElement) return;
     let click=new THREE.Vector2(2*e.clientX/window.innerWidth-1,-2*e.clientY/window.innerHeight+1);
     raycaster.setFromCamera(click,camera);
     let a=raycaster.intersectObjects(scene.children);
@@ -271,32 +301,48 @@ body { color:#000;background-color:#fff;margin:0px;overflow:hidden;font-family:A
     //Conet.log('click count:'+a.length+(a.length>0?' index0:'+scene.children.indexOf(a[0].object)
     //  +' faceIndex:'+a[0].faceIndex:''));
     if (a.length>0) {
-      let ps=a[0].object.userData;
+      const a0=a[0],obj=a0.object;
+      let ps=obj.userData;
       //console.log(ps);
       if (ps.blocksOfMesh) {
-        let bi=Math.floor(a[0].faceIndex/12);
+        let bi=Math.floor(a0.faceIndex/12);
         //onet.log('blocksOfMesh bi='+bi);
         ps=ps.blocksOfMesh[bi];
         //onsole.log(ps);
-        if (!mAddDel.checked) { Conet.log('Cant del blocks from combined mesh ('+ps.x+','+ps.y+','+ps.z+').');return; }
+        if (mModes[2].checked) { Conet.log('Cant del blocks from combined mesh ('+ps.x+','+ps.y+','+ps.z+').');return; }
       }
       if (ps.x===undefined) 
         Conet.log('ps.x is undefined');
       else {
-      if (mAddDel.checked) {
-        let fi=Math.floor((a[0].faceIndex%12)/2);
-        let h={};
-        if      (fi==0) h.x=1;
-        else if (fi==1) h.x=-1;
-        else if (fi==2) h.y=1;
-        else if (fi==3) h.y=-1;
-        else if (fi==4) h.z=1;
-        else            h.z=-1; 
-        //Conet.log('fi='+fi);
-        blockEt({x:ps.x+(h.x||0),y:ps.y+(h.y||0),z:ps.z+(h.z||0),addIfEmpty:1});
-      } else 
-        blockEt({x:ps.x,y:ps.y,z:ps.z,del:1});
-      //serialize();
+        if (mModes[0].checked) {//mMode.ms=='Add') {
+          if ((ps.t=='ramp')&&(obj!==selBox)) 
+            Conet.log('Cant add to non-box, select it first.');
+          else {
+          let fi=Math.floor((a0.faceIndex%12)/2);
+          let h={};
+          if      (fi==0) h.x=1;
+          else if (fi==1) h.x=-1;
+          else if (fi==2) h.y=1;
+          else if (fi==3) h.y=-1;
+          else if (fi==4) h.z=1;
+          else            h.z=-1; 
+          //Conet.log('fi='+fi);
+          let psn={};
+          if (selBox) Conet.hcopy(selBox.userData,psn,undefined,{mesh:1});      
+          psn.x=ps.x+(h.x||0);
+          psn.y=ps.y+(h.y||0);
+          psn.z=ps.z+(h.z||0);
+          psn.addIfEmpty=1;
+          blockEt(psn);//{x:ps.x+(h.x||0),y:ps.y+(h.y||0),z:ps.z+(h.z||0),addIfEmpty:1});
+          select(psn);
+          }
+        }
+        if (mModes[2].checked) //mMode.ms=='Delete') 
+          blockEt({x:ps.x,y:ps.y,z:ps.z,del:1});
+        if (mModes[1].checked) {//mMode.ms=='Select') {
+          Conet.log(ps.x+' '+ps.y+' '+ps.z);
+          select(ps);
+        }
       }
     }
     //...
@@ -308,12 +354,12 @@ body { color:#000;background-color:#fff;margin:0px;overflow:hidden;font-family:A
     //script src="https://threejs.org/examples/js/libs/stats.min.js">/script> //r109
     //script src="https://threejs.org/examples/js/controls/OrbitControls.js">/script>  //v81
     
-    Conet.log('v.0.546 ');//FOLDORUPDATEVERSION
+    Conet.log('v.0.1185 ');//FOLDORUPDATEVERSION
     
     //let renderer,stats;
     
     scene = new THREE.Scene();
-    renderer = new THREE.WebGLRenderer({antialias:true});
+    renderer=new THREE.WebGLRenderer({antialias:true});
     renderer.setClearColor( 0x888888 );
     renderer.shadowMap.enabled=true;
     renderer.shadowMap.type=THREE.BasicShadowMap;
@@ -330,6 +376,7 @@ body { color:#000;background-color:#fff;margin:0px;overflow:hidden;font-family:A
     
     camera=new THREE.PerspectiveCamera(60,window.innerWidth/window.innerHeight,1,10000);
     camera.position.z=500;
+    //console.log(camera);
     
     if (1) {
     controls=new THREE.OrbitControls(camera,renderer.domElement);
@@ -342,7 +389,9 @@ body { color:#000;background-color:#fff;margin:0px;overflow:hidden;font-family:A
     //onsole.log(controls);
     }
     
-    m0=new THREE.MeshPhongMaterial( { color:0x666666,flatShading:true } );
+    m0=new THREE.MeshPhongMaterial( { 
+      //color:0x666666,
+      flatShading:true,vertexColors:true } );
     m1=new THREE.MeshPhongMaterial({color:0x77dd77,flatShading:true,
       transparent:true,opacity:0.7});
     m2=new THREE.MeshPhongMaterial( { color:0x33ee33,flatShading:true } );
@@ -412,13 +461,14 @@ body { color:#000;background-color:#fff;margin:0px;overflow:hidden;font-family:A
     window.addEventListener('resize',resize,false);
     
     raycaster=new THREE.Raycaster();
-    window.addEventListener('click',click,false);
+    //window
+    renderer.domElement.addEventListener('click',click,false);
     
     let cfm=Conet.fileMenu({fn:'/anim/blockBuild/files.txt',url:'fn',noStartLoad:undefined,loadList:1,
     loadf:function(fn) {
       if (1)
       Conet.download({fn:fn,f:function(v) {
-        loadScene(JSON.parse(v));
+        loadScene(JSON.parse(v),fn);
       }
       });
     }
@@ -426,12 +476,100 @@ body { color:#000;background-color:#fff;margin:0px;overflow:hidden;font-family:A
       Conet.upload({fn:fn,data:serialize(),log:Conet.log,logChunk:1});
       //...
     }
-    })
+    });
     
+    function menuType() {
+      //---
+      if (!selBox) { Conet.log('Nothing selected.');return; }
+      const ps0=selBox.userData;
+      //onsole.log(ps0);
+      const ps=blockEt(ps0);
+      if (ps) {
+        ps.del=1;
+        blockEt(ps);
+        delete(ps.del);
+      } else 
+        ps=ps0;
+      ps.add=1;
+      let ai=undefined;
+      if (ps.t==this.s) {
+        const a=[//ay,az
+          [0,0],[0.5,0],[1,0],[-0.5,0],
+          [0,1],[0.5,1],[1,1],[-0.5,1],
+          [0.5,0.5],[-0.5,-0.5],[-0.5,0.5],[0.5,-0.5]
+        ];
+        ai=0;
+        for (let i=0;i<a.length;i++) {
+          if ((ps.ay==a[i][0])&&(ps.az==a[i][1])) { ai=i;break; }
+        }
+        ai=(ai+1)%a.length;
+        //Conet.log('Set rotation='+ai+'.');
+        ps.ay=a[ai][0];ps.az=a[ai][1];
+        /*
+        if (ps.az==0) {
+          if (ps.ay==0) ps.ay=0.5;
+          else if (ps.ay==0.5) ps.ay=1; 
+          else if (ps.ay==1) ps.ay=-0.5;
+          else //if (ps.ay==-0.5) 
+          { ps.ay=0;ps.az=1; }
+        } else {
+          if (ps.ay==0) ps.ay=0.5;
+          else if (ps.ay==0.5) ps.ay=1; 
+          else if (ps.ay==1) ps.ay=-0.5;
+          else //if (ps.ay==-0.5) 
+          { ps.ay=0;ps.az=0; }
+        }*/
+      } else
+        ps.t=this.s;
+      blockEt(ps);
+      Conet.log('Type set:'+this.s+((ai!==undefined)?' rotation:'+ai:''));
+      //...
+    }
+    function menuModes() {
+      //---
+      for (const m of mModes) Menu.setChecked(m,m===this);
+      //console.log('mModes '+this.ms);
+      //...
+    }
     
-    
-    Menu.init([
+    //Menu.init(
+    let ma=[
     {s:'&#9776;',noTri:true,fs:1.4,pw:0.05,sub:[
+    
+    cfm,
+    
+    {s:'Props..',ms:'of selected',r:1,doctrl:'Block properties',ta:1,cstay:1,jsonCheck:1,valuef:function() {
+      //---
+      if (!selBox) return undefined;
+      const ps=Conet.hcopy(selBox.userData,undefined,undefined,{mesh:1});
+      return JSON.stringify(ps,undefined,' ');
+      //...
+    }
+    ,setfunc:function(v) {
+      //---
+      const ps0=selBox.userData;
+      const ps1=JSON.parse(v);
+      ps0.del=1;
+      blockEt(ps0);
+      ps1.add=1;
+      blockEt(ps1);
+      //ps1.mesh=ps0.mesh;
+      //blocks[ps0.x+'_'+ps0.y+'_'+ps0.z]=ps1;
+      //ps1.mesh.userData=ps1;
+      selBox.userData=ps1;
+      //...
+    }
+    },
+    
+    {s:'Type',ms:'of selected',r:1,sub:[{s:'box',stay:1,actionf:menuType}
+    ,{s:'ramp',stay:1,actionf:menuType},{s:'ramp1',stay:1,actionf:menuType},{s:'ramp3',stay:1,actionf:menuType}
+    ]},
+    
+    mView={s:'View',sub:[
+    
+    //mIsoView={checkbox:1,ms:'Iso view',checked:1},
+    
+    
     Menu.mFullscreen,
     {s:'Serialze',ms:'to console',actionf:function() {
       //---
@@ -442,25 +580,121 @@ body { color:#000;background-color:#fff;margin:0px;overflow:hidden;font-family:A
     
     ,mMeshes={s:'Meshes'}
     
-    ,mSpeed={checkbox:1,ms:'anim speed x10'}
+    //,{s:'adasdasdasdas'}
     
-    ,{s:'Add..',ms:'units',doctrl:'Add units',value:'-4,4,1',setfunc:function(v) {
+    ,{s:'Scene..',ms:'properties',doctrl:'Scene properties',ta:1,jsonCheck:1,valuef:function() {
       //---
-      this.value=v;
-      const a=v.split(',');
-      unitsAdd({x:parseFloat(a[0]),y:parseFloat(a[1]),z:parseFloat(a[2])});
-      //onsole.log(a);
+      const ps=Conet.hcopy(sceneh,undefined,undefined,{voxels:1,orbitControls:1});
+      return JSON.stringify(ps,undefined,' ');
+      //...
+    }
+    ,setfunc:function(v) {
+      //---
+      sceneh=JSON.parse(v);
       //...
     }
     }
     
+    //,{s:'adasdasdasdas'}
+    
+    
+    ]}
+    
+    ,
+    mModes[0]={ms:'Add',r:1,checkbox:1,actionf:menuModes,lskey:'blockBuildMode0'},
+    mModes[1]={ms:'Select',r:1,checkbox:1,actionf:menuModes,lskey:'blockBuildMode1'},
+    mModes[2]={ms:'Delete',r:1,checkbox:1,actionf:menuModes,lskey:'blockBuildMode2'}
+    
+    
     ]},
     
-    cfm,
+    //mModes[0]={ms:'Add',checkbox:1,actionf:menuModes,lskey:'blockBuildMode0'},
+    //mModes[1]={ms:'Select',checkbox:1,actionf:menuModes,lskey:'blockBuildMode1'},
+    //mModes[2]={ms:'Delete',checkbox:1,actionf:menuModes,lskey:'blockBuildMode2'}
     
-    mAddDel={checkbox:1,ms:'Add or Del',checked:1}
-    ],{listen:1});
+    //,mMode={s:'Mode',ms:'Add',lskey:'blockBuildMode',autoval:2,sub:[{s:'Add'},{s:'Delete'},{s:'Select'}]}
+    
+    
+    
+    ];//,{listen:1});
     //Menu.draw();
+    
+    if (url.addUnits) (function() {
+      //---
+      let mSpeed;
+      const units=[];
+      
+      function unitsAdd(ps) {
+        //---
+        for (let i=0;i<20;i++) {
+          const m=box(0,0,0,1*gw-border,2*gw-border,1*gw-border,m2,{});
+          m.matrixAutoUpdate=true;
+          m.position.set(ps.x*gw,(ps.y+0.5)*gw,ps.z*gw);
+          scene.add(m);
+          units.push({x:ps.x,y:4,z:1,mesh:m});
+        }
+        //...
+      }
+      
+      
+      
+      mView.sub.push(
+      
+      mSpeed={checkbox:1,ms:'anim speed x10'}
+      
+      ,{s:'Add..',ms:'units',doctrl:'Add units',value:'-4,4,1',setfunc:function(v) {
+        //---
+        this.value=v;
+        const a=v.split(',');
+        unitsAdd({x:parseFloat(a[0]),y:parseFloat(a[1]),z:parseFloat(a[2])});
+        //onsole.log(a);
+        //...
+      }
+      }
+      
+      
+      );
+      
+      hooks.push({
+      animate:function(dt) {
+        //---
+        for (const u of units) {
+          //u.mesh.position.x+=1;
+          if (u.tweenRuns) continue;
+          
+          let dx=0,dy=0,dz=0;
+          switch (Conet.rani(4)) {
+            case 0:dx=1;break;
+            case 1:dx=-1;break;
+            case 2:dz=1;break;
+            case 3:dz=-1;break;
+          }
+          let x=u.x+dx,y=u.y+dy,z=u.z+dz;
+          
+          if (!walkAble(x,y,z)) {
+            if (walkAble(x,y+1,z)) y++;
+            else if (walkAble(x,y-1,z)) y--;
+            else continue;
+          }
+          
+          u.x=x;u.y=y;u.z=z;
+          
+          //u.x+=dx;u.y+=dy;u.z+=dz;
+          u.tweenRuns=true;const t=mSpeed.checked?10:100;
+          tweens.push({unit:u,o:u.mesh.position,key:'x',value:u.x*gw,t:t});
+          tweens.push({unit:u,o:u.mesh.position,key:'y',value:(u.y+0.5)*gw,t:t});
+          tweens.push({unit:u,o:u.mesh.position,key:'z',value:u.z*gw,t:t,onend:tweenEnd});
+        }
+        //...
+      }
+      });
+      
+      //...
+    }
+    )();
+    
+    
+    Menu.init(ma,{listen:1});
     
     Menu.cpy=0.2;
     
@@ -476,8 +710,12 @@ body { color:#000;background-color:#fff;margin:0px;overflow:hidden;font-family:A
     Menu.initLoad(mMeshes.sub);
     //...
   }
-  function loadScene(h) {
+  function loadScene(h,fn) {
     //---
+    if (!h.noClear) {
+    if (game.dispose) game.dispose();
+    game={};
+    
     //onsole.log('loadScene 0 '+scene.children.length);
     for (let m of Object.values(blocks)) {
       let ps=m;//.userData;
@@ -488,17 +726,23 @@ body { color:#000;background-color:#fff;margin:0px;overflow:hidden;font-family:A
     //onet.log('LoadScene: removing '+objs.length+' objs.');
     for (const o of objs) scene.remove(o);
     objs.length=0;
+    sceneh=h;
+    }
+    
     vertices.length=0;
+    colors.length=0;
     indices.length=0;
     
     //if (1) return;
     
     //onsole.log(h);
     if (h.voxels) {
-    
+    //sceneh=h;
     const vl=h.voxels.length;
     
     if (h.scriptModules) h.voxels.length=0;//scriptModules(h);
+    
+    //h.noVoxelGroupMeshes=1;
     
     const useBuffer=!h.noVoxelGroupMeshes;
     mMeshes.sub=[];
@@ -523,8 +767,8 @@ body { color:#000;background-color:#fff;margin:0px;overflow:hidden;font-family:A
       //const mesh=arraysToMesh({vertices:vertices,indices:indices,m:m0});
       //mesh.userData.blocksOfMesh=blocksOfMesh;blocksOfMesh=[];
       //objs.push(mesh);
-      //vertices.length=0;
-      //indices.length=0;
+      //v ertices.length=0;
+      //i ndices.length=0;
       arraysToObjsMesh();
     }
     
@@ -542,6 +786,7 @@ body { color:#000;background-color:#fff;margin:0px;overflow:hidden;font-family:A
     }
     
     //onsole.log(objs);
+    if (!h.noClear) {
     delete(h.voxels);
     sceneh=h;//console.log(sceneh);
     
@@ -551,12 +796,17 @@ body { color:#000;background-color:#fff;margin:0px;overflow:hidden;font-family:A
       controls.target.set(p1.x,p1.y,p1.z);
     }
     
+    Conet.log('"'+fn+'" loaded ('+vl+' voxels, useBuffer:'+useBuffer+(useBuffer?', meshes:'+objs.length:'')+').');
+    
     if (0) //!h.scriptModules)
       unitsAdd({x:-4,y:4,z:1});
     if (h.scriptModules) scriptModules();
     
-    if (game.onLoadScene) game.onLoadScene();
+    if (h.gameFreeWalkShoot) gameFreeWalkShoot();
+    if (h.halfGen) halfGen();
     
+    if (game.onLoadScene) game.onLoadScene();
+     
     //if (1) {
     //  const tsd=Menu.touchSticksInit({autoKeys:2});
     //  const ps={x:-4,y:4,z:1},m=box(0,0,0,1*gw-border,2*gw-border,1*gw-border,m1,{});
@@ -566,8 +816,8 @@ body { color:#000;background-color:#fff;margin:0px;overflow:hidden;font-family:A
     //  //units.push({x:ps.x,y:4,z:1,mesh:m});
     //}
     
-    Conet.log('Scene loaded ('+vl+' voxels, useBuffer:'+useBuffer+', meshes:'+objs.length+').');
-    
+    //Conet.log('"'+fn+'" loaded ('+vl+' voxels, useBuffer:'+useBuffer+(useBuffer?', meshes:'+objs.length:'')+').');
+    }
     
     } else {
       for (let b of h.blocks) {
@@ -678,6 +928,20 @@ body { color:#000;background-color:#fff;margin:0px;overflow:hidden;font-family:A
     
     //...
   }
+  function select(ps) {
+    //---
+    if (!selBox) {
+      const m=box(0,0,0,1*gw,1*gw,1*gw,//m1
+      new THREE.MeshPhongMaterial({color:0x77dd77,flatShading:true,transparent:true,opacity:0.5})
+      ,{});selBox=m;
+      m.matrixAutoUpdate=true;
+      m.castShadow=false;
+      scene.add(m);
+    }
+    selBox.position.set(ps.x*gw,ps.y*gw,ps.z*gw);
+    selBox.userData=ps;
+    //...
+  }
   function serialize() {
     //---
     let a0=Object.values(blocks),a1=[],sc;
@@ -713,17 +977,6 @@ body { color:#000;background-color:#fff;margin:0px;overflow:hidden;font-family:A
     this.unit.tweenRuns=false;
     //...
   }
-  function unitsAdd(ps) {
-    //---
-    for (let i=0;i<20;i++) {
-      const m=box(0,0,0,1*gw-border,2*gw-border,1*gw-border,m2,{});
-      m.matrixAutoUpdate=true;
-      m.position.set(ps.x*gw,(ps.y+0.5)*gw,ps.z*gw);
-      scene.add(m);
-      units.push({x:ps.x,y:4,z:1,mesh:m});
-    }
-    //...
-  }
   function walkAble(x,y,z) {
     //--- later differnt unit dimensions..
     if ((blockAt(x,y+1,z))||(blockAt(x,y,z))||(!blockAt(x,y-1,z))) return false;
@@ -731,12 +984,43 @@ body { color:#000;background-color:#fff;margin:0px;overflow:hidden;font-family:A
     //...
   }
   
-  if (1)
-  (function() {
+  
+  function gameFreeWalkShoot() {
     let tsd,tsd0,tsd1,m,l,time=0,
       clipr={x0:-540,y0:90,z0:-240,x1:250,y1:210,z1:420},
-      tbullet=0,gunits=[],player,firstLights=15;
+      tbullet=0,units=[],player,firstLights=15,mesh0,mesh1,
+      mIsoView,clips=[],inited=false,mGameInit,
+      shooting=false,tshoot=10000,mobHitMat;
+    const ph0=new Vecmath.Vec3(),ph1=new Vecmath.Vec3(),
+      p0=new THREE.Vector3(),p1=new THREE.Vector3(),
+      //p00=new THREE.Vector3(),p01=new THREE.Vector3(),
+      dir=new THREE.Vector3(),//,dir0=new THREE.Vector3();
+      colGreen=new THREE.Color(0x00ff00),
+      colWhite=new THREE.Color(0xffffff),
+      fws=sceneh.gameFreeWalkShoot,alwaysShoot=1,
+      bulletGrid={},bullets=[],dist2bu=gw*gw*1;
     //---
+    function bulletGridKey(p) {
+      //---
+      return Math.floor(0.5+p.x/gw)+'_'+Math.floor(0.5+p.y/gw)+'_'+Math.floor(0.5+p.z/gw)
+      //...
+    }
+    function _pushTweenNoDouble(tw) {
+      //---
+      //following isnt needed because checkWalk skips if tw is active
+      //if (1)
+      //for (let i=tweens.length-1;i>=0;i--) {
+      //  const t=tweens[i];
+      //  if ((t.o===tw.o)&&(t.k==tw.k)) {
+      //    tweens.splice(i,1);
+      //    console.log('splicing tween '+i);
+      //  }
+      //}
+      tweens.push(tw);
+      return tw;
+      //...
+    }
+    
     function dirmesh(x,y,z,w,h,b,m,ps) {
       let mesh;
       
@@ -745,7 +1029,9 @@ body { color:#000;background-color:#fff;margin:0px;overflow:hidden;font-family:A
           x1=x+w2,y1=y+h2,z1=z+b2;
       
       if (!ps.buffer) {
-        vertices.length=0;indices.length=0;
+        vertices.length=0;
+        //colors.length=0;
+        indices.length=0;
       }
       const i=vertices.length/3;
       vertices.push(
@@ -776,8 +1062,15 @@ body { color:#000;background-color:#fff;margin:0px;overflow:hidden;font-family:A
       
       return mesh;
     }
+    function dist2(p0,p1) {
+      //---
+      const dx=p1.x-p0.x,dy=p1.y-p0.y,dz=p1.z-p0.z;
+      return dx*dx+dy*dy+dz*dz;
+      //...
+    }
     function checkWalk(u,dx,dz) {
       //---
+      if (u.posytw&&!u.posytw.ended) return false;
       const pos=u.m.position,x=pos.x+dx,z=pos.z+dz;
       const xi=Math.floor(x/gw+0.5+(dx>0?0.5:-0.5)),
             yi=Math.floor(pos.y/gw-0.5),
@@ -785,46 +1078,180 @@ body { color:#000;background-color:#fff;margin:0px;overflow:hidden;font-family:A
       const xj=Math.floor(x/gw+0.5),
             yj=Math.floor(pos.y/gw-0.5),
             zj=Math.floor(z/gw+0.5);
-      let ret=!blockAt(xi,yi,zi)&&!blockAt(xj,yj,zj);
-      if (!u.bullet) {
-      if (ret) { 
-        if (!blockAt(xi,yi-1,zi)&&!blockAt(xj,yj-1,zj)) {
-          if (blockAt(xj,yj-2,zj)) {//dont fall down
-            pos.y=(yj-1+0.5)*gw;
-            //posyt=0;
-          } else 
-            ret=false;
+      let ret;
+      if (u.bullet) {
+        ret=!blockAt(xi,yi,zi)&&!blockAt(xj,yj,zj);
+      } else {
+        ret=!blockAt(xi,yi,zi)&&!blockAt(xj,yj,zj)&&!blockAt(xj,yj+1,zj);
+        if (ret) { 
+          if (!blockAt(xi,yi-1,zi)&&!blockAt(xj,yj-1,zj)) {
+            if (blockAt(xj,yj-2,zj)) {//dont fall down
+              if (0) pos.y=(yj-1+0.5)*gw;
+              else tweens.push(u.posytw={o:pos,key:'y',value:(yj-1+0.5)*gw,t:100,onset:((u===player)?updatePlayerView:undefined)});
+              //posyt=0;
+            } else 
+              ret=false;
+          }
+        } 
+        else //if (!ret) 
+        if (!blockAt(xi,yi+1,zi)&&!blockAt(xj,yj+1,zj)&&!blockAt(xi,yi+2,zi)&&!blockAt(xj,yj+2,zj)) {
+          if (0) pos.y=(yj+1+0.5)*gw;
+          else tweens.push(u.posytw={o:pos,key:'y',value:(yj+1+0.5)*gw,t:100,onset:((u===player)?updatePlayerView:undefined)});
+          //posyt=0;
+          ret=true;
         }
-      } 
-      else //if (!ret) 
-      if (!blockAt(xi,yi+1,zi)&&!blockAt(xj,yj+1,zj)&&!blockAt(xi,yi+2,zi)&&!blockAt(xj,yj+2,zj)) {
-        pos.y=(yj+1+0.5)*gw;
-        //posyt=0;
-        ret=true;
-      }
       }
       if (ret) {
         pos.x=x;pos.z=z; 
         if (u===player) {
-          const r=clipr,y=pos.y;
-          objs[0].visible=!((r.x0<=x)&&(r.y0<=y)&&(r.z0<=z)&&(r.x1>=x)&&(r.y1>=y)&&(r.z1>=z));
-          const t=controls.target,p=controls.object.position,dx=p.x-t.x,dy=p.y-t.y,dz=p.z-t.z;
-        
-          t.set(pos.x,pos.y,pos.z);
-          p.set(pos.x+dx,pos.y+dy,pos.z+dz);
+          updatePlayerView();
+      /*
+          const t=controls.target,p=controls.object.position;
+          if (!mIsoView.checked) {
+            mat0.rotY(u.m.rotation.y);
+            ph0.set3(0,0,gw*3);
+            mat0.transformV3(ph0,ph1);
+            p.set(pos.x+ph1.x,pos.y+ph1.y,pos.z+ph1.z);//p
+            ph0.set3(0,0,-gw*2);
+            mat0.transformV3(ph0,ph1);
+            t.set(pos.x+ph1.x,pos.y+ph1.y,pos.z+ph1.z);//t
+          } else {
+            const r=clipr,y=pos.y;
+            objs[0].visible=!((r.x0<=x)&&(r.y0<=y)&&(r.z0<=z)&&(r.x1>=x)&&(r.y1>=y)&&(r.z1>=z));
+            const dx=p.x-t.x,dy=p.y-t.y,dz=p.z-t.z;
+          
+            t.set(pos.x,pos.y,pos.z);
+            p.set(pos.x+dx,pos.y+dy,pos.z+dz);
+          }
+      */
         }
       }
       return ret;
       //...
     }
-    //---
-    game.onLoadScene=function() {
+    
+    
+    function updatePlayerView() {
+      
+      const u=player,pos=u.m.position,t=controls.target,p=controls.object.position;
+      
+      /*
+      function viewRay(dx,dy) {
+        ph0.set3(-gw,gw/4,gw*3);
+        mat0.transformV3(ph0,ph1);
+        p01.set(pos.x+ph1.x,pos.y+ph1.y,pos.z+ph1.z);//p
+        
+        ph0.set3(-gw,gw/4,0);
+        mat0.transformV3(ph0,ph1);
+        p00.set(pos.x+ph1.x,pos.y+ph1.y,pos.z+ph1.z);//p
+        dir0.set(p01.x-p00.x,p01.y-p00.y,p01.z-p00.z);
+        //dir.set(p0.x-p1.y,p0.y-p1.y,p0.z-p1.z);
+        const l=dir0.length();
+        dir0.x/=l;dir0.y/=l;dir0.z/=l;
+        
+        //const raycaster=new THREE.Raycaster();
+        raycaster.set(p00,dir0);
+        raycaster.far=l;
+        const a=raycaster.intersectObjects(scene.children);
+        raycaster.far=Number.POSITIVE_INFINITY;
+        if (a.length>0) return a[0].distance;
+        return undefined;
+        //...
+      }
+      */
+      
+      
+      if (!mIsoView.checked) {
+        mat0.rotY(u.m.rotation.y);
+      
+        ph0.set3(-gw,gw/4,gw*3);
+        mat0.transformV3(ph0,ph1);
+        p1.set(pos.x+ph1.x,pos.y+ph1.y,pos.z+ph1.z);//p
+      
+        ph0.set3(-gw,gw/4,0);
+        mat0.transformV3(ph0,ph1);
+        p0.set(pos.x+ph1.x,pos.y+ph1.y,pos.z+ph1.z);//p
+        dir.set(p1.x-p0.x,p1.y-p0.y,p1.z-p0.z);
+        //dir.set(p0.x-p1.y,p0.y-p1.y,p0.z-p1.z);
+        const l=dir.length();
+        dir.x/=l;dir.y/=l;dir.z/=l;
+      
+        //const raycaster=new THREE.Raycaster();
+        raycaster.set(p0,dir);
+        raycaster.far=l;
+        const a=raycaster.intersectObjects(scene.children);
+        //console.log(a.length+' '+raycaster.near+' '+raycaster.far);
+        raycaster.far=Number.POSITIVE_INFINITY;
+        //for (let io of a) io.object.material=m1;
+        //let dist=l,dh;
+        if (a.length>0) {
+          //dist=a[0].distance;
+          p1.copy(a[0].point);
+        }
+        
+        //if (dh=viewRay(0.5*gw,0)) dist=Math.min(dist,dh);
+        //if (dh=viewRay(gw,0)) dist=Math.min(dist,dh);
+        //if (dh=viewRay(1.5*gw,0)) dist=Math.min(dist,dh);
+        //if (dh=viewRay(2*gw,0)) dist=Math.min(dist,dh);
+        //if (dist<l) {
+        //  p1.x=p0.x+dir.x*dist;
+        //  p1.y=p0.y+dir.y*dist;
+        //  p1.z=p0.z+dir.z*dist;
+        //}
+        
+      
+        //mesh0.position.copy(p0);
+        //mesh1.position.copy(p1);
+      
+        p.copy(p1);
+        
+        
+        ph0.set3(-gw,gw/4,-gw*2);
+        mat0.transformV3(ph0,ph1);
+        t.set(pos.x+ph1.x,pos.y+ph1.y,pos.z+ph1.z);//t
+      } else {
+        const x=pos.x,y=pos.y,z=pos.z;
+        
+        if (objs.length>0) {
+        for (const o of objs) o.visible=true;
+        for (const r of clips) {
+          if ((r.x0<=x)&&(r.y0<=y)&&(r.z0<=z)&&(r.x1>=x)&&(r.y1>=y)&&(r.z1>=z)) {
+            for (const i of r.blendout) objs[i].visible=false;
+          }
+        }}
+        
+        //const r=clipr;
+        //if (objs.length>0)
+        //  objs[0].visible=!((r.x0<=x)&&(r.y0<=y)&&(r.z0<=z)&&(r.x1>=x)&&(r.y1>=y)&&(r.z1>=z));
+        const dx=p.x-t.x,dy=p.y-t.y,dz=p.z-t.z;
+      
+        t.set(pos.x,pos.y,pos.z);
+        p.set(pos.x+dx,pos.y+dy,pos.z+dz);
+      }
+      
+      //...
+    }
+    
+    function init() {
       //---
+      inited=true;
+      if (mGameInit) Menu.removeSub(mView,mGameInit);
       tsd=Menu.touchSticksInit({autoKeys:2});
       tsd0=tsd[0];tsd1=tsd[1];
-      const ps={x:-4,y:4,z:1};
+      //const fws=sceneh.gameFreeWalkShoot;
+      const ps=fws.player;//{x:-4,y:4,z:1};
       m=dirmesh(0,0,0,1*gw-border,2*gw-border,1*gw-border,m1,{});
       m.position.set(ps.x*gw,(ps.y+0.5)*gw,ps.z*gw);
+      
+      if (!fws.clipBoxes)
+      fws.clipBoxes=[
+        {x0:-9,y0:1.5,z0:-4,x1:4.2,y1:3.5,z1:7,blendout:[0]}  
+      ];
+      
+      for (const b of fws.clipBoxes) 
+        clips.push({x0:b.x0*gw,y0:b.y0*gw,z0:b.z0*gw
+                   ,x1:b.x1*gw,y1:b.y1*gw,z1:b.z1*gw,blendout:b.blendout});
+      
       
       l=new THREE.PointLight(0x00ff00,1,4*gw);
       l.castShadow=true;
@@ -834,40 +1261,137 @@ body { color:#000;background-color:#fff;margin:0px;overflow:hidden;font-family:A
       l.shadow.mapSize.height=1024;
       m.add(l);
       player={m:m,a:0,speed:0};
-      gunits.push(player);
+      units.push(player);
       
-      console.log(m.position);
+      mobHitMat=new THREE.MeshPhongMaterial({color:0xaaaaee,flatShading:true});
+      
+      for (const mob of fws.mobs) {
+        for (var i=0;i<10;i++) {
+        const mm=dirmesh(0,0,0,1*gw-border,2*gw-border,1*gw-border,new THREE.MeshPhongMaterial( { 
+          color:0x2244bb//0x444444
+          ,flatShading:true } ),{});
+        mm.position.set(mob.x*gw,(mob.y+0.5)*gw,mob.z*gw);
+        units.push({m:mm,a:0,speed:0,mob:1});
+        }
+      }
+      
+      //onsole.log(m.position);
       scene.add(m);
+      
+      /*
+      mesh0=box(0,0,0,gw/2,gw/2,gw/2,m0,{});
+      mesh0.matrixAutoUpdate=true;
+      mesh0.position.set(ps.x*gw,(ps.y+0.5)*gw,ps.z*gw);
+      scene.add(mesh0);
+      mesh1=box(0,0,0,gw/4,gw/4,gw/4,m0,{});
+      mesh1.matrixAutoUpdate=true;
+      mesh1.position.set(ps.x*gw+gw,(ps.y+0.5)*gw,ps.z*gw);
+      scene.add(mesh1);
+      */
+      
+      mView.sub.push(
+      Menu.initMenu(mIsoView={checkbox:1,r:1,ms:'Iso view',checked:1,actionf:function() {
+        //---
+        const t=controls.target,p=controls.object.position;
+        if (!this.checked) {
+          console.log(this.checked);
+          const dx=p.x-t.x,dy=p.y-t.y,dz=p.z-t.z;
+          game.controlsDeltas={x:dx,y:dy,z:dz};
+        } else {
+          const d=game.controlsDeltas;
+          if (d) {
+            p.x=t.x+d.x;
+            p.y=t.y+d.y;
+            p.z=t.z+d.z;
+          }
+        }
+        updatePlayerView();
+        //...
+      }
+      })
+      );
+      
+      if (!alwaysShoot) {
+      const px=0.045,pw=0.1;
+      Menu.roots.push({s:'\u270a',vertCenter:1,px:px,py:0.22,pw:pw,ph:pw,ydown:true,xright:true,fs:1.4,
+      actionf:function() {
+        tshoot=5000;
+      }
+      });
+      Menu.setMenus(Menu.roots);
+      Menu.remove();
+      Menu.draw();
+      }
+      
+      updatePlayerView();
+      
+      //...
+    }
+    //---
+    game.onLoadScene=function() {
+      //init();
+      if (fws.initMenu)
+        mView.sub.push(mGameInit={s:'Game',ms:'init',actionf:init});
+      else init();
+      //...
+    }
+    
+    
+    game.dispose=function() {
+      //---
+      if (inited) {
+        Menu.touchSticksRemove();
+        //const i=mView.sub.indexOf(mIsoView);
+        //mView.sub.splice(i,1);
+        Menu.removeSub(mView,mIsoView);
+        for (const u of units) scene.remove(u.m);
+      } else
+        if (mGameInit) Menu.removeSub(mView,mGameInit);
       //...
     }
     game.animate=function(dt) {
       //---
       if (!tsd1) return;
+      if (!mIsoView) return;
       
-      tbullet+=dt;
-      if (tbullet>300) {
-        tbullet=0;
-        //if (firstLights>=0)
-        //for (let i=0;i<(firstLights>0?firstLights:1);i++) {
-          let mb=dirmesh(0,0,0,0.5*gw-border,0.5*gw-border,1*gw-border,mbullet,{});
-          mb.position.copy(m.position);
-          mb.rotation.copy(m.rotation);
-          const l=new THREE.PointLight(0xff5500,3,4*gw);mb.add(l);
-          scene.add(mb);
-          gunits.push({m:mb,a:m.rotation.y,speed:1,bullet:1,t:0});
-        //}
-        //if (firstLights>0) firstLights=-firstLights;
-        //if (firstLights<0) firstLights++;
+      time+=dt;
+      
+      if (tshoot>0) tshoot-=dt;
+      shooting=alwaysShoot||(tshoot>0);
+      
+      if (shooting) {
+        tbullet+=dt;
+        if (tbullet>300) {
+          tbullet=0;
+          //if (firstLights>=0)
+          //for (let i=0;i<(firstLights>0?firstLights:1);i++) {
+            let mb=dirmesh(0,0,0,0.5*gw-border,0.5*gw-border,1*gw-border,mbullet,{});
+            mb.position.copy(m.position);
+            mb.rotation.copy(m.rotation);
+            const l=new THREE.PointLight(0xff5500,3,4*gw);mb.add(l);
+            scene.add(mb);let bu;
+            units.push(bu={m:mb,a:m.rotation.y,speed:1,bullet:1,t:0});
+            bullets.push(bu);
+          //}
+          //if (firstLights>0) firstLights=-firstLights;
+          //if (firstLights<0) firstLights++;
+        }
       }
       let tsd1d=false;
+      const iso=mIsoView.checked;
       if ((tsd1.dx!=0)||(tsd1.dy!=0)) {
-        m.rotation.y=controls.getAzimuthalAngle()-PI/2-Math.atan2(tsd1.dy,tsd1.dx);
+        if (iso) {
+          m.rotation.y=controls.getAzimuthalAngle()-PI/2-Math.atan2(tsd1.dy,tsd1.dx);
+        } else {
+          m.rotation.y-=tsd1.dx*dt*0.003;
+          updatePlayerView();
+        }
         tsd1d=true;
       }
       if ((tsd0.dx!=0)||(tsd0.dy!=0)) {
         const a=controls.getAzimuthalAngle()+PI/2-Math.atan2(tsd0.dy,tsd0.dx)-PI,
-              speed=0.5,pos=m.position;
-        if (!tsd1d) m.rotation.y=a;
+              speed=0.5,pos=m.position;//speed=0.5
+        if (iso&&!tsd1d) m.rotation.y=a;
         player.a=a;player.speed=speed;
         
         //const dx=speed*dt*Math.sin(a+PI);
@@ -886,12 +1410,57 @@ body { color:#000;background-color:#fff;margin:0px;overflow:hidden;font-family:A
         ////}
       } else player.speed=0;
       
-      for (let i=0;i<gunits.length;i++) {
-        const u=gunits[i];
+      for (let i=0;i<units.length;i++) {
+        const u=units[i];
         let del=false;
         if (u.bullet) {
           u.t+=dt;
+          const p=u.m.position;
+          //bulletGrid[bulletGridKey(p)]={t:time,u:u};
           if (u.t>2000) del=true; 
+        }
+        if (u.mob) {
+          if (u.thit) {
+            u.thit=Math.max(0,u.thit-dt);
+            if (!u.thit) {
+              u.m.material=u.omaterial;
+              u.trand=0;
+            }
+          } else {
+            const pp=player.m.position,mp=u.m.position;
+            let hitBu=undefined;
+            for (const bu of bullets) if (dist2(mp,bu.m.position)<dist2bu) 
+              { hitBu=bu;break; }
+            //const bg=bulletGrid[bulletGridKey(mp)];
+            //if (bg) if (time-bg.t<100) {
+            if (hitBu) {
+              if (!u.omaterial) u.omaterial=u.m.material;
+              u.m.material=mobHitMat;
+              u.thit=1000;
+              u.speed=hitBu.speed/2;//bg.u;
+              u.a=hitBu.a+(Conet.rand()-0.5)*1;//bg.u
+              //onsole.log('bulletGrid '+(time-bg.t));
+              //bg.t=time-1000;
+            } 
+            if (!u.thit) {
+              const dx=pp.x-mp.x,dy=pp.y-mp.y,dz=pp.z-mp.z,d=dx*dx+dy*dy+dz*dz;
+              if ((d>gw*gw*1)&&(d<gw*gw*50)) {
+                u.a=-PI/2-Math.atan2(dz,dx);
+                u.m.rotation.y=u.a;
+                u.speed=0.2;
+              } else {
+                //--- random walk
+                if (!u.trand) {
+                  u.trand=Conet.rani(1000);
+                  u.speed=Conet.rand()*0.3;
+                  u.a=Conet.rand()*PI*2;
+                  u.m.rotation.y=u.a;
+                }
+                u.trand=Math.max(0,u.trand-1);
+                //u.speed=0;
+              }
+            }
+          }
         }
         if (u.speed>0) {
           //const pos=u.m.position;
@@ -907,36 +1476,136 @@ body { color:#000;background-color:#fff;margin:0px;overflow:hidden;font-family:A
         }
         if (del) {
           scene.remove(u.m);
-          gunits.splice(i,1);
+          units.splice(i,1);
           i--;
+          if (u.bullet) {
+            const j=bullets.indexOf(u);
+            bullets.splice(j,1);
+          }
         }
       }
       
-      time+=dt;
-      const f=(Math.sin(time*0.01)+1)/2;
-      l.distance=4*gw+6*gw*f;
-      l.intensity=1+2*f;
+      if (shooting) {
+        //time+=dt;
+        const f=(Math.sin(time*0.01)+1)/2;
+        l.distance=4*gw+6*gw*f;
+        l.intensity=1+2*f;
+        l.color=colGreen;
+      } else {
+        l.color=colWhite;
+        l.distance=4*gw;
+        l.intensity=1;
+      }
         
       //...
     }
     //...
   }
-  )();
+  function halfGen() {
+    const bs=[];
+    
+    //---
+    function process() {
+      //---
+      if (bs.length>0) {
+        for (const b of bs) {
+          b.del=1;blockEt(b);
+        }
+        Conet.log('HalfGen removed '+bs.length+' blocks.');
+        bs.length=0;
+        return;
+      }
+      
+      let b;
+      const ps=sceneh.halfGen;let c=0;
+      for (let z=ps.p0[2];z<=ps.p1[2];z+=2) 
+      for (let y=ps.p0[1];y<=ps.p1[1];y+=2) 
+      for (let x=ps.p0[0];x<=ps.p1[0];x+=2) {
+        const b0=blockAt(x,y,z),b1=blockAt(x+1,y,z),b2=blockAt(x,y+1,z),b3=blockAt(x+1,y+1,z),
+              b4=blockAt(x,y,z+1),b5=blockAt(x+1,y,z+1),b6=blockAt(x,y+1,z+1),b7=blockAt(x+1,y+1,z+1);
+        if (!(b0||b1||b2||b3||b4||b5||b6||b7)) continue;
+        const xn=Math.floor(x/2)-15,yn=Math.floor(y/2),zn=Math.floor(z/2);
+        b={x:xn,y:yn,z:zn,c:0,addIfEmpty:1};
+        if (b0&&b1&&b2&&b3&& b4&&b5&&!b6&&!b7) { b.t='ramp';b.ay=1; }
+        else if (b0&&b1&&!b2&&!b3&& b4&&b5&&b6&&b7) { b.t='ramp'; }
+        else if (b0&&b1&&b2&&!b3&& b4&&b5&&b6&&!b7) { b.t='ramp';b.ay=-0.5; }
+        else if (b0&&b1&&!b2&&b3&& b4&&b5&&!b6&&b7) { b.t='ramp';b.ay=0.5; } 
+        else if (b0&&b1&&b2&&b3&& !b4&&!b5&&b6&&b7) { b.t='ramp';b.az=1;b.ay=1; }
+        else if (!b0&&!b1&&b2&&b3&& b4&&b5&&b6&&b7) { b.t='ramp';b.az=1; }
+        else if (b0&&!b1&&b2&&b3&& b4&&!b5&&b6&&b7) { b.t='ramp';b.az=1;b.ay=-0.5; }
+        else if (!b0&&b1&&b2&&b3&& !b4&&b5&&b6&&b7) { b.t='ramp';b.az=1;b.ay=0.5; }
+        else if (b0&&b1&&b2&&b3&& b4&&!b5&&b6&&!b7) { b.t='ramp';b.az=-0.5;b.ay=-0.5; }
+        else if (b0&&!b1&&b2&&!b3&& b4&&b5&&b6&&b7) { b.t='ramp';b.az=0.5;b.ay=-0.5; }
+        else if (b0&&b1&&b2&&b3&& !b4&&b5&&!b6&&b7) { b.t='ramp';b.az=0.5;b.ay=0.5; }
+        else if (!b0&&b1&&!b2&&b3&& b4&&b5&&b6&&b7) { b.t='ramp';b.az=-0.5;b.ay=0.5; }
+      
+        else if (b0&&b1&&b2&&!b3&& b4&&b5&&!b6&&!b7) { b.t='ramp1';b.ay=1; }
+        else if (b0&&b1&&!b2&&!b3&& b4&&b5&&b6&&!b7) { b.t='ramp1';b.ay=-0.5; }
+        else if (b0&&b1&&!b2&&!b3&& b4&&b5&&!b6&&b7) { b.t='ramp1';b.ay=0; }
+        else if (b0&&b1&&!b2&&b3&& b4&&b5&&!b6&&!b7) { b.t='ramp1';b.ay=0.5; }
+        else if (b0&&!b1&&b2&&b3&& !b4&&!b5&&b6&&b7) { b.t='ramp1';b.az=1;b.ay=-0.5; }
+        else if (!b0&&!b1&&b2&&b3&& b4&&!b5&&b6&&b7) { b.t='ramp1';b.az=1; }
+        else if (!b0&&b1&&b2&&b3&& !b4&&!b5&&b6&&b7) { b.t='ramp1';b.az=1;b.ay=1; }
+        else if (!b0&&!b1&&b2&&b3&& !b4&&b5&&b6&&b7) { b.t='ramp1';b.az=1;b.ay=0.5; }
+        
+        else if (b0&&b1&&b2&&!b3&& b4&&!b5&&b6&&!b7) { b.t='ramp1';b.az=-0.5;b.ax=0.5; }
+        else if (b0&&!b1&&b2&&!b3&& b4&&b5&&b6&&!b7) { b.t='ramp1';b.az=-0.5;b.ax=0; }
+        else if (b0&&b1&&!b2&&b3&& !b4&&b5&&!b6&&b7) { b.t='ramp1';b.az=0.5;b.ax=1; }
+        else if (!b0&&b1&&!b2&&b3&& b4&&b5&&!b6&&b7) { b.t='ramp1';b.az=0.5;b.ax=0.5; }
+      
+        if (b.t) c++;
+        blockEt(b);bs.push(b);
+      }
+      console.log(c);
+      
+      Conet.log('HalfGen '+bs.length+' blocks.');
+      //...
+    }
+    
+    //...
+    //Conet.log('halfGen init.');
+    mView.sub.push({s:'HalfGen',r:1,actionf:process});
+    process();
+    //...
+  }
+  
   
   init();
+  
+  window.blockBuildLoad=function(ps) {
+    let h=JSON.parse(ps.d);
+    h.noClear=1;
+    for (const v of h.voxels) {
+      v.x+=ps.x||0;
+      v.y+=ps.y||0;
+      v.z+=ps.z||0;
+    }
+    loadScene(h);
+    //...
+  }
   //...
 }
 )();
 </script></body>
 </html><script>
-//fr o,14
-//fr o,14,18
-//fr o,14,18,99,1
-//fr o,14,22,2
-//fr o,14,22,4
-//fr o,14,22,6
-//fr o,14,22,11
-//fr o,14,29
-//fr o,14,29,7
-//fr o,14,29,8
-//fr p,0,181
+//fr o,17
+//fr o,17,20
+//fr o,17,20,53
+//fr o,17,20,103
+//fr o,17,20,103,1
+//fr o,17,20,108
+//fr o,17,20,130
+//fr o,17,20,165,4
+//fr o,17,20,165,12
+//fr o,17,24,2
+//fr o,17,24,4
+//fr o,17,24,6
+//fr o,17,24,11
+//fr o,17,31
+//fr o,17,31,14
+//fr o,17,31,18
+//fr o,17,31,24
+//fr o,17,31,24,64
+//fr o,17,31,26
+//fr o,17,31,29
+//fr p,0,205

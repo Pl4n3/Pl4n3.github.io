@@ -21,7 +21,7 @@ var Menu={};
   Menu.soff='[ ]';//'\u2610';
   Menu.son='[x]';//'\u2611';
   Menu.pressed=pressed;
-  Menu.version='1.454 ';//FOLDORUPDATEVERSION
+  Menu.version='1.464 ';//FOLDORUPDATEVERSION
   function mCloseAll(a) {
     for (var i=0;i<a.length;i++) {
       var mh=a[i];
@@ -722,37 +722,44 @@ var Menu={};
       Menu.draw();
     }
   }
+  Menu.initMenu=function(m) {
+    //---
+    if ((m.ms===undefined)&&m.keys) { m.ms='<span style="color:#338;">Key:</span> '+String.fromCharCode(m.keys[0]); } 
+    if ((m.ms===undefined)&&(m.vertCenter===undefined)&&((m.s||'').indexOf('<br>')==-1)) m.vertCenter=1;
+    if (m.lskey) {
+      var v=localStorage[m.lskey];
+      if (!(v===undefined)) {
+        //alert(v);
+        if (m.autoval==2) m.ms=v;
+        if (m.setfunc) m.setfunc(v,true);
+        if (m.checkbox) m.checked=(v=='1');
+      }
+    }
+    if (m.initLoadVal) m.setfunc(m.initLoadVal,true);//--- new param since 191015 voxed.js
+    if (m.lskeyimg) {
+      var v=localStorage[m.lskeyimg];
+      if (v!==undefined) {
+        m.c2=new Image();
+        m.c2.src=v;
+      }
+    }
+    if (m.img) {
+      m.c2=new Image();
+      m.c2.src=m.img;
+    }
+    if (m.checkbox) m.s=m.checked?Menu.son:Menu.soff;
+    if (m.keys) for (var h=0;h<m.keys.length;h++) keym[m.keys[h]]=m;
+    if (m.gpbu) for (var h=0;h<m.gpbu.length;h++) gpbum[m.gpbu[h]]=m;
+    //if (m.noinp) m.col=Menu.colNoinp;
+    if (m.sub) Menu.initLoad(m.sub);
+    return m;
+    //...
+  }
   Menu.initLoad=function(a) {
     //onsole.log('initLoad');
     for (var i=0;i<a.length;i++) {
       var m=a[i];
-      if ((m.ms===undefined)&&m.keys) { m.ms='<span style="color:#338;">Key:</span> '+String.fromCharCode(m.keys[0]); } 
-      if ((m.ms===undefined)&&(m.vertCenter===undefined)&&((m.s||'').indexOf('<br>')==-1)) m.vertCenter=1;
-      if (m.lskey) {
-        var v=localStorage[m.lskey];
-        if (!(v===undefined)) {
-          //alert(v);
-          if (m.setfunc) m.setfunc(v,true);
-          if (m.checkbox) m.checked=(v=='1');
-        }
-      }
-      if (m.initLoadVal) m.setfunc(m.initLoadVal,true);//--- new param since 191015 voxed.js
-      if (m.lskeyimg) {
-        var v=localStorage[m.lskeyimg];
-        if (v!==undefined) {
-          m.c2=new Image();
-          m.c2.src=v;
-        }
-      }
-      if (m.img) {
-        m.c2=new Image();
-        m.c2.src=m.img;
-      }
-      if (m.checkbox) m.s=m.checked?Menu.son:Menu.soff;
-      if (m.keys) for (var h=0;h<m.keys.length;h++) keym[m.keys[h]]=m;
-      if (m.gpbu) for (var h=0;h<m.gpbu.length;h++) gpbum[m.gpbu[h]]=m;
-      //if (m.noinp) m.col=Menu.colNoinp;
-      if (m.sub) Menu.initLoad(m.sub);
+      Menu.initMenu(m);
     }
   }
   Menu.keyDown=function(ev) {
@@ -846,6 +853,15 @@ var Menu={};
       mh.shown=false; 
     }
     } catch (e) {}
+  }
+  Menu.removeSub=function(p,c) {
+    const i=p.sub.indexOf(c);
+    if (i!=-1)
+      p.sub.splice(i,1);
+    else {
+      console.error('couldnt remove menu '+c);
+    }
+    //...
   }
   Menu.search=function(x,y,justreturn) {
     //onsole.log('Menu.search 0');
@@ -1132,12 +1148,5 @@ var Menu={};
 
 //--
 //fr o,2
-//fr o,2,30
-//fr o,2,31
-//fr o,2,44
-//fr o,2,45
-//fr o,2,49
-//fr o,2,54
-//fr o,2,58
-//fr o,2,61
-//fr p,51,51
+//fr o,2,51
+//fr p,24,59

@@ -42,7 +42,7 @@ function Planim() {
     //--- 201230 using r124 for glitch, removed webvr because its in xr
   }
   var scene,stats,views=[],oh={},ot=Date.now(),otscra=ot,scra=[],scri=0,scrt=0,loopAfterLoaded,
-      base,debug='',version='1.2256 ',//FOLDORUPDATEVERSION
+      base,debug='',version='1.2335 ',//FOLDORUPDATEVERSION
       m0=new THREE.MeshPhongMaterial( { color:0x666666,flatShading:true } ),
       m1=new THREE.MeshPhongMaterial({color:0x77dd77,flatShading:true,
       transparent:true,opacity:0.5}),mray0=new THREE.MeshPhongMaterial({
@@ -952,10 +952,13 @@ function Planim() {
     
     if (self.vrkeys&&(views.length>0)&&!cmenu&&!Menu.mcontrol) {//&&!self.ego) {
       var cam=views[0].camera,rf=0.003;
+      if (!(self.tsd&&self.tsd.ps&&(self.tsd.ps.autoKeys==2))) {
+      //onsole.log('keys');
       if (keys[38]) cam.rotation.x+=rf*dto;
       if (keys[40]) cam.rotation.x-=rf*dto;
       if (keys[37]) cam.rotation.y+=rf*dto;
       if (keys[39]) cam.rotation.y-=rf*dto;
+      }
       //onsole.log(cam.rotation.x);
       var tsd1=self.tsd?self.tsd[1]:undefined;
       if (tsd1&&!fetch) {
@@ -1118,7 +1121,9 @@ function Planim() {
       }
     }
     
-    calcTweens(dt);
+    //calcTweens(dt);
+    Conet.calcTweens(tweens,dt);
+    
     
     if (game.calcLater) game.calcLater(dt);
     
@@ -1147,7 +1152,8 @@ function Planim() {
     
     //if (ps.ego) { self.controlo=planim.ego=o.ps; }
     
-    //onsole.log(o);//Object.assign({},o));
+    //console.log(o);//Object.assign({},o));
+    //o.meshes[0].diff='/shooter/objs/bullet/stick15/skin1d.json';
     
     //Pd5.animStart(o,o.animh[ps.animIdle||ps.anim]);
     Pd5.animStart(o,ps.animIdle||ps.anim);
@@ -1232,6 +1238,7 @@ function Planim() {
   }
   function oonload(v) {
     var ps=this;//console.log(this);
+    //onsole.log(v);
     var o=Pd5.load(v);
     //o.scale=1;//dont use scale from editor
     //onsole.log('anim.oonload');// o.scale=+o.scale);
@@ -1276,35 +1283,6 @@ function Planim() {
     //  //Pd5.animStart(o,o.anim===a0?o.animh.speak:a0);
     //}
     setTimeout(calcScra,20);
-  }
-  function calcTweens(dt) {
-    //---
-    for (var i=tweens.length-1;i>=0;i--) {
-      var tw=tweens[i];
-      tw.tc=Math.min(tw.t,(tw.tc||0)+dt);
-      //if (tw.x0===undefined) { tw.x0=tw.o.x;tw.y0=tw.o.y;tw.z0=tw.o.z; }
-      var f1=tw.tc/tw.t;
-      f1=0.5-Math.cos(f1*Math.PI)/2;
-      var f0=1-f1;
-      
-      if (tw.key) {
-        if (tw.value0===undefined) tw.value0=tw.o[tw.key];
-        tw.o[tw.key]=f1*tw.value+f0*tw.value0;
-      } else {  
-      if (tw.x0===undefined) { tw.x0=tw.o.x;tw.y0=tw.o.y;tw.z0=tw.o.z; }
-      tw.o.set(
-        f1*tw.x+f0*tw.x0,
-        f1*tw.y+f0*tw.y0,
-        f1*tw.z+f0*tw.z0,
-      );
-      }
-      
-      if (tw.t==tw.tc) {
-        if (tw.onend) tw.onend();
-        tweens.splice(i,1);
-      }
-    }
-    //...
   }
   function viewText(i,sh) {
     var v=views[i],c=v.textc,s=c.style;
@@ -1590,9 +1568,10 @@ function Planim() {
   function defaultLights(ps) {
     var l0,l1,l2;
     if (!ps) ps={};
-    base.add(l0=new THREE.AmbientLight(0xffffff,0.3));
-    l1=pointLight({x:-1,y:2,z:1,col:0xffffaa,dist:10,int:2,base:ps.l1base});
+    base.add(l0=new THREE.AmbientLight(0xffffff,ps.ambientInt||0.3));
+    l1=pointLight({x:-1+ps.x||0,y:2+ps.y||0,z:1+ps.z||0,col:0xffffaa,dist:ps.dist||10,int:ps.int||2,base:ps.l1base});
     ////pointLight({x:-5.5,y:0,z:-1,col:0x2222ff,dist:7,int:2});
+    //l2=pointLight({x:5+ps.x||0,y:-5,z:-5+ps.z||0,col:0xaaffff,dist:100,int:0.5,castShadow:false});
     l2=pointLight({x:5,y:-5,z:-5,col:0xaaffff,dist:100,int:0.5,castShadow:false});
     //var l=new THREE.DirectionalLight(0xaaffff,1);l.position.set(0.2,-1,-0.2);base.add(l);
     
@@ -1827,9 +1806,11 @@ function Planim() {
     }
     self.scriptH=scriptH;
     //onsole.log(ka);
+    //onsole.log(loada);
     
     if (loada.length>0) {
     Conet.load({a:loada,onAll:function() {
+      //onsole.log(self.scriptsLoaded.length);
       for (var f of self.scriptsLoaded) f({scriptH:scriptH});
       resize();
       //onsole.log(self.urlfiles);
@@ -1996,6 +1977,89 @@ function Planim() {
     uiMode=i;planim.uiMode=i;
     //...
   }
+  
+  //---ggf besser nach pd5
+  function panObjOnload(o) {
+    
+    //onsole.log(o.bulletCfg);
+    if (o.ps.diff) o.meshes[0].diff=o.ps.diff;
+    
+    //onsole.log(o);
+    
+    o.o={x:0,y:0,z:0,rot:0,go:{rotofs:o.ps.rotofs}};
+    //Pd5.bulletize(o);
+    Pd5.bulletize(o,{damp0:1,damp1:1});
+    
+    
+    var bc=o.bulletCfg,v;
+    if (bc) {
+      for (var b of bc.bones) {
+        //onsole.log(b);
+        //onsole.log(o.bones);
+        var co=o.bones[b.i].co;
+        if ((v=b.inverseMass)!==undefined) co.inverseMass=v;
+        if ((v=b.gravityY)!==undefined) co.gravity.y=v;
+      }
+      //onsole.log(o.bones);
+      //if (1) return;
+      o.pans=[];
+      for (var p of bc.pans) {
+        o[p.name]=p.a;
+        o.pans.push(p);//.a);
+      }
+      o.ps.gravityPull=bc.gravityPull;
+      //console.log(o);
+      //return;
+    }
+    
+    if (o.ps.panOnload) o.ps.panOnload();
+    
+    //...
+  }
+  function panObj(x,z,ps) {
+    var o0;
+    
+    //a.push( 
+    o0=Conet.hcopy(ps,{
+      fn:ps.fn
+      ,pos:new THREE.Vector3(x,-1.8,z),health:5,rotofs:Math.PI
+      ,anim:'idle'
+      ,scale:0.4,v:0.006,vrot:0.01//anim:flat//test0//idle
+      ,onload:ps.onload||panObjOnload//,inverseMass:ps.inverseMass||100,panps:ps
+      });//);
+    //panos.push(o0);
+    return o0;
+    
+    //...
+  }
+  function panStart(o,pan) {
+    //anim=pan;//o0.o.panTurnLeft;
+    //animi=0;t6=0;
+    //onsole.log(pan);
+    if (o.pan===pan) return;
+    
+    if (!o.env) {//--- this was checkstartanims()
+      o.env=true;
+      o.o.anim=undefined;
+      o.o.animInt=undefined;
+    }
+    
+    
+    //for (var b of o.o.bones) if (b.co) b.co.gravity.y=-30;
+    
+    if (o.pan)
+    for (let b of pan[0].a) if (b.gy!==undefined) o.o.bones[b.i].co.gravity.y=b.gy;
+    
+    //o0.o.bones[ab.i].co.gravity.y=ab.gy;
+    
+    
+    o.pan=pan;
+    o.pani=0;
+    o.pant=0;
+    //o.o.bones[7].co.gravity.y=300;
+    //...
+  }
+  
   //---
   init();
   this.etDebug=function(v) {
@@ -2110,6 +2174,7 @@ function Planim() {
   this.loadObj=loadObj;this.scra=scra;this.calcScra=calcScra;
   this.skipUis={};this.angle=angle;this.ps=ps;this.angleZX=angleZX;
   this.dist2=dist2;this.oh=oh;
+  this.panObj=panObj;this.panStart=panStart;this.panObjOnload=panObjOnload;
   //this.longClick; if true click is done also after long press with maxdrag<0.1, used in deep8
   //---waypoint stuff
   var y0=-1.80,tsc=1.8*1.2,ty0=y0/tsc,mh0=new THREE.Matrix4();//,vh0=new THREE.Vector3();
@@ -2466,22 +2531,20 @@ var planim=new Planim();
 </html><script>
 //fr o,28
 //fr o,28,19,100
-//fr o,28,24
-//fr o,28,46
-//fr o,28,46,75
-//fr o,28,58,32
-//fr o,28,58,38
-//fr o,28,58,40
-//fr o,28,58,43
-//fr o,28,58,46
-//fr o,28,58,48
-//fr o,28,58,50
-//fr o,28,58,85
-//fr o,28,58,90
-//fr o,28,59,11,1
-//fr o,28,59,13,2
-//fr o,28,74
-//fr o,28,105,3
-//fr o,28,105,11
-//fr o,28,105,15
-//fr p,48,111
+//fr o,28,20
+//fr o,28,34
+//fr o,28,35
+//fr o,28,40
+//fr o,28,41
+//fr o,28,45,75
+//fr o,28,57,86
+//fr o,28,57,91
+//fr o,28,58,11,1
+//fr o,28,58,13,2
+//fr o,28,65
+//fr o,28,66
+//fr o,28,79
+//fr o,28,111,3
+//fr o,28,111,11
+//fr o,28,111,15
+//fr p,0,246

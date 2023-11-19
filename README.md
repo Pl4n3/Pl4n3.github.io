@@ -2,3 +2,4 @@
 More infos soon!
 
 [vr cubes](/three/r124/examples/webxr_vr_cubes.html)
+[cubes124](/test/webvr/cubes124.htm)

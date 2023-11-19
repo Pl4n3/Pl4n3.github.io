@@ -140,6 +140,10 @@ import { XRControllerModelFactory } from '/three/r124/examples/jsm/webxr/XRContr
     );
     scene.add(ctrl1);
     
+    let cg1=renderer.xr.getControllerGrip(1);
+    cg1.add(controllerModelFactory.createControllerModel(cg1));
+    scene.add(cg1);
+    
     
     window.addEventListener('resize',onWindowResize,false);
     //
@@ -194,7 +198,7 @@ import { XRControllerModelFactory } from '/three/r124/examples/jsm/webxr/XRContr
       room.remove( cube );
     
       let pc=controller.position,pr=room.position;
-      cube.position.sety(pc.x+pr.x,pc.y+pr.y,pc.z+pr.z);
+      cube.position.set(pc.x-pr.x,pc.y-pr.y,pc.z-pr.z);
       cube.userData.velocity.x = ( Math.random() - 0.5 ) * 0.02 * delta;
       cube.userData.velocity.y = ( Math.random() - 0.5 ) * 0.02 * delta;
       cube.userData.velocity.z = ( Math.random() * 0.01 - 0.05 ) * delta;
@@ -297,4 +301,4 @@ import { XRControllerModelFactory } from '/three/r124/examples/jsm/webxr/XRContr
 //fr o,14,12
 //fr o,14,13
 //fr o,14,14
-//fr p,0,130
+//fr p,13,140

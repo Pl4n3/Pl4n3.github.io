@@ -5,6 +5,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <style>body { color:#000;background-color:#aaa;margin:0px;overflow:hidden;font-family:Sans-serif; }</style>
+<script src="/conet.js"></script>
+<script src="/menu.js"></script>
+<script src="/sound.js"></script>
+<script src="/vecmath.js"></script>
+<script src="/canvas/pd5.js"></script>
+<script src="/three/threePd5.js"></script>
 </head>
 <body>
 <script type="module">
@@ -17,7 +23,7 @@ import { XRControllerModelFactory } from '/three/r124/examples/jsm/webxr/XRContr
   const clock = new THREE.Clock();
   let container,camera,scene,raycaster,renderer,
       room,controller,ctrl1,gp0,gp1,controllerGrip,INTERSECTED,
-      rotateObj;
+      rotateObj,cubes=[];
   const tempMatrix = new THREE.Matrix4();
   
   init();
@@ -52,7 +58,7 @@ import { XRControllerModelFactory } from '/three/r124/examples/jsm/webxr/XRContr
     const o=new THREE.Mesh(geometry,new THREE.MeshLambertMaterial({color:0x999999}));
     o.scale.set(2,4,1);
     o.position.set(0,1,-1);
-    scene.add(o);rotateObj=o;
+    room.add(o);rotateObj=o;
     
     
     for ( let i = 0; i < 200; i ++ ) {
@@ -76,8 +82,8 @@ import { XRControllerModelFactory } from '/three/r124/examples/jsm/webxr/XRContr
       object.userData.velocity.y = Math.random() * 0.01 - 0.005;
       object.userData.velocity.z = Math.random() * 0.01 - 0.005;
     
-      room.add( object );
-    
+      room.add(object);
+      cubes.push(object);
     }
     
     raycaster = new THREE.Raycaster();
@@ -149,6 +155,22 @@ import { XRControllerModelFactory } from '/three/r124/examples/jsm/webxr/XRContr
     //
     
     document.body.appendChild( VRButton.createButton( renderer ) );
+    
+    window.THREE=THREE;
+    threeEnv.base=room;//scene;
+    threeEnv.scene=room;
+    threeEnv.path='/shooter/';
+    threeEnv.coBoSp=1;//computeBoundingSphere
+    threeEnv.camera=camera;
+    Conet.download({fn:'/shooter/objs/templar/o5.txt',f:function(v) {
+      //---
+      var o=Pd5.load(v);
+      o.scale=1;
+      Pd5.animStart(o,'stand2');
+      threeAddObj(o,0,0,0,3);
+      //...
+    }
+    });
     //---
   }
   function buildController( data ) {
@@ -194,8 +216,9 @@ import { XRControllerModelFactory } from '/three/r124/examples/jsm/webxr/XRContr
     
     if ( controller.userData.isSelecting === true ) {
     
-      const cube = room.children[ 0 ];
-      room.remove( cube );
+      const cube=cubes[0];//room.children[0];
+      cubes.splice(0,1);
+      //room.remove(cube);
     
       let pc=controller.position,pr=room.position;
       cube.position.set(pc.x-pr.x,pc.y-pr.y,pc.z-pr.z);
@@ -203,7 +226,8 @@ import { XRControllerModelFactory } from '/three/r124/examples/jsm/webxr/XRContr
       cube.userData.velocity.y = ( Math.random() - 0.5 ) * 0.02 * delta;
       cube.userData.velocity.z = ( Math.random() * 0.01 - 0.05 ) * delta;
       cube.userData.velocity.applyQuaternion( controller.quaternion );
-      room.add( cube );
+      //room.add(cube);
+      cubes.push(cube);
     
     }
     
@@ -247,9 +271,9 @@ import { XRControllerModelFactory } from '/three/r124/examples/jsm/webxr/XRContr
     
     // Keep cubes inside room
     
-    for ( let i = 0; i < room.children.length; i ++ ) {
+    for (let i=0;i<cubes.length;i++) {
     
-      const cube = room.children[ i ];
+      const cube=cubes[i];//room.children[i];
     
       cube.userData.velocity.multiplyScalar( 1 - ( 0.001 * delta ) );
     
@@ -262,27 +286,29 @@ import { XRControllerModelFactory } from '/three/r124/examples/jsm/webxr/XRContr
     
       }
     
-     if ( cube.position.y < 0 || cube.position.y > 6 ) {
+      if ( cube.position.y < 0 || cube.position.y > 6 ) {
     
-       cube.position.y = THREE.MathUtils.clamp( cube.position.y, 0, 6 );
-       cube.userData.velocity.y = - cube.userData.velocity.y;
+        cube.position.y = THREE.MathUtils.clamp( cube.position.y, 0, 6 );
+        cube.userData.velocity.y = - cube.userData.velocity.y;
     
-     }
+      }
     
-     if ( cube.position.z < - 3 || cube.position.z > 3 ) {
+      if ( cube.position.z < - 3 || cube.position.z > 3 ) {
     
-       cube.position.z = THREE.MathUtils.clamp( cube.position.z, - 3, 3 );
-       cube.userData.velocity.z = - cube.userData.velocity.z;
+        cube.position.z = THREE.MathUtils.clamp( cube.position.z, - 3, 3 );
+        cube.userData.velocity.z = - cube.userData.velocity.z;
     
-     }
+      }
     
-     cube.rotation.x += cube.userData.velocity.x * 2 * delta;
-     cube.rotation.y += cube.userData.velocity.y * 2 * delta;
-     cube.rotation.z += cube.userData.velocity.z * 2 * delta;
+      cube.rotation.x += cube.userData.velocity.x * 2 * delta;
+      cube.rotation.y += cube.userData.velocity.y * 2 * delta;
+      cube.rotation.z += cube.userData.velocity.z * 2 * delta;
     }
     
-    renderer.render( scene, camera );
+    threeRender(dt*10);
     
+    renderer.render( scene, camera );
+    //...
   }
   //...
 }
@@ -291,14 +317,15 @@ import { XRControllerModelFactory } from '/three/r124/examples/jsm/webxr/XRContr
 </script>
 </body>
 </html><script>
-//fr o,14
-//fr o,14,10
-//fr o,14,10,67
-//fr o,14,10,74
-//fr o,14,10,76
-//fr o,14,10,88
-//fr o,14,11
-//fr o,14,12
-//fr o,14,13
-//fr o,14,14
-//fr p,13,140
+//fr o,20
+//fr o,20,10
+//fr o,20,10,67
+//fr o,20,10,74
+//fr o,20,10,76
+//fr o,20,10,88
+//fr o,20,10,108
+//fr o,20,11
+//fr o,20,12
+//fr o,20,13
+//fr o,20,14
+//fr p,0,155

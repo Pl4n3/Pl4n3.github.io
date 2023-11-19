@@ -4,7 +4,7 @@ var threeEnv={
   scale:1,dtscale:1,r:2.5,
   ot:new Date().getTime(),os:[],rotLightV:0.05,ps:[],ps2:[],path:'',camFar:10000,
   billboards:[],posVerts:{},vertIndices:{}
-},isVr=false,onlyThree=false,threeTexH={},threeTL=window.THREE&&THREE.TextureLoader?new THREE.TextureLoader():undefined;
+},isVr=false,onlyThree=false,threeTexH={},threeTL;
 function threeParticles(geometry,x,y,z,wh,c) {
   				for ( i = 0; i < c; i ++ ) {
     					var vertex = new THREE.Vector3();
@@ -20,6 +20,8 @@ function threeImgOnload() {
 }
 function threeTexture(ts,o5,tlOnload) {
   //onsole.log('threeTexture '+ts);
+  if ((threeTL===undefined)&&window.THREE&&THREE.TextureLoader)
+    threeTL=new THREE.TextureLoader();
   var text;
   if (Pd5.startsWith(ts,'canv:')) {
     var c=document.createElement('canvas');
@@ -470,6 +472,7 @@ function threeInit(ps) {
   return renderer.domElement;
 }
 function threeBillboardAdd(p) {
+  //onsole.log(JSON.stringify(p));
   if (!p.ar) p.ar=0.5;
   
   if (!p.c) {
@@ -488,8 +491,15 @@ function threeBillboardAdd(p) {
     //Nearest
     var planeMaterial=new THREE.MeshBasicMaterial({map:t1,opacity:1,transparent:((p.transparent!==undefined)?p.transparent:true)});
     var g=new THREE.PlaneGeometry(p.gw||80,(p.gw||80)*p.ar);
-    
+  
+  //onsole.log('p.ar='+p.ar);
+  
+  if (THREE.REVISION>124) { //--- tested with 143
+    const attr=g.getAttribute('uv'),a=attr.array;a[5]=1-p.ar;a[7]=1-p.ar;attr.needsUpdate=true;
+  } else  
     g.faceVertexUvs=[[[{x:0,y:1},{x:0,y:1-p.ar},{x:1,y:1}],[{x:0,y:1-p.ar},{x:1,y:1-p.ar},{x:1,y:1}]]];//[0][0][0].y*=p.ar;
+    
+    
     //onsole.log(g);
     var o=new THREE.Mesh(g,planeMaterial);
     o.position.set(p.x,p.y,p.z);
@@ -629,6 +639,7 @@ function threeRender(dt) {
   }
   
   var br=threeEnv.useBaseRot?planim.baseRot:undefined;
+  //onsole.log(br?'br':'no br');
   
   //var q=threeEnv.camera.quaternion;
   //console.log(q._x+' '+q._y+' '+q._z+' '+q._w);
@@ -813,10 +824,11 @@ function DungeonGeometry(ps,view) {
   
   // buffers
   
-  var indices = [];
-  var vertices = [];
-  var normals = [];
-  var uvs = [];
+  var indices=[];
+  var vertices=[];
+  var normals=[];
+  var uvs=[];
+  var colors=ps.game&&ps.game.voxedColors?[]:undefined;
   
   // helper variables
   
@@ -824,7 +836,10 @@ function DungeonGeometry(ps,view) {
   var groupStart = 0;
   
   // build each side of the box geometry
-  var w=width,h=height,d=depth,a,mx,mz,xz,
+  var w=width,h=height,d=depth,a,mx,mz,xz;
+  
+  if (0) {
+  
   
     a=[[[-100,100,100,0.27,0.4381],[-100,-100,100,0.27,0.4688],[100,-100,100,0.4688,0.4108],[100,100,100,0.4688,0.3801]
        ,[-100,-100,-100,0.1563,0.3676],[-100,100,-100,0.1563,0.2142],[100,-100,-100,0.355,0.3096],[100,100,-100,0.355,0.1563]
@@ -837,7 +852,7 @@ function DungeonGeometry(ps,view) {
        //,[17,19,18],[23,21,22],[10,16,11],[16,10,20],[17,8,19],[9,21,23]
        ]];
   
-  if (0) {
+  //if (0) {
   var pa=a[0],fa=a[1];
   for (var i=0;i<pa.length;i++) { var p=pa[i];
     var x=(mx?-1:1)*(xz?p[2]:p[0]),
@@ -848,6 +863,7 @@ function DungeonGeometry(ps,view) {
     if ((mz&&!xz)||(xz&&!mx&&!mz)||(mx&&!xz)) indices.push(f[0],f[1],f[2]); else indices.push(f[0],f[2],f[1]); 
   }
   } 
+  let dcolor={r:0.7,g:0.7,b:0.7},color=dcolor,vcols=colors?Voxed.getColors():undefined,vox;
   function key(x,y,z) {
     return z+' '+y+' '+x;
   }
@@ -858,6 +874,7 @@ function DungeonGeometry(ps,view) {
     u*=0.5;
     v*=0.5;
     vertices.push(x,y,z);normals.push(u,v,0);uvs.push(u||0,v||0);
+    if (colors) colors.push(color.r,color.g,color.b);
     return vertices.length/3-1;
   }
   var rH=ps.rH,b=ps.blockw||10;  
@@ -873,29 +890,43 @@ function DungeonGeometry(ps,view) {
     if (view&&!a.view) continue;
     if (!view&&(a.view||!(a.wview||ps.allwview)
       )) continue;
+      
+    //let n;
     if (!rH[key(x,y-1,z)]) {
+      if (colors&&(vox=Voxed.etV(x,y-1,z))) color=vcols[vox.c];
       var i0=vert(x*b,y*b,z*b,0,0),i1=vert((x+1)*b,y*b,z*b,1,0),i2=vert(x*b,y*b,(z+1)*b,0,1),i3=vert((x+1)*b,y*b,(z+1)*b,1,1);
       indices.push(i0,i3,i1);indices.push(i0,i2,i3);
+      if (colors) color=dcolor;
     }
     if (!rH[key(x,y+1,z)]) {
+      if (colors&&(vox=Voxed.etV(x,y+1,z))) color=vcols[vox.c];
       var i0=vert(x*b,(y+1)*b,z*b,0,0),i1=vert((x+1)*b,(y+1)*b,z*b,1,0),i2=vert(x*b,(y+1)*b,(z+1)*b,0,1),i3=vert((x+1)*b,(y+1)*b,(z+1)*b,1,1);
       indices.push(i0,i1,i3);indices.push(i0,i3,i2);
+      if (colors) color=dcolor;
     }
     if (!rH[key(x-1,y,z)]) {
+      if (colors&&(vox=Voxed.etV(x-1,y,z))) color=vcols[vox.c];
       var i0=vert(x*b,y*b,z*b,0,0),i1=vert(x*b,(y+1)*b,z*b,1,0),i2=vert(x*b,(y+1)*b,(z+1)*b,1,1),i3=vert(x*b,y*b,(z+1)*b,0,1);
       indices.push(i0,i1,i2);indices.push(i0,i2,i3);
+      if (colors) color=dcolor;
     }
     if (!rH[key(x+1,y,z)]) {
+      if (colors&&(vox=Voxed.etV(x+1,y,z))) color=vcols[vox.c];
       var i0=vert((x+1)*b,y*b,z*b,0,0),i1=vert((x+1)*b,(y+1)*b,z*b,1,0),i2=vert((x+1)*b,(y+1)*b,(z+1)*b,1,1),i3=vert((x+1)*b,y*b,(z+1)*b,0,1);
       indices.push(i0,i2,i1);indices.push(i0,i3,i2);
+      if (colors) color=dcolor;
     }
     if (!rH[key(x,y,z-1)]) {
+      if (colors&&(vox=Voxed.etV(x,y,z-1))) color=vcols[vox.c];
       var i0=vert(x*b,y*b,z*b,0,0),i1=vert((x+1)*b,y*b,z*b,1,0),i2=vert((x+1)*b,(y+1)*b,z*b,1,1),i3=vert(x*b,(y+1)*b,z*b,0,1);
       indices.push(i0,i1,i2);indices.push(i0,i2,i3);
+      if (colors) color=dcolor;
     }
     if (!rH[key(x,y,z+1)]) {
+      if (colors&&(vox=Voxed.etV(x,y,z+1))) color=vcols[vox.c];
       var i0=vert(x*b,y*b,(z+1)*b,0,0),i1=vert((x+1)*b,y*b,(z+1)*b,1,0),i2=vert((x+1)*b,(y+1)*b,(z+1)*b,1,1),i3=vert(x*b,(y+1)*b,(z+1)*b,0,1);
       indices.push(i0,i2,i1);indices.push(i0,i3,i2);
+      if (colors) color=dcolor;
     }
   }
   groupCount=indices.length;
@@ -904,10 +935,14 @@ function DungeonGeometry(ps,view) {
   
   //onsole.log('DungeonGeometry indices.len='+indices.length);
   
-  this.setIndex( indices );
-  this.setAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 ) );
-  this.setAttribute( 'normal', new THREE.Float32BufferAttribute( normals, 3 ) );
-  this.setAttribute( 'uv', new THREE.Float32BufferAttribute( uvs, 2 ) );
+  this.setIndex(indices);
+  this.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
+  this.setAttribute('normal',  new THREE.Float32BufferAttribute(normals,3));
+  this.setAttribute('uv',      new THREE.Float32BufferAttribute(uvs,2));
+  
+  //onsole.log(normals.length);
+  if (colors)
+  this.setAttribute('color',   new THREE.Float32BufferAttribute(colors,3));
   
   if (view) {//view) {
     this.computeFaceNormals();
@@ -990,7 +1025,11 @@ threeEnv.addQuad=function(ps) {
   threeEnv.addTri({ge:ps.ge,v0:v1,v1:v3,v2:v2,c0:c1,c1:c3,c2:c2});
   //---
 }
-//fr o,9,33
+//fr o,9
+//fr o,9,35
+//fr o,15
 //fr o,16
 //fr o,19
-//fr p,2,167
+//fr o,20
+//fr o,34
+//fr p,49,6

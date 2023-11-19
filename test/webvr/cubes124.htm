@@ -15,14 +15,9 @@ import { XRControllerModelFactory } from '/three/r124/examples/jsm/webxr/XRContr
 (function() {
   //---
   const clock = new THREE.Clock();
-  
-  let container;
-  let camera, scene, raycaster, renderer;
-  
-  let room;
-  
-  let controller, controllerGrip;
-  let INTERSECTED;
+  let container,camera,scene,raycaster,renderer,
+      room,controller,controllerGrip,INTERSECTED,
+      rotateObj;
   const tempMatrix = new THREE.Matrix4();
   
   init();
@@ -56,8 +51,8 @@ import { XRControllerModelFactory } from '/three/r124/examples/jsm/webxr/XRContr
     
     const o=new THREE.Mesh(geometry,new THREE.MeshLambertMaterial({color:0x999999}));
     o.scale.set(2,4,1);
-    o.position.set(0,1,-2);
-    scene.add(o);
+    o.position.set(0,1,-1);
+    scene.add(o);rotateObj=o;
     
     
     for ( let i = 0; i < 200; i ++ ) {
@@ -98,7 +93,7 @@ import { XRControllerModelFactory } from '/three/r124/examples/jsm/webxr/XRContr
     
     function onSelectStart() {
       
-      					this.userData.isSelecting = true;
+      this.userData.isSelecting = true;
       
     }
     
@@ -108,22 +103,25 @@ import { XRControllerModelFactory } from '/three/r124/examples/jsm/webxr/XRContr
       
     }
     
-    controller = renderer.xr.getController( 0 );
-    controller.addEventListener( 'selectstart', onSelectStart );
-    controller.addEventListener( 'selectend', onSelectEnd );
-    controller.addEventListener( 'connected', function ( event ) {
-      
-      					this.add( buildController( event.data ) );
-      
+    controller=renderer.xr.getController(0);
+    controller.addEventListener('selectstart',onSelectStart);
+    controller.addEventListener('selectend',onSelectEnd);
+    controller.addEventListener('connected',function (e) {
+      //---
+      this.add(buildController(e.data));
+      //console.log(e.data.gamepad);
+      controller.userData.gamepad=e.data.gamepad;
+      //...
     }
     );
-    controller.addEventListener( 'disconnected', function () {
-      
-      					this.remove( this.children[ 0 ] );
-      
+    controller.addEventListener('disconnected',function () {
+      //---
+      this.remove( this.children[ 0 ] );
+      //...
     }
     );
-    scene.add( controller );
+    scene.add(controller);
+    //onsole.log(controller);
     
     const controllerModelFactory = new XRControllerModelFactory();
     
@@ -131,7 +129,7 @@ import { XRControllerModelFactory } from '/three/r124/examples/jsm/webxr/XRContr
     controllerGrip.add( controllerModelFactory.createControllerModel( controllerGrip ) );
     scene.add( controllerGrip );
     
-    window.addEventListener( 'resize', onWindowResize, false );
+    window.addEventListener('resize',onWindowResize,false);
     //
     
     document.body.appendChild( VRButton.createButton( renderer ) );
@@ -139,27 +137,27 @@ import { XRControllerModelFactory } from '/three/r124/examples/jsm/webxr/XRContr
   }
   function buildController( data ) {
     
-    				let geometry, material;
+    let geometry, material;
     
-    				switch ( data.targetRayMode ) {
+    switch ( data.targetRayMode ) {
     
-    					case 'tracked-pointer':
+    case 'tracked-pointer':
     
-    						geometry = new THREE.BufferGeometry();
-    						geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( [ 0, 0, 0, 0, 0, - 1 ], 3 ) );
-    						geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( [ 0.5, 0.5, 0.5, 0, 0, 0 ], 3 ) );
+    geometry = new THREE.BufferGeometry();
+    geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( [ 0, 0, 0, 0, 0, - 1 ], 3 ) );
+    geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( [ 0.5, 0.5, 0.5, 0, 0, 0 ], 3 ) );
     
-    						material = new THREE.LineBasicMaterial( { vertexColors: true, blending: THREE.AdditiveBlending } );
+    material = new THREE.LineBasicMaterial( { vertexColors: true, blending: THREE.AdditiveBlending } );
     
-    						return new THREE.Line( geometry, material );
+    return new THREE.Line( geometry, material );
     
-    					case 'gaze':
+    case 'gaze':
     
-    						geometry = new THREE.RingBufferGeometry( 0.02, 0.04, 32 ).translate( 0, 0, - 1 );
-    						material = new THREE.MeshBasicMaterial( { opacity: 0.5, transparent: true } );
-    						return new THREE.Mesh( geometry, material );
+    geometry = new THREE.RingBufferGeometry( 0.02, 0.04, 32 ).translate( 0, 0, - 1 );
+    material = new THREE.MeshBasicMaterial( { opacity: 0.5, transparent: true } );
+    return new THREE.Mesh( geometry, material );
     
-    				}
+    }
     
   }
   function onWindowResize() {
@@ -176,21 +174,27 @@ import { XRControllerModelFactory } from '/three/r124/examples/jsm/webxr/XRContr
   }
   function render() {
     
-    				const delta = clock.getDelta() * 60;
+    const delta=clock.getDelta()*60,dt=delta;
     
-    				if ( controller.userData.isSelecting === true ) {
+    if ( controller.userData.isSelecting === true ) {
     
-    					const cube = room.children[ 0 ];
-    					room.remove( cube );
+      const cube = room.children[ 0 ];
+      room.remove( cube );
     
-    					cube.position.copy( controller.position );
-    					cube.userData.velocity.x = ( Math.random() - 0.5 ) * 0.02 * delta;
-    					cube.userData.velocity.y = ( Math.random() - 0.5 ) * 0.02 * delta;
-    					cube.userData.velocity.z = ( Math.random() * 0.01 - 0.05 ) * delta;
-    					cube.userData.velocity.applyQuaternion( controller.quaternion );
-    					room.add( cube );
+      cube.position.copy( controller.position );
+      cube.userData.velocity.x = ( Math.random() - 0.5 ) * 0.02 * delta;
+      cube.userData.velocity.y = ( Math.random() - 0.5 ) * 0.02 * delta;
+      cube.userData.velocity.z = ( Math.random() * 0.01 - 0.05 ) * delta;
+      cube.userData.velocity.applyQuaternion( controller.quaternion );
+      room.add( cube );
     
-    				}
+    }
+    
+    let gp;
+    if (gp=controller.userData.gamepad) {
+      rotateObj.rotation.y+=gp.axes[2]*dt*0.1;
+      room.position.z-=gp.axes[3]*dt*0.1;
+    }
     
     				// find intersections
     
@@ -269,8 +273,12 @@ import { XRControllerModelFactory } from '/three/r124/examples/jsm/webxr/XRContr
 </body>
 </html><script>
 //fr o,14
-//fr o,14,15
-//fr o,14,17
-//fr o,14,18
-//fr o,14,19
-//fr p,18,58
+//fr o,14,10
+//fr o,14,10,67
+//fr o,14,10,74
+//fr o,14,10,76
+//fr o,14,11
+//fr o,14,12
+//fr o,14,13
+//fr o,14,14
+//fr p,18,191

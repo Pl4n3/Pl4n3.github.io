@@ -40,7 +40,7 @@ import { XRControllerModelFactory } from '/three/r124/examples/jsm/webxr/XRContr
     camera=new THREE.PerspectiveCamera(50,window.innerWidth/window.innerHeight,0.1,10);
     camera.position.set(0,1.6,3);
     scene.add(camera);
-    console.log(camera);
+    //console.log(camera);
     
     room = new THREE.LineSegments(
       new BoxLineGeometry( 6, 6, 6, 10, 10, 10 ).translate( 0, 3, 0 ),
@@ -155,7 +155,7 @@ import { XRControllerModelFactory } from '/three/r124/examples/jsm/webxr/XRContr
     window.addEventListener('resize',onWindowResize,false);
     //
     
-    document.body.appendChild( VRButton.createButton( renderer ) );
+    //document.body.appendChild(VRButton.createButton(renderer));
     
     window.THREE=THREE;
     threeEnv.base=room;//scene;
@@ -172,6 +172,24 @@ import { XRControllerModelFactory } from '/three/r124/examples/jsm/webxr/XRContr
       //...
     }
     });
+    
+    Menu.init([{s:'&#9776;',noTri:true,fs:1.4,pw:0.05,sub:[
+      Menu.mFullscreen,
+    {s:'VR',actionf:function() {
+      //---
+      function onSessionStarted(session) {
+        //---
+        renderer.xr.setSession( session );
+        //...
+      }
+      
+      const sessionInit = { optionalFeatures: [ 'local-floor', 'bounded-floor', 'hand-tracking' ] };
+      navigator.xr.requestSession( 'immersive-vr', sessionInit ).then( onSessionStarted );
+      //...
+    }
+      }]}]
+      ,{listen:1});
+    
     //---
   }
   function buildController( data ) {
@@ -338,8 +356,6 @@ import { XRControllerModelFactory } from '/three/r124/examples/jsm/webxr/XRContr
 //fr o,20,10,77
 //fr o,20,10,89
 //fr o,20,10,109
-//fr o,20,11
-//fr o,20,12
-//fr o,20,13
-//fr o,20,14
-//fr p,16,239
+//fr o,20,10,114
+//fr o,20,10,114,1
+//fr p,2,42

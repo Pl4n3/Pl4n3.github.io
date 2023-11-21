@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<title>three.js vr - cubes</title>
+<title>cubes124</title>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <style>body { color:#000;background-color:#aaa;margin:0px;overflow:hidden;font-family:Sans-serif; }</style>
@@ -24,7 +24,7 @@ import { XRControllerModelFactory } from '/three/r124/examples/jsm/webxr/XRContr
   let container,camera,scene,raycaster,renderer,
       room,controller,ctrl1,gp0,gp1,controllerGrip,INTERSECTED,
       rotateObj,cubes=[];
-  const tempMatrix = new THREE.Matrix4();
+  const tempMatrix=new THREE.Matrix4(),vt=new THREE.Vector3();
   
   init();
   animate();
@@ -37,9 +37,10 @@ import { XRControllerModelFactory } from '/three/r124/examples/jsm/webxr/XRContr
     scene = new THREE.Scene();
     scene.background = new THREE.Color( 0x505050 );
     
-    camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 0.1, 10 );
-    camera.position.set( 0, 1.6, 3 );
-    scene.add( camera );
+    camera=new THREE.PerspectiveCamera(50,window.innerWidth/window.innerHeight,0.1,10);
+    camera.position.set(0,1.6,3);
+    scene.add(camera);
+    console.log(camera);
     
     room = new THREE.LineSegments(
       new BoxLineGeometry( 6, 6, 6, 10, 10, 10 ).translate( 0, 3, 0 ),
@@ -233,11 +234,24 @@ import { XRControllerModelFactory } from '/three/r124/examples/jsm/webxr/XRContr
     
     if (gp0) {
       rotateObj.rotation.y+=gp0.axes[2]*dt*0.1;
-      room.position.z-=gp0.axes[3]*dt*0.1;
+      const d=gp0.axes[3];
+      if (Math.abs(d)>0.1) {
+        //const position = new THREE.Vector3();
+        //const rotation = new THREE.Quaternion();
+        //const scale = new THREE.Vector3();
+        //camera.matrixWorld.decompose(position,rotation,scale);
+        tempMatrix.identity().extractRotation(camera.matrixWorld);
+        vt.set(0,0,-1);
+        vt.applyMatrix4(tempMatrix);
+        vt.multiplyScalar(d*dt*0.1);
+        room.position.x+=vt.x;
+        room.position.y+=vt.y;
+        room.position.z+=vt.z;
+      }
     }
     if (gp1) {
-      room.position.x-=gp1.axes[2]*dt*0.1;
-      room.position.y+=gp1.axes[3]*dt*0.1;
+      //room.position.x-=gp1.axes[2]*dt*0.1;
+      //room.position.y+=gp1.axes[3]*dt*0.1;
     }
     
     // find intersections
@@ -319,13 +333,13 @@ import { XRControllerModelFactory } from '/three/r124/examples/jsm/webxr/XRContr
 </html><script>
 //fr o,20
 //fr o,20,10
-//fr o,20,10,67
-//fr o,20,10,74
-//fr o,20,10,76
-//fr o,20,10,88
-//fr o,20,10,108
+//fr o,20,10,68
+//fr o,20,10,75
+//fr o,20,10,77
+//fr o,20,10,89
+//fr o,20,10,109
 //fr o,20,11
 //fr o,20,12
 //fr o,20,13
 //fr o,20,14
-//fr p,0,155
+//fr p,16,239

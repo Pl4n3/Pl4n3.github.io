@@ -38,7 +38,7 @@ import { OrbitControls } from '/three/r124/examples/jsm/controls/OrbitControls.j
     scene = new THREE.Scene();
     scene.background = new THREE.Color( 0x505050 );
     
-    camera=new THREE.PerspectiveCamera(50,window.innerWidth/window.innerHeight,0.1,10);
+    camera=new THREE.PerspectiveCamera(50,window.innerWidth/window.innerHeight,0.1,100);
     camera.position.set(0,1.6,3);
     scene.add(camera);
     //console.log(camera);
@@ -49,18 +49,18 @@ import { OrbitControls } from '/three/r124/examples/jsm/controls/OrbitControls.j
     );
     scene.add( room );
     
-    scene.add( new THREE.HemisphereLight( 0x606060, 0x404040 ) );
+    scene.add(new THREE.AmbientLight(0xffffff,0.07));//new THREE.HemisphereLight(0x606060,0x404040));
     
-    const light = new THREE.DirectionalLight( 0xffffff );
-    light.position.set( 1, 1, 1 ).normalize();
-    scene.add( light );
+    const light = new THREE.DirectionalLight(0xffffff);
+    light.position.set(1,1,1).normalize();
+    scene.add(light);
     
     const geometry = new THREE.BoxBufferGeometry( 0.15, 0.15, 0.15 );
     
     const o=new THREE.Mesh(geometry,new THREE.MeshLambertMaterial({color:0x999999}));
     o.scale.set(2,4,1);
-    o.position.set(0,1,-1);
-    room.add(o);rotateObj=o;
+    o.position.set(1,0,-3);
+    camera.add(o);rotateObj=o;
     
     
     for ( let i = 0; i < 200; i ++ ) {
@@ -362,4 +362,4 @@ import { OrbitControls } from '/three/r124/examples/jsm/controls/OrbitControls.j
 //fr o,21,10,115
 //fr o,21,10,115,1
 //fr o,21,14
-//fr p,42,20
+//fr p,82,40

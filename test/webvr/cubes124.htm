@@ -18,12 +18,13 @@ import * as THREE from '/three/r124/build/three.module.js';
 import { BoxLineGeometry } from '/three/r124/examples/jsm/geometries/BoxLineGeometry.js';
 import { VRButton } from '/three/r124/examples/jsm/webxr/VRButton.js';
 import { XRControllerModelFactory } from '/three/r124/examples/jsm/webxr/XRControllerModelFactory.js';
+import { OrbitControls } from '/three/r124/examples/jsm/controls/OrbitControls.js';
 (function() {
   //---
   const clock = new THREE.Clock();
   let container,camera,scene,raycaster,renderer,
       room,controller,ctrl1,gp0,gp1,controllerGrip,INTERSECTED,
-      rotateObj,cubes=[];
+      rotateObj,cubes=[],controls;
   const tempMatrix=new THREE.Matrix4(),vt=new THREE.Vector3();
   
   init();
@@ -96,6 +97,7 @@ import { XRControllerModelFactory } from '/three/r124/examples/jsm/webxr/XRContr
     renderer.xr.enabled = true;
     container.appendChild( renderer.domElement );
     
+    controls=new OrbitControls(camera,renderer.domElement);
     //
     
     function onSelectStart() {
@@ -338,6 +340,7 @@ import { XRControllerModelFactory } from '/three/r124/examples/jsm/webxr/XRContr
     }
     
     threeRender(dt*10);
+    controls.update();
     
     renderer.render( scene, camera );
     //...
@@ -349,13 +352,14 @@ import { XRControllerModelFactory } from '/three/r124/examples/jsm/webxr/XRContr
 </script>
 </body>
 </html><script>
-//fr o,20
-//fr o,20,10
-//fr o,20,10,68
-//fr o,20,10,75
-//fr o,20,10,77
-//fr o,20,10,89
-//fr o,20,10,109
-//fr o,20,10,114
-//fr o,20,10,114,1
-//fr p,2,42
+//fr o,21
+//fr o,21,10
+//fr o,21,10,69
+//fr o,21,10,76
+//fr o,21,10,78
+//fr o,21,10,90
+//fr o,21,10,110
+//fr o,21,10,115
+//fr o,21,10,115,1
+//fr o,21,14
+//fr p,42,20

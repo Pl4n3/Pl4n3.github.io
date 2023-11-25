@@ -24,7 +24,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
   //---
   const clock = new THREE.Clock();
   let container,camera,scene,raycaster,renderer,
-      room,controller,ctrl1,gp0,gp1,INTERSECTED,
+      room,INTERSECTED,
       rotateObj,cubes=[],controls;
   const tempMatrix=new THREE.Matrix4(),vt=new THREE.Vector3();
   
@@ -62,7 +62,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     const geometry = new THREE.BoxBufferGeometry( 0.15, 0.15, 0.15 );
     
     const o=new THREE.Mesh(geometry,new THREE.MeshLambertMaterial({color:0x999999}));
-    o.scale.set(0.6,0.6,0.1);
+    o.scale.set(1,1,0.1);
     o.position.set(0.2,0,-0.5);
     camera.add(o);rotateObj=o;
     
@@ -107,10 +107,6 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     XrUtil.init({scene:scene,renderer:renderer
       //,XRControllerModelFactory:XRControllerModelFactory
       });  
-    controller=XrUtil.controller;
-    ctrl1=XrUtil.ctrl1;
-    gp0=XrUtil.gp0;
-    gp1=XrUtil.gp1;
     
     
     window.addEventListener('resize',onWindowResize,false);
@@ -214,6 +210,13 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
   function render() {
     
     const delta=clock.getDelta()*60,dt=delta;
+    
+    const controller=XrUtil.ctrl0;
+    const ctrl1=XrUtil.ctrl1;
+    const gp0=XrUtil.gp0;
+    const gp1=XrUtil.gp1;
+    
+    
     
     if ( controller.userData.isSelecting === true ) {
     
@@ -334,10 +337,10 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 </html><script>
 //fr o,22
 //fr o,22,10
-//fr o,22,10,92
-//fr o,22,10,97
-//fr o,22,10,97,1
-//fr o,22,10,106
+//fr o,22,10,88
+//fr o,22,10,93
+//fr o,22,10,93,1
+//fr o,22,10,102
 //fr o,22,11
 //fr o,22,14
-//fr p,4,107
+//fr p,15,64

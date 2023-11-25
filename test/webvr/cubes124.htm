@@ -11,7 +11,7 @@
 <script src="/vecmath.js"></script>
 <script src="/canvas/pd5.js"></script>
 <script src="/three/threePd5.js"></script>
-<script src="/util/bricks.js"></script>
+<script src="/three/anim/voxed.js"></script>
 </head>
 <body>
 <script type="module">
@@ -33,6 +33,9 @@ import { OrbitControls } from '/three/r124/examples/jsm/controls/OrbitControls.j
   
   function init() {
     
+    //script src="/util/bricks.js">/script>
+    
+    
     container = document.createElement( 'div' );
     document.body.appendChild( container );
     
@@ -53,7 +56,7 @@ import { OrbitControls } from '/three/r124/examples/jsm/controls/OrbitControls.j
     scene.add(new THREE.AmbientLight(0xffffff,0.07));//new THREE.HemisphereLight(0x606060,0x404040));
     
     const light = new THREE.DirectionalLight(0xffffff);
-    light.position.set(0.5,0.75,1).normalize();
+    light.position.set(0.5,1,0.25).normalize();
     scene.add(light);
     
     const geometry = new THREE.BoxBufferGeometry( 0.15, 0.15, 0.15 );
@@ -193,8 +196,26 @@ import { OrbitControls } from '/three/r124/examples/jsm/controls/OrbitControls.j
       }]}]
       ,{listen:1});
     
-    Bricks.initLoader({scene:room,scale:0.01,pos:{x:5,y:2,z:0}});
-    Conet.download({fn:'/three/lego/moreColors.txt',f:Bricks.parseLoad});
+    //Bricks.initLoader({scene:room,scale:0.01,pos:{x:5,y:2,z:0}});
+    //Conet.download({fn:'/three/lego/moreColors.txt',f:Bricks.parseLoad});
+    
+    // /three/anim/voxed/nienhagen1monster.json
+    
+    Conet.download({fn:'/three/anim/voxed/nienhagen1monster.json',f:function(v) {
+      //---
+      var h=JSON.parse(v);
+      delete(h.vw);
+      var r=Voxed.load(h);
+      //var blocks=r.blocks;//Voxed.toBlocks();
+      var m=Voxed.generateMesh();
+      var sc=3;
+      m.scale.set(sc,sc,sc);
+      m.position.set(0,2,-2);
+      scene.add(m);
+      //...
+    }
+    });
+    
     
     //---
   }
@@ -358,12 +379,13 @@ import { OrbitControls } from '/three/r124/examples/jsm/controls/OrbitControls.j
 </html><script>
 //fr o,22
 //fr o,22,10
-//fr o,22,10,69
-//fr o,22,10,76
-//fr o,22,10,78
-//fr o,22,10,90
-//fr o,22,10,110
-//fr o,22,10,115
-//fr o,22,10,115,1
+//fr o,22,10,72
+//fr o,22,10,79
+//fr o,22,10,81
+//fr o,22,10,93
+//fr o,22,10,113
+//fr o,22,10,118
+//fr o,22,10,118,1
+//fr o,22,10,127
 //fr o,22,14
-//fr p,20,13
+//fr p,49,57

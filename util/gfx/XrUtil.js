@@ -41,14 +41,14 @@ let XrUtil={};
     
     function onSelectEnd() {
       
-      					this.userData.isSelecting = false;
+      this.userData.isSelecting = false;
       
     }
     
-    let controller=renderer.xr.getController(0);
-    controller.addEventListener('selectstart',onSelectStart);
-    controller.addEventListener('selectend',onSelectEnd);
-    controller.addEventListener('connected',function (e) {
+    let ctrl0=renderer.xr.getController(0);
+    ctrl0.addEventListener('selectstart',onSelectStart);
+    ctrl0.addEventListener('selectend',onSelectEnd);
+    ctrl0.addEventListener('connected',function (e) {
       //---
       this.add(buildController(e.data));
       //console.log(e.data.gamepad);
@@ -56,20 +56,20 @@ let XrUtil={};
       //...
     }
     );
-    controller.addEventListener('disconnected',function () {
+    ctrl0.addEventListener('disconnected',function () {
       //---
       this.remove( this.children[0]);
       //...
     }
     );
-    ps.scene.add(controller);
+    ps.scene.add(ctrl0);
     //onsole.log(controller);
     
     const controllerModelFactory=new XRControllerModelFactory();
     
-    let controllerGrip = renderer.xr.getControllerGrip( 0 );
-    controllerGrip.add( controllerModelFactory.createControllerModel( controllerGrip ) );
-    ps.scene.add( controllerGrip );
+    let cg0=renderer.xr.getControllerGrip(0);
+    cg0.add(controllerModelFactory.createControllerModel(cg0));
+    ps.scene.add(cg0);
     
     let ctrl1=renderer.xr.getController(1);
     ctrl1.addEventListener('connected',function(e) {
@@ -86,13 +86,13 @@ let XrUtil={};
     cg1.add(controllerModelFactory.createControllerModel(cg1));
     ps.scene.add(cg1);
     
-    XrUtil.controller=controller;
+    XrUtil.ctrl0=ctrl0;
     XrUtil.ctrl1=ctrl1;
     //...
   }
   
   
-  console.log('XrUtil v.1.15 ');//FOLDORUPDATEVERSION
+  console.log('XrUtil v.1.18 ');//FOLDORUPDATEVERSION
   //...
 }
 )(XrUtil);
@@ -100,6 +100,7 @@ export { XrUtil };
 //fr o,2
 //fr o,2,3
 //fr o,2,3,4
+//fr o,2,3,6
 //fr o,2,3,11
 //fr o,2,3,25
-//fr p,3,1
+//fr p,5,26

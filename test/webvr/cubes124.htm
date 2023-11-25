@@ -18,13 +18,13 @@
 import * as THREE from '/three/r124/build/three.module.js';
 import { BoxLineGeometry } from '/three/r124/examples/jsm/geometries/BoxLineGeometry.js';
 import { VRButton } from '/three/r124/examples/jsm/webxr/VRButton.js';
-import { XRControllerModelFactory } from '/three/r124/examples/jsm/webxr/XRControllerModelFactory.js';
 import { OrbitControls } from '/three/r124/examples/jsm/controls/OrbitControls.js';
+import { XrUtil } from '/util/gfx/XrUtil.js';
 (function() {
   //---
   const clock = new THREE.Clock();
   let container,camera,scene,raycaster,renderer,
-      room,controller,ctrl1,gp0,gp1,controllerGrip,INTERSECTED,
+      room,controller,ctrl1,gp0,gp1,INTERSECTED,
       rotateObj,cubes=[],controls;
   const tempMatrix=new THREE.Matrix4(),vt=new THREE.Vector3();
   
@@ -104,58 +104,13 @@ import { OrbitControls } from '/three/r124/examples/jsm/controls/OrbitControls.j
     controls=new OrbitControls(camera,renderer.domElement);
     //
     
-    function onSelectStart() {
-      
-      this.userData.isSelecting = true;
-      
-    }
-    
-    function onSelectEnd() {
-      
-      					this.userData.isSelecting = false;
-      
-    }
-    
-    controller=renderer.xr.getController(0);
-    controller.addEventListener('selectstart',onSelectStart);
-    controller.addEventListener('selectend',onSelectEnd);
-    controller.addEventListener('connected',function (e) {
-      //---
-      this.add(buildController(e.data));
-      //console.log(e.data.gamepad);
-      gp0=e.data.gamepad;
-      //...
-    }
-    );
-    controller.addEventListener('disconnected',function () {
-      //---
-      this.remove( this.children[0]);
-      //...
-    }
-    );
-    scene.add(controller);
-    //onsole.log(controller);
-    
-    const controllerModelFactory = new XRControllerModelFactory();
-    
-    controllerGrip = renderer.xr.getControllerGrip( 0 );
-    controllerGrip.add( controllerModelFactory.createControllerModel( controllerGrip ) );
-    scene.add( controllerGrip );
-    
-    ctrl1=renderer.xr.getController(1);
-    ctrl1.addEventListener('connected',function(e) {
-      //---
-      this.add(buildController(e.data));
-      gp1=e.data.gamepad;
-      //onsole.log('ctrl1 connected');
-      //...
-    }
-    );
-    scene.add(ctrl1);
-    
-    let cg1=renderer.xr.getControllerGrip(1);
-    cg1.add(controllerModelFactory.createControllerModel(cg1));
-    scene.add(cg1);
+    XrUtil.init({scene:scene,renderer:renderer
+      //,XRControllerModelFactory:XRControllerModelFactory
+      });  
+    controller=XrUtil.controller;
+    ctrl1=XrUtil.ctrl1;
+    gp0=XrUtil.gp0;
+    gp1=XrUtil.gp1;
     
     
     window.addEventListener('resize',onWindowResize,false);
@@ -219,7 +174,7 @@ import { OrbitControls } from '/three/r124/examples/jsm/controls/OrbitControls.j
     
     //---
   }
-  function buildController( data ) {
+  function bui_ldController( data ) {
     
     let geometry, material;
     
@@ -379,13 +334,10 @@ import { OrbitControls } from '/three/r124/examples/jsm/controls/OrbitControls.j
 </html><script>
 //fr o,22
 //fr o,22,10
-//fr o,22,10,72
-//fr o,22,10,79
-//fr o,22,10,81
-//fr o,22,10,93
-//fr o,22,10,113
-//fr o,22,10,118
-//fr o,22,10,118,1
-//fr o,22,10,127
+//fr o,22,10,92
+//fr o,22,10,97
+//fr o,22,10,97,1
+//fr o,22,10,106
+//fr o,22,11
 //fr o,22,14
-//fr p,68,270
+//fr p,4,107

@@ -306,7 +306,7 @@ import { OrbitControls } from '/three/r124/examples/jsm/controls/OrbitControls.j
     raycaster.ray.origin.setFromMatrixPosition( controller.matrixWorld );
     raycaster.ray.direction.set( 0, 0, - 1 ).applyMatrix4( tempMatrix );
     
-    const intersects = raycaster.intersectObjects( room.children );
+    const intersects=raycaster.intersectObjects(cubes);//room.children);
     
     if ( intersects.length > 0 ) {
     
@@ -388,4 +388,4 @@ import { OrbitControls } from '/three/r124/examples/jsm/controls/OrbitControls.j
 //fr o,22,10,118,1
 //fr o,22,10,127
 //fr o,22,14
-//fr p,4,209
+//fr p,68,270

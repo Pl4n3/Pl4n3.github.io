@@ -3,7 +3,7 @@ var Voxed;
 (Voxed=function () {
   var mtool,medit,vw=0.03,mesh,cfm,cfmp,//medit1,
       vh={'0_0_0':{x:0,y:0,z:0},'1_0_0':{x:1,y:0,z:0},'2_0_0':{x:2,y:0,z:0},'2_1_0':{x:2,y:1,z:0},},
-      colors=[new THREE.Color(0.5,0.5,0.5),new THREE.Color(0.2,0.8,0.2)],
+      colors=window.THREE?[new THREE.Color(0.5,0.5,0.5),new THREE.Color(0.2,0.8,0.2)]:[],
       ccol=colors[0],mcolor,isConet,planeY=15,mplaney,mpyshow,va=[],mcolor2,bgcoldef=0x666666,
       mbackground,groundbox,mgroundbox,brush='0,0,0',brusha=[0,0,0],blocks=undefined,
       isTiles=false,userData=undefined,pi=Math.PI,mRotate;
@@ -466,7 +466,9 @@ var Voxed;
     if (window.planim&&!planim.url.noapp) {
       if (userData&&userData.snake4d) snake4dInit();
       if (userData&&userData.deepParts) deepPartsInit();
-      if (userData&&userData.deep8voxb&&noOrtho) deep8voxbInit();
+      if (userData&&userData.deep8voxb) {
+        if (noOrtho) deep8voxbInit(); else Conet.log('deep8voxb skipped, to run set in url noOrtho=1.');
+      }
     }
       //console.log(snake4dApp);
       //app=snake4dApp;
@@ -598,6 +600,7 @@ var Voxed;
     }
     
     function setv(p) {
+      
       //console.log(p);
       //console.log(v);
       if (p.c!==undefined) if (p.c<0) return;
@@ -614,6 +617,11 @@ var Voxed;
         //onsole.log(h);
       }
       //etV(p.x,p.y,p.z,{c:1});
+      //...
+      
+      
+      //---      
+      //cells[Math.floor(p.y+0.5)][Math.floor(p.x+0.5)].v=p.v;      
       //...
     }
     
@@ -891,9 +899,9 @@ var Voxed;
     return blocks;
   }
   
-  console.log('Voxed 0.2037 ');//FOLDORUPDATEVERSION
+  console.log('Voxed 0.2054 ');//FOLDORUPDATEVERSION
   
-  if (!window.planim) {
+  if ((!window.planim)||(window.planim.noVoxed)) {
     //window.Voxed=this;
     Voxed.generateLandscape=generateLandscape;
     Voxed.generateMesh     =generateMesh;
@@ -902,6 +910,9 @@ var Voxed;
     Voxed.load=load;
   Voxed.getVa=function() {
     return va;
+  }
+  Voxed.getColors=function() {
+    return colors;
   }
     return;
   }
@@ -2691,6 +2702,107 @@ var Voxed;
       }
       }
       ]};
+      
+      
+      no water and no yellow, to few colors (above ice dark voxels)
+      
+      {
+        "count":30,
+        "seed":0,
+        "do2d":1,
+        "colorCount":16,
+        "colorGradient":[
+          {"r":0.3,"g":0.3,"b":0,"w":0},
+          {"r":0,  "g":0.8,"b":0},
+          {"r":0.4,"g":0.4,"b":0},
+          {"r":1,  "g":1,  "b":1}
+        ]
+      }
+      
+      with water and yellow
+      
+      {
+        "count":30,
+        "seed":1,
+        "do2d":1,
+        "colorCount":25,
+        "colorGradient":[
+          {"r":0,  "g":0,  "b":0.1,"w":0},
+          {"r":0.0,"g":0.3,"b":0.8,"w":2.5},
+          {"r":0,  "g":0.3,"b":0,  "w":0},
+          {"r":0,  "g":0.8,"b":0,  "w":1},
+          {"r":0.8,"g":0.7,"b":0},
+          {"r":0.4,"g":0.3,"b":0,  "w":0.5},
+          {"r":1,  "g":1,  "b":1,  "w":1.5}
+        ]
+      }
+      
+      simple 2d with 2 colors for deep8 test
+      
+      //    {"r":0.2,"g":0.2,"b":0.2,"w":0}, //--- too few color contrast, used below with range from yellow to blue
+      //    {"r":0.8,"g":0.7,"b":0.3}
+      
+      
+      {
+        "count":10,
+        "seed":1,
+        "do2d":1,
+        "colorCount":9,
+        "colorGradient":[
+          {"r":0.2,"g":0.2,"b":0.9,"w":0},
+          {"r":1,"g":0.9,"b":0.4}
+        ]
+      }
+      
+      3d open above, closed down coloring based on distance to surface
+      
+      {
+        "count":20,
+        "seed":1,
+        "do2d":0,
+        "colorCount":13,
+        "colorGradient":[
+          {"r":0.7,"g":0.7,"b":0.7,"w":0},
+          {"r":1,"g":0,"b":0},
+          {"r":0,"g":1,"b":0,"w":2}
+        ],
+        "c1":-7,"c0":5
+      }
+      
+      same but coloring based on y and surface dist
+      
+      {
+        "count":20,
+        "seed":1,
+        "do2d":0,
+        "colorCount":40,
+        "colorGradient":[
+          {"r":0.7,"g":0.7,"b":0.7},
+          {"r":1,"g":0,"b":0},
+          {"r":0,"g":1,"b":0,"w":2}
+        ],
+        "c1":-7,"c0":5,
+        "color3dy":1
+      }
+      
+      same but count 40
+      
+      {
+        "count":40,
+        "seed":1,
+        "do2d":0,
+        "colorCount":80,
+        "colorGradient":[
+          {"r":0.7,"g":0.7,"b":0.7},
+          {"r":1,"g":0,"b":0},
+          {"r":0,"g":1,"b":0,"w":2}
+        ],
+        "c1":-8,"c0":5,
+        "color3dy":1
+      }
+      
+      
+      
       */
       //...
     }
@@ -2699,7 +2811,7 @@ var Voxed;
       
       var msub=[
       
-      cfm=Conet.fileMenu(cfmp={fn:'/three/anim/voxed/files'+(isConet?'':'NoConet')+'.txt',url:'fn',noStartLoad:app,
+      cfm=Conet.fileMenu(cfmp={fn:'/three/anim/voxed/files'+(isConet?'':'NoConet')+'.txt',url:'fn',noStartLoad:app,loadList:1,
       loadf:function(fn) {
         if (1)
         Conet.download({fn:fn,f:function(v) {
@@ -2877,7 +2989,7 @@ var Voxed;
       
       
       var startEditing=app;//for mib4
-      Menu.init([{s:'Voxed',ms:planim.version+'- 0.2994 ',sub:msub}//FOLDORUPDATEVERSION
+      Menu.init([{s:'Voxed',ms:planim.version+'- 0.3011 ',sub:msub}//FOLDORUPDATEVERSION
       
       ,medit={s:'Edit',checked:startEditing,checkbox:1,ms:'Edit',actionf:function(v) {
         planim.views[0].controls.enabled=!this.checked;
@@ -2965,21 +3077,17 @@ var Voxed;
 //fr o,2,13,3
 //fr o,2,13,7
 //fr o,2,13,11
-//fr o,2,36
-//fr o,2,36,7
 //fr o,2,36,9
 //fr o,2,36,11
 //fr o,2,36,14
-//fr o,2,36,17
-//fr o,2,85,16,7
-//fr o,2,85,64,1
-//fr o,2,86,3,10
-//fr o,2,87,2
-//fr o,2,87,4
-//fr o,2,87,32,74
-//fr o,2,87,32,74,15
-//fr o,2,87,32,83
-//fr o,2,98
-//fr o,2,98,36
-//fr o,2,98,36,31
-//fr p,39,68
+//fr o,2,86,16,7
+//fr o,2,86,64,1
+//fr o,2,87,3,10
+//fr o,2,88,2
+//fr o,2,88,4
+//fr o,2,88,32,74
+//fr o,2,88,32,74,15
+//fr o,2,88,32,83
+//fr o,2,99
+//fr o,2,99,36,31
+//fr p,86,5

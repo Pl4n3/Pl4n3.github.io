@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>voxXr</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<style>body { color:#000;background-color:#aaa;margin:0px;overflow:hidden;font-family:Sans-serif; }</style>
+<script src="/conet.js"></script>
+<script src="/menu.js"></script>
+<script src="/sound.js"></script>
+<script src="/vecmath.js"></script>
+<script src="/canvas/pd5.js"></script>
+<script src="/three/threePd5.js"></script>
+<script src="/three/anim/voxed.js"></script>
+</head>
+<body>
+<script type="module">
+import * as THREE from '/three/r124/build/three.module.js';
+import { BoxLineGeometry } from '/three/r124/examples/jsm/geometries/BoxLineGeometry.js';
+import { OrbitControls } from '/three/r124/examples/jsm/controls/OrbitControls.js';
+import { XrUtil } from '/util/gfx/XrUtil.js';
+(function() {
+  //---
+  const clock = new THREE.Clock();
+  let container,camera,scene,raycaster,renderer,
+      room,INTERSECTED,
+      rotateObj,cubes=[],controls;
+  const tempMatrix=new THREE.Matrix4(),vt=new THREE.Vector3();
+  
+  init();
+  animate();
+  
+  function init() {
+    
+    //script src="/util/bricks.js">/script>
+    
+    
+    container = document.createElement( 'div' );
+    document.body.appendChild( container );
+    
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color( 0x505050 );
+    
+    camera=new THREE.PerspectiveCamera(50,window.innerWidth/window.innerHeight,0.1,100);
+    camera.position.set(0,1.6,3);
+    scene.add(camera);
+    //console.log(camera);
+    
+    room = new THREE.LineSegments(
+      new BoxLineGeometry( 6, 6, 6, 10, 10, 10 ).translate( 0, 3, 0 ),
+      new THREE.LineBasicMaterial( { color: 0x808080 } )
+    );
+    scene.add( room );
+    
+    if (0) {
+    scene.add(new THREE.AmbientLight(0xffffff,0.07));//new THREE.HemisphereLight(0x606060,0x404040));
+    const light = new THREE.DirectionalLight(0xffffff);
+    light.position.set(0.5,1,0.25).normalize();
+    scene.add(light);
+    } else {
+    let l=new THREE.AmbientLight(0x555555),f=3;scene.add(l);
+    //l=new THREE.PointLight(0xffffff,1,0);l.position.set(-1*f,2*f,1*f);scene.add(l);
+    l=new THREE.PointLight(0xffffff,1,0);l.position.set(-0.5*f,1*f,1*f);
+    l.castShadow=true;
+    l.shadow.camera.near=0.1;
+    l.shadow.camera.far=100;
+    l.shadow.mapSize.width=1024;//2048;
+    l.shadow.mapSize.height=1024;
+    scene.add(l);
+    l=new THREE.PointLight(0xaaffff,0.3);l.position.set(1*f,-2*f,-1*f);scene.add(l);
+    }
+    
+    
+    const geometry = new THREE.BoxBufferGeometry( 0.15, 0.15, 0.15 );
+    const o=new THREE.Mesh(geometry,new THREE.MeshLambertMaterial({color:0x999999}));
+    o.scale.set(1,1,0.1);
+    o.position.set(0.2,0,-0.5);
+    camera.add(o);rotateObj=o;
+    
+    if (0)
+    for ( let i = 0; i < 200; i ++ ) {
+    
+      const object = new THREE.Mesh( geometry, new THREE.MeshLambertMaterial( { color: Math.random() * 0xffffff } ) );
+    
+      object.position.x = Math.random() * 4 - 2;
+      object.position.y = Math.random() * 4;
+      object.position.z = Math.random() * 4 - 2;
+    
+      object.rotation.x = Math.random() * 2 * Math.PI;
+      object.rotation.y = Math.random() * 2 * Math.PI;
+      object.rotation.z = Math.random() * 2 * Math.PI;
+    
+      object.scale.x = Math.random() + 0.5;
+      object.scale.y = Math.random() + 0.5;
+      object.scale.z = Math.random() + 0.5;
+    
+      object.userData.velocity = new THREE.Vector3();
+      object.userData.velocity.x = Math.random() * 0.01 - 0.005;
+      object.userData.velocity.y = Math.random() * 0.01 - 0.005;
+      object.userData.velocity.z = Math.random() * 0.01 - 0.005;
+    
+      room.add(object);
+      cubes.push(object);
+    }
+    
+    raycaster = new THREE.Raycaster();
+    
+    renderer = new THREE.WebGLRenderer( { antialias: true } );
+    renderer.setPixelRatio( window.devicePixelRatio );
+    renderer.setSize( window.innerWidth, window.innerHeight );
+    //renderer.outputEncoding=THREE.sRGBEncoding;
+    renderer.shadowMap.enabled=true;
+    renderer.shadowMap.type=THREE.BasicShadowMap;
+    renderer.xr.enabled = true;
+    container.appendChild( renderer.domElement );
+    
+    controls=new OrbitControls(camera,renderer.domElement);
+    //
+    
+    XrUtil.init({scene:scene,renderer:renderer
+      //,XRControllerModelFactory:XRControllerModelFactory
+      });  
+    
+    
+    window.addEventListener('resize',onWindowResize,false);
+    //
+    
+    //document.body.appendChild(VRButton.createButton(renderer));
+    
+    window.THREE=THREE;
+    threeEnv.base=room;//scene;
+    threeEnv.scene=room;
+    threeEnv.path='/shooter/';
+    threeEnv.coBoSp=1;//computeBoundingSphere
+    threeEnv.camera=camera;
+    if (0)
+    Conet.download({fn:'/shooter/objs/templar/o5.txt',f:function(v) {
+      //---
+      var o=Pd5.load(v);
+      o.scale=1;
+      Pd5.animStart(o,'stand2');
+      threeAddObj(o,0,0,0,3);
+      //...
+    }
+    });
+    
+    Menu.init([{s:'&#9776;',noTri:true,fs:1.4,pw:0.05,sub:[
+      Menu.mFullscreen,
+      XrUtil.menuXr
+      ]}]
+      ,{listen:1});
+    
+    //Bricks.initLoader({scene:room,scale:0.01,pos:{x:5,y:2,z:0}});
+    //Conet.download({fn:'/three/lego/moreColors.txt',f:Bricks.parseLoad});
+    
+    // /three/anim/voxed/nienhagen1monster.json
+    
+    Conet.download({fn:'/three/anim/voxed/nienhagen1monster.json',f:function(v) {
+      //---
+      var h=JSON.parse(v);
+      delete(h.vw);
+      var r=Voxed.load(h);
+      //var blocks=r.blocks;//Voxed.toBlocks();
+      var m=Voxed.generateMesh();
+      var sc=3;
+      m.scale.set(sc,sc,sc);
+      m.position.set(0,2,-2);
+      room.add(m);
+      //...
+    }
+    });
+    
+    
+    //---
+  }
+  function onWindowResize() {
+    //...
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize( window.innerWidth, window.innerHeight );
+    //---
+  }
+  function animate() {
+    
+    renderer.setAnimationLoop( render );
+    
+  }
+  function render() {
+    
+    const delta=clock.getDelta()*60,dt=delta;
+    
+    const controller=XrUtil.ctrl0;
+    const ctrl1=XrUtil.ctrl1;
+    const gp0=XrUtil.gp0;
+    const gp1=XrUtil.gp1;
+    
+    
+    
+    if ( controller.userData.isSelecting === true ) {
+    
+      const cube=cubes[0];//room.children[0];
+      cubes.splice(0,1);
+      //room.remove(cube);
+    
+      let pc=controller.position,pr=room.position;
+      cube.position.set(pc.x-pr.x,pc.y-pr.y,pc.z-pr.z);
+      cube.userData.velocity.x = ( Math.random() - 0.5 ) * 0.02 * delta;
+      cube.userData.velocity.y = ( Math.random() - 0.5 ) * 0.02 * delta;
+      cube.userData.velocity.z = ( Math.random() * 0.01 - 0.05 ) * delta;
+      cube.userData.velocity.applyQuaternion( controller.quaternion );
+      //room.add(cube);
+      cubes.push(cube);
+    
+    }
+    
+    if (gp0) {
+      rotateObj.rotation.y+=gp0.axes[2]*dt*0.1;
+      const d=gp0.axes[3];
+      if (Math.abs(d)>0.1) {
+        //const position = new THREE.Vector3();
+        //const rotation = new THREE.Quaternion();
+        //const scale = new THREE.Vector3();
+        //camera.matrixWorld.decompose(position,rotation,scale);
+        tempMatrix.identity().extractRotation(camera.matrixWorld);
+        vt.set(0,0,-1);
+        vt.applyMatrix4(tempMatrix);
+        vt.multiplyScalar(d*dt*0.1);
+        room.position.x+=vt.x;
+        room.position.y+=vt.y;
+        room.position.z+=vt.z;
+      }
+    }
+    if (gp1) {
+      //room.position.x-=gp1.axes[2]*dt*0.1;
+      //room.position.y+=gp1.axes[3]*dt*0.1;
+    }
+    
+    // find intersections
+    
+    tempMatrix.identity().extractRotation( controller.matrixWorld );
+    
+    raycaster.ray.origin.setFromMatrixPosition( controller.matrixWorld );
+    raycaster.ray.direction.set( 0, 0, - 1 ).applyMatrix4( tempMatrix );
+    
+    const intersects=raycaster.intersectObjects(cubes);//room.children);
+    
+    if ( intersects.length > 0 ) {
+    
+      if ( INTERSECTED != intersects[ 0 ].object ) {
+    
+        if ( INTERSECTED ) INTERSECTED.material.emissive.setHex( INTERSECTED.currentHex );
+    
+        INTERSECTED = intersects[ 0 ].object;
+        INTERSECTED.currentHex = INTERSECTED.material.emissive.getHex();
+        INTERSECTED.material.emissive.setHex( 0xff0000 );
+    
+      }
+    
+    } else {
+    
+      if ( INTERSECTED ) INTERSECTED.material.emissive.setHex( INTERSECTED.currentHex );
+    
+      INTERSECTED = undefined;
+    
+    }
+    
+    // Keep cubes inside room
+    
+    for (let i=0;i<cubes.length;i++) {
+    
+      const cube=cubes[i];//room.children[i];
+    
+      cube.userData.velocity.multiplyScalar( 1 - ( 0.001 * delta ) );
+    
+      cube.position.add( cube.userData.velocity );
+    
+      if ( cube.position.x < - 3 || cube.position.x > 3 ) {
+    
+        cube.position.x = THREE.MathUtils.clamp( cube.position.x, - 3, 3 );
+        cube.userData.velocity.x = - cube.userData.velocity.x;
+    
+      }
+    
+      if ( cube.position.y < 0 || cube.position.y > 6 ) {
+    
+        cube.position.y = THREE.MathUtils.clamp( cube.position.y, 0, 6 );
+        cube.userData.velocity.y = - cube.userData.velocity.y;
+    
+      }
+    
+      if ( cube.position.z < - 3 || cube.position.z > 3 ) {
+    
+        cube.position.z = THREE.MathUtils.clamp( cube.position.z, - 3, 3 );
+        cube.userData.velocity.z = - cube.userData.velocity.z;
+    
+      }
+    
+      cube.rotation.x += cube.userData.velocity.x * 2 * delta;
+      cube.rotation.y += cube.userData.velocity.y * 2 * delta;
+      cube.rotation.z += cube.userData.velocity.z * 2 * delta;
+    }
+    
+    threeRender(dt*10);
+    controls.update();
+    
+    renderer.render( scene, camera );
+    //...
+  }
+  //...
+}
+)();
+
+</script>
+</body>
+</html><script>
+//fr o,21
+//fr o,21,10
+//fr o,21,10,117
+//fr o,21,13
+//fr p,4,160

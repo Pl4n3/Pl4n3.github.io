@@ -76,6 +76,7 @@ let XrUtil={};
       //---
       this.add(buildController(e.data));
       XrUtil.gp1=e.data.gamepad;
+      console.log(XrUtil.gp1);
       //onsole.log('ctrl1 connected');
       //...
     }
@@ -93,6 +94,7 @@ let XrUtil={};
       function onSessionStarted(session) {
         //---
         renderer.xr.setSession(session);
+        XrUtil.isSession=1;
         //...
       }
       
@@ -105,7 +107,7 @@ let XrUtil={};
   }
   
   
-  console.log('XrUtil v.1.22 ');//FOLDORUPDATEVERSION
+  console.log('XrUtil v.1.25 ');//FOLDORUPDATEVERSION
   //...
 }
 )(XrUtil);
@@ -116,5 +118,6 @@ export { XrUtil };
 //fr o,2,3,6
 //fr o,2,3,11
 //fr o,2,3,25
+//fr o,2,3,35
 //fr o,2,3,35,1
-//fr p,2,63
+//fr p,24,50

@@ -88,11 +88,24 @@ let XrUtil={};
     
     XrUtil.ctrl0=ctrl0;
     XrUtil.ctrl1=ctrl1;
+    XrUtil.menuXr={s:'XR',actionf:function() {
+      //---
+      function onSessionStarted(session) {
+        //---
+        renderer.xr.setSession(session);
+        //...
+      }
+      
+      const sessionInit = { optionalFeatures: [ 'local-floor', 'bounded-floor', 'hand-tracking' ] };
+      navigator.xr.requestSession( 'immersive-vr', sessionInit ).then( onSessionStarted );
+      //...
+    }
+    };
     //...
   }
   
   
-  console.log('XrUtil v.1.18 ');//FOLDORUPDATEVERSION
+  console.log('XrUtil v.1.22 ');//FOLDORUPDATEVERSION
   //...
 }
 )(XrUtil);
@@ -103,4 +116,5 @@ export { XrUtil };
 //fr o,2,3,6
 //fr o,2,3,11
 //fr o,2,3,25
-//fr p,5,26
+//fr o,2,3,35,1
+//fr p,2,63

@@ -262,13 +262,13 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       //room.position.x-=gp1.axes[2]*dt*0.1;
       //room.position.y+=gp1.axes[3]*dt*0.1;
     }
-    if (ctrl1&&XrUtil.isSession) {
+    if (ctrl1) {//&&XrUtil.isSession) {
       let pc=ctrl1.position,pr=room.position;
       vt.set(0,0,-0.4);
       vt.applyQuaternion(ctrl1.quaternion);
       //console.log(pc);
       cursor.position.set(pc.x-pr.x+vt.x,pc.y-pr.y+vt.y,pc.z-pr.z+vt.z);
-      if (gp1.buttons[0].pressed) drawVoxel();
+      if (gp1&&gp1.buttons[0].pressed) drawVoxel();
     }
     
     // find intersections
@@ -354,4 +354,4 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,21,11,126
 //fr o,21,13
 //fr o,21,15
-//fr p,42,253
+//fr p,11,253

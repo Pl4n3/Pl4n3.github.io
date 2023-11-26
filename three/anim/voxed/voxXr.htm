@@ -202,11 +202,6 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     const gp1=XrUtil.gp1;
     
     
-    if (ctrl1) {
-      let pc=ctrl1.position,pr=room.position;
-      cursor.position.set(pc.x-pr.x,pc.y-pr.y,pc.z-pr.z);
-    }
-    
     
     if (0) if ( ctrl0.userData.isSelecting === true ) {
     
@@ -245,6 +240,10 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     if (gp1) {
       //room.position.x-=gp1.axes[2]*dt*0.1;
       //room.position.y+=gp1.axes[3]*dt*0.1;
+    }
+    if (ctrl1) {
+      let pc=ctrl1.position,pr=room.position;
+      cursor.position.set(pc.x-pr.x,pc.y-pr.y,pc.z-pr.z);
     }
     
     // find intersections
@@ -329,4 +328,4 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,21,10
 //fr o,21,10,124
 //fr o,21,13
-//fr p,8,189
+//fr p,0,186

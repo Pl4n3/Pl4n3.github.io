@@ -243,7 +243,10 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     }
     if (ctrl1) {
       let pc=ctrl1.position,pr=room.position;
-      cursor.position.set(pc.x-pr.x,pc.y-pr.y,pc.z-pr.z);
+      vt.set(0,0,-0.4);
+      vt.applyQuaternion(ctrl1.quaternion);
+      //console.log(pc);
+      cursor.position.set(pc.x-pr.x+vt.x,pc.y-pr.y+vt.y,pc.z-pr.z+vt.z);
     }
     
     // find intersections
@@ -328,4 +331,4 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,21,10
 //fr o,21,10,124
 //fr o,21,13
-//fr p,0,186
+//fr p,17,228

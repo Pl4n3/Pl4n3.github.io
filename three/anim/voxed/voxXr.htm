@@ -51,12 +51,12 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       new BoxLineGeometry(6,6,6,10,10,10).translate(0,3,0),
       new THREE.LineBasicMaterial( { color: 0x808080 } )
     );
-    scene.add( room );
+    scene.add(room);
     
     {
     let c=room,l=new THREE.AmbientLight(0x555555),f=3;c.add(l);
     //l=new THREE.PointLight(0xffffff,1,0);l.position.set(-1*f,2*f,1*f);scene.add(l);
-    l=new THREE.PointLight(0xffffff,1,0);l.position.set(-0.5*f,1*f,1*f);
+    l=new THREE.PointLight(0xffffff,1,0);l.position.set(-0.5*f,3*f,1*f);
     l.castShadow=true;
     l.shadow.camera.near=0.1;
     l.shadow.camera.far=100;
@@ -160,7 +160,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     ,actionf:function() {
       //---
       const p=cursor.position;
-      //p.y=14;
+      p.y=3;
       drawVoxel();
       //const p=cursor.position;
       //p.y=2;
@@ -210,9 +210,9 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
   function drawVoxel() {
     //---
     const p=cursor.position,f=15.22;
-    const x=Math.floor(p.x*11.11-voxMeshPos.x*11.11+0.5+12);
+    const x=Math.floor(p.x*11.11-voxMeshPos.x*11.11+0.5);
     const y=Math.floor(p.y*11.11-voxMeshPos.y*11.11+0.5+12);
-    const z=Math.floor(p.z*11.11-voxMeshPos.z*11.11+0.5+12);
+    const z=Math.floor(p.z*11.11-voxMeshPos.z*11.11+0.5);
     //onsole.log(p.y+' '+y);
     if (Voxed.etV(x,y,z)) return;
     room.remove(voxMesh);
@@ -371,4 +371,4 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,21,11,128
 //fr o,21,13
 //fr o,21,15
-//fr p,2,202
+//fr p,60,58

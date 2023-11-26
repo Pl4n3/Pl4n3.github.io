@@ -58,7 +58,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     light.position.set(0.5,1,0.25).normalize();
     scene.add(light);
     } else {
-    let l=new THREE.AmbientLight(0x555555),f=3;scene.add(l);
+    let c=room,l=new THREE.AmbientLight(0x555555),f=3;c.add(l);
     //l=new THREE.PointLight(0xffffff,1,0);l.position.set(-1*f,2*f,1*f);scene.add(l);
     l=new THREE.PointLight(0xffffff,1,0);l.position.set(-0.5*f,1*f,1*f);
     l.castShadow=true;
@@ -66,8 +66,8 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     l.shadow.camera.far=100;
     l.shadow.mapSize.width=1024;//2048;
     l.shadow.mapSize.height=1024;
-    scene.add(l);
-    l=new THREE.PointLight(0xaaffff,0.3);l.position.set(1*f,-2*f,-1*f);scene.add(l);
+    c.add(l);
+    l=new THREE.PointLight(0xaaffff,0.3);l.position.set(1*f,-2*f,-1*f);c.add(l);
     }
     
     
@@ -75,6 +75,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     const o=new THREE.Mesh(geometry,new THREE.MeshLambertMaterial({color:0x999999}));
     o.scale.set(1,1,0.1);
     o.position.set(0.2,0,-0.5);
+    o.rotation.y=-0.3;
     camera.add(o);rotateObj=o;
     
     if (0)
@@ -214,17 +215,17 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     }
     
     if (gp0) {
-      rotateObj.rotation.y+=gp0.axes[2]*dt*0.1;
-      const d=gp0.axes[3];
-      if (Math.abs(d)>0.1) {
+      //otateObj.rotation.y+=gp0.axes[2]*dt*0.1;
+      const dx=gp0.axes[2],dz=gp0.axes[3];
+      if ((Math.abs(dz)>0.1)||(Math.abs(dx)>0.1)) {
         //const position = new THREE.Vector3();
         //const rotation = new THREE.Quaternion();
         //const scale = new THREE.Vector3();
         //camera.matrixWorld.decompose(position,rotation,scale);
         tempMatrix.identity().extractRotation(camera.matrixWorld);
-        vt.set(0,0,-1);
+        vt.set(-dx,0,-dz);
         vt.applyMatrix4(tempMatrix);
-        vt.multiplyScalar(d*dt*0.1);
+        vt.multiplyScalar(dt*0.1);
         room.position.x+=vt.x;
         room.position.y+=vt.y;
         room.position.z+=vt.z;
@@ -315,6 +316,6 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 </html><script>
 //fr o,21
 //fr o,21,10
-//fr o,21,10,117
+//fr o,21,10,118
 //fr o,21,13
-//fr p,7,181
+//fr p,14,77

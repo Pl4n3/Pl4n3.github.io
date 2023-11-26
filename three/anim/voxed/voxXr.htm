@@ -156,7 +156,22 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       Menu.mFullscreen,
       XrUtil.menuXr
       ]}
-      ,{s:'TestButton',actionf:drawVoxel}
+      ,{s:'TestButton'
+    ,actionf:function() {
+      //---
+      const p=cursor.position;
+      //p.y=14;
+      drawVoxel();
+      //const p=cursor.position;
+      //p.y=2;
+      //drawVoxel();
+      //p.y=4;
+      //drawVoxel();
+      //p.y=3;
+      //drawVoxel();
+      //...
+    }
+      }
       ]
       ,{listen:1});
     
@@ -195,9 +210,10 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
   function drawVoxel() {
     //---
     const p=cursor.position,f=15.22;
-    const x=Math.floor((p.x-voxMeshPos.x*0.73)*f+0.5);
-    const y=Math.floor((p.y-voxMeshPos.y*0.73)*f+0.5);
-    const z=Math.floor((p.z-voxMeshPos.z*0.73)*f+0.5);
+    const x=Math.floor(p.x*11.11-voxMeshPos.x*11.11+0.5+12);
+    const y=Math.floor(p.y*11.11-voxMeshPos.y*11.11+0.5+12);
+    const z=Math.floor(p.z*11.11-voxMeshPos.z*11.11+0.5+12);
+    //onsole.log(p.y+' '+y);
     if (Voxed.etV(x,y,z)) return;
     room.remove(voxMesh);
     Voxed.etV(x,y,z,{c:0});
@@ -262,7 +278,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       //room.position.x-=gp1.axes[2]*dt*0.1;
       //room.position.y+=gp1.axes[3]*dt*0.1;
     }
-    if (ctrl1) {//&&XrUtil.isSession) {
+    if (ctrl1&&XrUtil.isSession) {
       let pc=ctrl1.position,pr=room.position;
       vt.set(0,0,-0.4);
       vt.applyQuaternion(ctrl1.quaternion);
@@ -351,7 +367,8 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 </html><script>
 //fr o,21
 //fr o,21,11
-//fr o,21,11,126
+//fr o,21,11,118
+//fr o,21,11,128
 //fr o,21,13
 //fr o,21,15
-//fr p,11,253
+//fr p,2,202

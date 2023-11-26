@@ -24,8 +24,9 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
   const clock = new THREE.Clock();
   let container,camera,scene,raycaster,renderer,
       room,INTERSECTED,cursor,
-      rotateObj,cubes=[],controls;
-  const tempMatrix=new THREE.Matrix4(),vt=new THREE.Vector3();
+      rotateObj,cubes=[],controls,voxMesh;
+  const tempMatrix=new THREE.Matrix4(),vt=new THREE.Vector3(),
+      voxMeshPos=new THREE.Vector3();
   
   init();
   animate();
@@ -47,7 +48,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     //console.log(camera);
     
     room = new THREE.LineSegments(
-      new BoxLineGeometry( 6, 6, 6, 10, 10, 10 ).translate( 0, 3, 0 ),
+      new BoxLineGeometry(6,6,6,10,10,10).translate(0,3,0),
       new THREE.LineBasicMaterial( { color: 0x808080 } )
     );
     scene.add( room );
@@ -154,7 +155,9 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     Menu.init([{s:'&#9776;',noTri:true,fs:1.4,pw:0.05,sub:[
       Menu.mFullscreen,
       XrUtil.menuXr
-      ]}]
+      ]}
+      ,{s:'TestButton',actionf:drawVoxel}
+      ]
       ,{listen:1});
     
     //Bricks.initLoader({scene:room,scale:0.01,pos:{x:5,y:2,z:0}});
@@ -168,11 +171,13 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       delete(h.vw);
       var r=Voxed.load(h);
       //var blocks=r.blocks;//Voxed.toBlocks();
+      //Voxed.etV(0,45.66,0,{c:0});
       var m=Voxed.generateMesh();
       var sc=3;
       m.scale.set(sc,sc,sc);
-      m.position.set(0,2,-2);
-      room.add(m);
+      voxMeshPos.set(0,2,-2);
+      m.position.copy(voxMeshPos);//set(0,2,-2);
+      room.add(m);voxMesh=m;
       //...
     }
     });
@@ -186,6 +191,22 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     camera.updateProjectionMatrix();
     renderer.setSize( window.innerWidth, window.innerHeight );
     //---
+  }
+  function drawVoxel() {
+    //---
+    const p=cursor.position,f=15.22;
+    const x=Math.floor((p.x-voxMeshPos.x*0.73)*f+0.5);
+    const y=Math.floor((p.y-voxMeshPos.y*0.73)*f+0.5);
+    const z=Math.floor((p.z-voxMeshPos.z*0.73)*f+0.5);
+    if (Voxed.etV(x,y,z)) return;
+    room.remove(voxMesh);
+    Voxed.etV(x,y,z,{c:0});
+    var m=Voxed.generateMesh();
+    var sc=3;
+    m.scale.set(sc,sc,sc);
+    m.position.copy(voxMeshPos);
+    room.add(m);voxMesh=m;
+    //...
   }
   function animate() {
     
@@ -241,12 +262,13 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       //room.position.x-=gp1.axes[2]*dt*0.1;
       //room.position.y+=gp1.axes[3]*dt*0.1;
     }
-    if (ctrl1) {
+    if (ctrl1&&XrUtil.isSession) {
       let pc=ctrl1.position,pr=room.position;
       vt.set(0,0,-0.4);
       vt.applyQuaternion(ctrl1.quaternion);
       //console.log(pc);
       cursor.position.set(pc.x-pr.x+vt.x,pc.y-pr.y+vt.y,pc.z-pr.z+vt.z);
+      if (gp1.buttons[0].pressed) drawVoxel();
     }
     
     // find intersections
@@ -328,7 +350,8 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 </body>
 </html><script>
 //fr o,21
-//fr o,21,10
-//fr o,21,10,124
+//fr o,21,11
+//fr o,21,11,126
 //fr o,21,13
-//fr p,17,228
+//fr o,21,15
+//fr p,42,253

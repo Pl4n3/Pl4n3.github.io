@@ -23,7 +23,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
   //---
   const clock = new THREE.Clock();
   let container,camera,scene,raycaster,renderer,
-      room,INTERSECTED,
+      room,INTERSECTED,cursor,
       rotateObj,cubes=[],controls;
   const tempMatrix=new THREE.Matrix4(),vt=new THREE.Vector3();
   
@@ -52,12 +52,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     );
     scene.add( room );
     
-    if (0) {
-    scene.add(new THREE.AmbientLight(0xffffff,0.07));//new THREE.HemisphereLight(0x606060,0x404040));
-    const light = new THREE.DirectionalLight(0xffffff);
-    light.position.set(0.5,1,0.25).normalize();
-    scene.add(light);
-    } else {
+    {
     let c=room,l=new THREE.AmbientLight(0x555555),f=3;c.add(l);
     //l=new THREE.PointLight(0xffffff,1,0);l.position.set(-1*f,2*f,1*f);scene.add(l);
     l=new THREE.PointLight(0xffffff,1,0);l.position.set(-0.5*f,1*f,1*f);
@@ -77,6 +72,17 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     o.position.set(0.2,0,-0.5);
     o.rotation.y=-0.3;
     camera.add(o);rotateObj=o;
+    
+    //m1=new THREE.MeshPhongMaterial({color:0x77dd77,flatShading:true,
+    //  transparent:true,opacity:0.7});
+    {
+    const geometry=new THREE.BoxBufferGeometry(0.1,0.1,0.1);
+    const o=new THREE.Mesh(geometry,new THREE.MeshPhongMaterial({color:0x77dd77,flatShading:true,
+      transparent:true,opacity:0.7}));
+    o.position.set(0,3,0);
+    room.add(o);cursor=o;
+    }
+    
     
     if (0)
     for ( let i = 0; i < 200; i ++ ) {
@@ -190,25 +196,30 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     const delta=clock.getDelta()*60,dt=delta;
     
-    const controller=XrUtil.ctrl0;
+    const ctrl0=XrUtil.ctrl0;
     const ctrl1=XrUtil.ctrl1;
     const gp0=XrUtil.gp0;
     const gp1=XrUtil.gp1;
     
     
+    if (ctrl1) {
+      let pc=ctrl1.position,pr=room.position;
+      cursor.position.set(pc.x-pr.x,pc.y-pr.y,pc.z-pr.z);
+    }
     
-    if (0) if ( controller.userData.isSelecting === true ) {
+    
+    if (0) if ( ctrl0.userData.isSelecting === true ) {
     
       const cube=cubes[0];//room.children[0];
       cubes.splice(0,1);
       //room.remove(cube);
     
-      let pc=controller.position,pr=room.position;
+      let pc=ctrl0.position,pr=room.position;
       cube.position.set(pc.x-pr.x,pc.y-pr.y,pc.z-pr.z);
       cube.userData.velocity.x = ( Math.random() - 0.5 ) * 0.02 * delta;
       cube.userData.velocity.y = ( Math.random() - 0.5 ) * 0.02 * delta;
       cube.userData.velocity.z = ( Math.random() * 0.01 - 0.05 ) * delta;
-      cube.userData.velocity.applyQuaternion( controller.quaternion );
+      cube.userData.velocity.applyQuaternion( ctrl0.quaternion );
       //room.add(cube);
       cubes.push(cube);
     
@@ -238,9 +249,9 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     // find intersections
     
-    tempMatrix.identity().extractRotation( controller.matrixWorld );
+    tempMatrix.identity().extractRotation(ctrl0.matrixWorld);
     
-    raycaster.ray.origin.setFromMatrixPosition( controller.matrixWorld );
+    raycaster.ray.origin.setFromMatrixPosition(ctrl0.matrixWorld);
     raycaster.ray.direction.set( 0, 0, - 1 ).applyMatrix4( tempMatrix );
     
     const intersects=raycaster.intersectObjects(cubes);//room.children);
@@ -316,6 +327,6 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 </html><script>
 //fr o,21
 //fr o,21,10
-//fr o,21,10,118
+//fr o,21,10,124
 //fr o,21,13
-//fr p,14,77
+//fr p,8,189

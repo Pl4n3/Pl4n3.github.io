@@ -899,7 +899,7 @@ var Voxed;
     return blocks;
   }
   
-  console.log('Voxed 0.2054 ');//FOLDORUPDATEVERSION
+  console.log('Voxed 0.2055 ');//FOLDORUPDATEVERSION
   
   if ((!window.planim)||(window.planim.noVoxed)) {
     //window.Voxed=this;
@@ -908,6 +908,11 @@ var Voxed;
     Voxed.etV              =etV;
     Voxed.toBlocks=toBlocks;
     Voxed.load=load;
+  Voxed.etVa=function(a) {
+    if (a===undefined) return va;
+    va=a;
+    //...
+  }
   Voxed.getVa=function() {
     return va;
   }
@@ -2989,7 +2994,7 @@ var Voxed;
       
       
       var startEditing=app;//for mib4
-      Menu.init([{s:'Voxed',ms:planim.version+'- 0.3011 ',sub:msub}//FOLDORUPDATEVERSION
+      Menu.init([{s:'Voxed',ms:planim.version+'- 0.3012 ',sub:msub}//FOLDORUPDATEVERSION
       
       ,medit={s:'Edit',checked:startEditing,checkbox:1,ms:'Edit',actionf:function(v) {
         planim.views[0].controls.enabled=!this.checked;
@@ -3077,17 +3082,20 @@ var Voxed;
 //fr o,2,13,3
 //fr o,2,13,7
 //fr o,2,13,11
+//fr o,2,15
 //fr o,2,36,9
 //fr o,2,36,11
 //fr o,2,36,14
-//fr o,2,86,16,7
-//fr o,2,86,64,1
-//fr o,2,87,3,10
-//fr o,2,88,2
-//fr o,2,88,4
-//fr o,2,88,32,74
-//fr o,2,88,32,74,15
-//fr o,2,88,32,83
-//fr o,2,99
-//fr o,2,99,36,31
-//fr p,86,5
+//fr o,2,48
+//fr o,2,49
+//fr o,2,87,16,7
+//fr o,2,87,64,1
+//fr o,2,88,3,10
+//fr o,2,89,2
+//fr o,2,89,4
+//fr o,2,89,32,74
+//fr o,2,89,32,74,15
+//fr o,2,89,32,83
+//fr o,2,100
+//fr o,2,100,36,31
+//fr p,5,69

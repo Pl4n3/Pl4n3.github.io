@@ -68,7 +68,8 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     
     const geometry = new THREE.BoxBufferGeometry( 0.15, 0.15, 0.15 );
-    const o=new THREE.Mesh(geometry,new THREE.MeshLambertMaterial({color:0x999999}));
+    const o=new THREE.Mesh(geometry,new THREE.MeshPhongMaterial({color:0x777777,flatShading:true,
+      transparent:true,opacity:0.5}));
     o.scale.set(1,1,0.1);
     o.position.set(0.2,0,-0.5);
     o.rotation.y=-0.3;
@@ -390,8 +391,8 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 </html><script>
 //fr o,21
 //fr o,21,11
-//fr o,21,11,118
-//fr o,21,11,129
+//fr o,21,11,119
+//fr o,21,11,130
 //fr o,21,13
 //fr o,21,15
-//fr p,15,240
+//fr p,30,71

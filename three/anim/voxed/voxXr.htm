@@ -23,8 +23,8 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
   //---
   const clock = new THREE.Clock();
   let container,camera,scene,raycaster,renderer,
-      room,INTERSECTED,cursor,
-      rotateObj,cubes=[],controls,voxMesh;
+      room,INTERSECTED,cursor,voxScale=3,tVoxAdd=0,
+      rotateObj,cubes=[],controls,voxMesh,voxMeshAdd,voxVa;
   const tempMatrix=new THREE.Matrix4(),vt=new THREE.Vector3(),
       voxMeshPos=new THREE.Vector3();
   
@@ -189,7 +189,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       //var blocks=r.blocks;//Voxed.toBlocks();
       //Voxed.etV(0,45.66,0,{c:0});
       var m=Voxed.generateMesh();
-      var sc=3;
+      var sc=voxScale;
       m.scale.set(sc,sc,sc);
       voxMeshPos.set(0,2,-2);
       m.position.copy(voxMeshPos);//set(0,2,-2);
@@ -215,14 +215,21 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     const y=Math.floor(p.y*11.11-voxMeshPos.y*11.11+0.5+12);
     const z=Math.floor(p.z*11.11-voxMeshPos.z*11.11+0.5);
     //onsole.log(p.y+' '+y);
-    if (Voxed.etV(x,y,z)) return;
-    room.remove(voxMesh);
+    if (!voxMeshAdd) {
+      voxVa=Voxed.etVa();
+      Voxed.etVa([]);
+    }
+    
+    let v=Voxed.etV(x,y,z);
+    if (v&&(v.c==0)) return;
+    if (voxMeshAdd) room.remove(voxMeshAdd);//room.remove(voxMesh);
     Voxed.etV(x,y,z,{c:0});
     var m=Voxed.generateMesh();
-    var sc=3;
+    var sc=voxScale;
     m.scale.set(sc,sc,sc);
     m.position.copy(voxMeshPos);
-    room.add(m);voxMesh=m;
+    room.add(m);voxMeshAdd=m;
+    tVoxAdd=1000;
     //...
   }
   function animate() {
@@ -232,14 +239,29 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
   }
   function render() {
     
-    const delta=clock.getDelta()*60,dt=delta;
+    const delta=clock.getDelta()*60,dt=delta*10;
     
     const ctrl0=XrUtil.ctrl0;
     const ctrl1=XrUtil.ctrl1;
     const gp0=XrUtil.gp0;
     const gp1=XrUtil.gp1;
     
-    
+    if (tVoxAdd>0) {
+      tVoxAdd-=dt;
+      //onsole.log(tVoxAdd);
+      if (tVoxAdd<=0) { //---merge vox meshes
+        console.log('merge vox meshes nao');
+        const va=Voxed.etVa();
+        Voxed.etVa(voxVa);
+        for (let v of va) Voxed.etV(v.x,v.y,v.z,v);
+        let m=Voxed.generateMesh();
+        m.scale.set(voxScale,voxScale,voxScale);
+        m.position.copy(voxMeshPos);
+        room.remove(voxMeshAdd);
+        room.remove(voxMesh);
+        room.add(m);voxMesh=m;voxMeshAdd=undefined;
+      }
+    }
     
     if (0) if ( ctrl0.userData.isSelecting === true ) {
     
@@ -269,7 +291,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
         tempMatrix.identity().extractRotation(camera.matrixWorld);
         vt.set(-dx,0,-dz);
         vt.applyMatrix4(tempMatrix);
-        vt.multiplyScalar(dt*0.1);
+        vt.multiplyScalar(dt*0.01);
         room.position.x+=vt.x;
         room.position.y+=vt.y;
         room.position.z+=vt.z;
@@ -353,7 +375,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       cube.rotation.z += cube.userData.velocity.z * 2 * delta;
     }
     
-    threeRender(dt*10);
+    threeRender(dt);
     controls.update();
     
     renderer.render( scene, camera );
@@ -372,4 +394,4 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,21,11,129
 //fr o,21,13
 //fr o,21,15
-//fr p,21,176
+//fr p,15,240

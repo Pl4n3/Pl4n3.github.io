@@ -178,9 +178,10 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     //Bricks.initLoader({scene:room,scale:0.01,pos:{x:5,y:2,z:0}});
     //Conet.download({fn:'/three/lego/moreColors.txt',f:Bricks.parseLoad});
     
-    // /three/anim/voxed/nienhagen1monster.json
+    //let fn='/three/anim/voxed/nienhagen1monster.json';
+    let fn='/three/anim/voxed/3x3.json';
     
-    Conet.download({fn:'/three/anim/voxed/nienhagen1monster.json',f:function(v) {
+    Conet.download({fn:fn,f:function(v) {
       //---
       var h=JSON.parse(v);
       delete(h.vw);
@@ -368,7 +369,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,21
 //fr o,21,11
 //fr o,21,11,118
-//fr o,21,11,128
+//fr o,21,11,129
 //fr o,21,13
 //fr o,21,15
-//fr p,60,58
+//fr p,21,176

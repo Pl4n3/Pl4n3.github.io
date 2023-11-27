@@ -23,7 +23,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
   //---
   const clock = new THREE.Clock();
   let container,camera,scene,raycaster,renderer,
-      room,INTERSECTED,cursor,voxScale=3,tVoxAdd=0,
+      room,INTERSECTED,cursor,voxScale=1,tVoxAdd=0,
       rotateObj,cubes=[],controls,voxMesh,voxMeshAdd,voxVa,voxVh;
   const tempMatrix=new THREE.Matrix4(),vt=new THREE.Vector3(),
       voxMeshPos=new THREE.Vector3();
@@ -78,7 +78,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     //m1=new THREE.MeshPhongMaterial({color:0x77dd77,flatShading:true,
     //  transparent:true,opacity:0.7});
     {
-    const geometry=new THREE.BoxBufferGeometry(0.1,0.1,0.1);
+    const geometry=new THREE.BoxBufferGeometry(voxScale/30,voxScale/30,voxScale/30);
     const o=new THREE.Mesh(geometry,new THREE.MeshPhongMaterial({color:0x77dd77,flatShading:true,
       transparent:true,opacity:0.7}));
     o.position.set(0,3,0);
@@ -211,10 +211,10 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
   }
   function drawVoxel() {
     //---
-    const p=cursor.position,f=15.22;
-    const x=Math.floor(p.x*11.11-voxMeshPos.x*11.11+0.5);
-    const y=Math.floor(p.y*11.11-voxMeshPos.y*11.11+0.5+12);
-    const z=Math.floor(p.z*11.11-voxMeshPos.z*11.11+0.5);
+    const p=cursor.position,f=11.11*3/voxScale;//15.22;
+    const x=Math.floor(p.x*f-voxMeshPos.x*f+0.5);
+    const y=Math.floor(p.y*f-voxMeshPos.y*f+0.5+12);
+    const z=Math.floor(p.z*f-voxMeshPos.z*f+0.5);
     //onsole.log(p.y+' '+y);
     if (!voxMeshAdd) {
       voxVa=Voxed.etVa();
@@ -398,4 +398,4 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,21,11,130
 //fr o,21,13
 //fr o,21,15
-//fr p,62,26
+//fr p,42,200

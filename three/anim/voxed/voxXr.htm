@@ -24,7 +24,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
   const clock = new THREE.Clock();
   let container,camera,scene,raycaster,renderer,
       room,INTERSECTED,cursor,voxScale=3,tVoxAdd=0,
-      rotateObj,cubes=[],controls,voxMesh,voxMeshAdd,voxVa;
+      rotateObj,cubes=[],controls,voxMesh,voxMeshAdd,voxVa,voxVh;
   const tempMatrix=new THREE.Matrix4(),vt=new THREE.Vector3(),
       voxMeshPos=new THREE.Vector3();
   
@@ -179,8 +179,8 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     //Bricks.initLoader({scene:room,scale:0.01,pos:{x:5,y:2,z:0}});
     //Conet.download({fn:'/three/lego/moreColors.txt',f:Bricks.parseLoad});
     
-    //let fn='/three/anim/voxed/nienhagen1monster.json';
-    let fn='/three/anim/voxed/3x3.json';
+    let fn='/three/anim/voxed/nienhagen1monster.json';
+    //let fn='/three/anim/voxed/3x3.json';
     
     Conet.download({fn:fn,f:function(v) {
       //---
@@ -218,7 +218,9 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     //onsole.log(p.y+' '+y);
     if (!voxMeshAdd) {
       voxVa=Voxed.etVa();
+      voxVh=Voxed.etVh();
       Voxed.etVa([]);
+      Voxed.etVh({});
     }
     
     let v=Voxed.etV(x,y,z);
@@ -254,6 +256,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
         console.log('merge vox meshes nao');
         const va=Voxed.etVa();
         Voxed.etVa(voxVa);
+        Voxed.etVh(voxVh);
         for (let v of va) Voxed.etV(v.x,v.y,v.z,v);
         let m=Voxed.generateMesh();
         m.scale.set(voxScale,voxScale,voxScale);
@@ -395,4 +398,4 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,21,11,130
 //fr o,21,13
 //fr o,21,15
-//fr p,30,71
+//fr p,62,26

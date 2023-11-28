@@ -24,7 +24,8 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
   const clock = new THREE.Clock();
   let container,camera,scene,raycaster,renderer,
       room,INTERSECTED,cursor,voxScale=1,tVoxAdd=0,
-      rotateObj,cubes=[],controls,voxMesh,voxMeshAdd,voxVa,voxVh;
+      rotateObj,cubes=[],controls,voxMesh,voxMeshAdd,voxVa,voxVh,
+      mGreen,mRed;
   const tempMatrix=new THREE.Matrix4(),vt=new THREE.Vector3(),
       voxMeshPos=new THREE.Vector3();
   
@@ -79,10 +80,11 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     //  transparent:true,opacity:0.7});
     {
     const geometry=new THREE.BoxBufferGeometry(voxScale/30,voxScale/30,voxScale/30);
-    const o=new THREE.Mesh(geometry,new THREE.MeshPhongMaterial({color:0x77dd77,flatShading:true,
+    const o=new THREE.Mesh(geometry,mGreen=new THREE.MeshPhongMaterial({color:0x77dd77,flatShading:true,
       transparent:true,opacity:0.7}));
     o.position.set(0,3,0);
     room.add(o);cursor=o;
+    mRed=new THREE.MeshPhongMaterial({color:0xdd7777,flatShading:true,transparent:true,opacity:0.7});
     }
     
     
@@ -209,12 +211,26 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     renderer.setSize( window.innerWidth, window.innerHeight );
     //---
   }
-  function drawVoxel() {
+  function drawVoxel(del) {
     //---
     const p=cursor.position,f=11.11*3/voxScale;//15.22;
     const x=Math.floor(p.x*f-voxMeshPos.x*f+0.5);
     const y=Math.floor(p.y*f-voxMeshPos.y*f+0.5+12);
     const z=Math.floor(p.z*f-voxMeshPos.z*f+0.5);
+    
+    if (del) {
+      let v=Voxed.etV(x,y,z);
+      if (!v) return;
+      room.remove(voxMesh);
+      Voxed.etV(x,y,z,null);
+      var m=Voxed.generateMesh();
+      var sc=voxScale;
+      m.scale.set(sc,sc,sc);
+      m.position.copy(voxMeshPos);
+      room.add(m);voxMesh=m;
+      return;
+    }
+    
     //onsole.log(p.y+' '+y);
     if (!voxMeshAdd) {
       voxVa=Voxed.etVa();
@@ -235,6 +251,22 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     tVoxAdd=1000;
     //...
   }
+  function drawMerge() {
+    //---
+    console.log('merge vox meshes nao');
+    tVoxAdd=0;
+    const va=Voxed.etVa();
+    Voxed.etVa(voxVa);
+    Voxed.etVh(voxVh);
+    for (let v of va) Voxed.etV(v.x,v.y,v.z,v);
+    let m=Voxed.generateMesh();
+    m.scale.set(voxScale,voxScale,voxScale);
+    m.position.copy(voxMeshPos);
+    room.remove(voxMeshAdd);
+    room.remove(voxMesh);
+    room.add(m);voxMesh=m;voxMeshAdd=undefined;
+    //...
+  }
   function animate() {
     
     renderer.setAnimationLoop( render );
@@ -252,19 +284,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     if (tVoxAdd>0) {
       tVoxAdd-=dt;
       //onsole.log(tVoxAdd);
-      if (tVoxAdd<=0) { //---merge vox meshes
-        console.log('merge vox meshes nao');
-        const va=Voxed.etVa();
-        Voxed.etVa(voxVa);
-        Voxed.etVh(voxVh);
-        for (let v of va) Voxed.etV(v.x,v.y,v.z,v);
-        let m=Voxed.generateMesh();
-        m.scale.set(voxScale,voxScale,voxScale);
-        m.position.copy(voxMeshPos);
-        room.remove(voxMeshAdd);
-        room.remove(voxMesh);
-        room.add(m);voxMesh=m;voxMeshAdd=undefined;
-      }
+      if (tVoxAdd<=0) drawMerge();
     }
     
     if (0) if ( ctrl0.userData.isSelecting === true ) {
@@ -311,7 +331,15 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       vt.applyQuaternion(ctrl1.quaternion);
       //console.log(pc);
       cursor.position.set(pc.x-pr.x+vt.x,pc.y-pr.y+vt.y,pc.z-pr.z+vt.z);
-      if (gp1&&gp1.buttons[0].pressed) drawVoxel();
+      if (gp1) {
+        if (gp1.buttons[0].pressed) drawVoxel();
+        if (gp1.buttons[1].pressed) {
+          if (voxMeshAdd) drawMerge();
+          //onsole.log('gp11');
+          cursor.material=mRed;
+          drawVoxel(1);
+        } else if (cursor.material!==mGreen) cursor.material=mGreen;
+      }
     }
     
     // find intersections
@@ -393,9 +421,10 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 </body>
 </html><script>
 //fr o,21
-//fr o,21,11
-//fr o,21,11,119
-//fr o,21,11,130
-//fr o,21,13
+//fr o,21,12
+//fr o,21,12,120
+//fr o,21,12,131
+//fr o,21,14
 //fr o,21,15
-//fr p,42,200
+//fr o,21,17
+//fr p,8,320

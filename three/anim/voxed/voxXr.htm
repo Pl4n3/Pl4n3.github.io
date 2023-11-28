@@ -23,7 +23,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
   //---
   const clock = new THREE.Clock();
   let container,camera,scene,raycaster,renderer,
-      room,INTERSECTED,cursor,voxScale=1,tVoxAdd=0,
+      room,INTERSECTED,cursor,voxScale=0.5,tVoxAdd=0,
       rotateObj,cubes=[],controls,voxMesh,voxMeshAdd,voxVa,voxVh,
       mGreen,mRed,roomMatrix;
   const tempMatrix=new THREE.Matrix4(),vt=new THREE.Vector3(),
@@ -440,4 +440,4 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,21,12,121
 //fr o,21,12,133
 //fr o,21,17
-//fr p,4,272
+//fr p,40,25

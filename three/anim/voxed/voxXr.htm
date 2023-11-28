@@ -325,9 +325,6 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       }
       if (gp0.buttons[0].pressed) {
         if (!roomMatrix) { roomMatrix=new THREE.Matrix4();roomMatrix.copy(room.matrix); }
-        room.matrix.multiplyMatrices(roomMatrix,ctrl0.matrix);
-      } else if (gp0.buttons[1].pressed) {
-        if (!roomMatrix) { roomMatrix=new THREE.Matrix4();roomMatrix.copy(room.matrix); }
         room.matrix.multiplyMatrices(ctrl0.matrix,roomMatrix);
       } else {
         if (roomMatrix) { room.matrix.copy(roomMatrix);roomMatrix=undefined; }
@@ -342,7 +339,13 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       vt.set(0,0,-0.4);
       vt.applyQuaternion(ctrl1.quaternion);
       //console.log(pc);
-      cursor.position.set(pc.x-pr.x+vt.x,pc.y-pr.y+vt.y,pc.z-pr.z+vt.z);
+      //cursor.position.set(pc.x-pr.x+vt.x,pc.y-pr.y+vt.y,pc.z-pr.z+vt.z);
+      vt.x+=pc.x;vt.y+=pc.y;vt.z+=pc.z;
+      //vt.set(pc.x,pc.y,pc.z);
+      tempMatrix.copy(room.matrix);
+      tempMatrix.invert();
+      vt.applyMatrix4(tempMatrix);
+      cursor.position.set(vt.x,vt.y,vt.z);//pc.x-pr.x,pc.y-pr.y,pc.z-pr.z);
       if (gp1) {
         if (gp1.buttons[0].pressed) drawVoxel();
         if (gp1.buttons[1].pressed) {
@@ -437,4 +440,4 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,21,12,121
 //fr o,21,12,133
 //fr o,21,17
-//fr p,4,257
+//fr p,4,272

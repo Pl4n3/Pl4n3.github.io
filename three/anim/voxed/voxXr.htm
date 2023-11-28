@@ -43,7 +43,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     scene = new THREE.Scene();
     scene.background = new THREE.Color( 0x505050 );
     
-    camera=new THREE.PerspectiveCamera(50,window.innerWidth/window.innerHeight,0.1,100);
+    camera=new THREE.PerspectiveCamera(50,window.innerWidth/window.innerHeight,0.1,10);
     camera.position.set(0,1.6,3);
     scene.add(camera);
     //console.log(camera);
@@ -56,12 +56,12 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     scene.add(room);
     
     {
-    let c=scene,l=new THREE.AmbientLight(0x555555),f=3;c.add(l);
+    let c=room,l=new THREE.AmbientLight(0x555555),f=3;c.add(l);
     //l=new THREE.PointLight(0xffffff,1,0);l.position.set(-1*f,2*f,1*f);scene.add(l);
     l=new THREE.PointLight(0xffffff,1,0);l.position.set(-0.5*f,3*f,1*f);
     l.castShadow=true;
     l.shadow.camera.near=0.1;
-    l.shadow.camera.far=100;
+    l.shadow.camera.far=10;
     l.shadow.mapSize.width=1024;//2048;
     l.shadow.mapSize.height=1024;
     c.add(l);
@@ -440,4 +440,4 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,21,12,121
 //fr o,21,12,133
 //fr o,21,17
-//fr p,11,58
+//fr p,81,45

@@ -25,7 +25,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
   let container,camera,scene,raycaster,renderer,
       room,INTERSECTED,cursor,voxScale=1,tVoxAdd=0,
       rotateObj,cubes=[],controls,voxMesh,voxMeshAdd,voxVa,voxVh,
-      mGreen,mRed;
+      mGreen,mRed,roomMatrix;
   const tempMatrix=new THREE.Matrix4(),vt=new THREE.Vector3(),
       voxMeshPos=new THREE.Vector3();
   
@@ -324,7 +324,13 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
         room.updateMatrix();
       }
       if (gp0.buttons[0].pressed) {
-        room.matrix.copy(ctrl0.matrix);
+        if (!roomMatrix) { roomMatrix=new THREE.Matrix4();roomMatrix.copy(room.matrix); }
+        room.matrix.multiplyMatrices(roomMatrix,ctrl0.matrix);
+      } else if (gp0.buttons[1].pressed) {
+        if (!roomMatrix) { roomMatrix=new THREE.Matrix4();roomMatrix.copy(room.matrix); }
+        room.matrix.multiplyMatrices(ctrl0.matrix,roomMatrix);
+      } else {
+        if (roomMatrix) { room.matrix.copy(roomMatrix);roomMatrix=undefined; }
       }
     }
     if (gp1) {
@@ -431,4 +437,4 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,21,12,121
 //fr o,21,12,133
 //fr o,21,17
-//fr p,33,255
+//fr p,4,257

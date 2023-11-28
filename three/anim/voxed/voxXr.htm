@@ -126,7 +126,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     renderer.xr.enabled = true;
     container.appendChild( renderer.domElement );
     
-    controls=new OrbitControls(camera,renderer.domElement);
+    //controls=new OrbitControls(camera,renderer.domElement);
     //
     
     XrUtil.init({scene:scene,renderer:renderer
@@ -423,7 +423,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     }
     
     threeRender(dt);
-    controls.update();
+    if (controls) controls.update();
     
     renderer.render( scene, camera );
     //...
@@ -440,4 +440,4 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,21,12,121
 //fr o,21,12,133
 //fr o,21,17
-//fr p,81,45
+//fr p,14,354

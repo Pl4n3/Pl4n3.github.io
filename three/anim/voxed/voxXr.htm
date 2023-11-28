@@ -48,10 +48,11 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     scene.add(camera);
     //console.log(camera);
     
-    room = new THREE.LineSegments(
+    room=new THREE.LineSegments(
       new BoxLineGeometry(6,6,6,10,10,10).translate(0,3,0),
       new THREE.LineBasicMaterial( { color: 0x808080 } )
     );
+    room.matrixAutoUpdate=false;
     scene.add(room);
     
     {
@@ -181,8 +182,9 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     //Bricks.initLoader({scene:room,scale:0.01,pos:{x:5,y:2,z:0}});
     //Conet.download({fn:'/three/lego/moreColors.txt',f:Bricks.parseLoad});
     
-    let fn='/three/anim/voxed/nienhagen1monster.json';
+    //let fn='/three/anim/voxed/nienhagen1monster.json';
     //let fn='/three/anim/voxed/3x3.json';
+    let fn='/three/anim/voxed/treeBroad0.json';
     
     Conet.download({fn:fn,f:function(v) {
       //---
@@ -319,6 +321,10 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
         room.position.x+=vt.x;
         room.position.y+=vt.y;
         room.position.z+=vt.z;
+        room.updateMatrix();
+      }
+      if (gp0.buttons[0].pressed) {
+        room.matrix.copy(ctrl0.matrix);
       }
     }
     if (gp1) {
@@ -422,9 +428,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 </html><script>
 //fr o,21
 //fr o,21,12
-//fr o,21,12,120
-//fr o,21,12,131
-//fr o,21,14
-//fr o,21,15
+//fr o,21,12,121
+//fr o,21,12,133
 //fr o,21,17
-//fr p,8,320
+//fr p,33,255

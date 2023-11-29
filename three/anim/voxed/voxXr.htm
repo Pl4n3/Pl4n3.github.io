@@ -43,7 +43,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     scene = new THREE.Scene();
     scene.background = new THREE.Color( 0x505050 );
     
-    camera=new THREE.PerspectiveCamera(50,window.innerWidth/window.innerHeight,0.1,10);
+    camera=new THREE.PerspectiveCamera(50,window.innerWidth/window.innerHeight,0.1,100);
     camera.position.set(0,1.6,3);
     scene.add(camera);
     //console.log(camera);
@@ -61,7 +61,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     l=new THREE.PointLight(0xffffff,1,0);l.position.set(-0.5*f,3*f,1*f);
     l.castShadow=true;
     l.shadow.camera.near=0.1;
-    l.shadow.camera.far=10;
+    l.shadow.camera.far=100;
     l.shadow.mapSize.width=1024;//2048;
     l.shadow.mapSize.height=1024;
     c.add(l);
@@ -159,7 +159,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     Menu.init([{s:'&#9776;',noTri:true,fs:1.4,pw:0.05,sub:[
       Menu.mFullscreen,
-    {s:'TestButton',ms:'v. 1.1 '//FOLDORUPDATEVERSION
+    {s:'TestButton',ms:'v. 1.12 '//FOLDORUPDATEVERSION
     ,actionf:function() {
       //---
       const p=cursor.position;
@@ -214,12 +214,23 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     renderer.setSize( window.innerWidth, window.innerHeight );
     //---
   }
-  function drawVoxel(del) {
+  function cursorPos() {
     //---
     const p=cursor.position,f=11.11*3/voxScale;//15.22;
     const x=Math.floor(p.x*f-voxMeshPos.x*f+0.5);
     const y=Math.floor(p.y*f-voxMeshPos.y*f+0.5+12);
-    const z=Math.floor(p.z*f-voxMeshPos.z*f+0.5);
+    const z=Math.floor(p.z*f-voxMeshPos.z*f+0.5),ud=cursor.userData;
+    ud.vx=x;ud.vy=y;ud.vz=z;
+    //...
+  }
+  function drawVoxel(del) {
+    //---
+    //const p=cursor.position,f=11.11*3/voxScale;//15.22;
+    //const x=Math.floor(p.x*f-voxMeshPos.x*f+0.5);
+    //const y=Math.floor(p.y*f-voxMeshPos.y*f+0.5+12);
+    //const z=Math.floor(p.z*f-voxMeshPos.z*f+0.5);
+    cursorPos();
+    const ud=cursor.userData,x=ud.vx,y=ud.vy,z=ud.vz;
     
     if (del) {
       let v=Voxed.etV(x,y,z);
@@ -355,7 +366,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
           //onsole.log('gp11');
           cursor.material=mRed;
           drawVoxel(1);
-        } else if (gp1.buttons[5].pressed) {
+        } else if (gp1.buttons[4].pressed) {
           if (cursor.material===mGreen) {
             const ca=Voxed.getColors();  
             //onsole.log(ca);
@@ -364,10 +375,18 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
             cursor.material=new THREE.MeshPhongMaterial({color:new THREE.Color(ch.r,ch.g,ch.b),flatShading:true});
             console.log(drawColor);
           }
-        } else if (gp1.buttons[4].pressed) {
+        } else if (gp1.buttons[5].pressed) {
           //---
-          if (cursor.material===mGreen) {
-            cursor.material=new THREE.MeshPhongMaterial({color:0xffffff,flatShading:true,transparent:true,opacity:0.7});
+          if (voxMeshAdd) drawMerge();
+          cursorPos();
+          const ud=cursor.userData,x=ud.vx,y=ud.vy,z=ud.vz;
+          const v=Voxed.etV(x,y,z);
+          let c=drawColor;
+          if (v) c=v.c;
+          if ((drawColor!=c)||(cursor.material===mGreen)) {
+            drawColor=c;
+            const ca=Voxed.getColors(),ch=ca[drawColor];
+            cursor.material=new THREE.MeshPhongMaterial({color:new THREE.Color(ch.r,ch.g,ch.b),flatShading:true});
           }
         } else if (cursor.material!==mGreen) cursor.material=mGreen;
       }
@@ -434,5 +453,6 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,21
 //fr o,21,12
 //fr o,21,14
-//fr o,21,17
-//fr p,49,129
+//fr o,21,15
+//fr o,21,18
+//fr p,28,284

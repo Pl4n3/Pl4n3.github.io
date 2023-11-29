@@ -23,9 +23,9 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
   //---
   const clock = new THREE.Clock();
   let container,camera,scene,raycaster,renderer,
-      room,INTERSECTED,cursor,voxScale=0.5,tVoxAdd=0,
+      room,INTERSECTED,cursor,voxScale=1,tVoxAdd=0,
       rotateObj,cubes=[],controls,voxMesh,voxMeshAdd,voxVa,voxVh,
-      mGreen,mRed,roomMatrix;
+      mGreen,mRed,roomMatrix,drawColor=0;
   const tempMatrix=new THREE.Matrix4(),vt=new THREE.Vector3(),
       voxMeshPos=new THREE.Vector3();
   
@@ -89,30 +89,31 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     }
     
     
-    if (0)
-    for ( let i = 0; i < 200; i ++ ) {
-    
-      const object = new THREE.Mesh( geometry, new THREE.MeshLambertMaterial( { color: Math.random() * 0xffffff } ) );
-    
-      object.position.x = Math.random() * 4 - 2;
-      object.position.y = Math.random() * 4;
-      object.position.z = Math.random() * 4 - 2;
-    
-      object.rotation.x = Math.random() * 2 * Math.PI;
-      object.rotation.y = Math.random() * 2 * Math.PI;
-      object.rotation.z = Math.random() * 2 * Math.PI;
-    
-      object.scale.x = Math.random() + 0.5;
-      object.scale.y = Math.random() + 0.5;
-      object.scale.z = Math.random() + 0.5;
-    
-      object.userData.velocity = new THREE.Vector3();
-      object.userData.velocity.x = Math.random() * 0.01 - 0.005;
-      object.userData.velocity.y = Math.random() * 0.01 - 0.005;
-      object.userData.velocity.z = Math.random() * 0.01 - 0.005;
-    
-      room.add(object);
-      cubes.push(object);
+    if (0) /* cubes */ {
+      for ( let i = 0; i < 200; i ++ ) {
+      
+        const object = new THREE.Mesh( geometry, new THREE.MeshLambertMaterial( { color: Math.random() * 0xffffff } ) );
+      
+        object.position.x = Math.random() * 4 - 2;
+        object.position.y = Math.random() * 4;
+        object.position.z = Math.random() * 4 - 2;
+      
+        object.rotation.x = Math.random() * 2 * Math.PI;
+        object.rotation.y = Math.random() * 2 * Math.PI;
+        object.rotation.z = Math.random() * 2 * Math.PI;
+      
+        object.scale.x = Math.random() + 0.5;
+        object.scale.y = Math.random() + 0.5;
+        object.scale.z = Math.random() + 0.5;
+      
+        object.userData.velocity = new THREE.Vector3();
+        object.userData.velocity.x = Math.random() * 0.01 - 0.005;
+        object.userData.velocity.y = Math.random() * 0.01 - 0.005;
+        object.userData.velocity.z = Math.random() * 0.01 - 0.005;
+      
+        room.add(object);
+        cubes.push(object);
+      }
     }
     
     raycaster = new THREE.Raycaster();
@@ -158,9 +159,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     Menu.init([{s:'&#9776;',noTri:true,fs:1.4,pw:0.05,sub:[
       Menu.mFullscreen,
-      XrUtil.menuXr
-      ]}
-      ,{s:'TestButton'
+    {s:'TestButton',ms:'v. 1.1 '//FOLDORUPDATEVERSION
     ,actionf:function() {
       //---
       const p=cursor.position;
@@ -175,7 +174,9 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       //drawVoxel();
       //...
     }
-      }
+    }
+      ]} 
+     ,XrUtil.menuXr  
       ]
       ,{listen:1});
     
@@ -242,9 +243,10 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     }
     
     let v=Voxed.etV(x,y,z);
-    if (v&&(v.c==0)) return;
+    let col=drawColor;
+    if (v&&(v.c==col)) return;
     if (voxMeshAdd) room.remove(voxMeshAdd);//room.remove(voxMesh);
-    Voxed.etV(x,y,z,{c:0});
+    Voxed.etV(x,y,z,{c:col});
     var m=Voxed.generateMesh();
     var sc=voxScale;
     m.scale.set(sc,sc,sc);
@@ -353,73 +355,67 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
           //onsole.log('gp11');
           cursor.material=mRed;
           drawVoxel(1);
+        } else if (gp1.buttons[5].pressed) {
+          if (cursor.material===mGreen) {
+            const ca=Voxed.getColors();  
+            //onsole.log(ca);
+            drawColor=(drawColor+1)%ca.length;
+            const ch=ca[drawColor];
+            cursor.material=new THREE.MeshPhongMaterial({color:new THREE.Color(ch.r,ch.g,ch.b),flatShading:true});
+            console.log(drawColor);
+          }
+        } else if (gp1.buttons[4].pressed) {
+          //---
+          if (cursor.material===mGreen) {
+            cursor.material=new THREE.MeshPhongMaterial({color:0xffffff,flatShading:true,transparent:true,opacity:0.7});
+          }
         } else if (cursor.material!==mGreen) cursor.material=mGreen;
       }
     }
     
-    // find intersections
-    
-    tempMatrix.identity().extractRotation(ctrl0.matrixWorld);
-    
-    raycaster.ray.origin.setFromMatrixPosition(ctrl0.matrixWorld);
-    raycaster.ray.direction.set( 0, 0, - 1 ).applyMatrix4( tempMatrix );
-    
-    const intersects=raycaster.intersectObjects(cubes);//room.children);
-    
-    if ( intersects.length > 0 ) {
-    
-      if ( INTERSECTED != intersects[ 0 ].object ) {
-    
+    if (0) /* cubes */ {
+      // find intersections
+      tempMatrix.identity().extractRotation(ctrl0.matrixWorld);
+      raycaster.ray.origin.setFromMatrixPosition(ctrl0.matrixWorld);
+      raycaster.ray.direction.set(0,0,-1).applyMatrix4(tempMatrix);
+      
+      const intersects=raycaster.intersectObjects(cubes);//room.children);
+      if ( intersects.length > 0 ) {
+        if ( INTERSECTED != intersects[ 0 ].object ) {
+          if ( INTERSECTED ) INTERSECTED.material.emissive.setHex( INTERSECTED.currentHex );
+          INTERSECTED = intersects[ 0 ].object;
+          INTERSECTED.currentHex = INTERSECTED.material.emissive.getHex();
+          INTERSECTED.material.emissive.setHex( 0xff0000 );
+        }
+      } else {
         if ( INTERSECTED ) INTERSECTED.material.emissive.setHex( INTERSECTED.currentHex );
-    
-        INTERSECTED = intersects[ 0 ].object;
-        INTERSECTED.currentHex = INTERSECTED.material.emissive.getHex();
-        INTERSECTED.material.emissive.setHex( 0xff0000 );
-    
+        INTERSECTED = undefined;
       }
-    
-    } else {
-    
-      if ( INTERSECTED ) INTERSECTED.material.emissive.setHex( INTERSECTED.currentHex );
-    
-      INTERSECTED = undefined;
-    
-    }
-    
-    // Keep cubes inside room
-    
-    for (let i=0;i<cubes.length;i++) {
-    
-      const cube=cubes[i];//room.children[i];
-    
-      cube.userData.velocity.multiplyScalar( 1 - ( 0.001 * delta ) );
-    
-      cube.position.add( cube.userData.velocity );
-    
-      if ( cube.position.x < - 3 || cube.position.x > 3 ) {
-    
-        cube.position.x = THREE.MathUtils.clamp( cube.position.x, - 3, 3 );
-        cube.userData.velocity.x = - cube.userData.velocity.x;
-    
+      
+      // Keep cubes inside room
+      for (let i=0;i<cubes.length;i++) {
+        const cube=cubes[i];//room.children[i];
+        cube.userData.velocity.multiplyScalar( 1 - ( 0.001 * delta ) );
+        cube.position.add( cube.userData.velocity );
+      
+        if ( cube.position.x < - 3 || cube.position.x > 3 ) {
+          cube.position.x = THREE.MathUtils.clamp( cube.position.x, - 3, 3 );
+          cube.userData.velocity.x = - cube.userData.velocity.x;
+        }
+      
+        if ( cube.position.y < 0 || cube.position.y > 6 ) {
+          cube.position.y = THREE.MathUtils.clamp( cube.position.y, 0, 6 );
+          cube.userData.velocity.y = - cube.userData.velocity.y;
+        }
+        if ( cube.position.z < - 3 || cube.position.z > 3 ) {
+          cube.position.z = THREE.MathUtils.clamp( cube.position.z, - 3, 3 );
+          cube.userData.velocity.z = - cube.userData.velocity.z;
+      
+        }
+        cube.rotation.x += cube.userData.velocity.x * 2 * delta;
+        cube.rotation.y += cube.userData.velocity.y * 2 * delta;
+        cube.rotation.z += cube.userData.velocity.z * 2 * delta;
       }
-    
-      if ( cube.position.y < 0 || cube.position.y > 6 ) {
-    
-        cube.position.y = THREE.MathUtils.clamp( cube.position.y, 0, 6 );
-        cube.userData.velocity.y = - cube.userData.velocity.y;
-    
-      }
-    
-      if ( cube.position.z < - 3 || cube.position.z > 3 ) {
-    
-        cube.position.z = THREE.MathUtils.clamp( cube.position.z, - 3, 3 );
-        cube.userData.velocity.z = - cube.userData.velocity.z;
-    
-      }
-    
-      cube.rotation.x += cube.userData.velocity.x * 2 * delta;
-      cube.rotation.y += cube.userData.velocity.y * 2 * delta;
-      cube.rotation.z += cube.userData.velocity.z * 2 * delta;
     }
     
     threeRender(dt);
@@ -437,7 +433,6 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 </html><script>
 //fr o,21
 //fr o,21,12
-//fr o,21,12,121
-//fr o,21,12,133
+//fr o,21,14
 //fr o,21,17
-//fr p,14,354
+//fr p,49,129

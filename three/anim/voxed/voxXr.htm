@@ -24,10 +24,10 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
   const clock = new THREE.Clock();
   let container,camera,scene,raycaster,renderer,
       room,INTERSECTED,cursor,voxScale=1,tVoxAdd=0,
-      rotateObj,cubes=[],controls,voxMesh,voxMeshAdd,voxVa,voxVh,
+      cubes=[],controls,voxMesh,voxMeshAdd,voxVa,voxVh,
       mGreen,mRed,roomMatrix,drawColor=0,hudCount=0;
   const tempMatrix=new THREE.Matrix4(),vt=new THREE.Vector3(),
-      voxMeshPos=new THREE.Vector3(),huds=[],hud={};
+      voxMeshPos=new THREE.Vector3(),huds=[],hud={lines:['Hello','World']};
   
   init();
   animate();
@@ -37,8 +37,11 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     const ct=hud.ct,c=hud.c;
     ct.clearRect(0,0,c.width,c.height);
     ct.fillStyle='rgba(0,0,0,0.3)';ct.fillRect(0,0,c.width,c.height);
-    ct.font='20px sans-serif';ct.textBaseline='top';ct.fillStyle='#ff0';
-    ct.fillText('c='+hudCount,2,2);
+    ct.font='20px sans-serif';ct.textBaseline='top';ct.fillStyle='#ddd';
+    //ct.fillText('c='+hudCount,2,2);
+    for (let i=0;i<hud.lines.length;i++) {
+      ct.fillText(hud.lines[i],2,2+i*18);
+    }
     hud.t.needsUpdate=true;
     //...
   }
@@ -79,18 +82,9 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     l=new THREE.PointLight(0xaaffff,0.3);l.position.set(1*f,-2*f,-1*f);c.add(l);
     }
     
-    
-    const geometry = new THREE.BoxBufferGeometry(0.15,0.15,0.15);
-    const o=new THREE.Mesh(geometry,new THREE.MeshPhongMaterial({color:0x777777,flatShading:true,
-      transparent:true,opacity:0.5}));
-    o.scale.set(1,1,0.1);
-    o.position.set(0.2,0,-0.5);
-    o.rotation.y=-0.3;
-    camera.add(o);rotateObj=o;
-    
     {
     const g=new THREE.PlaneGeometry(0.15,0.15);
-    const c=document.createElement('canvas');c.width=128;c.height=128;
+    const c=document.createElement('canvas');c.width=256;c.height=256;
     const ct=c.getContext('2d');hud.c=c;hud.ct=ct;
     //ct.fillStyle='rgba(0,0,0,0.3)';ct.fillRect(0,0,c.width,c.height);
     //ct.font='20px sans-serif';ct.textBaseline='top';ct.fillStyle='#ff0';ct.fillText('n/i',2,2);
@@ -186,7 +180,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     Menu.init([{s:'&#9776;',noTri:true,fs:1.4,pw:0.05,sub:[
       Menu.mFullscreen,
-    {s:'TestButton',ms:'v. 1.31 '//FOLDORUPDATEVERSION
+    {s:'TestButton',ms:'v. 1.43 '//FOLDORUPDATEVERSION
     ,actionf:function() {
       //---
       const p=cursor.position;
@@ -421,21 +415,26 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     if (1) /* intersect */ {
       // find intersections
-      tempMatrix.identity().extractRotation(ctrl0.matrixWorld);
-      raycaster.ray.origin.setFromMatrixPosition(ctrl0.matrixWorld);
+      tempMatrix.identity().extractRotation(ctrl1.matrixWorld);
+      raycaster.ray.origin.setFromMatrixPosition(ctrl1.matrixWorld);
       raycaster.ray.direction.set(0,0,-1).applyMatrix4(tempMatrix);
       
       const intersects=raycaster.intersectObjects(huds);//room.children);
       if (intersects.length>0) {
-        if (INTERSECTED!=intersects[0].object) {
+        const i0=intersects[0];
+        //console.log(i0);
+        if (INTERSECTED!=i0.object) {
           //if (INTERSECTED) INTERSECTED.material.emissive.setHex( INTERSECTED.currentHex );
-          INTERSECTED=intersects[0].object;
+          INTERSECTED=i0.object;
           //INTERSECTED.currentHex = INTERSECTED.material.emissive.getHex();
           //INTERSECTED.material.emissive.setHex( 0xff0000 );
           //onsole.log('intersected');
-          hudCount++;
-          drawHud();
+          hudCount++;    
         }
+        hud.lines[0]='c '+hudCount;
+        hud.lines[1]=i0.uv.x;
+        hud.lines[2]=i0.uv.y;
+        drawHud();
       } else {
         //if ( INTERSECTED ) INTERSECTED.material.emissive.setHex( INTERSECTED.currentHex );
         INTERSECTED=undefined;
@@ -488,4 +487,4 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,21,17
 //fr o,21,20
 //fr o,21,20,104
-//fr p,6,350
+//fr p,4,340

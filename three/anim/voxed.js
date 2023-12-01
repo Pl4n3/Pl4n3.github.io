@@ -354,6 +354,12 @@ var Voxed;
     //console.log(e);
     //...
   }
+  
+  function f4(v) {
+    return Math.floor(0.5+v*10000)/10000;//...
+  }
+  
+  
   function serialize() {
     //---
     if (isTiles) calcTiles({onlyClear:1});
@@ -377,8 +383,8 @@ var Voxed;
     data+=']';
     }
     
-    data+=',"backgroundColor":"'+colIToS(planim.views[0].bgcol)+'"\n';
-    data+=',"groundbox":'+(mgroundbox.checked?1:0)+'\n';
+    if (window.planim) data+=',"backgroundColor":"'+colIToS(planim.views[0].bgcol)+'"\n';
+    if (mgroundbox) data+=',"groundbox":'+(mgroundbox.checked?1:0)+'\n';
     
     if (blocks) data+=',"blocks":'+JSON.stringify(blocks)+'\n';
     if (userData) data+=',"userData":'+JSON.stringify(userData)+'\n';
@@ -899,7 +905,7 @@ var Voxed;
     return blocks;
   }
   
-  console.log('Voxed 0.2056 ');//FOLDORUPDATEVERSION
+  console.log('Voxed 0.2060 ');//FOLDORUPDATEVERSION
   
   if ((!window.planim)||(window.planim.noVoxed)) {
     //window.Voxed=this;
@@ -908,6 +914,7 @@ var Voxed;
     Voxed.etV              =etV;
     Voxed.toBlocks=toBlocks;
     Voxed.load=load;
+    Voxed.serialize=serialize;
     
   Voxed.etVh=function(h) {
     if (h===undefined) return vh;
@@ -3000,7 +3007,7 @@ var Voxed;
       
       
       var startEditing=app;//for mib4
-      Menu.init([{s:'Voxed',ms:planim.version+'- 0.3013 ',sub:msub}//FOLDORUPDATEVERSION
+      Menu.init([{s:'Voxed',ms:planim.version+'- 0.3017 ',sub:msub}//FOLDORUPDATEVERSION
       
       ,medit={s:'Edit',checked:startEditing,checkbox:1,ms:'Edit',actionf:function(v) {
         planim.views[0].controls.enabled=!this.checked;
@@ -3089,19 +3096,22 @@ var Voxed;
 //fr o,2,13,7
 //fr o,2,13,11
 //fr o,2,15
-//fr o,2,36,9
-//fr o,2,36,11
-//fr o,2,36,14
-//fr o,2,49
-//fr o,2,51
-//fr o,2,89,16,7
-//fr o,2,89,64,1
-//fr o,2,90,3,10
-//fr o,2,91,2
-//fr o,2,91,4
-//fr o,2,91,32,74
-//fr o,2,91,32,74,15
-//fr o,2,91,32,83
-//fr o,2,102
-//fr o,2,102,36,31
-//fr p,22,68
+//fr o,2,35
+//fr o,2,40,9
+//fr o,2,40,11
+//fr o,2,40,14
+//fr o,2,54
+//fr o,2,56
+//fr o,2,94,16,7
+//fr o,2,94,64,1
+//fr o,2,95,3,10
+//fr o,2,96,2
+//fr o,2,96,4
+//fr o,2,96,32,74
+//fr o,2,96,32,74,15
+//fr o,2,96,32,83
+//fr o,2,107
+//fr o,2,107,36,31
+//fr o,2,107,38
+//fr o,2,107,38,5
+//fr p,16,78

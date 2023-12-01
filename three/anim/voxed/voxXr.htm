@@ -26,10 +26,11 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       room,INTERSECTED,cursor,voxScale=1,tVoxAdd=0,
       cubes=[],controls,voxMesh,voxMeshAdd,voxVa,voxVh,
       mGreen,mRed,roomMatrix,drawColor=0,hudCount=0,
-      fn='/three/anim/voxed/xr0.json';
+      fn='/three/anim/voxed/3x3.json';
+      //fn='/three/anim/voxed/xr0.json';
   const tempMatrix=new THREE.Matrix4(),vt=new THREE.Vector3(),
       voxMeshPos=new THREE.Vector3(),huds=[],hud={lines:[
-      'VoxXr 0.22 '//FOLDORUPDATEVERSION
+      'VoxXr 0.29 '//FOLDORUPDATEVERSION
       ,fn],
       cursor:{x:0.5,y:0.5,vis:false},buttons:[
       {s:'Save',x:0.5,y:0.7,w:0.4,h:0.2,ondown:save}]};
@@ -196,7 +197,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     renderer.xr.enabled = true;
     container.appendChild( renderer.domElement );
     
-    //controls=new OrbitControls(camera,renderer.domElement);
+    controls=new OrbitControls(camera,renderer.domElement);
     //
     
     XrUtil.init({scene:scene,renderer:renderer
@@ -228,12 +229,15 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     Menu.init([{s:'&#9776;',noTri:true,fs:1.4,pw:0.05,sub:[
       Menu.mFullscreen,
-    {s:'TestButton',ms:'v. 1.93 '//FOLDORUPDATEVERSION
+    {s:'TestButton'
     ,actionf:function() {
       //---
-      //const p=cursor.position;
-      //p.y=3;
-      //drawVoxel();
+      //console.log(Voxed.serialize());
+      const p=cursor.position;
+      p.y=3;
+      drawVoxel();
+      //drawMerge();
+      //console.log(Voxed.serialize());
       save();
       //...
     }
@@ -506,14 +510,14 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 </body>
 </html><script>
 //fr o,21
-//fr o,21,20
 //fr o,21,21
-//fr o,21,23
-//fr o,21,23,102
-//fr o,21,23,116
-//fr o,21,25
+//fr o,21,22
+//fr o,21,24
+//fr o,21,24,102
+//fr o,21,24,116
 //fr o,21,26
 //fr o,21,27
-//fr o,21,29
-//fr o,21,29,56
-//fr p,5,43
+//fr o,21,28
+//fr o,21,30
+//fr o,21,30,56
+//fr p,0,206

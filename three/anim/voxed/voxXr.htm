@@ -25,22 +25,70 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
   let container,camera,scene,raycaster,renderer,
       room,INTERSECTED,cursor,voxScale=1,tVoxAdd=0,
       cubes=[],controls,voxMesh,voxMeshAdd,voxVa,voxVh,
-      mGreen,mRed,roomMatrix,drawColor=0,hudCount=0;
+      mGreen,mRed,roomMatrix,drawColor=0,hudCount=0,
+      fn='/three/anim/voxed/xr0.json';
   const tempMatrix=new THREE.Matrix4(),vt=new THREE.Vector3(),
-      voxMeshPos=new THREE.Vector3(),huds=[],hud={lines:['Hello','World']};
+      voxMeshPos=new THREE.Vector3(),huds=[],hud={lines:[
+      'VoxXr 0.22 '//FOLDORUPDATEVERSION
+      ,fn],
+      cursor:{x:0.5,y:0.5,vis:false},buttons:[
+      {s:'Save',x:0.5,y:0.7,w:0.4,h:0.2,ondown:save}]};
   
   init();
   animate();
   
+  function f4(v) {
+    return Math.floor(0.5+v*10000)/10000;//...
+  }
+  
+  
+  function save() {
+    //---
+    drawMerge();
+    const data=Voxed.serialize();
+    Conet.upload({fn:fn,data:data});//,log:Conet.log,logChunk:1});
+    
+    hud.lines.push('Saved '+data.length+' bytes.');
+    while (hud.lines.length>4) hud.lines.splice(0,1);
+    //...
+  }
   function drawHud() {
     //---
-    const ct=hud.ct,c=hud.c;
-    ct.clearRect(0,0,c.width,c.height);
-    ct.fillStyle='rgba(0,0,0,0.3)';ct.fillRect(0,0,c.width,c.height);
-    ct.font='20px sans-serif';ct.textBaseline='top';ct.fillStyle='#ddd';
+    const ct=hud.ct,c=hud.c,w=c.width,h=c.height;
+    ct.clearRect(0,0,w,h);
+    ct.fillStyle='rgba(0,0,0,0.3)';ct.fillRect(0,0,w,h);
+    ct.font='20px sans-serif';//ct.textBaseline='top';
     //ct.fillText('c='+hudCount,2,2);
+    const cur=hud.cursor,curx=cur.x*w,cury=cur.y*h;
+    ct.textAlign='center';
+    ct.textBaseline='middle';
+    for (let b of hud.buttons) {
+      const bx=b.x*w,by=b.y*h,bw=b.w*w,bh=b.h*h;
+      if (b.pressed&&(!cur.down||!cur.vis)) b.pressed=false;
+      if (cur.vis) {
+        if ((curx>=bx)&&(cury>=by)&&(curx<=bx+bw)&&(cury<=by+bh)) {
+          if (cur.down&&!b.pressed) {
+            b.pressed=true;
+            b.ondown();
+          }
+          ct.fillStyle=b.pressed?'rgba(150,150,50,0.5)':'rgba(100,100,100,0.5)';
+          ct.fillRect(bx,by,bw,bh);
+        }
+      } 
+      ct.strokeStyle='#aaa';
+      ct.strokeRect(bx,by,bw,bh);
+      ct.fillStyle='#ddd';
+      ct.fillText(b.s,bx+bw/2,by+bh/2);
+    }
+    ct.textAlign='start';
+    ct.textBaseline='top';
+    ct.fillStyle='#ddd';
     for (let i=0;i<hud.lines.length;i++) {
-      ct.fillText(hud.lines[i],2,2+i*18);
+      ct.fillText(hud.lines[i],3,3+i*18);
+    }
+    if (cur.vis) {
+      ct.strokeStyle='#fff';
+      ct.strokeRect(curx-5,cury-5,10,10);
     }
     hud.t.needsUpdate=true;
     //...
@@ -180,19 +228,13 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     Menu.init([{s:'&#9776;',noTri:true,fs:1.4,pw:0.05,sub:[
       Menu.mFullscreen,
-    {s:'TestButton',ms:'v. 1.43 '//FOLDORUPDATEVERSION
+    {s:'TestButton',ms:'v. 1.93 '//FOLDORUPDATEVERSION
     ,actionf:function() {
       //---
-      const p=cursor.position;
-      p.y=3;
-      drawVoxel();
       //const p=cursor.position;
-      //p.y=2;
-      //drawVoxel();
-      //p.y=4;
-      //drawVoxel();
       //p.y=3;
       //drawVoxel();
+      save();
       //...
     }
     }
@@ -206,7 +248,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     //let fn='/three/anim/voxed/nienhagen1monster.json';
     //let fn='/three/anim/voxed/3x3.json';
-    let fn='/three/anim/voxed/treeBroad0.json';
+    //let fn='/three/anim/voxed/treeBroad0.json';
     
     Conet.download({fn:fn,f:function(v) {
       //---
@@ -289,6 +331,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
   }
   function drawMerge() {
     //---
+    if (!voxMeshAdd) return;
     console.log('merge vox meshes nao');
     tVoxAdd=0;
     const va=Voxed.etVa();
@@ -364,56 +407,8 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
         if (roomMatrix) { room.matrix.copy(roomMatrix);roomMatrix=undefined; }
       }
     }
-    if (gp1) {
-      //room.position.x-=gp1.axes[2]*dt*0.1;
-      //room.position.y+=gp1.axes[3]*dt*0.1;
-    }
-    if (ctrl1&&XrUtil.isSession) {
-      let pc=ctrl1.position,pr=room.position;
-      vt.set(0,0,-0.4);
-      vt.applyQuaternion(ctrl1.quaternion);
-      //console.log(pc);
-      //cursor.position.set(pc.x-pr.x+vt.x,pc.y-pr.y+vt.y,pc.z-pr.z+vt.z);
-      vt.x+=pc.x;vt.y+=pc.y;vt.z+=pc.z;
-      //vt.set(pc.x,pc.y,pc.z);
-      tempMatrix.copy(room.matrix);
-      tempMatrix.invert();
-      vt.applyMatrix4(tempMatrix);
-      cursor.position.set(vt.x,vt.y,vt.z);//pc.x-pr.x,pc.y-pr.y,pc.z-pr.z);
-      if (gp1) {
-        if (gp1.buttons[0].pressed) drawVoxel();
-        if (gp1.buttons[1].pressed) {
-          if (voxMeshAdd) drawMerge();
-          //onsole.log('gp11');
-          cursor.material=mRed;
-          drawVoxel(1);
-        } else if (gp1.buttons[4].pressed) {
-          if (cursor.material===mGreen) {
-            const ca=Voxed.getColors();  
-            //onsole.log(ca);
-            drawColor=(drawColor+1)%ca.length;
-            const ch=ca[drawColor];
-            cursor.material=new THREE.MeshPhongMaterial({color:new THREE.Color(ch.r,ch.g,ch.b),flatShading:true});
-            console.log(drawColor);
-          }
-        } else if (gp1.buttons[5].pressed) {
-          //---
-          if (voxMeshAdd) drawMerge();
-          cursorPos();
-          const ud=cursor.userData,x=ud.vx,y=ud.vy,z=ud.vz;
-          const v=Voxed.etV(x,y,z);
-          let c=drawColor;
-          if (v) c=v.c;
-          if ((drawColor!=c)||(cursor.material===mGreen)) {
-            drawColor=c;
-            const ca=Voxed.getColors(),ch=ca[drawColor];
-            cursor.material=new THREE.MeshPhongMaterial({color:new THREE.Color(ch.r,ch.g,ch.b),flatShading:true});
-          }
-        } else if (cursor.material!==mGreen) cursor.material=mGreen;
-      }
-    }
     
-    if (1) /* intersect */ {
+    /* intersect */ {
       // find intersections
       tempMatrix.identity().extractRotation(ctrl1.matrixWorld);
       raycaster.ray.origin.setFromMatrixPosition(ctrl1.matrixWorld);
@@ -431,41 +426,71 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
           //onsole.log('intersected');
           hudCount++;    
         }
-        hud.lines[0]='c '+hudCount;
-        hud.lines[1]=i0.uv.x;
-        hud.lines[2]=i0.uv.y;
+        //hud.lines[0]='c '+hudCount;
+        //hud.lines[1]=i0.uv.x;
+        //hud.lines[2]=i0.uv.y;
+        hud.cursor.x=i0.uv.x;
+        hud.cursor.y=1-i0.uv.y;
+        hud.cursor.vis=true;
+        hud.cursor.down=gp1&&gp1.buttons[0].pressed;
         drawHud();
+        cursor.visible=false;
       } else {
         //if ( INTERSECTED ) INTERSECTED.material.emissive.setHex( INTERSECTED.currentHex );
         INTERSECTED=undefined;
-      }
-      
-      // Keep cubes inside room
-      if (0)
-      for (let i=0;i<cubes.length;i++) {
-        const cube=cubes[i];//room.children[i];
-        cube.userData.velocity.multiplyScalar( 1 - ( 0.001 * delta ) );
-        cube.position.add( cube.userData.velocity );
-      
-        if ( cube.position.x < - 3 || cube.position.x > 3 ) {
-          cube.position.x = THREE.MathUtils.clamp( cube.position.x, - 3, 3 );
-          cube.userData.velocity.x = - cube.userData.velocity.x;
+        cursor.visible=true;
+        if (hud.cursor.vis) {
+          hud.cursor.vis=false;
+          drawHud();
         }
-      
-        if ( cube.position.y < 0 || cube.position.y > 6 ) {
-          cube.position.y = THREE.MathUtils.clamp( cube.position.y, 0, 6 );
-          cube.userData.velocity.y = - cube.userData.velocity.y;
-        }
-        if ( cube.position.z < - 3 || cube.position.z > 3 ) {
-          cube.position.z = THREE.MathUtils.clamp( cube.position.z, - 3, 3 );
-          cube.userData.velocity.z = - cube.userData.velocity.z;
-      
-        }
-        cube.rotation.x += cube.userData.velocity.x * 2 * delta;
-        cube.rotation.y += cube.userData.velocity.y * 2 * delta;
-        cube.rotation.z += cube.userData.velocity.z * 2 * delta;
       }
     }
+    
+    if (ctrl1&&XrUtil.isSession&&cursor.visible) {
+      let pc=ctrl1.position,pr=room.position;
+      vt.set(0,0,-0.4);
+      vt.applyQuaternion(ctrl1.quaternion);
+      //console.log(pc);
+      //cursor.position.set(pc.x-pr.x+vt.x,pc.y-pr.y+vt.y,pc.z-pr.z+vt.z);
+      vt.x+=pc.x;vt.y+=pc.y;vt.z+=pc.z;
+      //vt.set(pc.x,pc.y,pc.z);
+      tempMatrix.copy(room.matrix);
+      tempMatrix.invert();
+      vt.applyMatrix4(tempMatrix);
+      cursor.position.set(vt.x,vt.y,vt.z);//pc.x-pr.x,pc.y-pr.y,pc.z-pr.z);
+      if (gp1) {
+        if (gp1.buttons[0].pressed) drawVoxel();
+        if (gp1.buttons[1].pressed) {
+          drawMerge();
+          //onsole.log('gp11');
+          cursor.material=mRed;
+          drawVoxel(1);
+        } else if (gp1.buttons[4].pressed) {
+          if (cursor.material===mGreen) {
+            const ca=Voxed.getColors();  
+            //onsole.log(ca);
+            drawColor=(drawColor+1)%ca.length;
+            const ch=ca[drawColor];
+            cursor.material=new THREE.MeshPhongMaterial({color:new THREE.Color(ch.r,ch.g,ch.b),flatShading:true});
+            console.log(drawColor);
+          }
+        } else if (gp1.buttons[5].pressed) {
+          //---
+          drawMerge();
+          cursorPos();
+          const ud=cursor.userData,x=ud.vx,y=ud.vy,z=ud.vz;
+          const v=Voxed.etV(x,y,z);
+          let c=drawColor;
+          if (v) c=v.c;
+          if ((drawColor!=c)||(cursor.material===mGreen)) {
+            drawColor=c;
+            const ca=Voxed.getColors(),ch=ca[drawColor];
+            cursor.material=new THREE.MeshPhongMaterial({color:new THREE.Color(ch.r,ch.g,ch.b),flatShading:true});
+          }
+        } else if (cursor.material!==mGreen) cursor.material=mGreen;
+      }
+    }
+    
     
     threeRender(dt);
     if (controls) controls.update();
@@ -481,10 +506,14 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 </body>
 </html><script>
 //fr o,21
-//fr o,21,12
-//fr o,21,14
-//fr o,21,16
-//fr o,21,17
 //fr o,21,20
-//fr o,21,20,104
-//fr p,4,340
+//fr o,21,21
+//fr o,21,23
+//fr o,21,23,102
+//fr o,21,23,116
+//fr o,21,25
+//fr o,21,26
+//fr o,21,27
+//fr o,21,29
+//fr o,21,29,56
+//fr p,5,43

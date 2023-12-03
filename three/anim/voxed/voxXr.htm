@@ -26,11 +26,11 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       room,INTERSECTED,cursor,voxScale=1,tVoxAdd=0,
       cubes=[],controls,voxMesh,voxMeshAdd,voxVa,voxVh,
       mGreen,mRed,roomMatrix,drawColor=0,hudCount=0,
-      fn='/three/anim/voxed/3x3.json';
+      fn='/three/anim/voxed/3x3.json',hudMesh;
       //fn='/three/anim/voxed/xr0.json';
   const tempMatrix=new THREE.Matrix4(),vt=new THREE.Vector3(),
       voxMeshPos=new THREE.Vector3(),huds=[],hud={lines:[
-      'VoxXr 0.61 '//FOLDORUPDATEVERSION
+      'VoxXr 0.66 '//FOLDORUPDATEVERSION
       ],cursor:{x:0.5,y:0.5,vis:false},buttons:[]},
       lsKey='voxXr0';
   
@@ -98,7 +98,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     for (let b of hud.buttons) {
       const bx=b.x*w,by=b.y*h,bw=b.w*w,bh=b.h*h;
       if (b.pressed&&(!cur.down||!cur.vis)) b.pressed=false;
-      if (cur.vis) {
+      if (cur.vis&&hudMesh.visible) {
         if ((curx>=bx)&&(cury>=by)&&(curx<=bx+bw)&&(cury<=by+bh)) {
           if (cur.down&&!b.pressed) {
             b.pressed=true;
@@ -175,7 +175,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     const planeMaterial=new THREE.MeshBasicMaterial({map:t1,opacity:1,transparent:true});
     const o=new THREE.Mesh(g,planeMaterial);
     o.position.set(-0.2,0,-0.5);
-    o.rotation.y=0.3;
+    o.rotation.y=0.3;hudMesh=o;
     camera.add(o);huds.push(o);
     }
     
@@ -454,7 +454,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       }
     }
     
-    /* intersect */ {
+    if (hudMesh.visible) /* intersect */ {
       // find intersections
       tempMatrix.identity().extractRotation(ctrl1.matrixWorld);
       raycaster.ray.origin.setFromMatrixPosition(ctrl1.matrixWorld);
@@ -505,12 +505,15 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       vt.applyMatrix4(tempMatrix);
       cursor.position.set(vt.x,vt.y,vt.z);//pc.x-pr.x,pc.y-pr.y,pc.z-pr.z);
       if (gp1) {
-        if (gp1.buttons[0].pressed) drawVoxel();
-        if (gp1.buttons[1].pressed) {
+        if (gp1.buttons[0].pressed) {
+          drawVoxel();
+          hudMesh.visible=false;
+        } else if (gp1.buttons[1].pressed) {
           drawMerge();
           //onsole.log('gp11');
           cursor.material=mRed;
           drawVoxel(1);
+          hudMesh.visible=false;
         } else if (gp1.buttons[4].pressed) {
           if (cursor.material===mGreen) {
             const ca=Voxed.getColors();  
@@ -520,6 +523,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
             cursor.material=new THREE.MeshPhongMaterial({color:new THREE.Color(ch.r,ch.g,ch.b),flatShading:true});
             console.log(drawColor);
           }
+          hudMesh.visible=false;
         } else if (gp1.buttons[5].pressed) {
           //---
           drawMerge();
@@ -533,7 +537,11 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
             const ca=Voxed.getColors(),ch=ca[drawColor];
             cursor.material=new THREE.MeshPhongMaterial({color:new THREE.Color(ch.r,ch.g,ch.b),flatShading:true});
           }
-        } else if (cursor.material!==mGreen) cursor.material=mGreen;
+          hudMesh.visible=false;
+        } else {
+          if (cursor.material!==mGreen) cursor.material=mGreen;
+          if (!hudMesh.visible) hudMesh.visible=true;
+        }
       }
     }
     
@@ -557,12 +565,8 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,21,20
 //fr o,21,21
 //fr o,21,22
-//fr o,21,24
 //fr o,21,24,103
 //fr o,21,24,104
-//fr o,21,26
-//fr o,21,27
-//fr o,21,28
 //fr o,21,30
 //fr o,21,30,56
-//fr p,10,65
+//fr p,21,185

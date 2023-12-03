@@ -30,27 +30,59 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       //fn='/three/anim/voxed/xr0.json';
   const tempMatrix=new THREE.Matrix4(),vt=new THREE.Vector3(),
       voxMeshPos=new THREE.Vector3(),huds=[],hud={lines:[
-      'VoxXr 0.29 '//FOLDORUPDATEVERSION
-      ,fn],
-      cursor:{x:0.5,y:0.5,vis:false},buttons:[
-      {s:'Save',x:0.5,y:0.7,w:0.4,h:0.2,ondown:save}]};
+      'VoxXr 0.60 '//FOLDORUPDATEVERSION
+      ],cursor:{x:0.5,y:0.5,vis:false},buttons:[]},
+      lsKey='voxXr0';
   
   init();
   animate();
   
+  function log(s) {
+    //---
+    hud.lines.push(s);
+    while (hud.lines.length>4) hud.lines.splice(0,1);
+    drawHud();
+    //...
+  }
   function f4(v) {
     return Math.floor(0.5+v*10000)/10000;//...
   }
-  
-  
+  function load(v) {
+    //---
+    var h=JSON.parse(v);
+    delete(h.vw);
+    var r=Voxed.load(h);
+    //var blocks=r.blocks;//Voxed.toBlocks();
+    //Voxed.etV(0,45.66,0,{c:0});
+    if (voxMesh) room.remove(voxMesh);
+    var m=Voxed.generateMesh();
+    var sc=voxScale;
+    m.scale.set(sc,sc,sc);
+    voxMeshPos.set(0,2,-2);
+    m.position.copy(voxMeshPos);//set(0,2,-2);
+    room.add(m);voxMesh=m;
+    //...
+  }
+  function loadFn(fn) {
+    //---
+    if (this.fn) fn=this.fn;
+    Conet.download({fn:fn,f:function(v) {
+      //---
+      load(v);
+      log('Loaded '+fn+'.');
+      //...
+    }
+    });
+    //...
+  }
   function save() {
     //---
     drawMerge();
     const data=Voxed.serialize();
-    Conet.upload({fn:fn,data:data});//,log:Conet.log,logChunk:1});
+    //Conet.upload({fn:fn,data:data});//,log:Conet.log,logChunk:1});
+    localStorage[lsKey]=data;
     
-    hud.lines.push('Saved '+data.length+' bytes.');
-    while (hud.lines.length>4) hud.lines.splice(0,1);
+    log('Saved to localStorage '+data.length+' bytes.');
     //...
   }
   function drawHud() {
@@ -229,6 +261,22 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     Menu.init([{s:'&#9776;',noTri:true,fs:1.4,pw:0.05,sub:[
       Menu.mFullscreen,
+        
+      
+    {s:'Json',ms:'import/export',doctrl:'Json data',mcfs:0.07,ta:true,jsonCheck:1,wrap:0,tacols:30,tarows:20,setfunc:function(v,initLoad) {
+      //---
+      load(v);
+      log('Imported '+v.length+' b.');
+      //...
+    }
+    ,valuef:function() {
+      return Voxed.serialize();
+    }
+    }
+      
+      
+      
+      /*
     {s:'TestButton'
     ,actionf:function() {
       //---
@@ -242,6 +290,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       //...
     }
     }
+    */
       ]} 
      ,XrUtil.menuXr  
       ]
@@ -253,25 +302,18 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     //let fn='/three/anim/voxed/nienhagen1monster.json';
     //let fn='/three/anim/voxed/3x3.json';
     //let fn='/three/anim/voxed/treeBroad0.json';
+    const data=localStorage[lsKey];
+    if (data) {
+      load(data); 
+      log('Loaded ls '+data.length+' b.');
+    } else loadFn(fn);
     
-    Conet.download({fn:fn,f:function(v) {
-      //---
-      var h=JSON.parse(v);
-      delete(h.vw);
-      var r=Voxed.load(h);
-      //var blocks=r.blocks;//Voxed.toBlocks();
-      //Voxed.etV(0,45.66,0,{c:0});
-      var m=Voxed.generateMesh();
-      var sc=voxScale;
-      m.scale.set(sc,sc,sc);
-      voxMeshPos.set(0,2,-2);
-      m.position.copy(voxMeshPos);//set(0,2,-2);
-      room.add(m);voxMesh=m;
-      //...
-    }
-    });
-    
-    
+    hud.buttons=[
+    {s:'Save',x:0.5,y:0.7,w:0.45,h:0.25,ondown:save},
+    {s:'Load 3x3',x:0.05,y:0.55,w:0.4,h:0.1,ondown:loadFn,fn:'/three/anim/voxed/3x3.json'},
+    {s:'Load tree',x:0.05,y:0.7,w:0.4,h:0.1,ondown:loadFn,fn:'/three/anim/voxed/treeBroad0.json'},
+    {s:'Load coast',x:0.05,y:0.85,w:0.4,h:0.1,ondown:loadFn,fn:'/three/anim/voxed/nienhagen1monster.json'}
+    ];
     //---
   }
   function onWindowResize() {
@@ -510,14 +552,17 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 </body>
 </html><script>
 //fr o,21
+//fr o,21,17
+//fr o,21,19
+//fr o,21,20
 //fr o,21,21
 //fr o,21,22
 //fr o,21,24
-//fr o,21,24,102
-//fr o,21,24,116
+//fr o,21,24,103
+//fr o,21,24,104
 //fr o,21,26
 //fr o,21,27
 //fr o,21,28
 //fr o,21,30
 //fr o,21,30,56
-//fr p,0,206
+//fr p,30,229

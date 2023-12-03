@@ -30,7 +30,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       //fn='/three/anim/voxed/xr0.json';
   const tempMatrix=new THREE.Matrix4(),vt=new THREE.Vector3(),
       voxMeshPos=new THREE.Vector3(),huds=[],hud={lines:[
-      'VoxXr 0.60 '//FOLDORUPDATEVERSION
+      'VoxXr 0.61 '//FOLDORUPDATEVERSION
       ],cursor:{x:0.5,y:0.5,vis:false},buttons:[]},
       lsKey='voxXr0';
   
@@ -65,7 +65,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
   }
   function loadFn(fn) {
     //---
-    if (this.fn) fn=this.fn;
+    if (this&&this.fn) fn=this.fn;
     Conet.download({fn:fn,f:function(v) {
       //---
       load(v);
@@ -565,4 +565,4 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,21,28
 //fr o,21,30
 //fr o,21,30,56
-//fr p,30,229
+//fr p,10,65

@@ -30,7 +30,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       //fn='/three/anim/voxed/xr0.json';
   const tempMatrix=new THREE.Matrix4(),vt=new THREE.Vector3(),
       voxMeshPos=new THREE.Vector3(),huds=[],hud={lines:[
-      'VoxXr 0.71 '//FOLDORUPDATEVERSION
+      'VoxXr 0.85 '//FOLDORUPDATEVERSION
       ],cursor:{x:0.5,y:0.5,vis:false},buttons:[]},
       lsKey='voxXr0';
   
@@ -52,6 +52,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     var h=JSON.parse(v);
     delete(h.vw);
     var r=Voxed.load(h);
+    drawColor=0;
     //var blocks=r.blocks;//Voxed.toBlocks();
     //Voxed.etV(0,45.66,0,{c:0});
     if (voxMesh) room.remove(voxMesh);
@@ -248,13 +249,14 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     threeEnv.path='/shooter/';
     threeEnv.coBoSp=1;//computeBoundingSphere
     threeEnv.camera=camera;
-    if (0)
+    if (1)
     Conet.download({fn:'/shooter/objs/templar/o5.txt',f:function(v) {
       //---
       var o=Pd5.load(v);
       o.scale=1;
       Pd5.animStart(o,'stand2');
-      threeAddObj(o,0,0,0,3);
+      threeAddObj(o,0,0,0,0.15);
+      o.meshes[0].tmesh.position.set(-0.3,1.1,-1.8);
       //...
     }
     });
@@ -568,9 +570,10 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,21,21
 //fr o,21,22
 //fr o,21,24
+//fr o,21,24,96
 //fr o,21,24,103
 //fr o,21,24,104
 //fr o,21,27
 //fr o,21,30
 //fr o,21,30,56
-//fr p,78,288
+//fr p,35,226

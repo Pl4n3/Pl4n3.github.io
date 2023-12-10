@@ -31,7 +31,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       //fn='/three/anim/voxed/xr0.json';
   const tempMatrix=new THREE.Matrix4(),vt=new THREE.Vector3(),
       voxMeshPos=new THREE.Vector3(0,2,-2),huds=[],hud={lines:[
-      'VoxXr 0.168 '//FOLDORUPDATEVERSION
+      'VoxXr 0.170 '//FOLDORUPDATEVERSION
       ],cursor:{x:0.5,y:0.5,vis:false},buttons:[]},
       lsKey='voxXr0',blockWalk=new BlockWalk(),
       //---vrPos independent from room pos to follow unit
@@ -540,8 +540,11 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
           const a3=gp1.axes[3];
           if (Math.abs(a3)>0.1) {
             u.speed=0.0002*(Math.abs(a3)-0.1)*((a3<0)?1:-1);
-          } else 
+            Pd5.animStart(u.o,'run');
+          } else {
             u.speed=0;
+            Pd5.animStart(u.o,'stand2');
+          }
         }
         if (gp1.buttons[0].pressed) {
           drawVoxel({});
@@ -642,4 +645,4 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,22,28
 //fr o,22,29
 //fr o,22,32
-//fr p,18,240
+//fr p,33,451

@@ -31,7 +31,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       //fn='/three/anim/voxed/xr0.json';
   const tempMatrix=new THREE.Matrix4(),vt=new THREE.Vector3(),
       voxMeshPos=new THREE.Vector3(0,2,-2),huds=[],hud={lines:[
-      'VoxXr 0.147 '//FOLDORUPDATEVERSION
+      'VoxXr 0.162 '//FOLDORUPDATEVERSION
       ],cursor:{x:0.5,y:0.5,vis:false},buttons:[]},
       lsKey='voxXr0',blockWalk=new BlockWalk();
   
@@ -268,8 +268,8 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       let z=vz/f+voxMeshPos.z;
       let m=o.meshes[0].tmesh;
       m.position.set(x,y,z);
-      //m.rotation.y=Math.PI/2;
-      unit0={speed:0,a:0,o:o,m:m};//0.0001
+      unit0={speed:0.0001,a:Math.PI/2,o:o,m:m};//0.0001
+      m.rotation.y=unit0.a;
       ////blockWalk.gw=1/f;
       ////blockWalk.blockMeshPos={x:voxMeshPos.x,y:voxMeshPos.y-13/f,z:voxMeshPos.z};
       //console.log(blockWalk.checkWalk(unit0,0,0));
@@ -532,7 +532,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
         const u=unit0;
         if (u) {
           
-          u.a+=gp1.axes[2]*dt*0.01;
+          u.a-=gp1.axes[2]*dt*0.01;
           u.o.meshes[0].tmesh.rotation.y=u.a;
           const a3=gp1.axes[3];
           if (Math.abs(a3)>0.1) {
@@ -606,6 +606,12 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     Conet.calcTweens(blockWalk.tweens,dt);
     
+    if (1&&unit0) {
+      const p=unit0.m.position;
+      room.position.set(-p.x,-p.y-0.05,-p.z);
+      room.updateMatrix();
+    }
+    
     
     threeRender(dt);
     if (controls) controls.update();
@@ -633,4 +639,4 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,22,26
 //fr o,22,27
 //fr o,22,30
-//fr p,15,493
+//fr p,34,516

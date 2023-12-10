@@ -12,6 +12,7 @@
 <script src="/canvas/pd5.js"></script>
 <script src="/three/threePd5.js"></script>
 <script src="/three/anim/voxed.js"></script>
+<script src="/three/deep/blockWalk.js"></script>
 </head>
 <body>
 <script type="module">
@@ -26,13 +27,13 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       room,INTERSECTED,cursor,voxScale=1,tVoxAdd=0,
       cubes=[],controls,voxMesh,voxMeshAdd,voxVa,voxVh,
       mGreen,mRed,roomMatrix,drawColor=0,hudCount=0,
-      fn='/three/anim/voxed/3x3.json',hudMesh;
+      fn='/three/anim/voxed/3x3.json',hudMesh,unit0;
       //fn='/three/anim/voxed/xr0.json';
   const tempMatrix=new THREE.Matrix4(),vt=new THREE.Vector3(),
-      voxMeshPos=new THREE.Vector3(),huds=[],hud={lines:[
-      'VoxXr 0.85 '//FOLDORUPDATEVERSION
+      voxMeshPos=new THREE.Vector3(0,2,-2),huds=[],hud={lines:[
+      'VoxXr 0.147 '//FOLDORUPDATEVERSION
       ],cursor:{x:0.5,y:0.5,vis:false},buttons:[]},
-      lsKey='voxXr0';
+      lsKey='voxXr0',blockWalk=new BlockWalk();
   
   init();
   animate();
@@ -59,7 +60,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     var m=Voxed.generateMesh();
     var sc=voxScale;
     m.scale.set(sc,sc,sc);
-    voxMeshPos.set(0,2,-2);
+    //voxMeshPos.set(0,2,-2);
     m.position.copy(voxMeshPos);//set(0,2,-2);
     room.add(m);voxMesh=m;
     //...
@@ -242,6 +243,9 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     //
     
     //document.body.appendChild(VRButton.createButton(renderer));
+    blockWalk.gw=voxScale/33.33;
+    blockWalk.blockMeshPos={x:voxMeshPos.x,y:voxMeshPos.y-13*blockWalk.gw,z:voxMeshPos.z};
+    blockWalk.blockAt=Voxed.etV;
     
     window.THREE=THREE;
     threeEnv.base=room;//scene;
@@ -255,8 +259,25 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       var o=Pd5.load(v);
       o.scale=1;
       Pd5.animStart(o,'stand2');
-      threeAddObj(o,0,0,0,0.15);
-      o.meshes[0].tmesh.position.set(-0.3,1.1,-1.8);
+      threeAddObj(o,0,0,0,0.1);
+      //o.meshes[0].tmesh.position.set(-0.3,1.1,-1.8);
+      
+      let vx=-10,vy=-18,vz=8,f=33.33/voxScale;
+      let x=vx/f+voxMeshPos.x;
+      let y=(vy-12)/f+voxMeshPos.y;
+      let z=vz/f+voxMeshPos.z;
+      let m=o.meshes[0].tmesh;
+      m.position.set(x,y,z);
+      //m.rotation.y=Math.PI/2;
+      unit0={speed:0,a:0,o:o,m:m};//0.0001
+      ////blockWalk.gw=1/f;
+      ////blockWalk.blockMeshPos={x:voxMeshPos.x,y:voxMeshPos.y-13/f,z:voxMeshPos.z};
+      //console.log(blockWalk.checkWalk(unit0,0,0));
+      ////const x=Math.floor(p.x*f-voxMeshPos.x*f+0.5);
+      ////const y=Math.floor(p.y*f-voxMeshPos.y*f+0.5+12);
+      ////const z=Math.floor(p.z*f-voxMeshPos.z*f+0.5),ud=cursor.userData;
+      
+      
       //...
     }
     });
@@ -332,6 +353,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     const y=Math.floor(p.y*f-voxMeshPos.y*f+0.5+12);
     const z=Math.floor(p.z*f-voxMeshPos.z*f+0.5),ud=cursor.userData;
     ud.vx=x;ud.vy=y;ud.vz=z;
+    console.log(x+' '+y+' '+z);
     //...
   }
   function drawVoxel(ps) {
@@ -507,6 +529,17 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       vt.applyMatrix4(tempMatrix);
       cursor.position.set(vt.x,vt.y,vt.z);//pc.x-pr.x,pc.y-pr.y,pc.z-pr.z);
       if (gp1) {
+        const u=unit0;
+        if (u) {
+          
+          u.a+=gp1.axes[2]*dt*0.01;
+          u.o.meshes[0].tmesh.rotation.y=u.a;
+          const a3=gp1.axes[3];
+          if (Math.abs(a3)>0.1) {
+            u.speed=0.0002*(Math.abs(a3)-0.1)*((a3<0)?1:-1);
+          } else 
+            u.speed=0;
+        }
         if (gp1.buttons[0].pressed) {
           drawVoxel({});
           hudMesh.visible=false;
@@ -549,6 +582,30 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       }
     }
     
+    if (unit0) {
+      let u=unit0;
+      //u.meshes[0].tmesh.rotation.y+=0.01*dt;
+      if (u.speed!=0) {
+        //const pos=u.m.position;
+        const dx=u.speed*dt*Math.sin(u.a);
+        const dz=u.speed*dt*Math.cos(u.a);
+        const m=u.o.meshes[0].tmesh;
+        if (0) {
+          m.position.x+=dx;
+          m.position.z+=dz;
+        } else if (!blockWalk.checkWalk(u,dx,dz)) {
+          //console.log('no checkwalk');
+          //if (u.bullet) 
+          //  del=true;
+          //else 
+            if (!blockWalk.checkWalk(u,dx,0)) 
+              blockWalk.checkWalk(u,0,dz);
+        }
+      }
+    }
+    
+    Conet.calcTweens(blockWalk.tweens,dt);
+    
     
     threeRender(dt);
     if (controls) controls.update();
@@ -563,17 +620,17 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 </script>
 </body>
 </html><script>
-//fr o,21
-//fr o,21,17
-//fr o,21,19
-//fr o,21,20
-//fr o,21,21
-//fr o,21,22
-//fr o,21,24
-//fr o,21,24,96
-//fr o,21,24,103
-//fr o,21,24,104
-//fr o,21,27
-//fr o,21,30
-//fr o,21,30,56
-//fr p,35,226
+//fr o,22
+//fr o,22,17
+//fr o,22,19
+//fr o,22,20
+//fr o,22,21
+//fr o,22,22
+//fr o,22,24
+//fr o,22,24,99
+//fr o,22,24,106
+//fr o,22,24,107
+//fr o,22,26
+//fr o,22,27
+//fr o,22,30
+//fr p,15,493

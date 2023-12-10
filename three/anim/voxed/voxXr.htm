@@ -27,11 +27,11 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       room,INTERSECTED,cursor,voxScale=1,tVoxAdd=0,
       cubes=[],controls,voxMesh,voxMeshAdd,voxVa,voxVh,
       mGreen,mRed,roomMatrix,drawColor=0,hudCount=0,
-      fn='/three/anim/voxed/3x3.json',hudMesh,unit0;
+      fn='/three/anim/voxed/xr1.json',hudMesh,unit0;
       //fn='/three/anim/voxed/xr0.json';
   const tempMatrix=new THREE.Matrix4(),vt=new THREE.Vector3(),
       voxMeshPos=new THREE.Vector3(0,2,-2),huds=[],hud={lines:[
-      'VoxXr 0.170 '//FOLDORUPDATEVERSION
+      'VoxXr 0.179 '//FOLDORUPDATEVERSION
       ],cursor:{x:0.5,y:0.5,vis:false},buttons:[]},
       lsKey='voxXr0',blockWalk=new BlockWalk(),
       //---vrPos independent from room pos to follow unit
@@ -120,8 +120,9 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     ct.textAlign='start';
     ct.textBaseline='top';
     ct.fillStyle='#ddd';
+    ct.font='14px sans-serif';//ct.textBaseline='top';
     for (let i=0;i<hud.lines.length;i++) {
-      ct.fillText(hud.lines[i],3,3+i*18);
+      ct.fillText(hud.lines[i],3,3+i*12);
     }
     if (cur.vis) {
       ct.strokeStyle='#fff';
@@ -335,6 +336,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     hud.buttons=[
     {s:'Save',x:0.5,y:0.7,w:0.45,h:0.25,ondown:save},
+    {s:'Load xr1',x:0.05,y:0.4,w:0.4,h:0.1,ondown:loadFn,fn:'/three/anim/voxed/xr1.json'},
     {s:'Load 3x3',x:0.05,y:0.55,w:0.4,h:0.1,ondown:loadFn,fn:'/three/anim/voxed/3x3.json'},
     {s:'Load tree',x:0.05,y:0.7,w:0.4,h:0.1,ondown:loadFn,fn:'/three/anim/voxed/treeBroad0.json'},
     {s:'Load coast',x:0.05,y:0.85,w:0.4,h:0.1,ondown:loadFn,fn:'/three/anim/voxed/nienhagen1monster.json'}
@@ -636,6 +638,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,22,19
 //fr o,22,21
 //fr o,22,22
+//fr o,22,22,2
 //fr o,22,23
 //fr o,22,24
 //fr o,22,26
@@ -645,4 +648,4 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,22,28
 //fr o,22,29
 //fr o,22,32
-//fr p,33,451
+//fr p,4,304

@@ -31,7 +31,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       //fn='/three/anim/voxed/xr0.json';
   const tempMatrix=new THREE.Matrix4(),vt=new THREE.Vector3(),
       voxMeshPos=new THREE.Vector3(0,2,-2),huds=[],hud={lines:[
-      'VoxXr 0.165 '//FOLDORUPDATEVERSION
+      'VoxXr 0.168 '//FOLDORUPDATEVERSION
       ],cursor:{x:0.5,y:0.5,vis:false},buttons:[]},
       lsKey='voxXr0',blockWalk=new BlockWalk(),
       //---vrPos independent from room pos to follow unit
@@ -270,7 +270,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       let z=vz/f+voxMeshPos.z;
       let m=o.meshes[0].tmesh;
       m.position.set(x,y,z);
-      unit0={speed:0.0001,a:Math.PI/2,o:o,m:m};//0.0001
+      unit0={speed:0,a:0,o:o,m:m};//0.0001
       m.rotation.y=unit0.a;
       ////blockWalk.gw=1/f;
       ////blockWalk.blockMeshPos={x:voxMeshPos.x,y:voxMeshPos.y-13/f,z:voxMeshPos.z};
@@ -609,7 +609,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     Conet.calcTweens(blockWalk.tweens,dt);
     
-    if (1&&unit0) {
+    if (1&&unit0&&!roomMatrix) {
       const p=unit0.m.position;
       room.position.set(-p.x+vrPos.x,-p.y-0.05+vrPos.y,-p.z+vrPos.z);
       room.updateMatrix();
@@ -642,4 +642,4 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,22,28
 //fr o,22,29
 //fr o,22,32
-//fr p,63,519
+//fr p,18,240

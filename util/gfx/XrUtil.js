@@ -1,7 +1,12 @@
+import * as THREE from '/three/r124/build/three.module.js';
 import { XRControllerModelFactory } from '/three/r124/examples/jsm/webxr/XRControllerModelFactory.js';
 let XrUtil={};
-(function(XrUtil) {
+(function(pself) {
   //---
+  let self=pself,gp0,camera,room,vrPos;
+  
+  const tempMatrix=new THREE.Matrix4(),vt=new THREE.Vector3();
+  
   function buildController(data) {
     //---
     let geometry, material;
@@ -27,10 +32,37 @@ let XrUtil={};
     }
     //...
   }
-  
-  XrUtil.init=function(ps) {
+  self.checkFlight=function(dt) {
+    //---
+    if (gp0) {
+      //otateObj.rotation.y+=gp0.axes[2]*dt*0.1;
+      const dx=gp0.axes[2],dz=gp0.axes[3],md=0.1;
+      let adx=Math.abs(dx),adz=Math.abs(dz);
+      if ((adz>md)||(adx>md)) {
+        //const position = new THREE.Vector3();
+        //const rotation = new THREE.Quaternion();
+        //const scale = new THREE.Vector3();
+        //camera.matrixWorld.decompose(position,rotation,scale);
+        tempMatrix.identity().extractRotation(camera.matrixWorld);
+        adx=(adx-md)/(1-md);adx*=adx*adx*adx;
+        adz=(adz-md)/(1-md);adz*=adz*adz*adz;
+        vt.set(adx*(dx>0?-1:1),0,adz*(dz>0?-1:1));
+        vt.applyMatrix4(tempMatrix);
+        vt.multiplyScalar(dt*0.01);
+        room.position.x+=vt.x;
+        room.position.y+=vt.y;
+        room.position.z+=vt.z;
+        if (vrPos) vrPos.add(vt);
+        room.updateMatrix();
+      }
+    }
+    //...
+  }
+  self.init=function(ps) {
     //---
     let renderer=ps.renderer;
+    camera=ps.camera;
+    room=ps.room;
     //let XRControllerModelFactory=ps.XRControllerModelFactory;
     
     function onSelectStart() {
@@ -52,7 +84,7 @@ let XrUtil={};
       //---
       this.add(buildController(e.data));
       //console.log(e.data.gamepad);
-      XrUtil.gp0=e.data.gamepad;
+      gp0=self.gp0=e.data.gamepad;
       //...
     }
     );
@@ -75,8 +107,8 @@ let XrUtil={};
     ctrl1.addEventListener('connected',function(e) {
       //---
       this.add(buildController(e.data));
-      XrUtil.gp1=e.data.gamepad;
-      console.log(XrUtil.gp1);
+      self.gp1=e.data.gamepad;
+      //onsole.log(XrU til.gp1);
       //onsole.log('ctrl1 connected');
       //...
     }
@@ -87,14 +119,14 @@ let XrUtil={};
     cg1.add(controllerModelFactory.createControllerModel(cg1));
     ps.scene.add(cg1);
     
-    XrUtil.ctrl0=ctrl0;
-    XrUtil.ctrl1=ctrl1;
-    XrUtil.menuXr={s:'XR',actionf:function() {
+    self.ctrl0=ctrl0;
+    self.ctrl1=ctrl1;
+    self.menuXr={s:'XR',actionf:function() {
       //---
       function onSessionStarted(session) {
         //---
         renderer.xr.setSession(session);
-        XrUtil.isSession=1;
+        self.isSession=1;
         //...
       }
       
@@ -107,17 +139,18 @@ let XrUtil={};
   }
   
   
-  console.log('XrUtil v.1.25 ');//FOLDORUPDATEVERSION
+  console.log('XrUtil v.1.53 ');//FOLDORUPDATEVERSION
   //...
 }
 )(XrUtil);
 export { XrUtil };
-//fr o,2
-//fr o,2,3
-//fr o,2,3,4
-//fr o,2,3,6
-//fr o,2,3,11
-//fr o,2,3,25
-//fr o,2,3,35
-//fr o,2,3,35,1
-//fr p,24,50
+//fr o,3
+//fr o,3,6
+//fr o,3,7
+//fr o,3,7,6
+//fr o,3,7,8
+//fr o,3,7,13
+//fr o,3,7,27
+//fr o,3,7,37
+//fr o,3,7,37,1
+//fr p,40,23

@@ -2,7 +2,7 @@
 var Pd5={};
 (function(Pd5) {
   var vh0=new Vecmath.Vec3(0,0,0),vh1=new Vecmath.Vec3(0,0,0),vh2=new Vecmath.Vec3(0,0,0),cr=new Vecmath.Vec3(0,0,0);
-  var m0=new Vecmath.Mat4(),m1=new Vecmath.Mat4(),m=new Vecmath.Mat4();
+  var m0=new Vecmath.Mat4(),m1=new Vecmath.Mat4(),m=new Vecmath.Mat4(),mfocrot=new Vecmath.Mat4();
   var m4=new Vecmath.Mat4(),PI=Math.PI;
   var dcol={r:230,g:200,b:100};
   var dcols=[{r:230,g:200,b:100},{r:130,g:230,b:100},{r:100,g:150,b:240}];
@@ -186,6 +186,131 @@ var Pd5={};
     }
     //...
   }
+  
+  function panObjOnload(o) {
+    
+    //onsole.log(o.bulletCfg);
+    if (o.ps.diff) o.meshes[0].diff=o.ps.diff;
+    
+    //onsole.log(o);
+    
+    o.o={x:0,y:0,z:0,rot:0,go:{rotofs:o.ps.rotofs}};
+    //Pd5.bulletize(o);
+    Pd5.bulletize(o,{damp0:1,damp1:1});
+    
+    
+    var bc=o.bulletCfg,v;
+    if (bc) {
+      for (var b of bc.bones) {
+        //onsole.log(b);
+        //onsole.log(o.bones);
+        var co=o.bones[b.i].co;
+        if ((v=b.inverseMass)!==undefined) {
+          //console.log(co.inverseMass+' '+v);
+          co.inverseMass=v;
+        }
+        if ((v=b.gravityY)!==undefined) co.gravity.y=v;
+      }
+      //onsole.log(o.bones);
+      //if (1) return;
+      o.pans=[];
+      for (var p of bc.pans) {
+        o[p.name]=p.a;
+        o.pans.push(p);//.a);
+      }
+      o.ps.gravityPull=bc.gravityPull;
+      //console.log(o);
+      //return;
+    }
+    
+    if (o.ps.panOnload) o.ps.panOnload();
+    
+    //...
+  }
+  function panObj(x,z,ps) {
+    var o0;
+    
+    //a.push( 
+    o0=Conet.hcopy(ps,{
+      fn:ps.fn
+      ,pos:new THREE.Vector3(x,-1.8,z),health:5,rotofs:Math.PI
+      ,anim:'idle'
+      ,scale:0.4,v:0.006,vrot:0.01//anim:flat//test0//idle
+      ,onload:ps.onload||panObjOnload//,inverseMass:ps.inverseMass||100,panps:ps
+      });//);
+    //panos.push(o0);
+    return o0;
+    
+    //...
+  }
+  function panStart(o,pan) {
+    //anim=pan;//o0.o.panTurnLeft;
+    //animi=0;t6=0;
+    //onsole.log(pan);
+    if (o.pan===pan) return;
+    
+    if (!o.env) {//--- this was checkstartanims()
+      o.env=true;
+      o.o.anim=undefined;
+      o.o.animInt=undefined;
+    }
+    
+    
+    //for (var b of o.o.bones) if (b.co) b.co.gravity.y=-30;
+    
+    if (o.pan)
+    for (let b of pan[0].a) if (b.gy!==undefined) o.o.bones[b.i].co.gravity.y=b.gy;
+    
+    //o0.o.bones[ab.i].co.gravity.y=ab.gy;
+    
+    
+    o.pan=pan;
+    o.pani=0;
+    o.pant=0;
+    //o.o.bones[7].co.gravity.y=300;
+    //...
+  }
+  function panOnload() {
+    //---
+    var o=this.o;
+    /*
+    if (this===stick15o) {
+      const gp=this.gravityPull;
+      gp.panForward='panForward';//---not panDown
+      //o.panForward[0].a.push({i:7,gy:350});
+      o.panForward=[
+        {t:200,a:[{i:0,x:1.8,dz:0.5},{i:2,x:-1.875},{i:1,x:0.25,dz:0.5},{i:3,x:-0.25},{i:4,x:0},{i:5,x:0},{i:7,gy:280}]}
+       //,{t:200,a:[{i:0,x:0.75,dz:0.5},{i:2,x:-1.25},{i:1,x:0.25,dz:0.5},{i:3,x:-0.25},{i:4,x:0},{i:5,x:0}]}
+       ,{t:300,a:[{i:0,x:0.5,dz:0}   ,{i:2,x:-0.25},{i:1,x:-0.25,dz:0} ,{i:3,x:-0.25},{i:4,x:0},{i:5,x:0}]}
+       ,{t:200,a:[{i:0,x:0.25,dz:0.5},{i:2,x:-0.25},{i:1,x:1.8,dz:0.5},{i:3,x:-1.875},{i:4,x:0},{i:5,x:0}]}
+       ,{t:300,a:[{i:0,x:-0.25,dz:0} ,{i:2,x:-0.25},{i:1,x:0.5,dz:0}   ,{i:3,x:-0.25},{i:4,x:0},{i:5,x:0}]}
+      ];
+      console.log(o.panForward);
+    }
+    */
+    //console.log(o===stick15o);
+    //console.log(this===stick15o);
+    
+    setTimeout(function() {
+      //panStart(o.ps,o.panIdle);//...
+      
+      if (!o.ps.panOnloadNostart) 
+        panStart(o.ps,o.panIdle);//...
+      else {
+        o.ps.env=true;
+        o.anim=undefined;
+        o.animInt=undefined;
+      }
+      //for (var b of o.bones) if (b.co) b.co.gravity.y=-5;
+      
+      
+    }
+    ,1500);
+    //...
+  }
+  Pd5.panObj=panObj;Pd5.panStart=panStart;
+  Pd5.panObjOnload=panObjOnload;Pd5.panOnload=panOnload;
+  
   Pd5.vertNew=function(x,y,z,u,v) {
     return {p0:new Vecmath.Vec4(x,y,z,1),p1:new Vecmath.Vec4(0,0,0,1),ts:[],vis:false,u:u,v:v};
   }
@@ -425,6 +550,7 @@ var Pd5={};
     if ((o.anim==anim)||!anim) return;
     //onsole.log('Pd5.animStart '+anim.length);
     o.anim=anim;
+    if (o.stopAfterAnim) o.animStop=false;
     //o.animStarted=anim;
     
     if (typeof(anim)=='string') { o.animInt=o.animh[anim];if (!o.animInt) throw 'no0 anim '+anim; } else 
@@ -455,7 +581,10 @@ var Pd5={};
   }
   Pd5.calc=function(lo,dt,aX,aY,scale,tr,cw2,ch2,notris) {
     var o=lo;
-    if (o.animStop&&!o.recalc&&!o.isEdit) return;
+    if ((o.animStop&&!o.recalc&&!o.isEdit)||o.skipCalc) { 
+      //onsole.log('skipping calc');
+      return;
+    }
     var oo=lo.o;//,ps=o.ps||1;
     var va=lo.verts;
     var m=new Vecmath.Mat4();
@@ -500,6 +629,11 @@ var Pd5={};
             } else
               lo.ta=(t%aT)*1000;
             }
+          }
+          if (lo.stopAfterAnim&&(lo.ca==lo.stopAfterAnim)) { 
+            lo.animStop=true;lo.recalc=false; 
+            //onsole.log('stopping after Anim '+lo.stopAfterAnim);
+            //lo.ca=0;
           }
         }
         t=t%aT;lo.at=t;
@@ -636,6 +770,13 @@ var Pd5={};
               m0.rotY(oo.rot+(oo.go.rotofs||0));m.mul1(m0);
             }
           }
+          
+          if (0) if (ii==35) {
+            m0.rotX(1);
+            m1.mul2s(m,m0);
+            m.setM4(m1);
+          }
+          
           m0.setIdentity();
           //m0.setTranslation3(aba.t.x,aba.t.y,aba.t.z);
           m0.setTranslation(t);m1.mul2s(m,m0);
@@ -643,6 +784,99 @@ var Pd5={};
           m0.quat3(q.x,q.y,q.z);
           m.mul2s(m1,m0);
           //if (!ba[9]) ba[9]=new Vecmath.Mat4();  
+          //if (0) 
+          var fr=b.focrot;
+          if (fr) {
+          //if (ii==35) {
+    
+             //if (fr.dy===undefined) fr.dy=0;
+             //if (fr.dx===undefined) fr.dx=0;
+             if (fr.t===undefined) fr.t=0;
+             if (fr.tmax===undefined) fr.tmax=1500;
+             var dr=0.008*dt;
+    
+             if (fr.t>fr.tmax) {
+               if (fr.dy<0) fr.dy=Math.min(0,fr.dy+dr); else fr.dy=Math.max(0,fr.dy-dr);
+               if (fr.dx<0) fr.dx=Math.min(0,fr.dx+dr); else fr.dx=Math.max(0,fr.dx-dr);
+               if ((fr.dy==0)&&(fr.dx==0)) { fr.t=0;fr.tmax=500+Math.random()*3000; }
+             } else {
+    
+             m1.setIdentity();
+             m1.rotY((lo.ps.roty+(lo.ps.rotofs||0)));
+             
+             var sc=lo.ps.scale*10;
+             m0.scale3(sc,sc,sc);
+             //m1.mul2(m0,m1);//
+             m1.mul1(m0);
+             
+             m0.setIdentity();
+             m0.setTranslation3(lo.ps.pos.x*10,lo.ps.pos.y*10,lo.ps.pos.z*10);
+             m0.mul1(m1);//m1.mul1(m0);
+             
+             //console.log(lo.ps.scale);
+             //m1.scale3(lo.ps.scale/2,lo.ps.scale/2,lo.ps.scale/2);
+             //m0.mul1(m1);
+             mfocrot.setM4(m0);
+    
+             
+    //r dy0=Math.max(fr.dymin,fr.dy-dr);m1.setM4(m);m0.rotY(dy0);  m1.mul2s(m1,m0);m0.setM4(mfocrot);m0.mul1(m1);vh0.set3(0,0,10);m0.transformV3(vh0,vh1);var d0=Vecmath.dist2(vh1,fr.p);
+    var dy0=Math.max(fr.dymin,fr.dy-dr);m1.setM4(m);m0.rotY(dy0);  m1.mul1(m0);m0.rotX(fr.dx);m1.mul1(m0);m0.setM4(mfocrot);m0.mul1(m1);vh0.set3(0,0,10);m0.transformV3(vh0,vh1);var d0=Vecmath.dist2(vh1,fr.p);
+    var dy1=Math.min(fr.dymax,fr.dy+dr);m1.setM4(m);m0.rotY(dy1);  m1.mul1(m0);m0.rotX(fr.dx);m1.mul1(m0);m0.setM4(mfocrot);m0.mul1(m1);vh0.set3(0,0,10);m0.transformV3(vh0,vh1);var d1=Vecmath.dist2(vh1,fr.p);
+                                        m1.setM4(m);m0.rotY(fr.dy);m1.mul1(m0);m0.rotX(fr.dx);m1.mul1(m0);m0.setM4(mfocrot);m0.mul1(m1);vh0.set3(0,0,10);m0.transformV3(vh0,vh1);var dm=Vecmath.dist2(vh1,fr.p);
+    
+             if (d1<d0) { d0=d1;dy0=dy1; }//fr.dy=dy0; else fr.dy=dy1;
+             if (d0<dm) fr.dy=dy0;
+    
+    var dx0=Math.max(fr.dxmin,fr.dx-dr);m1.setM4(m);m0.rotY(fr.dy);m1.mul1(m0);m0.rotX(dx0);  m1.mul1(m0);m0.setM4(mfocrot);m0.mul1(m1);vh0.set3(0,0,10);m0.transformV3(vh0,vh1);d0=Vecmath.dist2(vh1,fr.p);
+    var dx1=Math.min(fr.dxmax,fr.dx+dr);m1.setM4(m);m0.rotY(fr.dy);m1.mul1(m0);m0.rotX(dx1);  m1.mul1(m0);m0.setM4(mfocrot);m0.mul1(m1);vh0.set3(0,0,10);m0.transformV3(vh0,vh1);d1=Vecmath.dist2(vh1,fr.p);
+                                        m1.setM4(m);m0.rotY(fr.dy);m1.mul1(m0);m0.rotX(fr.dx);m1.mul1(m0);m0.setM4(mfocrot);m0.mul1(m1);vh0.set3(0,0,10);m0.transformV3(vh0,vh1);dm=Vecmath.dist2(vh1,fr.p);
+    
+             if (d1<d0) { d0=d1;dx0=dx1; }//fr.dy=dy0; else fr.dy=dy1;
+             if (d0<dm) fr.dx=dx0;
+    
+    
+    
+    
+             fr.t+=dt;
+             }
+             
+             //console.log((d0-d1)+' '+());
+             
+             if (1) {
+             m1.setM4(m);
+             m0.rotY(fr.dy);//fr.dy);//m0.setTranslation({x:0.1,y:0,z:0}); 
+             m.mul2s(m1,m0);
+             m0.rotX(fr.dx);
+             m.mul1(m0);
+             }
+             
+             //m1.setM4(m);
+             //m0.rotX(1);
+             //m.mul2s(m1,m0);
+             
+             //vh0.set3(0,0,100);
+             //m.transformV3(vh0,vh1);
+             //console.log(vh1.toString());
+             //onsole.log(lo.ps.roty);
+             //console.log(lo.ps.pos);
+             //console.log(lo.ps.rotofs);
+             
+             //m1.setIdentity();
+             //m1.rotY((lo.ps.roty+(lo.ps.rotofs||0)));
+             //m0.setIdentity();
+             //m0.setTranslation3(lo.ps.pos.x*10,lo.ps.pos.y*10,lo.ps.pos.z*10);
+             //m0.mul1(m1);//m1.mul1(m0);
+             //mfocrot.setM4(m0);
+             
+             if (0) {
+             m0.setM4(mfocrot);
+             m0.mul1(m);
+             vh0.set3(0,0,0);
+             m0.transformV3(vh0,vh1);
+             console.log(vh1.toString());
+             }
+    
+          }
           b.mat.setM4(m);
         }
       }
@@ -842,6 +1076,7 @@ var Pd5={};
       if (!lo.viewBones) 
       for (var h=lo.verts.length-1;h>=0;h--) {
         var v=lo.verts[h];
+        if (!v.ws) continue;
         var p0=v.p0;
         p0.set3(0,0,0);
         var sw=0;
@@ -1101,6 +1336,7 @@ var Pd5={};
     var f2=1/20;//ragdoll_scale/translationscale
     var f3=f2*100;
     //var ret='';
+    //onsole.log('bulletize '+JSON.stringify(o.ps.pos));
     if (!o) return;
     if (!o.bones) return; 
     
@@ -1174,9 +1410,11 @@ var Pd5={};
         var b=o.bones[parseInt(s1)];
         b.ox=(w1.p1.x-(w1.p0.x+w0.p0.x)/2+w0.p0.x);
         b.oy=(w1.p1.y-(w1.p0.y+w0.p0.y)/2+w0.p0.y);
+        //b.oz=(w1.p1.z-(w1.p0.z+w0.p0.z)/2+w0.p0.z);
         b.cr=wrx.p0.distTo(w1.p0);
         b.cl=w1.p0.distTo(w0.p0);
-        sh=" (radlen "+b.cr+" "+b.cl+") (origin "+b.ox+" "+b.oy+" 0"+(shh.length>0?shh:"")+")";
+        sh=" (radlen "+b.cr+" "+b.cl+") (origin "+b.ox+" "+b.oy+" 0"//+b.oz
+          +(shh.length>0?shh:"")+")";
         sH[s1]=sh;
         //alert('bulletTest sh='+sh);
         mH2['s1_'+s1]=w1;
@@ -1238,7 +1476,7 @@ var Pd5={};
     //          if (ov[4]=='ezyx') Bullet.MatrixUtil.setEulerZYX(transform.basis,vf(ov,5),vf(ov,6),vf(ov,7));
     //        }
       tmpTrans.mul2(offset, transform);
-      var mass=1;
+      var mass=b.mass||1;
       var isDynamic = (mass != 0);
        
       var localInertia = new Vecmath.Vec3();
@@ -1256,6 +1494,8 @@ var Pd5={};
     //        this.coH[s.name]=body;
       body.setDamping(ps.damp0||0.05,ps.damp1||0.85);
       //body.setDamping(10,10);
+      //body.setDamping(0.01,0.01);
+      
       body.deactivationTime=0.8;
       body.setSleepingThresholds(1.6,2.5);
       b.co=body;
@@ -1275,7 +1515,9 @@ var Pd5={};
     //    if (s2=='b') continue;
     
     for (var s1 of j6names) {
-        var s=j6ah[s1],sa=s.split(','),s0=sa[0];    
+        var s=j6ah[s1];
+        if (!s) continue;
+        var sa=s.split(','),s0=sa[0];    
         
         var w0=mH[s];
         var w1=mH[s0+','+s1+',b'];
@@ -1768,20 +2010,23 @@ var Pd5={};
       for (var chi=1;chi<ch.a.length;chi++) 
       if (//(ch.a.length>2)&&
         ch.a[chi].o.onlyAnims) { //integrate extern anim files
-        //console.log('pd5.loadcombine integrate extern anims nao.');
+        //onsole.log('pd5.loadcombine integrate extern anims nao.');
         var o0=ch.a[0].o,cha2=ch.a[chi],oa=cha2.o;
         o0.animFn=cha2.fn;//so that for now on w3dit save only anim file is saved
         var boneh={}
         for (var i=0;i<o0.bones.length;i++) boneh[o0.bones[i].name]=i;
         //onsole.log(boneh);
         for (var an of oa.anims) {
-          console.log('pd5.loadCombine adding extern anim: '+an.name);
+          //console.log('pd5.loadCombine adding extern anim: '+an.name);
+          var ow=false;
           for (var i=o0.anims.length-1;i>=0;i--) {
             if (o0.anims[i].name==an.name) {
               //onsole.log('pd5.loadCombine: overwriting existing anim.');
-              o0.anims.splice(i,1,1);
+              o0.anims.splice(i,1);//,1);
+              ow=true;
             }
           }
+          console.log('pd5.loadCombine '+(ow?'overwriting':'adding')+' extern anim: '+an.name);
           an.animFn=cha2.fn;
           //onsole.log('pd5.loadCombine bones counts '+o0.bones.length+' '+an.a[0].bs.length);
           for (var i=0;i<an.a.length;i++) {
@@ -1799,6 +2044,7 @@ var Pd5={};
         }
       }
       //loadPd5({o5:ch.a[0].o,x:0,y:0,z:0,v:1,ego:1,rotofs:PI,s:8,sasc:0.07,rot:PI,eyeh:0.33});
+      //onsole.log(ch.a[0].o.anims);
       ch.cloadf(ch.a[0].o,ch);
     }
     function sload(fn,i,ch) {
@@ -2175,14 +2421,16 @@ var Pd5={};
     }
     //pd5OptPlane(o,o.meshes[0].fa.indexOf(t1));
   }
+  Pd5.weightNew=weightNew;
 }
 )(Pd5);
 
 
 //---
 //fr o,2
-//fr o,2,41
-//fr o,2,41,90
-//fr o,2,47,44
-//fr o,2,48,2,3
-//fr p,10,100
+//fr o,2,31
+//fr o,2,49
+//fr o,2,49,93
+//fr o,2,55,44
+//fr o,2,56,2,3
+//fr p,2,73

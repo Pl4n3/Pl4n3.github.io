@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>bulletXr</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<style>body { color:#000;background-color:#aaa;margin:0px;overflow:hidden;font-family:Sans-serif; }</style>
+<script src="/conet.js"></script>
+<script src="/menu.js"></script>
+<script src="/sound.js"></script>
+<script src="/vecmath.js"></script>
+<script src="/canvas/pd5.js"></script>
+<script src="/three/threePd5.js"></script>
+<script src="/bulletjs/bullet.js"></script>
+</head>
+<body>
+<script type="module">
+import * as THREE from '/three/r124/build/three.module.js';
+import { BoxLineGeometry } from '/three/r124/examples/jsm/geometries/BoxLineGeometry.js';
+import { OrbitControls } from '/three/r124/examples/jsm/controls/OrbitControls.js';
+import { XrUtil } from '/util/gfx/XrUtil.js';
+(function() {
+  //---
+  const clock=new THREE.Clock(),xrUtil=XrUtil,panos=[];
+  let container,camera,scene,raycaster,renderer,
+      room,INTERSECTED,rotateObj,controls,o0;
+  
+  init();
+  animate();
+  
+  function init() {
+    
+    //script src="/util/bricks.js">/script>
+    
+    
+    container = document.createElement( 'div' );
+    document.body.appendChild( container );
+    
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color( 0x505050 );
+    
+    camera=new THREE.PerspectiveCamera(50,window.innerWidth/window.innerHeight,0.1,100);
+    camera.position.set(0,1.6,3);
+    scene.add(camera);
+    //console.log(camera);
+    
+    room = new THREE.LineSegments(
+      new BoxLineGeometry( 6, 6, 6, 10, 10, 10 ).translate( 0, 3, 0 ),
+      new THREE.LineBasicMaterial( { color: 0x808080 } )
+    );
+    scene.add( room );
+    
+    scene.add(new THREE.AmbientLight(0xffffff,0.5));//new THREE.HemisphereLight(0x606060,0x404040));
+    
+    const light = new THREE.DirectionalLight(0xffffff);
+    light.position.set(0.5,1,0.25).normalize();
+    scene.add(light);
+    
+    const geometry = new THREE.BoxBufferGeometry( 0.15, 0.15, 0.15 );
+    
+    const o=new THREE.Mesh(geometry,new THREE.MeshLambertMaterial({color:0x999999}));
+    o.scale.set(1,1,0.1);
+    o.position.set(0.2,0,-0.5);
+    camera.add(o);rotateObj=o;
+    
+    
+    raycaster = new THREE.Raycaster();
+    
+    renderer = new THREE.WebGLRenderer( { antialias: true } );
+    renderer.setPixelRatio( window.devicePixelRatio );
+    renderer.setSize( window.innerWidth, window.innerHeight );
+    //renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.xr.enabled = true;
+    container.appendChild( renderer.domElement );
+    
+    controls=new OrbitControls(camera,renderer.domElement);
+    //
+    
+    xrUtil.init({scene:scene,renderer:renderer,camera:camera,room:room
+      //,XRControllerModelFactory:XRControllerModelFactory
+      });  
+    
+    
+    window.addEventListener('resize',onWindowResize,false);
+    //
+    
+    //document.body.appendChild(VRButton.createButton(renderer));
+    
+    window.THREE=THREE;
+    threeEnv.base=room;//scene;
+    threeEnv.scene=room;
+    threeEnv.path='/shooter/';
+    threeEnv.coBoSp=1;//computeBoundingSphere
+    threeEnv.camera=camera;
+    Conet.download({fn:'/shooter/objs/templar/o5.txt',f:function(v) {
+      //---
+      var o=Pd5.load(v);
+      o.scale=1;
+      Pd5.animStart(o,'stand2');
+      threeAddObj(o,0,0,0,3);
+      //...
+    }
+    });
+    
+    Menu.init([{s:'&#9776;',noTri:true,fs:1.4,pw:0.05,sub:[
+      Menu.mFullscreen
+      ]},xrUtil.menuXr]
+      ,{listen:1});
+    
+    //Bricks.initLoader({scene:room,scale:0.01,pos:{x:5,y:2,z:0}});
+    //Conet.download({fn:'/three/lego/moreColors.txt',f:Bricks.parseLoad});
+    
+    // /three/anim/voxed/nienhagen1monster.json
+    
+    {
+    const mb=125;
+    Pd5.boxes.push([-mb,10,0,10,20,mb]);
+    Pd5.boxes.push([mb,10,0,10,20,mb]);
+    Pd5.boxes.push([0,10,-mb,mb,20,10]);
+    Pd5.boxes.push([0,10,10+mb,mb,20,10]);
+    
+    Pd5.boxes.push([-75,0,-75,50,10,50]);//,0.09]);
+    Pd5.boxes.push([0,0,-35,10,10,10]);//,0.09]);
+    Pd5.boxes.push([-90,15,-50,25,5,25]);
+    
+    var ge=new THREE.Geometry(),w=mb/7,c=new THREE.Color(0.5,0.5,0.5),y0=-1.8,h0=w/3;
+    
+    for (var i=Pd5.boxes.length-1;i>=0;i--) { var b=Pd5.boxes[i];
+      var x=b[0],y=b[1],z=b[2],dx=b[3]*2,dy=b[4]*2,dz=b[5]*2,d=13;
+      //onsole.log(b);
+      x/=d;y/=d;z/=d;dx/=d;dy/=d;dz/=d;
+      threeEnv.addQuad({ge:ge,a0:[x-dx/2,y-dy/2-1.8,z+dz/2],a1:[0,0,-dz],a2:[dx,0,0],a3:[dx,0,-dz],dim:1,c:c});
+      threeEnv.addQuad({ge:ge,a0:[x-dx/2,y+dy/2-1.8,z+dz/2],a1:[dx,0,0],a2:[0,0,-dz],a3:[dx,0,-dz],dim:1,c:c});
+      threeEnv.addQuad({ge:ge,a0:[x-dx/2,y-dy/2-1.8,z+dz/2],a1:[dx,0,0],a2:[0,dy,0],a3:[dx,dy,0],dim:1,c:c});
+      threeEnv.addQuad({ge:ge,a0:[x-dx/2,y-dy/2-1.8,z+dz/2],a1:[0,dy,0],a2:[0,0,-dz],a3:[0,dy,-dz],dim:1,c:c});
+      threeEnv.addQuad({ge:ge,a0:[x-dx/2,y-dy/2-1.8,z-dz/2],a1:[0,dy,0],a2:[dx,0,0],a3:[dx,dy,0],dim:1,c:c});
+      threeEnv.addQuad({ge:ge,a0:[x+dx/2,y-dy/2-1.8,z+dz/2],a1:[0,0,-dz],a2:[0,dy,0],a3:[0,dy,-dz],dim:1,c:c});
+    }
+    
+    
+    ge.computeVertexNormals();
+    var bge=new THREE.BufferGeometry().fromGeometry(ge);
+    var mh={vertexColors:THREE.FaceColors};
+    var m=new THREE.Mesh(bge,new THREE.MeshPhongMaterial(mh));
+    m.position.set(0,0,0);
+    m.castShadow=true;
+    m.receiveShadow=true;
+    room.add(m);
+    
+    const a=[];
+    const fn=
+      //'/shooter/objs/bullet/bird/o.json';
+      '/shooter/objs/bullet/stick15.txt';
+    
+    (o0=Pd5.panObj(0,-1,{
+      fn:fn,panOnload:Pd5.panOnload
+    }));//stick15o=o0;
+    a.push(o0);panos.push(o0);
+    
+        
+    (o0=Pd5.panObj(5,-2,{
+      fn:fn,diff:'/shooter/objs/bullet/stick15/skin1d.json'
+      
+    ,onload:function(o) {
+      //---
+      for (const w of o.bones[3].ws) w.p0.y/=2;
+      for (const w of o.bones[2].ws) w.p0.y/=2;
+      for (const w of o.bones[4].ws) w.p0.y/=2;
+      for (const w of o.bones[5].ws) w.p0.y/=2;
+      for (const w of o.bones[6].ws) w.p0.y*=2;
+      Pd5.panObjOnload(o);
+      //...
+    }
+      
+      ,panOnload:Pd5.panOnload
+    }));o0.panai=1;
+    a.push(o0);panos.push(o0);
+    
+    
+    (o0=Pd5.panObj(-5,-2,{
+      fn:fn,diff:'/shooter/objs/bullet/stick15/skin1d.json',panOnload:Pd5.panOnload
+    }));o0.panai=1;
+    a.push(o0);panos.push(o0);
+    
+    //--- now do loadObjsThenLoop(a)
+    for (const h of a) {
+    h.f=function(v) {
+      //---
+      let ps=this;
+      var o=Pd5.load(v);
+      //---loadinit start
+      o.ps=ps;ps.o=o;
+      if (ps.onload) ps.onload(o);
+      
+      //---loadinit end
+      o.scale=1;
+      Pd5.animStart(o,'idle');
+      
+      //Pd5.calc(o,0,0.0,0,1,{x:0,y:0,z:0},0,0,true);
+      
+      threeAddObj(o,0,0,0,ps.scale);
+      //...
+    }
+      Conet.download(h);
+    }
+    
+    }
+    //---
+  }
+  function onWindowResize() {
+    //...
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize( window.innerWidth, window.innerHeight );
+    //---
+  }
+  function animate() {
+    
+    renderer.setAnimationLoop( render );
+    
+  }
+  function render() {
+    
+    const delta=clock.getDelta()*60,dt=delta*10;
+    
+    const controller=xrUtil.ctrl0;
+    const ctrl1=xrUtil.ctrl1;
+    const gp0=xrUtil.gp0;
+    const gp1=xrUtil.gp1;
+    
+    xrUtil.checkFlight(dt);
+    
+    if (gp1) {
+      //room.position.x-=gp1.axes[2]*dt*0.1;
+      //room.position.y+=gp1.axes[3]*dt*0.1;
+    }
+    
+    
+    if (Pd5.dynamicsWorld) Pd5.dynamicsWorld.stepSimulation1(dt/1000);
+    
+    threeRender(dt);
+    controls.update();
+    
+    renderer.render(scene,camera);
+    //...
+  }
+  //...
+}
+)();
+
+</script>
+</body>
+</html><script>
+//fr o,21
+//fr o,21,8
+//fr o,21,8,63
+//fr o,21,8,139
+//fr o,21,11
+//fr p,2,189

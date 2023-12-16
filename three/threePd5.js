@@ -1025,11 +1025,22 @@ threeEnv.addQuad=function(ps) {
   threeEnv.addTri({ge:ps.ge,v0:v1,v1:v3,v2:v2,c0:c1,c1:c3,c2:c2});
   //---
 }
-//fr o,9
+//--- three util funcs
+threeEnv.pointLight=function(ps) {
+  //---
+  const dist=ps.dist,l=new THREE.PointLight(ps.col,ps.int,dist);l.position.set(ps.x,ps.y,ps.z);
+  if (ps.castShadow!==false) {
+  l.castShadow=true;
+  l.shadow.camera.near=0.1;//100;
+  l.shadow.camera.far=dist;//1000;
+  l.shadow.mapSize.width=1024;//2048;
+  l.shadow.mapSize.height=1024;
+  }
+  //(ps.base||base).add(l);
+  return l;
+  //...
+}
+//---
 //fr o,9,35
-//fr o,15
-//fr o,16
-//fr o,19
-//fr o,20
-//fr o,34
-//fr p,49,6
+//fr o,36
+//fr p,8,36

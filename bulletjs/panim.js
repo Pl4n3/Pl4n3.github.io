@@ -2,9 +2,11 @@
 function Panim(ps) {
   //---
   const self=this,th0=new Bullet.Transform(),th1=new Bullet.Transform(),
-        tmp=new Vecmath.Vec3(),PI=Math.PI,panStart=Pd5.panStart,
+        tmp=new Vecmath.Vec3(),PI=Math.PI,
         tempMatrix=new THREE.Matrix4(),euler=new THREE.Euler(0,1,0,'YXZ');
   
+  this.panos=[];
+  this.a=[];
   
   this.calc=function(dt) {
     //---
@@ -79,7 +81,7 @@ function Panim(ps) {
             //onsole.log('panTurn nao '+gp.panTurn);
             //onsole.log(o);
             //onsole.log(o[gp.panTurn]);
-            panStart(o,o.o[gp.panTurn]);
+            self.start(o,o.o[gp.panTurn]);
           }
           if (gp.fTurn) f=gp.fTurn;
           o.wasMnav=true;
@@ -87,13 +89,13 @@ function Panim(ps) {
           al=1;ar=-1; 
           //onsole.log('ileft');
           //onsole.log(gp);
-          if (gp.panForward) panStart(o,o.o[gp.panForward]);
+          if (gp.panForward) self.start(o,o.o[gp.panForward]);
           o.wasMnav=true;
         } else if (o.moveBack) { 
           if (gp.fBack) f=gp.fBack;
           al=-1;ar=1; 
         } else {
-          if (o.wasMnav&&gp.panIdle&&o.pan) panStart(o,o.o[gp.panIdle]);
+          if (o.wasMnav&&gp.panIdle&&o.pan) self.start(o,o.o[gp.panIdle]);
           o.wasMnav=false;
         }
         if (al!=0) {
@@ -262,12 +264,137 @@ function Panim(ps) {
     }
     //oo.go.rotofs=o.rotofs;
   }
+  //---
+  this.objOnload=function(o) {
+    
+    //onsole.log(o.bulletCfg);
+    if (o.ps.diff) o.meshes[0].diff=o.ps.diff;
+    
+    //onsole.log(o);
+    
+    o.o={x:0,y:0,z:0,rot:0,go:{rotofs:o.ps.rotofs}};
+    //Pd5.bulletize(o);
+    Pd5.bulletize(o,{damp0:1,damp1:1});
+    
+    
+    var bc=o.bulletCfg,v;
+    if (bc) {
+      for (var b of bc.bones) {
+        //onsole.log(b);
+        //onsole.log(o.bones);
+        var co=o.bones[b.i].co;
+        if ((v=b.inverseMass)!==undefined) {
+          //console.log(co.inverseMass+' '+v);
+          co.inverseMass=v;
+        }
+        if ((v=b.gravityY)!==undefined) co.gravity.y=v;
+      }
+      //onsole.log(o.bones);
+      //if (1) return;
+      o.pans=[];
+      for (var p of bc.pans) {
+        o[p.name]=p.a;
+        o.pans.push(p);//.a);
+      }
+      o.ps.gravityPull=bc.gravityPull;
+      //console.log(o);
+      //return;
+    }
+    
+    if (o.ps.panOnload) o.ps.panOnload();
+    
+    //...
+  }
+  this.obj=function(x,z,ps) {
+    var o0;
+    
+    //a.push( 
+    o0=Conet.hcopy(ps,{
+      fn:ps.fn
+      ,pos:new THREE.Vector3(x,-1.8,z),health:5,rotofs:Math.PI
+      ,anim:'idle'
+      ,scale:0.4,v:0.006,vrot:0.01//anim:flat//test0//idle
+      ,onload:ps.onload||self.objOnload//,inverseMass:ps.inverseMass||100,panps:ps
+      });//);
+    //panos.push(o0);
+    self.panos.push(o0);self.a.push(o0);
+    return o0;
+    
+    //...
+  }
+  this.start=function(o,pan) {
+    //anim=pan;//o0.o.panTurnLeft;
+    //animi=0;t6=0;
+    //onsole.log(pan);
+    if (o.pan===pan) return;
+    
+    if (!o.env) {//--- this was checkstartanims()
+      o.env=true;
+      o.o.anim=undefined;
+      o.o.animInt=undefined;
+    }
+    
+    
+    //for (var b of o.o.bones) if (b.co) b.co.gravity.y=-30;
+    
+    if (o.pan)
+    for (let b of pan[0].a) if (b.gy!==undefined) o.o.bones[b.i].co.gravity.y=b.gy;
+    
+    //o0.o.bones[ab.i].co.gravity.y=ab.gy;
+    
+    
+    o.pan=pan;
+    o.pani=0;
+    o.pant=0;
+    //o.o.bones[7].co.gravity.y=300;
+    //...
+  }
+  this.onload=function() {
+    //---
+    var o=this.o;
+    /*
+    if (this===stick15o) {
+      const gp=this.gravityPull;
+      gp.panForward='panForward';//---not panDown
+      //o.panForward[0].a.push({i:7,gy:350});
+      o.panForward=[
+        {t:200,a:[{i:0,x:1.8,dz:0.5},{i:2,x:-1.875},{i:1,x:0.25,dz:0.5},{i:3,x:-0.25},{i:4,x:0},{i:5,x:0},{i:7,gy:280}]}
+       //,{t:200,a:[{i:0,x:0.75,dz:0.5},{i:2,x:-1.25},{i:1,x:0.25,dz:0.5},{i:3,x:-0.25},{i:4,x:0},{i:5,x:0}]}
+       ,{t:300,a:[{i:0,x:0.5,dz:0}   ,{i:2,x:-0.25},{i:1,x:-0.25,dz:0} ,{i:3,x:-0.25},{i:4,x:0},{i:5,x:0}]}
+       ,{t:200,a:[{i:0,x:0.25,dz:0.5},{i:2,x:-0.25},{i:1,x:1.8,dz:0.5},{i:3,x:-1.875},{i:4,x:0},{i:5,x:0}]}
+       ,{t:300,a:[{i:0,x:-0.25,dz:0} ,{i:2,x:-0.25},{i:1,x:0.5,dz:0}   ,{i:3,x:-0.25},{i:4,x:0},{i:5,x:0}]}
+      ];
+      console.log(o.panForward);
+    }
+    */
+    //console.log(o===stick15o);
+    //console.log(this===stick15o);
+    
+    setTimeout(function() {
+      //panStart(o.ps,o.panIdle);//...
+      
+      if (!o.ps.panOnloadNostart) 
+        self.start(o.ps,o.panIdle);//...
+      else {
+        o.ps.env=true;
+        o.anim=undefined;
+        o.animInt=undefined;
+      }
+      //for (var b of o.bones) if (b.co) b.co.gravity.y=-5;
+      
+      
+    }
+    ,1500);
+    //...
+  }
   //...
 }
 
 
-console.log('Panim v.0.39 ');//FOLDORUPDATEVERSION
+console.log('Panim v.0.47 ');//FOLDORUPDATEVERSION
 //...
 //fr o,1
-//fr o,1,6
-//fr p,12,42
+//fr o,1,8
+//fr o,1,11
+//fr o,1,13,20
+//fr p,40,4

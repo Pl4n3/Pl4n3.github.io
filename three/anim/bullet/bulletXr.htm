@@ -12,6 +12,7 @@
 <script src="/canvas/pd5.js"></script>
 <script src="/three/threePd5.js"></script>
 <script src="/bulletjs/bullet.js"></script>
+<script src="/bulletjs/panim.js"></script>
 </head>
 <body>
 <script type="module">
@@ -23,7 +24,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
   //---
   const clock=new THREE.Clock(),xrUtil=XrUtil,panos=[];
   let container,camera,scene,raycaster,renderer,
-      room,INTERSECTED,rotateObj,controls,o0;
+      room,INTERSECTED,rotateObj,controls,o0,panim;
   
   init();
   animate();
@@ -44,11 +45,11 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     scene.add(camera);
     //console.log(camera);
     
-    room = new THREE.LineSegments(
-      new BoxLineGeometry( 6, 6, 6, 10, 10, 10 ).translate( 0, 3, 0 ),
-      new THREE.LineBasicMaterial( { color: 0x808080 } )
+    room=new THREE.LineSegments(
+      new BoxLineGeometry(6,6,6,10,10,10).translate(0,3,0),
+      new THREE.LineBasicMaterial({color:0x808080})
     );
-    scene.add( room );
+    scene.add(room);
     
     scene.add(new THREE.AmbientLight(0xffffff,0.5));//new THREE.HemisphereLight(0x606060,0x404040));
     
@@ -87,11 +88,13 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     //document.body.appendChild(VRButton.createButton(renderer));
     
     window.THREE=THREE;
-    threeEnv.base=room;//scene;
+    threeEnv.base=room;//room;//scene;
     threeEnv.scene=room;
     threeEnv.path='/shooter/';
     threeEnv.coBoSp=1;//computeBoundingSphere
     threeEnv.camera=camera;
+    threeEnv.aipos=1;
+    if (0)
     Conet.download({fn:'/shooter/objs/templar/o5.txt',f:function(v) {
       //---
       var o=Pd5.load(v);
@@ -111,6 +114,8 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     //Conet.download({fn:'/three/lego/moreColors.txt',f:Bricks.parseLoad});
     
     // /three/anim/voxed/nienhagen1monster.json
+    const tsd=Menu.touchSticksInit({autoKeys:1,skip1:1});
+    
     
     {
     const mb=125;
@@ -145,16 +150,20 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     m.position.set(0,0,0);
     m.castShadow=true;
     m.receiveShadow=true;
-    room.add(m);
+    let cont=room;//scene;//room
+    cont.add(m);//room
     
     const a=[];
     const fn=
       //'/shooter/objs/bullet/bird/o.json';
       '/shooter/objs/bullet/stick15.txt';
     
+    panim=new Panim({});
+    
+    
     (o0=Pd5.panObj(0,-1,{
       fn:fn,panOnload:Pd5.panOnload
-    }));//stick15o=o0;
+    }));panim.stick15o=o0;
     a.push(o0);panos.push(o0);
     
         
@@ -190,6 +199,9 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       var o=Pd5.load(v);
       //---loadinit start
       o.ps=ps;ps.o=o;
+      
+      if (ps.roty===undefined) ps.roty=0;
+      
       if (ps.onload) ps.onload(o);
       
       //---loadinit end
@@ -198,12 +210,17 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       
       //Pd5.calc(o,0,0.0,0,1,{x:0,y:0,z:0},0,0,true);
       
-      threeAddObj(o,0,0,0,ps.scale);
+      threeAddObj(o,0,0,0,1*ps.scale);
       //...
     }
       Conet.download(h);
     }
     
+    panim.panos=panos;
+    panim.a=a;
+    panim.xrUtil=xrUtil;panim.camera=camera;
+    panim.tsd0=tsd[0];
+    panim.controls=controls;
     }
     //---
   }
@@ -221,7 +238,8 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
   }
   function render() {
     
-    const delta=clock.getDelta()*60,dt=delta*10;
+    //const cgd=clock.getDelta(),delta=cgd*60,dt=cgd*1000;
+    const dt=clock.getDelta()*1000;
     
     const controller=xrUtil.ctrl0;
     const ctrl1=xrUtil.ctrl1;
@@ -231,10 +249,13 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     xrUtil.checkFlight(dt);
     
     if (gp1) {
+      //panim.gpad=gp1;
       //room.position.x-=gp1.axes[2]*dt*0.1;
       //room.position.y+=gp1.axes[3]*dt*0.1;
     }
     
+    //if (window.panimCalc) 
+    panim.calc(dt);
     
     if (Pd5.dynamicsWorld) Pd5.dynamicsWorld.stepSimulation1(dt/1000);
     
@@ -251,9 +272,10 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 </script>
 </body>
 </html><script>
-//fr o,21
-//fr o,21,8
-//fr o,21,8,63
-//fr o,21,8,139
-//fr o,21,11
-//fr p,2,189
+//fr o,22
+//fr o,22,8
+//fr o,22,8,65
+//fr o,22,8,147
+//fr o,22,10
+//fr o,22,11
+//fr p,40,211

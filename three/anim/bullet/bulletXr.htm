@@ -22,9 +22,9 @@ import { OrbitControls } from '/three/r124/examples/jsm/controls/OrbitControls.j
 import { XrUtil } from '/util/gfx/XrUtil.js';
 (function() {
   //---
-  const clock=new THREE.Clock(),xrUtil=XrUtil,panos=[];
+  const clock=new THREE.Clock(),xrUtil=XrUtil;
   let container,camera,scene,raycaster,renderer,
-      room,INTERSECTED,rotateObj,controls,o0,panim;
+      room,INTERSECTED,controls,o0,panim;
   
   init();
   animate();
@@ -45,25 +45,24 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     scene.add(camera);
     //console.log(camera);
     
-    room=new THREE.LineSegments(
-      new BoxLineGeometry(6,6,6,10,10,10).translate(0,3,0),
-      new THREE.LineBasicMaterial({color:0x808080})
-    );
-    scene.add(room);
+    //room=new THREE.LineSegments(
+    //  new BoxLineGeometry(6,6,6,10,10,10).translate(0,3,0),
+    //  new THREE.LineBasicMaterial({color:0x808080}));
+    room=new THREE.Group();scene.add(room);
+    //room=scene;
     
-    scene.add(new THREE.AmbientLight(0xffffff,0.5));//new THREE.HemisphereLight(0x606060,0x404040));
+    //scene.add(new THREE.AmbientLight(0xffffff,0.5));//new THREE.HemisphereLight(0x606060,0x404040));
+    //const light = new THREE.DirectionalLight(0xffffff);
+    //light.position.set(0.5,1,0.25).normalize();
+    //scene.add(light);
     
-    const light = new THREE.DirectionalLight(0xffffff);
-    light.position.set(0.5,1,0.25).normalize();
-    scene.add(light);
+    window.THREE=THREE;
+    scene.add(new THREE.AmbientLight(0xffffff,0.3));
+    scene.add(threeEnv.pointLight({x:-4,y:12,z:4,col:0xffffff,dist:25,int:2}));
+    scene.add(threeEnv.pointLight({x:5,y:-5,z:-5,col:0xaaffff,dist:100,int:0.5,castShadow:false}));
     
-    const geometry = new THREE.BoxBufferGeometry( 0.15, 0.15, 0.15 );
     
-    const o=new THREE.Mesh(geometry,new THREE.MeshLambertMaterial({color:0x999999}));
-    o.scale.set(1,1,0.1);
-    o.position.set(0.2,0,-0.5);
-    camera.add(o);rotateObj=o;
-    
+    //const geometry = new THREE.BoxBufferGeometry( 0.15, 0.15, 0.15 );
     
     raycaster = new THREE.Raycaster();
     
@@ -71,6 +70,8 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     renderer.setPixelRatio( window.devicePixelRatio );
     renderer.setSize( window.innerWidth, window.innerHeight );
     //renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.shadowMap.enabled=true;
+    renderer.shadowMap.type=THREE.BasicShadowMap;
     renderer.xr.enabled = true;
     container.appendChild( renderer.domElement );
     
@@ -155,19 +156,19 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     const a=[];
     const fn=
-      //'/shooter/objs/bullet/bird/o.json';
-      '/shooter/objs/bullet/stick15.txt';
+      '/shooter/objs/bullet/bird/o.json';
+      //'/shooter/objs/bullet/stick15.txt';
     
     panim=new Panim({});
     
     
-    (o0=Pd5.panObj(0,-1,{
-      fn:fn,panOnload:Pd5.panOnload
+    (o0=panim.obj(0,-1,{
+      fn:fn,panOnload:panim.onload
     }));panim.stick15o=o0;
-    a.push(o0);panos.push(o0);
+    //a.push(o0);panos.push(o0);
     
         
-    (o0=Pd5.panObj(5,-2,{
+    (o0=panim.obj(5,-2,{
       fn:fn,diff:'/shooter/objs/bullet/stick15/skin1d.json'
       
     ,onload:function(o) {
@@ -177,22 +178,22 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       for (const w of o.bones[4].ws) w.p0.y/=2;
       for (const w of o.bones[5].ws) w.p0.y/=2;
       for (const w of o.bones[6].ws) w.p0.y*=2;
-      Pd5.panObjOnload(o);
+      panim.objOnload(o);
       //...
     }
       
-      ,panOnload:Pd5.panOnload
+      ,panOnload:panim.onload
     }));o0.panai=1;
-    a.push(o0);panos.push(o0);
+    //a.push(o0);panos.push(o0);
     
     
-    (o0=Pd5.panObj(-5,-2,{
-      fn:fn,diff:'/shooter/objs/bullet/stick15/skin1d.json',panOnload:Pd5.panOnload
+    (o0=panim.obj(-5,-2,{
+      fn:fn,diff:'/shooter/objs/bullet/stick15/skin1d.json',panOnload:panim.onload
     }));o0.panai=1;
-    a.push(o0);panos.push(o0);
+    //a.push(o0);panos.push(o0);
     
     //--- now do loadObjsThenLoop(a)
-    for (const h of a) {
+    for (const h of panim.a) {
     h.f=function(v) {
       //---
       let ps=this;
@@ -216,8 +217,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       Conet.download(h);
     }
     
-    panim.panos=panos;
-    panim.a=a;
+    //panim.panos=panos;panim.a=a;
     panim.xrUtil=xrUtil;panim.camera=camera;
     panim.tsd0=tsd[0];
     panim.controls=controls;
@@ -274,8 +274,9 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 </html><script>
 //fr o,22
 //fr o,22,8
-//fr o,22,8,65
-//fr o,22,8,147
+//fr o,22,8,66
+//fr o,22,8,134
+//fr o,22,8,148
 //fr o,22,10
 //fr o,22,11
-//fr p,40,211
+//fr p,2,158

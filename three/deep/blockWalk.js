@@ -1,9 +1,11 @@
 //----
-console.log('BlockWalk v.1.24 ');//FOLDORUPDATEVERSION
+console.log('BlockWalk 1.46 ');//FOLDORUPDATEVERSION
 var BlockWalk=function(ps) {
   //---
-  const self=this,tweens=[];
-  this.tweens=tweens;
+  const self=this,PI=Math.PI;
+  let tempMatrix,euler;
+  
+  this.tweens=[];
   this.blockMeshPos={x:0,y:0,z:0};
   this.checkWalk=function(u,dx,dz) {
     //---
@@ -34,7 +36,7 @@ var BlockWalk=function(ps) {
         if (!blockAt(xi,yi-1,zi)&&!blockAt(xj,yj-1,zj)) {
           if (blockAt(xj,yj-2,zj)) {//dont fall down
             if (0) pos.y=(yj-1+0.5)*gw;
-            else tweens.push(u.posytw={o:pos,key:'y',value:(yj-1+0.5)*gw+bmp.y,t:100,onset:((u===player)?updatePlayerView:undefined)});
+            else self.tweens.push(u.posytw={o:pos,key:'y',value:(yj-1+0.5)*gw+bmp.y,t:100,onset:((u===player)?updatePlayerView:undefined)});
             //posyt=0;
           } else 
             ret=false;
@@ -43,7 +45,7 @@ var BlockWalk=function(ps) {
       else //if (!ret) 
       if (!blockAt(xi,yi+1,zi)&&!blockAt(xj,yj+1,zj)&&!blockAt(xi,yi+2,zi)&&!blockAt(xj,yj+2,zj)) {
         if (0) pos.y=(yj+1+0.5)*gw;
-        else tweens.push(u.posytw={o:pos,key:'y',value:(yj+1+0.5)*gw+bmp.y,t:100,onset:((u===player)?updatePlayerView:undefined)});
+        else self.tweens.push(u.posytw={o:pos,key:'y',value:(yj+1+0.5)*gw+bmp.y,t:100,onset:((u===player)?updatePlayerView:undefined)});
         //posyt=0;
         ret=true;
       }
@@ -76,9 +78,75 @@ var BlockWalk=function(ps) {
     return ret;
     //...
   }
+  
+  this.steer=function(u,dt) {
+    //---
+    const tsd0=self.tsd0,gpad=self.xrUtil?self.xrUtil.gp1:undefined;
+    
+    //if (!gpad) return;
+    
+    let dx=0,dy=0;
+    if (gpad) {
+      dx=gpad.axes[2];
+      dy=gpad.axes[3];
+    } else {
+      dx=tsd0.dx;
+      dy=tsd0.dy;
+    }
+    
+    //if ((dx==0)&&(dy==0)) return;
+    
+    let animMove=false,animTurn=false;
+    u.speed=0;
+    if ((dx!=0)||(dy!=0)) {
+      let ay=0;
+      if (self.camera) {
+        if (!tempMatrix) {
+          tempMatrix=new THREE.Matrix4();
+          euler=new THREE.Euler(0,1,0,'YXZ');
+        }
+        tempMatrix.identity().extractRotation(self.camera.matrixWorld);
+        euler.setFromRotationMatrix(tempMatrix);
+        ay=euler.y;
+      } //else ay=self.controls.getAzimuthalAngle();
+       
+      const a2=Math.atan2(dy,-dx)-PI/2+ay,//view
+            da=Conet.dAng(a2,u.a);//ang);
+      //onsole.log(da);
+      const mda=0.15;
+      
+      if (Math.abs(da)>mda) {
+        u.a+=(da<0?-1:1)*dt*0.01;
+        u.o.meshes[0].tmesh.rotation.y=u.a;
+        animTurn=true;
+      } else {
+        u.speed=0.0002*1;//(Math.abs(a3)-0.1)*((a3<0)?1:-1);
+        animMove=true;
+      } 
+    }
+    if (animMove||animTurn) {
+      Pd5.animStart(u.o,'run');
+    } else {
+      Pd5.animStart(u.o,'stand2');
+    }
+    
+    
+    
+    //u.a-=dx*dt*0.01;
+    //u.o.meshes[0].tmesh.rotation.y=u.a;
+    //const a3=dy;
+    //if (Math.abs(a3)>0.1) {
+    //  u.speed=0.0002*(Math.abs(a3)-0.1)*((a3<0)?1:-1);
+    //  Pd5.animStart(u.o,'run');
+    //} else {
+    //  u.speed=0;
+    //  Pd5.animStart(u.o,'stand2');
+    //}
+    //...
+  }
   //...
 }
 //...
 //fr o,2
-//fr o,2,4
-//fr p,4,31
+//fr o,2,8
+//fr p,10,56

@@ -63,6 +63,7 @@ let XrUtil={};
     let renderer=ps.renderer;
     camera=ps.camera;
     room=ps.room;
+    vrPos=ps.vrPos;
     //let XRControllerModelFactory=ps.XRControllerModelFactory;
     
     function onSelectStart() {
@@ -139,7 +140,7 @@ let XrUtil={};
   }
   
   
-  console.log('XrUtil v.1.53 ');//FOLDORUPDATEVERSION
+  console.log('XrUtil v.1.55 ');//FOLDORUPDATEVERSION
   //...
 }
 )(XrUtil);
@@ -147,10 +148,10 @@ export { XrUtil };
 //fr o,3
 //fr o,3,6
 //fr o,3,7
-//fr o,3,7,6
-//fr o,3,7,8
-//fr o,3,7,13
-//fr o,3,7,27
-//fr o,3,7,37
-//fr o,3,7,37,1
-//fr p,40,23
+//fr o,3,7,7
+//fr o,3,7,9
+//fr o,3,7,14
+//fr o,3,7,28
+//fr o,3,7,38
+//fr o,3,7,38,1
+//fr p,15,41

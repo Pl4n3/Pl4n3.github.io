@@ -122,6 +122,8 @@ let XrUtil={};
     
     self.ctrl0=ctrl0;
     self.ctrl1=ctrl1;
+    let mode='immersive-vr';
+    //---
     self.menuXr={s:'XR',actionf:function() {
       //---
       function onSessionStarted(session) {
@@ -131,16 +133,27 @@ let XrUtil={};
         //...
       }
       
-      const sessionInit = { optionalFeatures: [ 'local-floor', 'bounded-floor', 'hand-tracking' ] };
-      navigator.xr.requestSession('immersive-ar',sessionInit).then(onSessionStarted);
+      const sessionInit={optionalFeatures:['local-floor','bounded-floor','hand-tracking','layers']};
+      navigator.xr.requestSession(mode,sessionInit).then(onSessionStarted);
       //...
     }
     };
+    
+    if ('xr' in navigator) 
+    navigator.xr.isSessionSupported('immersive-ar')
+    .then(function(supported) {
+      if (supported) {
+        self.menuXr.s='AR';
+        mode='immersive-ar';
+        //showStartXR( 'immersive-ar' );
+      }
+    }
+    );
     //...
   }
   
   
-  console.log('XrUtil v.1.59 ');//FOLDORUPDATEVERSION
+  console.log('XrUtil v.1.63 ');//FOLDORUPDATEVERSION
   //...
 }
 )(XrUtil);
@@ -152,6 +165,7 @@ export { XrUtil };
 //fr o,3,7,9
 //fr o,3,7,14
 //fr o,3,7,28
-//fr o,3,7,38
-//fr o,3,7,38,1
-//fr p,77,106
+//fr o,3,7,40
+//fr o,3,7,40,1
+//fr o,3,7,45
+//fr p,15,117

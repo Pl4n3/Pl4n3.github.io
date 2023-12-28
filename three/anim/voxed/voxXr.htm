@@ -31,11 +31,11 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       //fn='/three/anim/voxed/xr0.json';
   const tempMatrix=new THREE.Matrix4(),vt=new THREE.Vector3(),
       voxMeshPos=new THREE.Vector3(0,2,-2),huds=[],hud={lines:[
-      'VoxXr 0.179 '//FOLDORUPDATEVERSION
+      'VoxXr 0.199 '//FOLDORUPDATEVERSION
       ],cursor:{x:0.5,y:0.5,vis:false},buttons:[]},
       lsKey='voxXr0',blockWalk=new BlockWalk(),
       //---vrPos independent from room pos to follow unit
-      vrPos=new THREE.Vector3(0,0,0);
+      vrPos=new THREE.Vector3(0,0,0),xrUtil=XrUtil;
   
   init();
   animate();
@@ -237,7 +237,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     controls=new OrbitControls(camera,renderer.domElement);
     //
     
-    XrUtil.init({scene:scene,renderer:renderer
+    xrUtil.init({scene:scene,renderer:renderer,camera:camera,room:room,vrPos:vrPos
       //,XRControllerModelFactory:XRControllerModelFactory
       });  
     
@@ -246,9 +246,9 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     //
     
     //document.body.appendChild(VRButton.createButton(renderer));
-    blockWalk.gw=voxScale/33.33;
-    blockWalk.blockMeshPos={x:voxMeshPos.x,y:voxMeshPos.y-13*blockWalk.gw,z:voxMeshPos.z};
-    blockWalk.blockAt=Voxed.etV;
+    //blockWalk.gw=voxScale/33.33;
+    //blockWalk.blockMeshPos={x:voxMeshPos.x,y:voxMeshPos.y-13*blockWalk.gw,z:voxMeshPos.z};
+    //blockWalk.blockAt=Voxed.etV;
     
     window.THREE=THREE;
     threeEnv.base=room;//scene;
@@ -318,9 +318,20 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     }
     */
       ]} 
-     ,XrUtil.menuXr  
+     ,xrUtil.menuXr  
       ]
       ,{listen:1});
+    
+    const tsd=Menu.touchSticksInit({autoKeys:1,skip1:1});
+    
+    
+    blockWalk.gw=voxScale/33.33;
+    blockWalk.blockMeshPos={x:voxMeshPos.x,y:voxMeshPos.y-13*blockWalk.gw,z:voxMeshPos.z};
+    blockWalk.blockAt=Voxed.etV;
+    blockWalk.tsd0=tsd[0];
+    blockWalk.xrUtil=xrUtil;
+    blockWalk.camera=camera;
+    
     
     //Bricks.initLoader({scene:room,scale:0.01,pos:{x:5,y:2,z:0}});
     //Conet.download({fn:'/three/lego/moreColors.txt',f:Bricks.parseLoad});
@@ -429,10 +440,10 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     const delta=clock.getDelta()*60,dt=delta*10;
     
-    const ctrl0=XrUtil.ctrl0;
-    const ctrl1=XrUtil.ctrl1;
-    const gp0=XrUtil.gp0;
-    const gp1=XrUtil.gp1;
+    const ctrl0=xrUtil.ctrl0;
+    const ctrl1=xrUtil.ctrl1;
+    const gp0=xrUtil.gp0;
+    const gp1=xrUtil.gp1;
     
     if (tVoxAdd>0) {
       tVoxAdd-=dt;
@@ -457,24 +468,28 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     }
     
+    xrUtil.checkFlight(dt);
+    
+    //if (gp0) {
+    //  //otateObj.rotation.y+=gp0.axes[2]*dt*0.1;
+    //  const dx=gp0.axes[2],dz=gp0.axes[3];
+    //  if ((Math.abs(dz)>0.1)||(Math.abs(dx)>0.1)) {
+    //    //const position = new THREE.Vector3();
+    //    //const rotation = new THREE.Quaternion();
+    //    //const scale = new THREE.Vector3();
+    //    //camera.matrixWorld.decompose(position,rotation,scale);
+    //    tempMatrix.identity().extractRotation(camera.matrixWorld);
+    //    vt.set(-dx,0,-dz);
+    //    vt.applyMatrix4(tempMatrix);
+    //    vt.multiplyScalar(dt*0.01);
+    //    room.position.x+=vt.x;
+    //    room.position.y+=vt.y;
+    //    room.position.z+=vt.z;
+    //    vrPos.add(vt);
+    //    room.updateMatrix();
+    //  }
+    //}
     if (gp0) {
-      //otateObj.rotation.y+=gp0.axes[2]*dt*0.1;
-      const dx=gp0.axes[2],dz=gp0.axes[3];
-      if ((Math.abs(dz)>0.1)||(Math.abs(dx)>0.1)) {
-        //const position = new THREE.Vector3();
-        //const rotation = new THREE.Quaternion();
-        //const scale = new THREE.Vector3();
-        //camera.matrixWorld.decompose(position,rotation,scale);
-        tempMatrix.identity().extractRotation(camera.matrixWorld);
-        vt.set(-dx,0,-dz);
-        vt.applyMatrix4(tempMatrix);
-        vt.multiplyScalar(dt*0.01);
-        room.position.x+=vt.x;
-        room.position.y+=vt.y;
-        room.position.z+=vt.z;
-        vrPos.add(vt);
-        room.updateMatrix();
-      }
       if (gp0.buttons[0].pressed) {
         if (!roomMatrix) { roomMatrix=new THREE.Matrix4();roomMatrix.copy(room.matrix); }
         room.matrix.multiplyMatrices(ctrl0.matrix,roomMatrix);
@@ -534,20 +549,21 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       vt.applyMatrix4(tempMatrix);
       cursor.position.set(vt.x,vt.y,vt.z);//pc.x-pr.x,pc.y-pr.y,pc.z-pr.z);
       if (gp1) {
-        const u=unit0;
-        if (u) {
-          
-          u.a-=gp1.axes[2]*dt*0.01;
-          u.o.meshes[0].tmesh.rotation.y=u.a;
-          const a3=gp1.axes[3];
-          if (Math.abs(a3)>0.1) {
-            u.speed=0.0002*(Math.abs(a3)-0.1)*((a3<0)?1:-1);
-            Pd5.animStart(u.o,'run');
-          } else {
-            u.speed=0;
-            Pd5.animStart(u.o,'stand2');
-          }
-        }
+        //const u=unit0;
+        //if (u) {
+          ////blockWalk.xrUtil=xrUtil;
+          //blockWalk.steer(u,dt);
+          ////u.a-=gp1.axes[2]*dt*0.01;
+          ////u.o.meshes[0].tmesh.rotation.y=u.a;
+          ////const a3=gp1.axes[3];
+          ////if (Math.abs(a3)>0.1) {
+          ////  u.speed=0.0002*(Math.abs(a3)-0.1)*((a3<0)?1:-1);
+          ////  Pd5.animStart(u.o,'run');
+          ////} else {
+          ////  u.speed=0;
+          ////  Pd5.animStart(u.o,'stand2');
+          ////}
+        //}
         if (gp1.buttons[0].pressed) {
           drawVoxel({});
           hudMesh.visible=false;
@@ -592,6 +608,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     if (unit0) {
       let u=unit0;
+      blockWalk.steer(u,dt);
       //u.meshes[0].tmesh.rotation.y+=0.01*dt;
       if (u.speed!=0) {
         //const pos=u.m.position;
@@ -640,12 +657,9 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,22,22
 //fr o,22,22,2
 //fr o,22,23
-//fr o,22,24
 //fr o,22,26
 //fr o,22,26,99
 //fr o,22,26,106
 //fr o,22,26,107
-//fr o,22,28
-//fr o,22,29
 //fr o,22,32
-//fr p,4,304
+//fr p,6,384

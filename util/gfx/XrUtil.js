@@ -85,7 +85,7 @@ let XrUtil={};
       //---
       this.add(buildController(e.data));
       //console.log(e.data.gamepad);
-      gp0=self.gp0=e.data.gamepad;
+      gp0=e.data.gamepad;self.gp0=gp0;
       //...
     }
     );
@@ -140,7 +140,7 @@ let XrUtil={};
   }
   
   
-  console.log('XrUtil v.1.55 ');//FOLDORUPDATEVERSION
+  console.log('XrUtil v.1.57 ');//FOLDORUPDATEVERSION
   //...
 }
 )(XrUtil);
@@ -154,4 +154,4 @@ export { XrUtil };
 //fr o,3,7,28
 //fr o,3,7,38
 //fr o,3,7,38,1
-//fr p,15,41
+//fr p,32,63

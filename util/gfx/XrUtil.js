@@ -132,7 +132,7 @@ let XrUtil={};
       }
       
       const sessionInit = { optionalFeatures: [ 'local-floor', 'bounded-floor', 'hand-tracking' ] };
-      navigator.xr.requestSession( 'immersive-vr', sessionInit ).then( onSessionStarted );
+      navigator.xr.requestSession('immersive-ar',sessionInit).then(onSessionStarted);
       //...
     }
     };
@@ -140,7 +140,7 @@ let XrUtil={};
   }
   
   
-  console.log('XrUtil v.1.57 ');//FOLDORUPDATEVERSION
+  console.log('XrUtil v.1.59 ');//FOLDORUPDATEVERSION
   //...
 }
 )(XrUtil);
@@ -154,4 +154,4 @@ export { XrUtil };
 //fr o,3,7,28
 //fr o,3,7,38
 //fr o,3,7,38,1
-//fr p,32,63
+//fr p,77,106

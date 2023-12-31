@@ -6,3 +6,4 @@ Work in progress:
 1. [voxXr](/three/anim/voxed/voxXr.htm)
 1. [local editHist](http://192.168.2.110:7000/util/editHist.htm)
 1. [bulletXr](/three/anim/bullet/bulletXr.htm)
+1. [sculpt160](/test/webvr/sculpt160.htm)

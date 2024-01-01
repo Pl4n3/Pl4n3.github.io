@@ -158,27 +158,28 @@ let XrUtil={};
     self.ctrl0=ctrl0;
     self.ctrl1=ctrl1;
     
+    
     let mode='immersive-vr';
+    const sessionInit={optionalFeatures:['local-floor','bounded-floor','hand-tracking'
+      //,'layers' // doesnt start xr on quest3 with 124, maybe with 143?
+      ]};
+    function onSessionStarted(session) {
+      //---
+      renderer.xr.setSession(session);
+      self.isSession=1;
+      //...
+    }
     //---
     self.menuXr={s:'XR',actionf:function() {
       //---
-      function onSessionStarted(session) {
-        //---
-        renderer.xr.setSession(session);
-        self.isSession=1;
-        //...
-      }
-      
-      const sessionInit={optionalFeatures:['local-floor','bounded-floor','hand-tracking'
-        //,'layers' // doesnt start xr on quest3 with 124, maybe with 143?
-        ]};
       navigator.xr.requestSession(mode,sessionInit).then(onSessionStarted);
       //...
     }
     };
+    self.menuXr.ms='v.0.3 ';//FOLDORUPDATEVERSION
     
-    if ('xr' in navigator) 
-    navigator.xr.isSessionSupported('immersive-ar')
+    if ('xr' in navigator) {
+      navigator.xr.isSessionSupported('immersive-ar')
     .then(function(supported) {
       if (supported) {
         self.menuXr.s='AR';
@@ -186,12 +187,15 @@ let XrUtil={};
         //showStartXR( 'immersive-ar' );
       }
     }
-    );
+      );
+      if (navigator.xr.offerSession!==undefined) 
+        navigator.xr.offerSession(mode,sessionInit).then(onSessionStarted);
+    }
     //...
   }
   
   
-  console.log('XrUtil v.1.90 ');//FOLDORUPDATEVERSION
+  console.log('XrUtil v.1.95 ');//FOLDORUPDATEVERSION
   //...
 }
 )(XrUtil);
@@ -201,7 +205,6 @@ export { XrUtil };
 //fr o,3,7
 //fr o,3,7,7
 //fr o,3,7,9
-//fr o,3,7,76
-//fr o,3,7,76,1
 //fr o,3,7,81
-//fr p,0,87
+//fr o,3,7,87
+//fr p,18,132

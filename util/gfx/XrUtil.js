@@ -78,9 +78,34 @@ let XrUtil={};
       
     }
     
+    
+    if (0&&ps.sculpt) {
+      let scene=ps.scene;
+    
+      let ctrl0=renderer.xr.getController(0);
+      ctrl0.addEventListener('selectstart',onSelectStart);
+      ctrl0.addEventListener('selectend',onSelectEnd);
+      scene.add(ctrl0);
+    
+      let ctrl1=renderer.xr.getController(1);
+      ctrl1.addEventListener('selectstart',onSelectStart);
+      ctrl1.addEventListener('selectend',onSelectEnd);
+      scene.add(ctrl1);
+    
+      self.ctrl0=ctrl0;
+      self.ctrl1=ctrl1;
+      return;
+    }
+    
+    
+    
+    
     let ctrl0=renderer.xr.getController(0);
     ctrl0.addEventListener('selectstart',onSelectStart);
     ctrl0.addEventListener('selectend',onSelectEnd);
+    
+    
+    if (!ps.sculpt) {
     ctrl0.addEventListener('connected',function (e) {
       //---
       this.add(buildController(e.data));
@@ -95,16 +120,19 @@ let XrUtil={};
       //...
     }
     );
+    }
     ps.scene.add(ctrl0);
     //onsole.log(controller);
     
-    const controllerModelFactory=new XRControllerModelFactory();
-    
-    let cg0=renderer.xr.getControllerGrip(0);
-    cg0.add(controllerModelFactory.createControllerModel(cg0));
-    ps.scene.add(cg0);
+    //const controllerModelFactory=new XRControllerModelFactory();
+    //let cg0=renderer.xr.getControllerGrip(0);
+    //cg0.add(controllerModelFactory.createControllerModel(cg0));
+    //ps.scene.add(cg0);
     
     let ctrl1=renderer.xr.getController(1);
+    ctrl1.addEventListener('selectstart',onSelectStart);
+    ctrl1.addEventListener('selectend',onSelectEnd);
+    if (!ps.sculpt)
     ctrl1.addEventListener('connected',function(e) {
       //---
       this.add(buildController(e.data));
@@ -116,15 +144,23 @@ let XrUtil={};
     );
     ps.scene.add(ctrl1);
     
+    if (!ps.sculpt) {
+    const controllerModelFactory=new XRControllerModelFactory();
+    let cg0=renderer.xr.getControllerGrip(0);
+    cg0.add(controllerModelFactory.createControllerModel(cg0));
+    ps.scene.add(cg0);
+    
     let cg1=renderer.xr.getControllerGrip(1);
     cg1.add(controllerModelFactory.createControllerModel(cg1));
     ps.scene.add(cg1);
+    }
     
     self.ctrl0=ctrl0;
     self.ctrl1=ctrl1;
+    
     let mode='immersive-vr';
     //---
-    self.menuXr={s:'XR',ms:'v.0.1',actionf:function() {
+    self.menuXr={s:'XR',actionf:function() {
       //---
       function onSessionStarted(session) {
         //---
@@ -134,7 +170,7 @@ let XrUtil={};
       }
       
       const sessionInit={optionalFeatures:['local-floor','bounded-floor','hand-tracking'
-        //,'layers'
+        //,'layers' // doesnt start xr on quest3 with 124, maybe with 143?
         ]};
       navigator.xr.requestSession(mode,sessionInit).then(onSessionStarted);
       //...
@@ -155,7 +191,7 @@ let XrUtil={};
   }
   
   
-  console.log('XrUtil v.1.65 ');//FOLDORUPDATEVERSION
+  console.log('XrUtil v.1.90 ');//FOLDORUPDATEVERSION
   //...
 }
 )(XrUtil);
@@ -165,9 +201,7 @@ export { XrUtil };
 //fr o,3,7
 //fr o,3,7,7
 //fr o,3,7,9
-//fr o,3,7,14
-//fr o,3,7,28
-//fr o,3,7,40
-//fr o,3,7,40,1
-//fr o,3,7,45
-//fr p,26,98
+//fr o,3,7,76
+//fr o,3,7,76,1
+//fr o,3,7,81
+//fr p,0,87

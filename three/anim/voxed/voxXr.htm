@@ -15,6 +15,14 @@
 <script src="/three/deep/blockWalk.js"></script>
 </head>
 <body>
+<script type="importmap">
+{
+"imports": {
+"three": "/three/r124/build/three.module.js",
+"three/addons/": "/three/r124/examples/jsm/"
+}
+}
+</script>
 <script type="module">
 import * as THREE from '/three/r124/build/three.module.js';
 import { BoxLineGeometry } from '/three/r124/examples/jsm/geometries/BoxLineGeometry.js';
@@ -34,7 +42,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       voxMeshPos=new THREE.Vector3(0,2,-2),
       
       //huds=[],hud={lines:[
-      //'VoxXr 0.227 '//FOLDORUPDATEVERSION
+      //'VoxXr 0.229 '//FOLDORUPDATEVERSION
       //],cursor:{x:0.5,y:0.5,vis:false},buttons:[]},
       
       lsKey='voxXr0',blockWalk=new BlockWalk(),
@@ -172,21 +180,21 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     l=new THREE.PointLight(0xaaffff,0.3);l.position.set(1*f,-2*f,-1*f);c.add(l);
     }
     
-    if (0) {
-    const g=new THREE.PlaneGeometry(0.15,0.15);
-    const c=document.createElement('canvas');c.width=256;c.height=256;
-    const ct=c.getContext('2d');hud.c=c;hud.ct=ct;
-    //ct.fillStyle='rgba(0,0,0,0.3)';ct.fillRect(0,0,c.width,c.height);
-    //ct.font='20px sans-serif';ct.textBaseline='top';ct.fillStyle='#ff0';ct.fillText('n/i',2,2);
-    const t1=new THREE.Texture(c);hud.t=t1;
-    //t1.needsUpdate=true;
-    drawHud();
-    const planeMaterial=new THREE.MeshBasicMaterial({map:t1,opacity:1,transparent:true});
-    const o=new THREE.Mesh(g,planeMaterial);
-    o.position.set(-0.2,0,-0.5);
-    o.rotation.y=0.3;hudMesh=o;
-    camera.add(o);huds.push(o);
-    }
+    //if (0) {
+    //const g=new THREE.PlaneGeometry(0.15,0.15);
+    //const c=document.createElement('canvas');c.width=256;c.height=256;
+    //const ct=c.getContext('2d');hud.c=c;hud.ct=ct;
+    ////ct.fillStyle='rgba(0,0,0,0.3)';ct.fillRect(0,0,c.width,c.height);
+    ////ct.font='20px sans-serif';ct.textBaseline='top';ct.fillStyle='#ff0';ct.fillText('n/i',2,2);
+    //const t1=new THREE.Texture(c);hud.t=t1;
+    ////t1.needsUpdate=true;
+    //drawHud();
+    //const planeMaterial=new THREE.MeshBasicMaterial({map:t1,opacity:1,transparent:true});
+    //const o=new THREE.Mesh(g,planeMaterial);
+    //o.position.set(-0.2,0,-0.5);
+    //o.rotation.y=0.3;hudMesh=o;
+    //camera.add(o);huds.push(o);
+    //}
     
     //m1=new THREE.MeshPhongMaterial({color:0x77dd77,flatShading:true,
     //  transparent:true,opacity:0.7});
@@ -664,18 +672,18 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 </script>
 </body>
 </html><script>
-//fr o,22
-//fr o,22,23
-//fr o,22,25
-//fr o,22,26
-//fr o,22,26,2
-//fr o,22,27
-//fr o,22,30
-//fr o,22,30,104
-//fr o,22,30,111
-//fr o,22,30,112
-//fr o,22,32
-//fr o,22,33
-//fr o,22,34
-//fr o,22,36
-//fr p,45,28
+//fr o,30
+//fr o,30,23
+//fr o,30,25
+//fr o,30,26
+//fr o,30,26,2
+//fr o,30,27
+//fr o,30,30
+//fr o,30,30,104
+//fr o,30,30,111
+//fr o,30,30,112
+//fr o,30,32
+//fr o,30,33
+//fr o,30,34
+//fr o,30,36
+//fr p,29,21

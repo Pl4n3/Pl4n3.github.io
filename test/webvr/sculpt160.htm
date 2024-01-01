@@ -14,12 +14,14 @@ import * as THREE from '/three/r160/build/three.module.js';
 import { OrbitControls } from '/three/r160/examples/jsm/controls/OrbitControls.js';
 import { MarchingCubes } from '/three/r160/examples/jsm/objects/MarchingCubes.js';
 import { XRButton } from '/three/r160/examples/jsm/webxr/XRButton.js';
+import { XrUtil } from '/util/gfx/XrUtil.js';
 (function() {
   //---
   let container,camera,scene,renderer,
       controller1,controller2,
-      controls,blob,points=[];
-  
+      controls,blob,points=[],
+      xrUtil=XrUtil;
+      
   init();
   animate();
   
@@ -38,8 +40,8 @@ import { XRButton } from '/three/r160/examples/jsm/webxr/XRButton.js';
     controls.target.set( 0, 1.6, 0 );
     controls.update();
     
-    const grid = new THREE.GridHelper( 4, 1, 0x111111, 0x111111 );
-    scene.add( grid );
+    const grid=new THREE.GridHelper(4,1,0x111111,0x111111);
+    scene.add(grid);
     
     scene.add( new THREE.HemisphereLight( 0x888877, 0x777788, 3 ) );
     
@@ -49,25 +51,26 @@ import { XRButton } from '/three/r160/examples/jsm/webxr/XRButton.js';
     
     //
     
-    renderer = new THREE.WebGLRenderer( { antialias: true } );
-    renderer.setPixelRatio( window.devicePixelRatio );
-    renderer.setSize( window.innerWidth, window.innerHeight );
-    renderer.xr.enabled = true;
-    container.appendChild( renderer.domElement );
+    renderer = new THREE.WebGLRenderer( { antialias:true } );
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize( window.innerWidth,window.innerHeight );
+    renderer.xr.enabled=true;
+    container.appendChild(renderer.domElement);
     
     document.body.appendChild( XRButton.createButton( renderer ) );
     
     // controllers
+    if (0) {
     
     function onSelectStart() {
       
-      					this.userData.isSelecting = true;
+      this.userData.isSelecting = true;
       
     }
     
     function onSelectEnd() {
       
-      					this.userData.isSelecting = false;
+      this.userData.isSelecting = false;
       
     }
     
@@ -82,6 +85,17 @@ import { XRButton } from '/three/r160/examples/jsm/webxr/XRButton.js';
     controller2.addEventListener( 'selectend', onSelectEnd );
     controller2.userData.id = 1;
     scene.add( controller2 );
+    
+    } else {
+    
+    xrUtil.init({scene:scene,renderer:renderer,camera:camera,room:scene,sculpt:1//,vrPos:vrPos
+      });
+    controller1=xrUtil.ctrl0;
+    controller2=xrUtil.ctrl1;
+    controller1.userData.id=0;
+    controller2.userData.id=1;
+    
+    }
     
     //
     
@@ -125,7 +139,10 @@ import { XRButton } from '/three/r160/examples/jsm/webxr/XRButton.js';
     blob.position.y = 1;
     scene.add( blob );
     
-    initPoints();
+    points=[
+      {position:new THREE.Vector3(),strength:0.04,subtract:10},
+      {position:new THREE.Vector3(),strength:-0.08,subtract:10}
+    ];
     
     for (let i=0;i<10;i++) {
       points.push({position:new THREE.Vector3(0.5+i*0.03,0.5,0.5),strength:0.04,subtract:10,color:new THREE.Color(0.1,0.9,0.1)});
@@ -158,18 +175,12 @@ import { XRButton } from '/three/r160/examples/jsm/webxr/XRButton.js';
     }
     
       ]} 
-     //,xrUtil.menuXr  
+     ,xrUtil.menuXr  
       ]
       ,{listen:1});
     
     
     //...
-  }
-  function initPoints() {
-    points = [
-      { position:new THREE.Vector3(),strength:0.04,subtract:10 },
-      { position:new THREE.Vector3(),strength:-0.08,subtract:10 }
-    ];
   }
   function onWindowResize() {
     //---
@@ -242,11 +253,13 @@ import { XRButton } from '/three/r160/examples/jsm/webxr/XRButton.js';
 </body>
 </html>
 <script>
-//fr o,16
-//fr o,16,8
-//fr o,16,8,103
-//fr o,16,8,104
-//fr o,16,8,107
-//fr o,16,9
-//fr o,16,17
-//fr p,6,132
+//fr o,17
+//fr o,17,9
+//fr o,17,9,36
+//fr o,17,9,38
+//fr o,17,9,118
+//fr o,17,9,119
+//fr o,17,9,122
+//fr o,17,14
+//fr o,17,17
+//fr p,1,177

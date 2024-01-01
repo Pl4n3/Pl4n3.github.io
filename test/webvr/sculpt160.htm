@@ -9,6 +9,14 @@
 <script src="/menu.js"></script>
 </head>
 <body>
+<script type="importmap">
+{
+"imports": {
+"three": "/three/r160/build/three.module.js",
+"three/addons/": "/three/r160/examples/jsm/"
+}
+}
+</script>
 <script type="module">
 import * as THREE from '/three/r160/build/three.module.js';
 import { OrbitControls } from '/three/r160/examples/jsm/controls/OrbitControls.js';
@@ -62,7 +70,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     xrUtil.init({scene:scene,renderer:renderer,camera:camera,room:scene,sculpt:1//,vrPos:vrPos
       });
-    //xrUtil.initHud();
+    xrUtil.initHud();
     
     controller1=xrUtil.ctrl0;
     controller2=xrUtil.ctrl1;
@@ -206,7 +214,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     handleController(controller1);
     handleController(controller2);
     updateBlob();
-    //xrUtil.renderHud();
+    xrUtil.renderHud();
     renderer.render(scene,camera);
     //...
   }
@@ -226,12 +234,12 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 </body>
 </html>
 <script>
-//fr o,17
-//fr o,17,9
-//fr o,17,9,98
-//fr o,17,9,99
-//fr o,17,9,102
-//fr o,17,14
-//fr o,17,16
-//fr o,17,17
-//fr p,2,64
+//fr o,25
+//fr o,25,9
+//fr o,25,9,98
+//fr o,25,9,99
+//fr o,25,9,102
+//fr o,25,14
+//fr o,25,16
+//fr o,25,17
+//fr p,0,192

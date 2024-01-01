@@ -1,5 +1,5 @@
 //----
-console.log('BlockWalk 1.46 ');//FOLDORUPDATEVERSION
+console.log('BlockWalk 1.54 ');//FOLDORUPDATEVERSION
 var BlockWalk=function(ps) {
   //---
   const self=this,PI=Math.PI;
@@ -7,16 +7,16 @@ var BlockWalk=function(ps) {
   
   this.tweens=[];
   this.blockMeshPos={x:0,y:0,z:0};
-  this.checkWalk=function(u,dx,dz) {
+  function checkWalk(u,dx,dz) {
     //---
     if (u.posytw&&!u.posytw.ended) return false;
-    const gw=self.gw,bmp=self.blockMeshPos,blockAt=self.blockAt,player=self.player,updatePlayerView=self.updatePlayerView;
+    const gw=self.gw,gh=self.gh||gw,bmp=self.blockMeshPos,blockAt=self.blockAt,player=self.player,updatePlayerView=self.updatePlayerView;
     const pos=u.m.position,x=pos.x+dx,z=pos.z+dz;
     const xi=Math.floor((x-bmp.x)/gw+0.5+(dx>0?0.5:-0.5)),
-          yi=Math.floor((pos.y-bmp.y)/gw-0.5),
+          yi=Math.floor((pos.y-bmp.y)/gh-0.5),
           zi=Math.floor((z-bmp.z)/gw+0.5+(dz>0?0.5:-0.5));
     const xj=Math.floor((x-bmp.x)/gw+0.5),
-          yj=Math.floor((pos.y-bmp.y)/gw-0.5),
+          yj=Math.floor((pos.y-bmp.y)/gh-0.5),
           zj=Math.floor((z-bmp.z)/gw+0.5);
     if (0) { 
       console.log('x:'+xj+' y:'+yj+' z:'+zj);
@@ -36,7 +36,7 @@ var BlockWalk=function(ps) {
         if (!blockAt(xi,yi-1,zi)&&!blockAt(xj,yj-1,zj)) {
           if (blockAt(xj,yj-2,zj)) {//dont fall down
             if (0) pos.y=(yj-1+0.5)*gw;
-            else self.tweens.push(u.posytw={o:pos,key:'y',value:(yj-1+0.5)*gw+bmp.y,t:100,onset:((u===player)?updatePlayerView:undefined)});
+            else self.tweens.push(u.posytw={o:pos,key:'y',value:(yj-1+0.5)*gh+bmp.y,t:100,onset:((u===player)?updatePlayerView:undefined)});
             //posyt=0;
           } else 
             ret=false;
@@ -45,7 +45,7 @@ var BlockWalk=function(ps) {
       else //if (!ret) 
       if (!blockAt(xi,yi+1,zi)&&!blockAt(xj,yj+1,zj)&&!blockAt(xi,yi+2,zi)&&!blockAt(xj,yj+2,zj)) {
         if (0) pos.y=(yj+1+0.5)*gw;
-        else self.tweens.push(u.posytw={o:pos,key:'y',value:(yj+1+0.5)*gw+bmp.y,t:100,onset:((u===player)?updatePlayerView:undefined)});
+        else self.tweens.push(u.posytw={o:pos,key:'y',value:(yj+1+0.5)*gh+bmp.y,t:100,onset:((u===player)?updatePlayerView:undefined)});
         //posyt=0;
         ret=true;
       }
@@ -78,8 +78,7 @@ var BlockWalk=function(ps) {
     return ret;
     //...
   }
-  
-  this.steer=function(u,dt) {
+  function steer(u,dt) {
     //---
     const tsd0=self.tsd0,gpad=self.xrUtil?self.xrUtil.gp1:undefined;
     
@@ -120,7 +119,7 @@ var BlockWalk=function(ps) {
         u.o.meshes[0].tmesh.rotation.y=u.a;
         animTurn=true;
       } else {
-        u.speed=0.0002*1;//(Math.abs(a3)-0.1)*((a3<0)?1:-1);
+        u.speed=self.speed||0.0002*1;//(Math.abs(a3)-0.1)*((a3<0)?1:-1);
         animMove=true;
       } 
     }
@@ -144,9 +143,31 @@ var BlockWalk=function(ps) {
     //}
     //...
   }
+  this.calc=function(dt) {
+    //---
+    let u=self.unit0;
+    if (!u) return;
+    steer(u,dt);
+    if (u.speed!=0) {
+      const dx=u.speed*dt*Math.sin(u.a);
+      const dz=u.speed*dt*Math.cos(u.a);
+      const m=u.o.meshes[0].tmesh;
+      if (0) {
+        m.position.x+=dx;
+        m.position.z+=dz;
+      } else if (!checkWalk(u,dx,dz)) {
+        if (!checkWalk(u,dx,0)) 
+          checkWalk(u,0,dz);
+      }
+    }
+    Conet.calcTweens(self.tweens,dt);
+    //...
+  }
+  this.checkWalk=checkWalk;
+  this.steer=steer;
   //...
 }
 //...
 //fr o,2
 //fr o,2,8
-//fr p,10,56
+//fr p,33,28

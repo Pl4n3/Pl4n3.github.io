@@ -26,13 +26,17 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
   let container,camera,scene,raycaster,renderer,
       room,INTERSECTED,cursor,voxScale=1,tVoxAdd=0,
       cubes=[],controls,voxMesh,voxMeshAdd,voxVa,voxVh,
-      mGreen,mRed,roomMatrix,drawColor=0,hudCount=0,
-      fn='/three/anim/voxed/xr1.json',hudMesh,unit0;
+      mGreen,mRed,roomMatrix,drawColor=0,unit0,//hudCount=0,
+      fn='/three/anim/voxed/xr1.json';
+      //,hudMesh,unit0,huds,hud;
       //fn='/three/anim/voxed/xr0.json';
   const tempMatrix=new THREE.Matrix4(),vt=new THREE.Vector3(),
-      voxMeshPos=new THREE.Vector3(0,2,-2),huds=[],hud={lines:[
-      'VoxXr 0.199 '//FOLDORUPDATEVERSION
-      ],cursor:{x:0.5,y:0.5,vis:false},buttons:[]},
+      voxMeshPos=new THREE.Vector3(0,2,-2),
+      
+      //huds=[],hud={lines:[
+      //'VoxXr 0.227 '//FOLDORUPDATEVERSION
+      //],cursor:{x:0.5,y:0.5,vis:false},buttons:[]},
+      
       lsKey='voxXr0',blockWalk=new BlockWalk(),
       //---vrPos independent from room pos to follow unit
       vrPos=new THREE.Vector3(0,0,0),xrUtil=XrUtil;
@@ -40,7 +44,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
   init();
   animate();
   
-  function log(s) {
+  function lo_g(s) {
     //---
     hud.lines.push(s);
     while (hud.lines.length>4) hud.lines.splice(0,1);
@@ -73,7 +77,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     Conet.download({fn:fn,f:function(v) {
       //---
       load(v);
-      log('Loaded '+fn+'.');
+      xrUtil.log('Loaded '+fn+'.');
       //...
     }
     });
@@ -86,10 +90,10 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     //Conet.upload({fn:fn,data:data});//,log:Conet.log,logChunk:1});
     localStorage[lsKey]=data;
     
-    log('Saved to localStorage '+data.length+' bytes.');
+    xrUtil.log('Saved to localStorage '+data.length+' bytes.');
     //...
   }
-  function drawHud() {
+  function dra_wHud() {
     //---
     const ct=hud.ct,c=hud.c,w=c.width,h=c.height;
     ct.clearRect(0,0,w,h);
@@ -168,7 +172,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     l=new THREE.PointLight(0xaaffff,0.3);l.position.set(1*f,-2*f,-1*f);c.add(l);
     }
     
-    {
+    if (0) {
     const g=new THREE.PlaneGeometry(0.15,0.15);
     const c=document.createElement('canvas');c.width=256;c.height=256;
     const ct=c.getContext('2d');hud.c=c;hud.ct=ct;
@@ -240,6 +244,11 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     xrUtil.init({scene:scene,renderer:renderer,camera:camera,room:room,vrPos:vrPos
       //,XRControllerModelFactory:XRControllerModelFactory
       });  
+    xrUtil.cursor=cursor;
+    xrUtil.initHud();
+    //huds=xrUtil.huds;
+    //hudMesh=xrUtil.hudMesh;
+    //hud=xrUtil.hud;
     
     
     window.addEventListener('resize',onWindowResize,false);
@@ -273,6 +282,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       m.position.set(x,y,z);
       unit0={speed:0,a:0,o:o,m:m};//0.0001
       m.rotation.y=unit0.a;
+      blockWalk.unit0=unit0;
       ////blockWalk.gw=1/f;
       ////blockWalk.blockMeshPos={x:voxMeshPos.x,y:voxMeshPos.y-13/f,z:voxMeshPos.z};
       //console.log(blockWalk.checkWalk(unit0,0,0));
@@ -292,7 +302,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     {s:'Json',ms:'import/export',doctrl:'Json data',mcfs:0.07,ta:true,jsonCheck:1,wrap:0,tacols:30,tarows:20,setfunc:function(v,initLoad) {
       //---
       load(v);
-      log('Imported '+v.length+' b.');
+      xrUtil.log('Imported '+v.length+' b.');
       //...
     }
     ,valuef:function() {
@@ -342,10 +352,10 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     const data=localStorage[lsKey];
     if (data) {
       load(data); 
-      log('Loaded ls '+data.length+' b.');
+      xrUtil.log('Loaded ls '+data.length+' b.');
     } else loadFn(fn);
     
-    hud.buttons=[
+    xrUtil.hud.buttons=[
     {s:'Save',x:0.5,y:0.7,w:0.45,h:0.25,ondown:save},
     {s:'Load xr1',x:0.05,y:0.4,w:0.4,h:0.1,ondown:loadFn,fn:'/three/anim/voxed/xr1.json'},
     {s:'Load 3x3',x:0.05,y:0.55,w:0.4,h:0.1,ondown:loadFn,fn:'/three/anim/voxed/3x3.json'},
@@ -498,6 +508,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       }
     }
     
+    if (0)
     if (hudMesh.visible) /* intersect */ {
       // find intersections
       tempMatrix.identity().extractRotation(ctrl1.matrixWorld);
@@ -536,8 +547,10 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       }
     }
     
+    xrUtil.renderHud();
+    
     if (ctrl1&&XrUtil.isSession&&cursor.visible) {
-      let pc=ctrl1.position,pr=room.position;
+      let pc=ctrl1.position,pr=room.position,hudMesh=xrUtil.hudMesh;
       vt.set(0,0,-0.4);
       vt.applyQuaternion(ctrl1.quaternion);
       //console.log(pc);
@@ -606,30 +619,30 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       }
     }
     
-    if (unit0) {
-      let u=unit0;
-      blockWalk.steer(u,dt);
-      //u.meshes[0].tmesh.rotation.y+=0.01*dt;
-      if (u.speed!=0) {
-        //const pos=u.m.position;
-        const dx=u.speed*dt*Math.sin(u.a);
-        const dz=u.speed*dt*Math.cos(u.a);
-        const m=u.o.meshes[0].tmesh;
-        if (0) {
-          m.position.x+=dx;
-          m.position.z+=dz;
-        } else if (!blockWalk.checkWalk(u,dx,dz)) {
-          //console.log('no checkwalk');
-          //if (u.bullet) 
-          //  del=true;
-          //else 
-            if (!blockWalk.checkWalk(u,dx,0)) 
-              blockWalk.checkWalk(u,0,dz);
-        }
-      }
-    }
-    
-    Conet.calcTweens(blockWalk.tweens,dt);
+    //if (unit0) {
+    //  let u=unit0;
+    //  blockWalk.steer(u,dt);
+    //  //u.meshes[0].tmesh.rotation.y+=0.01*dt;
+    //  if (u.speed!=0) {
+    //    //const pos=u.m.position;
+    //    const dx=u.speed*dt*Math.sin(u.a);
+    //    const dz=u.speed*dt*Math.cos(u.a);
+    //    const m=u.o.meshes[0].tmesh;
+    //    if (0) {
+    //      m.position.x+=dx;
+    //      m.position.z+=dz;
+    //    } else if (!blockWalk.checkWalk(u,dx,dz)) {
+    //      //console.log('no checkwalk');
+    //      //if (u.bullet) 
+    //      //  del=true;
+    //      //else 
+    //        if (!blockWalk.checkWalk(u,dx,0)) 
+    //          blockWalk.checkWalk(u,0,dz);
+    //    }
+    //  }
+    //}
+    //Conet.calcTweens(blockWalk.tweens,dt);
+    blockWalk.calc(dt);
     
     if (1&&unit0&&!roomMatrix) {
       const p=unit0.m.position;
@@ -652,14 +665,17 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 </body>
 </html><script>
 //fr o,22
-//fr o,22,19
-//fr o,22,21
-//fr o,22,22
-//fr o,22,22,2
 //fr o,22,23
+//fr o,22,25
 //fr o,22,26
-//fr o,22,26,99
-//fr o,22,26,106
-//fr o,22,26,107
+//fr o,22,26,2
+//fr o,22,27
+//fr o,22,30
+//fr o,22,30,104
+//fr o,22,30,111
+//fr o,22,30,112
 //fr o,22,32
-//fr p,6,384
+//fr o,22,33
+//fr o,22,34
+//fr o,22,36
+//fr p,45,28

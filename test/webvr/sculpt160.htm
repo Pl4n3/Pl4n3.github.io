@@ -5,6 +5,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <style>body { color:#000;background-color:#aaa;margin:0px;overflow:hidden;font-family:Sans-serif; }</style>
+<script src="/conet.js"></script>
+<script src="/menu.js"></script>
 </head>
 <body>
 <script type="module">
@@ -19,7 +21,6 @@ import { XRButton } from '/three/r160/examples/jsm/webxr/XRButton.js';
       controls,blob,points=[];
   
   init();
-  initBlob();
   animate();
   
   function init() {
@@ -95,10 +96,9 @@ import { XRButton } from '/three/r160/examples/jsm/webxr/XRButton.js';
     controller2.add( group.clone() );
     //
     window.addEventListener( 'resize', onWindowResize );
-    //...
-  }
-  function initBlob() {
-    //---
+    
+    //--- initBlob
+    
     /*
     const path = 'textures/cube/SwedishRoyalCastle/';
     const format = '.jpg';
@@ -130,6 +130,39 @@ import { XRButton } from '/three/r160/examples/jsm/webxr/XRButton.js';
     for (let i=0;i<10;i++) {
       points.push({position:new THREE.Vector3(0.5+i*0.03,0.5,0.5),strength:0.04,subtract:10,color:new THREE.Color(0.1,0.9,0.1)});
     }
+    
+    //---menu
+    
+    Menu.init([{s:'&#9776;',noTri:true,fs:1.4,pw:0.05,sub:[
+      Menu.mFullscreen,  
+    {s:'Json',ms:'import/export',doctrl:'Json data',mcfs:0.07,ta:true,jsonCheck:1,wrap:0,tacols:30,tarows:20,setfunc:function(v,initLoad) {
+      //---
+      var d=JSON.parse(v);
+      points.length=2;
+      points=points.concat(d.points);
+      //load(v);
+      //log('Imported '+v.length+' b.');
+      //...
+    }
+    ,valuef:function() {
+      return serialize();
+    }
+    }
+    
+    ,{s:'Clear blobs',actionf:function() {
+      //---
+      //alert(23);
+      points.length=2;
+      //...
+    }
+    }
+    
+      ]} 
+     //,xrUtil.menuXr  
+      ]
+      ,{listen:1});
+    
+    
     //...
   }
   function initPoints() {
@@ -193,6 +226,15 @@ import { XRButton } from '/three/r160/examples/jsm/webxr/XRButton.js';
     renderer.render(scene,camera);
     //...
   }
+  function serialize() {
+    //---
+    let s='{"points":[\n';
+    for (let i=2;i<points.length;i++)
+      s+=JSON.stringify(points[i])+((i<points.length-1)?',':'')+'\n';
+    s+=']}\n';
+    return s;
+    //...
+  }
   //...
 }
 )();
@@ -200,14 +242,11 @@ import { XRButton } from '/three/r160/examples/jsm/webxr/XRButton.js';
 </body>
 </html>
 <script>
-//fr o,14
-//fr o,14,9
-//fr o,14,10
-//fr o,14,11
-//fr o,14,12
-//fr o,14,14
-//fr o,14,15
-//fr o,14,16
-//fr o,14,17
-//fr o,14,18
-//fr p,2,106
+//fr o,16
+//fr o,16,8
+//fr o,16,8,103
+//fr o,16,8,104
+//fr o,16,8,107
+//fr o,16,9
+//fr o,16,17
+//fr p,6,132

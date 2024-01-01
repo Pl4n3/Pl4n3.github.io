@@ -159,7 +159,7 @@ let XrUtil={};
     self.ctrl1=ctrl1;
     
     
-    let mode='immersive-vr';
+    let mode='immersive-ar';
     const sessionInit={optionalFeatures:['local-floor','bounded-floor','hand-tracking'
       //,'layers' // doesnt start xr on quest3 with 124, maybe with 143?
       ]};
@@ -176,7 +176,7 @@ let XrUtil={};
       //...
     }
     };
-    self.menuXr.ms='v.0.3 ';//FOLDORUPDATEVERSION
+    self.menuXr.ms='v.0.4 ';//FOLDORUPDATEVERSION
     
     if ('xr' in navigator) {
       navigator.xr.isSessionSupported('immersive-ar')
@@ -195,7 +195,7 @@ let XrUtil={};
   }
   
   
-  console.log('XrUtil v.1.95 ');//FOLDORUPDATEVERSION
+  console.log('XrUtil v.1.96 ');//FOLDORUPDATEVERSION
   //...
 }
 )(XrUtil);
@@ -205,6 +205,7 @@ export { XrUtil };
 //fr o,3,7
 //fr o,3,7,7
 //fr o,3,7,9
+//fr o,3,7,79
 //fr o,3,7,81
 //fr o,3,7,87
-//fr p,18,132
+//fr p,21,120

@@ -159,24 +159,39 @@ let XrUtil={};
     self.ctrl1=ctrl1;
     
     
-    let mode='immersive-ar';
+    let mode='immersive-vr',currentSession=null;
     const sessionInit={optionalFeatures:['local-floor','bounded-floor','hand-tracking'
       //,'layers' // doesnt start xr on quest3 with 124, maybe with 143?
       ]};
-    function onSessionStarted(session) {
+    async function onSessionStarted(session) {
       //---
-      renderer.xr.setSession(session);
+      session.addEventListener('end',onSessionEnded);
+      await renderer.xr.setSession(session);
       self.isSession=1;
+      currentSession=session;
+      //...
+    }
+    function onSessionEnded() {
+      //---
+      currentSession.removeEventListener('end',onSessionEnded);
+      currentSession=null;
+      self.isSession=false;
       //...
     }
     //---
     self.menuXr={s:'XR',actionf:function() {
       //---
-      navigator.xr.requestSession(mode,sessionInit).then(onSessionStarted);
+      if (currentSession===null) 
+        navigator.xr.requestSession(mode,sessionInit).then(onSessionStarted);
+      else {
+        currentSession.end();
+        if (navigator.xr.offerSession!==undefined) 
+          navigator.xr.offerSession(mode,sessionInit).then(onSessionStarted);
+      }
       //...
     }
     };
-    self.menuXr.ms='v.0.4 ';//FOLDORUPDATEVERSION
+    self.menuXr.ms='v.0.14 ';//FOLDORUPDATEVERSION
     
     if ('xr' in navigator) {
       navigator.xr.isSessionSupported('immersive-ar')
@@ -186,16 +201,17 @@ let XrUtil={};
         mode='immersive-ar';
         //showStartXR( 'immersive-ar' );
       }
-    }
-      );
       if (navigator.xr.offerSession!==undefined) 
         navigator.xr.offerSession(mode,sessionInit).then(onSessionStarted);
+      //...
+    }
+      );
     }
     //...
   }
   
   
-  console.log('XrUtil v.1.96 ');//FOLDORUPDATEVERSION
+  console.log('XrUtil v.1.106 ');//FOLDORUPDATEVERSION
   //...
 }
 )(XrUtil);
@@ -206,6 +222,7 @@ export { XrUtil };
 //fr o,3,7,7
 //fr o,3,7,9
 //fr o,3,7,79
-//fr o,3,7,81
-//fr o,3,7,87
-//fr p,21,120
+//fr o,3,7,80
+//fr o,3,7,82
+//fr o,3,7,88
+//fr p,7,128

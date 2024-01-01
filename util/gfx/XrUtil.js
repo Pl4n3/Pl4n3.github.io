@@ -1,10 +1,12 @@
-import * as THREE from '/three/r124/build/three.module.js';
-import { XRControllerModelFactory } from '/three/r124/examples/jsm/webxr/XRControllerModelFactory.js';
+import * as THREE from 'three';
+import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFactory.js';
+//import * as THREE from '/three/r124/build/three.module.js';
+//import { XRControllerModelFactory } from '/three/r124/examples/jsm/webxr/XRControllerModelFactory.js';
 let XrUtil={};
 (function(pself) {
   //---
-  let version='v.1.128 ',//FOLDORUPDATEVERSION
-      self=pself,ctrl0,ctrl1,gp0,gp1,camera,room,vrPos,huds=[],hudMesh,
+  let version='v.1.133 ',//FOLDORUPDATEVERSION
+      self=pself,ctrl0,ctrl1,gp0,gp1,camera,scene,room,vrPos,huds=[],hudMesh,
       hud={lines:['xrUtil '+version],cursor:{x:0.5,y:0.5,vis:false},buttons:[]},
       raycaster,INTERSECTED,hudCount=0;
   
@@ -67,6 +69,7 @@ let XrUtil={};
     camera=ps.camera;
     room=ps.room;
     vrPos=ps.vrPos;
+    scene=ps.scene;
     //let XRControllerModelFactory=ps.XRControllerModelFactory;
     
     function onSelectStart() {
@@ -277,7 +280,9 @@ let XrUtil={};
     const o=new THREE.Mesh(g,planeMaterial);
     o.position.set(-0.2,0,-0.5);
     o.rotation.y=0.3;hudMesh=o;
-    camera.add(o);huds.push(o);
+    camera.add(o);
+    //scene.add(o);
+    huds.push(o);
     raycaster=new THREE.Raycaster();
     
     self.huds=huds;self.hudMesh=hudMesh;self.hud=hud;
@@ -332,17 +337,16 @@ let XrUtil={};
 }
 )(XrUtil);
 export { XrUtil };
-//fr o,3
-//fr o,3,10
-//fr o,3,10,7
-//fr o,3,10,9
-//fr o,3,10,56
-//fr o,3,10,79
-//fr o,3,10,80
-//fr o,3,10,82
-//fr o,3,10,88
-//fr o,3,14
-//fr o,3,16
-//fr o,3,18
-//fr o,3,18,1
-//fr p,23,137
+//fr o,5
+//fr o,5,10,8
+//fr o,5,10,10
+//fr o,5,10,57
+//fr o,5,10,80
+//fr o,5,10,81
+//fr o,5,10,83
+//fr o,5,10,89
+//fr o,5,14
+//fr o,5,16
+//fr o,5,18
+//fr o,5,18,1
+//fr p,54,1

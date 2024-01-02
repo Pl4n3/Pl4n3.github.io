@@ -18,17 +18,16 @@
 }
 </script>
 <script type="module">
-import * as THREE from '/three/r160/build/three.module.js';
-import { OrbitControls } from '/three/r160/examples/jsm/controls/OrbitControls.js';
-import { MarchingCubes } from '/three/r160/examples/jsm/objects/MarchingCubes.js';
-import { XRButton } from '/three/r160/examples/jsm/webxr/XRButton.js';
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { MarchingCubes } from 'three/addons/objects/MarchingCubes.js';
 import { XrUtil } from '/util/gfx/XrUtil.js';
 (function() {
   //---
   let container,camera,scene,renderer,
       controller1,controller2,
       controls,blob,points=[],
-      xrUtil=XrUtil;
+      xrUtil=XrUtil,lsKey='sculpt160_0';
       
   init();
   animate();
@@ -71,6 +70,16 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     xrUtil.init({scene:scene,renderer:renderer,camera:camera,room:scene,sculpt:1//,vrPos:vrPos
       });
     xrUtil.initHud();
+    xrUtil.hud.buttons=[
+    {s:'Save',x:0.5,y:0.7,w:0.45,h:0.25,ondown:function() {
+      //---
+      const data=serialize();
+      localStorage[lsKey]=data;
+      xrUtil.log('Saved to localStorage '+data.length+' bytes.');
+      //...
+    }
+    },
+    ];
     
     controller1=xrUtil.ctrl0;
     controller2=xrUtil.ctrl1;
@@ -234,12 +243,13 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 </body>
 </html>
 <script>
-//fr o,25
-//fr o,25,9
-//fr o,25,9,98
-//fr o,25,9,99
-//fr o,25,9,102
-//fr o,25,14
-//fr o,25,16
-//fr o,25,17
-//fr p,0,192
+//fr o,24
+//fr o,24,9
+//fr o,24,9,38
+//fr o,24,9,102
+//fr o,24,9,103
+//fr o,24,9,106
+//fr o,24,14
+//fr o,24,16
+//fr o,24,17
+//fr p,43,22

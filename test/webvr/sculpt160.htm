@@ -150,7 +150,10 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       {position:new THREE.Vector3(),strength:-0.08,subtract:10}
     ];
     
-    for (let i=0;i<10;i++) {
+    let d=localStorage[lsKey];
+    if (d!==undefined)
+      load(d);
+    else for (let i=0;i<10;i++) {
       points.push({position:new THREE.Vector3(0.5+i*0.03,0.5,0.5),strength:0.04,subtract:10,color:new THREE.Color(0.1,0.9,0.1)});
     }
     
@@ -158,20 +161,8 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     Menu.init([{s:'&#9776;',noTri:true,fs:1.4,pw:0.05,sub:[
       Menu.mFullscreen,  
-    {s:'Json',ms:'import/export',doctrl:'Json data',mcfs:0.07,ta:true,jsonCheck:1,wrap:0,tacols:30,tarows:20,setfunc:function(v,initLoad) {
-      //---
-      var d=JSON.parse(v);
-      points.length=2;
-      points=points.concat(d.points);
-      //load(v);
-      //log('Imported '+v.length+' b.');
-      //...
-    }
-    ,valuef:function() {
-      return serialize();
-    }
-    }
-    
+    {s:'Json',ms:'import/export',doctrl:'Json data',mcfs:0.07,ta:true,jsonCheck:1,wrap:0,tacols:30,tarows:20
+      ,setfunc:load,valuef:serialize}
     ,{s:'Clear blobs',actionf:function() {
       //---
       //alert(23);
@@ -245,6 +236,13 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     renderer.render(scene,camera);
     //...
   }
+  function load(v,initLoad) {
+    //---
+    var d=JSON.parse(v);
+    points.length=2;
+    points=points.concat(d.points);
+    //...
+  }
   function serialize() {
     //---
     let s='{"points":[\n';
@@ -265,10 +263,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,24,9
 //fr o,24,9,37
 //fr o,24,9,39
-//fr o,24,9,113
-//fr o,24,9,114
-//fr o,24,9,117
+//fr o,24,9,118
 //fr o,24,14
-//fr o,24,16
 //fr o,24,17
-//fr p,80,208
+//fr p,33,164

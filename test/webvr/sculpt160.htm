@@ -216,10 +216,11 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       transformPoint(points[id].position);
     
       if (controller.userData.isSelecting&&!xrUtil.hud.cursor.vis) {
-        const strength=points[id].strength/2;
+        const point=points[id];
+        const strength=point.strength/2;
         const vector=new THREE.Vector3().setFromMatrixPosition(matrix);
         transformPoint(vector);
-        points.push({position:vector,strength:strength,subtract:10});
+        points.push({position:vector,strength:strength,subtract:10,color:point.color});
       }
     }
     //...
@@ -270,4 +271,4 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,24,14
 //fr o,24,16
 //fr o,24,17
-//fr p,37,91
+//fr p,80,208

@@ -70,6 +70,13 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     xrUtil.init({scene:scene,renderer:renderer,camera:camera,room:scene,sculpt:1//,vrPos:vrPos
       });
     xrUtil.initHud();
+    function setColor() {
+      //---
+      console.log(this.color);
+      points[0].color=new THREE.Color(this.color);
+      points[1].color=new THREE.Color(this.color);
+      //...
+    }
     xrUtil.hud.buttons=[
     {s:'Save',x:0.5,y:0.7,w:0.45,h:0.25,ondown:function() {
       //---
@@ -79,6 +86,16 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       //...
     }
     },
+    
+    {x:0.05,y:0.7,w:0.1,h:0.1,color:'rgb(250,0,0)',ondown:setColor},
+    {x:0.2,y:0.7,w:0.1,h:0.1,color:'rgb(0,250,0)',ondown:setColor},
+    {x:0.35,y:0.7,w:0.1,h:0.1,color:'rgb(0,0,250)',ondown:setColor},
+    
+    
+    {x:0.05,y:0.85,w:0.1,h:0.1,color:'rgb(250,250,250)',ondown:setColor},
+    {x:0.2,y:0.85,w:0.1,h:0.1,color:'rgb(0,0,0)',ondown:setColor},
+    {x:0.35,y:0.85,w:0.1,h:0.1,color:'rgb(250,250,0)',ondown:setColor}
+    
     ];
     
     controller1=xrUtil.ctrl0;
@@ -198,7 +215,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       points[id].position.setFromMatrixPosition(matrix);
       transformPoint(points[id].position);
     
-      if (controller.userData.isSelecting ) {
+      if (controller.userData.isSelecting&&!xrUtil.hud.cursor.vis) {
         const strength=points[id].strength/2;
         const vector=new THREE.Vector3().setFromMatrixPosition(matrix);
         transformPoint(vector);
@@ -245,11 +262,12 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 <script>
 //fr o,24
 //fr o,24,9
-//fr o,24,9,38
-//fr o,24,9,102
-//fr o,24,9,103
-//fr o,24,9,106
+//fr o,24,9,37
+//fr o,24,9,39
+//fr o,24,9,113
+//fr o,24,9,114
+//fr o,24,9,117
 //fr o,24,14
 //fr o,24,16
 //fr o,24,17
-//fr p,43,22
+//fr p,37,91

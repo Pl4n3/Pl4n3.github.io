@@ -5,7 +5,7 @@ import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFa
 let XrUtil={};
 (function(pself) {
   //---
-  let version='v.1.133 ',//FOLDORUPDATEVERSION
+  let version='v.1.138 ',//FOLDORUPDATEVERSION
       self=pself,ctrl0,ctrl1,gp0,gp1,camera,scene,room,vrPos,huds=[],hudMesh,
       hud={lines:['xrUtil '+version],cursor:{x:0.5,y:0.5,vis:false},buttons:[]},
       raycaster,INTERSECTED,hudCount=0;
@@ -296,12 +296,12 @@ let XrUtil={};
       tempMatrix.identity().extractRotation(ctrl1.matrixWorld);
       raycaster.ray.origin.setFromMatrixPosition(ctrl1.matrixWorld);
       raycaster.ray.direction.set(0,0,-1).applyMatrix4(tempMatrix);
-      
+      raycaster.far=0.1;
       const intersects=raycaster.intersectObjects(huds),//room.children);
             cursor=self.cursor;
       if (intersects.length>0) {
         const i0=intersects[0];
-        //console.log(i0);
+        //onsole.log(i0.distance);
         if (INTERSECTED!=i0.object) {
           //if (INTERSECTED) INTERSECTED.material.emissive.setHex( INTERSECTED.currentHex );
           INTERSECTED=i0.object;
@@ -349,4 +349,4 @@ export { XrUtil };
 //fr o,5,16
 //fr o,5,18
 //fr o,5,18,1
-//fr p,54,1
+//fr p,4,62

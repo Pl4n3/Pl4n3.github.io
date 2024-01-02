@@ -5,7 +5,7 @@ import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFa
 let XrUtil={};
 (function(pself) {
   //---
-  let version='v.1.138 ',//FOLDORUPDATEVERSION
+  let version='v.1.143 ',//FOLDORUPDATEVERSION
       self=pself,ctrl0,ctrl1,gp0,gp1,camera,scene,room,vrPos,huds=[],hudMesh,
       hud={lines:['xrUtil '+version],cursor:{x:0.5,y:0.5,vis:false},buttons:[]},
       raycaster,INTERSECTED,hudCount=0;
@@ -138,13 +138,13 @@ let XrUtil={};
     ctrl1=renderer.xr.getController(1);
     ctrl1.addEventListener('selectstart',onSelectStart);
     ctrl1.addEventListener('selectend',onSelectEnd);
-    if (!ps.sculpt)
+    //if (!ps.sculpt)
     ctrl1.addEventListener('connected',function(e) {
       //---
-      this.add(buildController(e.data));
+      if (!ps.sculpt) this.add(buildController(e.data));
       gp1=e.data.gamepad;self.gp1=gp1;
       //onsole.log(XrU til.gp1);
-      //onsole.log('ctrl1 connected');
+      console.log('ctrl1 connected');
       //...
     }
     );
@@ -241,8 +241,14 @@ let XrUtil={};
       } 
       ct.strokeStyle='#aaa';
       ct.strokeRect(bx,by,bw,bh);
-      ct.fillStyle='#ddd';
-      ct.fillText(b.s,bx+bw/2,by+bh/2);
+      if (b.color) {
+        ct.fillStyle=b.color;
+        ct.fillRect(bx+4,by+4,bw-8,bh-8);
+      }
+      if (b.s!==undefined) {
+        ct.fillStyle='#ddd';
+        ct.fillText(b.s,bx+bw/2,by+bh/2);
+      }
     }
     ct.textAlign='start';
     ct.textBaseline='top';
@@ -338,6 +344,7 @@ let XrUtil={};
 )(XrUtil);
 export { XrUtil };
 //fr o,5
+//fr o,5,10
 //fr o,5,10,8
 //fr o,5,10,10
 //fr o,5,10,57
@@ -345,8 +352,9 @@ export { XrUtil };
 //fr o,5,10,81
 //fr o,5,10,83
 //fr o,5,10,89
+//fr o,5,12
 //fr o,5,14
 //fr o,5,16
 //fr o,5,18
 //fr o,5,18,1
-//fr p,4,62
+//fr p,35,186

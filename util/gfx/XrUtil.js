@@ -5,7 +5,7 @@ import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFa
 let XrUtil={};
 (function(pself) {
   //---
-  let version='v.1.143 ',//FOLDORUPDATEVERSION
+  let version='v.1.144 ',//FOLDORUPDATEVERSION
       self=pself,ctrl0,ctrl1,gp0,gp1,camera,scene,room,vrPos,huds=[],hudMesh,
       hud={lines:['xrUtil '+version],cursor:{x:0.5,y:0.5,vis:false},buttons:[]},
       raycaster,INTERSECTED,hudCount=0;
@@ -286,8 +286,9 @@ let XrUtil={};
     const o=new THREE.Mesh(g,planeMaterial);
     o.position.set(-0.2,0,-0.5);
     o.rotation.y=0.3;hudMesh=o;
-    camera.add(o);
+    //camera.add(o);
     //scene.add(o);
+    ctrl0.add(o);
     huds.push(o);
     raycaster=new THREE.Raycaster();
     
@@ -357,4 +358,4 @@ export { XrUtil };
 //fr o,5,16
 //fr o,5,18
 //fr o,5,18,1
-//fr p,35,186
+//fr p,13,231

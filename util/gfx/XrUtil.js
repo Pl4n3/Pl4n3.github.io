@@ -5,10 +5,10 @@ import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFa
 let XrUtil={};
 (function(pself) {
   //---
-  let version='v.1.150 ',//FOLDORUPDATEVERSION
+  let version='v.1.153 ',//FOLDORUPDATEVERSION
       self=pself,ctrl0,ctrl1,gp0,gp1,camera,scene,room,vrPos,huds=[],hudMesh,
       hud={lines:['xrUtil '+version],cursor:{x:0.5,y:0.5,vis:false},buttons:[]},
-      raycaster,INTERSECTED,hudCount=0;
+      raycaster,INTERSECTED,hudCount=0,needDrawUi=false;
   
   const tempMatrix=new THREE.Matrix4(),vt=new THREE.Vector3();
   
@@ -262,6 +262,7 @@ let XrUtil={};
       ct.strokeRect(curx-5,cury-5,10,10);
     }
     hud.t.needsUpdate=true;
+    needDrawUi=false;
     //...
   }
   
@@ -269,7 +270,8 @@ let XrUtil={};
     //---
     hud.lines.push(s);
     while (hud.lines.length>4) hud.lines.splice(0,1);
-    drawHud();
+    //drawHud();
+    needDrawUi=true;
     //...
   }
   
@@ -335,6 +337,7 @@ let XrUtil={};
           drawHud();
         }
       }
+      if (needDrawUi) drawHud();
     }
     //...
   }
@@ -358,4 +361,4 @@ export { XrUtil };
 //fr o,5,16
 //fr o,5,18
 //fr o,5,18,1
-//fr p,68,231
+//fr p,26,280

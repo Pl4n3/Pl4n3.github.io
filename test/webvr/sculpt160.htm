@@ -71,12 +71,19 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       });
     xrUtil.initHud();
     
+    function selectInButtonGroup(bg,b) {
+      //---
+      for (let bh of bg) bh.selected=(bh==b);
+      //...
+    }
+    
     function setColor() {
       //---
       console.log(this.color);
       points[0].color=new THREE.Color(this.color);
       points[1].color=new THREE.Color(this.color);
       xrUtil.log('Brush color is set to '+this.color+'.');
+      selectInButtonGroup(bgcolors,this);
       //...
     }
     function setBrush() {
@@ -85,15 +92,40 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
         points[0].subtract=this.subtract;
         points[1].subtract=this.subtract;
         xrUtil.log('Brush subtract is set to '+this.subtract+'.');
+        selectInButtonGroup(bgsubtract,this);
       }
       //onsole.log(this.s);
       if (this.strength) {
         points[0].strength=this.strength;
         points[1].strength=this.strength*-2;
         xrUtil.log('Brush strength is set to '+this.strength+'.');
+        selectInButtonGroup(bgstrength,this);
       }
       //...
     }
+    
+    let bgsubtract=[
+      {x:0.05,y:0.4,w:0.1,h:0.1,s:'u1',ondown:setBrush,subtract:10,selected:1},
+      {x:0.2,y:0.4,w:0.1,h:0.1,s:'u2',ondown:setBrush,subtract:20},
+      {x:0.35,y:0.4,w:0.1,h:0.1,s:'u3',ondown:setBrush,subtract:40}
+    ];
+    
+    let bgstrength=[
+      {x:0.05,y:0.55,w:0.1,h:0.1,s:'s1',ondown:setBrush,strength:0.01},
+      {x:0.2,y:0.55,w:0.1,h:0.1,s:'s2',ondown:setBrush,strength:0.02},
+      {x:0.35,y:0.55,w:0.1,h:0.1,s:'s3',ondown:setBrush,strength:0.04,selected:1},
+      {x:0.5,y:0.55,w:0.1,h:0.1,s:'s4',ondown:setBrush,strength:0.16},
+      {x:0.65,y:0.55,w:0.1,h:0.1,s:'s5',ondown:setBrush,strength:0.6}
+    ];
+    
+    let bgcolors=[
+      {x:0.05,y:0.7,w:0.1,h:0.1,color:'rgb(250,0,0)',ondown:setColor},
+      {x:0.2,y:0.7,w:0.1,h:0.1,color:'rgb(0,250,0)',ondown:setColor},
+      {x:0.35,y:0.7,w:0.1,h:0.1,color:'rgb(0,0,250)',ondown:setColor},
+      {x:0.05,y:0.85,w:0.1,h:0.1,color:'rgb(250,250,250)',ondown:setColor,selected:1},
+      {x:0.2,y:0.85,w:0.1,h:0.1,color:'rgb(0,0,0)',ondown:setColor},
+      {x:0.35,y:0.85,w:0.1,h:0.1,color:'rgb(250,250,0)',ondown:setColor}
+    ];
     
     xrUtil.hud.buttons=[
     {s:'Save',x:0.5,y:0.7,w:0.45,h:0.25,ondown:function() {
@@ -105,15 +137,6 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     }
     },
     
-    {x:0.05,y:0.4,w:0.1,h:0.1,s:'u1',ondown:setBrush,subtract:10},
-    {x:0.2,y:0.4,w:0.1,h:0.1,s:'u2',ondown:setBrush,subtract:20},
-    {x:0.35,y:0.4,w:0.1,h:0.1,s:'u3',ondown:setBrush,subtract:40},
-    
-    {x:0.05,y:0.55,w:0.1,h:0.1,s:'s1',ondown:setBrush,strength:0.01},
-    {x:0.2,y:0.55,w:0.1,h:0.1,s:'s2',ondown:setBrush,strength:0.02},
-    {x:0.35,y:0.55,w:0.1,h:0.1,s:'s3',ondown:setBrush,strength:0.04},
-    {x:0.5,y:0.55,w:0.1,h:0.1,s:'s4',ondown:setBrush,strength:0.16},
-    {x:0.65,y:0.55,w:0.1,h:0.1,s:'s5',ondown:setBrush,strength:0.6},
     {x:0.8,y:0.55,w:0.15,h:0.1,s:'P',ondown:function() {
       //---
       xrUtil.log('Later toggle points mode here.');
@@ -121,18 +144,8 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     }
     },
     
-    
-    {x:0.05,y:0.7,w:0.1,h:0.1,color:'rgb(250,0,0)',ondown:setColor},
-    {x:0.2,y:0.7,w:0.1,h:0.1,color:'rgb(0,250,0)',ondown:setColor},
-    {x:0.35,y:0.7,w:0.1,h:0.1,color:'rgb(0,0,250)',ondown:setColor},
-    
-    
-    {x:0.05,y:0.85,w:0.1,h:0.1,color:'rgb(250,250,250)',ondown:setColor},
-    {x:0.2,y:0.85,w:0.1,h:0.1,color:'rgb(0,0,0)',ondown:setColor},
-    {x:0.35,y:0.85,w:0.1,h:0.1,color:'rgb(250,250,0)',ondown:setColor}
-    
-    ];
-    const version='v.0.24 ';//FOLDORUPDATEVERSION
+    ].concat(bgsubtract,bgstrength,bgcolors);
+    const version='v.0.34 ';//FOLDORUPDATEVERSION
     xrUtil.log('sculpt '+version);
     
     controller1=xrUtil.ctrl0;
@@ -183,8 +196,8 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     scene.add( blob );
     
     points=[
-      {position:new THREE.Vector3(),strength:0.04,subtract:10},
-      {position:new THREE.Vector3(),strength:-0.08,subtract:10}
+      {position:new THREE.Vector3(),strength:0.04,subtract:10,color:new THREE.Color(bgcolors[3].color)},
+      {position:new THREE.Vector3(),strength:-0.08,subtract:10,color:new THREE.Color(bgcolors[3].color)}
     ];
     
     let d=localStorage[lsKey];
@@ -300,11 +313,11 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,24
 //fr o,24,9
 //fr o,24,9,38
-//fr o,24,9,39
-//fr o,24,9,42
-//fr o,24,9,54
-//fr o,24,9,137
+//fr o,24,9,40
+//fr o,24,9,41
+//fr o,24,9,67
+//fr o,24,9,143
 //fr o,24,14
 //fr o,24,15
 //fr o,24,17
-//fr p,30,198
+//fr p,58,195

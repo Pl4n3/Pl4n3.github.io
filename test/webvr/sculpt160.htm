@@ -139,14 +139,22 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     {x:0.8,y:0.55,w:0.15,h:0.1,s:'P',ondown:function() {
       //---
-      if (this.s=='P') this.s='NP'; else this.s='P';
-      xrUtil.log('Later toggle points mode here.');
+      showPoints=!showPoints;
+      if (showPoints) {
+        this.s='NP';
+        xrUtil.log('Current mode: diminish points.');
+      } else {
+        this.s='P';
+        if (pointGroup) { scene.remove(pointGroup);pointGroup=undefined; }
+        xrUtil.log('Current mode: diminish sculpt by adding points.');
+      }
+      
       //...
     }
     },
     
     ].concat(bgsubtract,bgstrength,bgcolors);
-    const version='v.0.77 ';//FOLDORUPDATEVERSION
+    const version='v.0.88 ';//FOLDORUPDATEVERSION
     xrUtil.log('sculpt '+version);
     
     controller1=xrUtil.ctrl0;
@@ -266,7 +274,17 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
         const strength=point.strength/2;
         const vector=new THREE.Vector3().setFromMatrixPosition(matrix);
         transformPoint(vector);
-        points.push({position:vector,strength:strength,subtract:point.subtract,color:point.color});
+        if ((id==1)&&showPoints) {
+          let md=0.1,mi=-1;
+          for (let i=2;i<points.length;i++) {
+            let p=points[i].position,dx=vector.x-p.x,dy=vector.y-p.y,dz=vector.z-p.z,
+                d=dx*dx+dy*dy+dz*dz;
+            if (d>=md) continue;
+            md=d;mi=i;
+          }
+          if (mi!=-1) points.splice(mi,1);
+        } else
+          points.push({position:vector,strength:strength,subtract:point.subtract,color:point.color});
       }
     }
     //...
@@ -281,13 +299,15 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     }
     blob.update();
     if (showPoints&&(points.length!=lastPointCount)) {
-      console.log('render points now');
+      //onsole.log('render points now '+points.length+' '+lastPointCount);
       lastPointCount=points.length;
       if (pointGroup) scene.remove(pointGroup);
       pointGroup=new THREE.Group();
       for (let i=0;i<points.length;i++) {
         let p=points[i],pos=p.position,w=p.strength,
-            mesh=new THREE.Mesh(new THREE.BoxGeometry(Math.abs(w),w<0?0.001:w,Math.abs(w)),pointMaterial);
+            g=new THREE.BoxGeometry(Math.abs(w),w<0?0.001:w,Math.abs(w)),
+            mesh=new THREE.Mesh(g,pointMaterial);
+        //g.computeBoundingSphere();
         mesh.position.set(pos.x*2-1,pos.y*2,pos.z*2-1);
         //mesh.updateMatrix();
         //mesh.matrixAutoUpdate=false;
@@ -345,4 +365,4 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,24,15
 //fr o,24,16
 //fr o,24,17
-//fr p,70,275
+//fr p,36,144

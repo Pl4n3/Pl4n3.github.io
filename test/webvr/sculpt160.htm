@@ -27,7 +27,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
   let container,camera,scene,renderer,
       controller1,controller2,controls,blob,points=[],
       xrUtil=XrUtil,lsKey='sculpt160_0',
-      showPoints=true,lastPointCount=0,pointGroup,pointMaterial;
+      showPoints=false,lastPointCount=0,pointGroup,pointMaterial;
       
   init();
   animate();
@@ -143,10 +143,11 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       if (showPoints) {
         this.s='NP';
         xrUtil.log('Current mode: diminish points.');
+        lastPointCount=0;
       } else {
         this.s='P';
         if (pointGroup) { scene.remove(pointGroup);pointGroup=undefined; }
-        xrUtil.log('Current mode: diminish sculpt by adding points.');
+        xrUtil.log('Current mode: diminish sculpt w/ points.');
       }
       
       //...
@@ -154,7 +155,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     },
     
     ].concat(bgsubtract,bgstrength,bgcolors);
-    const version='v.0.88 ';//FOLDORUPDATEVERSION
+    const version='v.0.91 ';//FOLDORUPDATEVERSION
     xrUtil.log('sculpt '+version);
     
     controller1=xrUtil.ctrl0;
@@ -365,4 +366,4 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,24,15
 //fr o,24,16
 //fr o,24,17
-//fr p,36,144
+//fr p,20,29

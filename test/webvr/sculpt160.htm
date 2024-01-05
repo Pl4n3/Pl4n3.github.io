@@ -25,9 +25,9 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 (function() {
   //---
   let container,camera,scene,renderer,
-      controller1,controller2,
-      controls,blob,points=[],
-      xrUtil=XrUtil,lsKey='sculpt160_0';
+      controller1,controller2,controls,blob,points=[],
+      xrUtil=XrUtil,lsKey='sculpt160_0',
+      showPoints=true,lastPointCount=0,pointGroup,pointMaterial;
       
   init();
   animate();
@@ -51,10 +51,10 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     const grid=new THREE.GridHelper(4,1,0x111111,0x111111);
     scene.add(grid);
     
-    scene.add( new THREE.HemisphereLight( 0x888877, 0x777788, 3 ) );
+    scene.add(new THREE.HemisphereLight(0x888877,0x777788,3));
     
-    const light = new THREE.DirectionalLight( 0xffffff, 3 );
-    light.position.set( 0, 6, 0 );
+    const light=new THREE.DirectionalLight(0xffffff,3);
+    light.position.set(0,6,0);
     scene.add( light );
     
     //
@@ -139,13 +139,14 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     {x:0.8,y:0.55,w:0.15,h:0.1,s:'P',ondown:function() {
       //---
+      if (this.s=='P') this.s='NP'; else this.s='P';
       xrUtil.log('Later toggle points mode here.');
       //...
     }
     },
     
     ].concat(bgsubtract,bgstrength,bgcolors);
-    const version='v.0.34 ';//FOLDORUPDATEVERSION
+    const version='v.0.77 ';//FOLDORUPDATEVERSION
     xrUtil.log('sculpt '+version);
     
     controller1=xrUtil.ctrl0;
@@ -228,6 +229,9 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       ,{listen:1});
     
     
+    //pointMaterial=new THREE.MeshPhongMaterial({color:0x77dd77,flatShading:true,transparent:true,opacity:0.7});
+    pointMaterial=new THREE.MeshPhongMaterial({flatShading:true,color:0x66aa66,depthTest:false,transparent:true,opacity:0.7});
+    
     //...
   }
   function onWindowResize() {
@@ -270,12 +274,31 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
   function updateBlob() {
     //---
     blob.reset();
-    for ( let i = 0; i < points.length; i ++ ) {
+    for (let i=0;i<points.length;i++) {
       const point=points[i];
       const position=point.position;
       blob.addBall(position.x,position.y,position.z,point.strength,point.subtract,point.color);
     }
     blob.update();
+    if (showPoints&&(points.length!=lastPointCount)) {
+      console.log('render points now');
+      lastPointCount=points.length;
+      if (pointGroup) scene.remove(pointGroup);
+      pointGroup=new THREE.Group();
+      for (let i=0;i<points.length;i++) {
+        let p=points[i],pos=p.position,w=p.strength,
+            mesh=new THREE.Mesh(new THREE.BoxGeometry(Math.abs(w),w<0?0.001:w,Math.abs(w)),pointMaterial);
+        mesh.position.set(pos.x*2-1,pos.y*2,pos.z*2-1);
+        //mesh.updateMatrix();
+        //mesh.matrixAutoUpdate=false;
+        //mesh.castShadow=true;
+        //mesh.receiveShadow=true;
+        pointGroup.add(mesh);
+        //scene.add(mesh);
+      }
+      scene.add(pointGroup);
+      //scene.remove(blob);
+    }
     //...
   }
   function render() {
@@ -316,8 +339,10 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,24,9,40
 //fr o,24,9,41
 //fr o,24,9,67
+//fr o,24,9,70
 //fr o,24,9,143
 //fr o,24,14
 //fr o,24,15
+//fr o,24,16
 //fr o,24,17
-//fr p,58,195
+//fr p,70,275

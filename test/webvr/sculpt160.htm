@@ -28,7 +28,8 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       controller1,controller2,controls,blob,points=[],
       xrUtil=XrUtil,lsKey='sculpt160_0',
       showPoints=false,lastPointCount=0,pointGroup,pointMaterial,
-      colorBlack=new THREE.Color(0,0,0);
+      colorBlack=new THREE.Color(0,0,0),
+      dimColor=false;
       
   init();
   animate();
@@ -82,7 +83,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       //---
       console.log(this.color);
       points[0].color=new THREE.Color(this.color);
-      if (points[1].color!==undefined) points[1].color=new THREE.Color(this.color);
+      if (dimColor) points[1].color=new THREE.Color(this.color);
       xrUtil.log('Brush color is set to '+this.color+'.');
       selectInButtonGroup(bgcolors,this);
       //...
@@ -145,6 +146,19 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     ]}));
     
     xrUtil.hud.buttons=[
+    
+    {s:'1000p',x:0.6,y:0.05,w:0.35,h:0.1,ondown:function() {
+      //---
+      xrUtil.log('Number of points.');
+      //...
+    }
+    ,ondraw:function() {
+      //---
+      this.s=points.length+'p';
+      //...
+    }
+    },
+    
     {s:'Save',x:0.5,y:0.7,w:0.45,h:0.25,ondown:function() {
       //---
       const data=serialize();
@@ -173,12 +187,13 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     {x:0.5,y:0.4,w:0.45,h:0.1,s:'DimColor',ondown:function() {
       //---
-      if (!points[1].color) {
+      dimColor=!dimColor;
+      if (dimColor) {
         points[1].color=points[0].color;
         this.s='DimNoColor';
         xrUtil.log('Diminish sculpt with colors.');
       } else {
-        points[1].color=undefined;
+        points[1].color=colorBlack;
         this.s='DimColor';
         xrUtil.log('Diminish sculpt without colors.');
       }
@@ -187,7 +202,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     }
     
     ].concat(bgsubtract,bgstrength,bgcolors);
-    const version='v.0.121 ';//FOLDORUPDATEVERSION
+    const version='v.0.131 ';//FOLDORUPDATEVERSION
     xrUtil.log('sculpt '+version);
     
     controller1=xrUtil.ctrl0;
@@ -317,7 +332,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
           }
           if (mi!=-1) points.splice(mi,1);
         } else
-          points.push({position:vector,strength:strength,subtract:point.subtract,color:((id==1)&&(!point.color))?colorBlack:point.color});
+          points.push({position:vector,strength:strength,subtract:point.subtract,color:point.color});
       }
     }
     //...
@@ -387,14 +402,15 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 </html>
 <script>
 //fr o,24
-//fr o,24,10
-//fr o,24,10,38
-//fr o,24,10,40
-//fr o,24,10,41
-//fr o,24,10,79
-//fr o,24,10,152
-//fr o,24,15
+//fr o,24,11
+//fr o,24,11,38
+//fr o,24,11,40
+//fr o,24,11,41
+//fr o,24,11,74
+//fr o,24,11,75
+//fr o,24,11,157
 //fr o,24,16
 //fr o,24,17
 //fr o,24,18
-//fr p,7,289
+//fr o,24,19
+//fr p,25,146

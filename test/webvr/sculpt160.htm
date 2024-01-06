@@ -122,13 +122,14 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       if (this.s=='d') {
         dimColor=false;dimPoints=false;
         points[1].color=colorBlack;
-        xrUtil.log('Diminish sculpt without colors.');
+        xrUtil.log('Diminish sculpt without color.');
       } else if (this.s=='dc') {
         dimColor=true;dimPoints=false;
         points[1].color=points[0].color;
-        xrUtil.log('Diminish sculpt with colors.');
+        xrUtil.log('Diminish sculpt with color.');
       } else if (this.s=='dp') {
-        dimPoints=true;
+        dimPoints=true;dimColor=true;
+        points[1].color=colorBlack;
         xrUtil.log('Diminish sculpt with points.');
       }
       selectInButtonGroup(bgdiminish,this);
@@ -171,7 +172,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     xrUtil.hud.buttons=[
     
-    {s:'1000p',color:'rgba(100,100,100,0.5)',x:0.63,y:0.52,w:0.33,h:0.16,ondown:function() {
+    {s:'1000p',color:'rgba(100,100,100,0.5)',x:0.63,y:0.52,w:0.32,h:0.16,ondown:function() {
       //---
       xrUtil.log('Number of points.');
       //...
@@ -197,12 +198,12 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       showPoints=!showPoints;
       if (showPoints) {
         this.s='NP';
-        xrUtil.log('Current mode: diminish points.');
+        xrUtil.log('Showing points.');
         lastPointCount=0;
       } else {
         this.s='P';
         if (pointGroup) { scene.remove(pointGroup);pointGroup=undefined; }
-        xrUtil.log('Current mode: diminish sculpt w/ points.');
+        xrUtil.log('Not showing points.');
       }
       
       //...
@@ -230,8 +231,8 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     */
     
     ].concat(bgsubtract,bgstrength,bgdiminish,bgcolors);
-    const version='v.0.164 ';//FOLDORUPDATEVERSION
-    xrUtil.log('sculpt '+version);
+    const version='v.0.168 ';//FOLDORUPDATEVERSION
+    xrUtil.log('Sculpt '+version);
     
     controller1=xrUtil.ctrl0;
     controller2=xrUtil.ctrl1;
@@ -435,9 +436,10 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,24,11,44
 //fr o,24,11,82
 //fr o,24,11,83
+//fr o,24,11,89
 //fr o,24,11,169
 //fr o,24,16
 //fr o,24,17
 //fr o,24,18
 //fr o,24,19
-//fr p,61,151
+//fr p,13,193

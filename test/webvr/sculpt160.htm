@@ -202,7 +202,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     }
     
     ].concat(bgsubtract,bgstrength,bgcolors);
-    const version='v.0.131 ';//FOLDORUPDATEVERSION
+    const version='v.0.132 ';//FOLDORUPDATEVERSION
     xrUtil.log('sculpt '+version);
     
     controller1=xrUtil.ctrl0;
@@ -323,7 +323,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
         const vector=new THREE.Vector3().setFromMatrixPosition(matrix);
         transformPoint(vector);
         if ((id==1)&&showPoints) {
-          let md=0.1,mi=-1;
+          let md=0.05,mi=-1;
           for (let i=2;i<points.length;i++) {
             let p=points[i].position,dx=vector.x-p.x,dy=vector.y-p.y,dz=vector.z-p.z,
                 d=dx*dx+dy*dy+dz*dz;
@@ -413,4 +413,4 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,24,17
 //fr o,24,18
 //fr o,24,19
-//fr p,25,146
+//fr p,17,268

@@ -29,7 +29,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       xrUtil=XrUtil,lsKey='sculpt160_0',
       showPoints=false,lastPointCount=0,pointGroup,pointMaterial,
       colorBlack=new THREE.Color(0,0,0),
-      dimColor=false;
+      dimColor=false,dimPoints=false;
       
   init();
   animate();
@@ -78,6 +78,18 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       for (let bh of bg) bh.selected=(bh==b);
       //...
     }
+    function posButtons(ps) {
+      //---
+      let x=ps.x;
+      for (let b of ps.a) {
+        b.x=x;b.y=ps.y;b.z=ps.z;
+        b.w=ps.w;b.h=ps.h;
+        x+=ps.w+ps.b;
+      }
+      return ps.a;
+      //...
+    }
+    
     
     function setColor() {
       //---
@@ -105,36 +117,48 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       }
       //...
     }
-    
-    let bgsubtract=[
-      {x:0.05,y:0.4,w:0.1,h:0.1,s:'u1',ondown:setBrush,subtract:10,selected:1},
-      {x:0.2,y:0.4,w:0.1,h:0.1,s:'u2',ondown:setBrush,subtract:20},
-      {x:0.35,y:0.4,w:0.1,h:0.1,s:'u3',ondown:setBrush,subtract:40}
-    ];
-    
-    let bgstrength=[
-      {x:0.05,y:0.55,w:0.1,h:0.1,s:'s1',ondown:setBrush,strength:0.01},
-      {x:0.2,y:0.55,w:0.1,h:0.1,s:'s2',ondown:setBrush,strength:0.02},
-      {x:0.35,y:0.55,w:0.1,h:0.1,s:'s3',ondown:setBrush,strength:0.04,selected:1},
-      {x:0.5,y:0.55,w:0.1,h:0.1,s:'s4',ondown:setBrush,strength:0.16},
-      {x:0.65,y:0.55,w:0.1,h:0.1,s:'s5',ondown:setBrush,strength:0.6}
-    ];
-    
-    function posButtons(ps) {
+    function setDiminish() {
       //---
-      let x=ps.x;
-      for (let b of ps.a) {
-        b.x=x;b.y=ps.y;b.z=ps.z;
-        b.w=ps.w;b.h=ps.h;
-        x+=ps.w+ps.b;
+      if (this.s=='d') {
+        dimColor=false;dimPoints=false;
+        points[1].color=colorBlack;
+        xrUtil.log('Diminish sculpt without colors.');
+      } else if (this.s=='dc') {
+        dimColor=true;dimPoints=false;
+        points[1].color=points[0].color;
+        xrUtil.log('Diminish sculpt with colors.');
+      } else if (this.s=='dp') {
+        dimPoints=true;
+        xrUtil.log('Diminish sculpt with points.');
       }
-      return ps.a;
+      selectInButtonGroup(bgdiminish,this);
       //...
     }
     
+    let bgsubtract=posButtons({x:0.05,y:0.4,w:0.085,h:0.1,b:0.03,a:[
+      {s:'u1',ondown:setBrush,subtract:10,selected:1},
+      {s:'u2',ondown:setBrush,subtract:20},
+      {s:'u3',ondown:setBrush,subtract:40}
+    ]});
+    
+    let bgstrength=posButtons({x:0.05,y:0.55,w:0.085,h:0.1,b:0.03,a:[
+      {s:'s1',ondown:setBrush,strength:0.01},
+      {s:'s2',ondown:setBrush,strength:0.02},
+      {s:'s3',ondown:setBrush,strength:0.04,selected:1},
+      {s:'s4',ondown:setBrush,strength:0.16},
+      {s:'s5',ondown:setBrush,strength:0.6}
+    ]});
+    
+    let bgdiminish=posButtons({x:0.45,y:0.4,w:0.085,h:0.1,b:0.03,a:[
+      {s:'d',ondown:setDiminish,selected:1},
+      {s:'dc',ondown:setDiminish},
+      {s:'dp',ondown:setDiminish}
+    ]});
+    
     let bgcolors=[].concat(
-    posButtons({x:0.05,y:0.7,w:0.1,h:0.1,b:0.05,a:[
+    posButtons({x:0.05,y:0.7,w:0.075,h:0.1,b:0.03,a:[
       {color:'rgb(250,0,0)',ondown:setColor},
+      {color:'rgb(250,125,0)',ondown:setColor},
       {color:'rgb(0,250,0)',ondown:setColor},
       {color:'rgb(0,0,250)',ondown:setColor},
     ]}),
@@ -147,7 +171,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     xrUtil.hud.buttons=[
     
-    {s:'1000p',x:0.6,y:0.05,w:0.35,h:0.1,ondown:function() {
+    {s:'1000p',color:'rgba(100,100,100,0.5)',x:0.63,y:0.52,w:0.33,h:0.16,ondown:function() {
       //---
       xrUtil.log('Number of points.');
       //...
@@ -168,7 +192,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     }
     },
     
-    {x:0.8,y:0.55,w:0.15,h:0.1,s:'P',ondown:function() {
+    {x:0.85,y:0.4,w:0.1,h:0.1,s:'P',ondown:function() {
       //---
       showPoints=!showPoints;
       if (showPoints) {
@@ -183,9 +207,11 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       
       //...
     }
-    },
+    }
     
-    {x:0.5,y:0.4,w:0.45,h:0.1,s:'DimColor',ondown:function() {
+    /*
+    
+    ,{x:0.4,y:0.25,w:0.4,h:0.1,s:'DimColor',ondown:function() {
       //---
       dimColor=!dimColor;
       if (dimColor) {
@@ -201,8 +227,10 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     }
     }
     
-    ].concat(bgsubtract,bgstrength,bgcolors);
-    const version='v.0.133 ';//FOLDORUPDATEVERSION
+    */
+    
+    ].concat(bgsubtract,bgstrength,bgdiminish,bgcolors);
+    const version='v.0.164 ';//FOLDORUPDATEVERSION
     xrUtil.log('sculpt '+version);
     
     controller1=xrUtil.ctrl0;
@@ -322,7 +350,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
         const strength=point.strength/2;
         const vector=new THREE.Vector3().setFromMatrixPosition(matrix);
         transformPoint(vector);
-        if ((id==1)&&showPoints) {
+        if ((id==1)&&dimPoints) {
           let md=0.05,mi=-1;
           for (let i=2;i<points.length;i++) {
             let p=points[i].position,dx=vector.x-p.x,dy=vector.y-p.y,dz=vector.z-p.z,
@@ -346,7 +374,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       blob.addBall(position.x,position.y,position.z,point.strength,point.subtract,point.color);
     }
     blob.update();
-    if (0&&showPoints&&(points.length!=lastPointCount)) {
+    if (showPoints&&(points.length!=lastPointCount)) {
       //onsole.log('render points now '+points.length+' '+lastPointCount);
       lastPointCount=points.length;
       if (pointGroup) scene.remove(pointGroup);
@@ -403,14 +431,13 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 <script>
 //fr o,24
 //fr o,24,11
-//fr o,24,11,38
-//fr o,24,11,40
-//fr o,24,11,41
-//fr o,24,11,74
-//fr o,24,11,75
-//fr o,24,11,157
+//fr o,24,11,43
+//fr o,24,11,44
+//fr o,24,11,82
+//fr o,24,11,83
+//fr o,24,11,169
 //fr o,24,16
 //fr o,24,17
 //fr o,24,18
 //fr o,24,19
-//fr p,75,213
+//fr p,61,151

@@ -5,7 +5,7 @@ import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFa
 let XrUtil={};
 (function(pself) {
   //---
-  let version='v.1.160 ',//FOLDORUPDATEVERSION
+  let version='v.1.161 ',//FOLDORUPDATEVERSION
       self=pself,ctrl0,ctrl1,gp0,gp1,camera,scene,room,vrPos,huds=[],hudMesh,
       hud={lines:['xrUtil '+version],cursor:{x:0.5,y:0.5,vis:false},buttons:[]},
       raycaster,INTERSECTED,hudCount=0,needDrawUi=false;
@@ -241,6 +241,7 @@ let XrUtil={};
       } 
       ct.strokeStyle=b.selected?'#fff':'#222';//#aaa
       ct.strokeRect(bx,by,bw,bh);
+      if (b.ondraw) b.ondraw();
       if (b.color) {
         ct.fillStyle=b.color;
         ct.fillRect(bx+4,by+4,bw-8,bh-8);
@@ -361,4 +362,4 @@ export { XrUtil };
 //fr o,5,16
 //fr o,5,18
 //fr o,5,18,1
-//fr p,40,182
+//fr p,27,184

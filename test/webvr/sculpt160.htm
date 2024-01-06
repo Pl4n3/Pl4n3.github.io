@@ -118,14 +118,41 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       {x:0.65,y:0.55,w:0.1,h:0.1,s:'s5',ondown:setBrush,strength:0.6}
     ];
     
+    function posButtons(ps) {
+      //---
+      let x=ps.x;
+      for (let b of ps.a) {
+        b.x=x;b.y=ps.y;b.z=ps.z;
+        b.w=ps.w;b.h=ps.h;
+        x+=ps.w+ps.b;
+      }
+      return ps.a;
+      //...
+    }
+    
+    
     let bgcolors=[
-      {x:0.05,y:0.7,w:0.1,h:0.1,color:'rgb(250,0,0)',ondown:setColor},
-      {x:0.2,y:0.7,w:0.1,h:0.1,color:'rgb(0,250,0)',ondown:setColor},
-      {x:0.35,y:0.7,w:0.1,h:0.1,color:'rgb(0,0,250)',ondown:setColor},
-      {x:0.05,y:0.85,w:0.1,h:0.1,color:'rgb(250,250,250)',ondown:setColor,selected:1},
-      {x:0.2,y:0.85,w:0.1,h:0.1,color:'rgb(0,0,0)',ondown:setColor},
-      {x:0.35,y:0.85,w:0.1,h:0.1,color:'rgb(250,250,0)',ondown:setColor}
+      //{x:0.05,y:0.7,w:0.1,h:0.1,color:'rgb(250,0,0)',ondown:setColor},
+      //{x:0.2,y:0.7,w:0.1,h:0.1,color:'rgb(0,250,0)',ondown:setColor},
+      //{x:0.35,y:0.7,w:0.1,h:0.1,color:'rgb(0,0,250)',ondown:setColor},
+      
+      //{x:0.05,y:0.85,w:0.1,h:0.1,color:'rgb(250,250,250)',ondown:setColor,selected:1},
+      //{x:0.2,y:0.85,w:0.1,h:0.1,color:'rgb(0,0,0)',ondown:setColor},
+      //{x:0.35,y:0.85,w:0.1,h:0.1,color:'rgb(250,250,0)',ondown:setColor}
     ];
+    
+    bgcolors=bgcolors.concat(
+    posButtons({x:0.05,y:0.7,w:0.1,h:0.1,b:0.05,a:[
+      {color:'rgb(250,0,0)',ondown:setColor},
+      {color:'rgb(0,250,0)',ondown:setColor},
+      {color:'rgb(0,0,250)',ondown:setColor},
+    ]}),
+    posButtons({x:0.05,y:0.85,w:0.075,h:0.1,b:0.03,a:[
+      {color:'rgb(250,250,250)',ondown:setColor,selected:1},
+      {color:'rgb(125,125,125)',ondown:setColor},
+      {color:'rgb(0,0,0)',ondown:setColor},
+      {color:'rgb(250,250,0)',ondown:setColor}
+    ]}));
     
     xrUtil.hud.buttons=[
     {s:'Save',x:0.5,y:0.7,w:0.45,h:0.25,ondown:function() {
@@ -155,7 +182,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     },
     
     ].concat(bgsubtract,bgstrength,bgcolors);
-    const version='v.0.91 ';//FOLDORUPDATEVERSION
+    const version='v.0.100 ';//FOLDORUPDATEVERSION
     xrUtil.log('sculpt '+version);
     
     controller1=xrUtil.ctrl0;
@@ -359,11 +386,12 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,24,9,38
 //fr o,24,9,40
 //fr o,24,9,41
-//fr o,24,9,67
-//fr o,24,9,70
-//fr o,24,9,143
+//fr o,24,9,57
+//fr o,24,9,84
+//fr o,24,9,87
+//fr o,24,9,160
 //fr o,24,14
 //fr o,24,15
 //fr o,24,16
 //fr o,24,17
-//fr p,20,29
+//fr p,0,149

@@ -27,7 +27,8 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
   let container,camera,scene,renderer,
       controller1,controller2,controls,blob,points=[],
       xrUtil=XrUtil,lsKey='sculpt160_0',
-      showPoints=false,lastPointCount=0,pointGroup,pointMaterial;
+      showPoints=false,lastPointCount=0,pointGroup,pointMaterial,
+      colorBlack=new THREE.Color(0,0,0);
       
   init();
   animate();
@@ -170,7 +171,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     }
     },
     
-    {x:0.5,y:0.4,w:0.4,h:0.1,s:'DimColor',ondown:function() {
+    {x:0.5,y:0.4,w:0.45,h:0.1,s:'DimColor',ondown:function() {
       //---
       if (!points[1].color) {
         points[1].color=points[0].color;
@@ -186,7 +187,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     }
     
     ].concat(bgsubtract,bgstrength,bgcolors);
-    const version='v.0.115 ';//FOLDORUPDATEVERSION
+    const version='v.0.121 ';//FOLDORUPDATEVERSION
     xrUtil.log('sculpt '+version);
     
     controller1=xrUtil.ctrl0;
@@ -316,7 +317,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
           }
           if (mi!=-1) points.splice(mi,1);
         } else
-          points.push({position:vector,strength:strength,subtract:point.subtract,color:point.color});
+          points.push({position:vector,strength:strength,subtract:point.subtract,color:((id==1)&&(!point.color))?colorBlack:point.color});
       }
     }
     //...
@@ -330,7 +331,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       blob.addBall(position.x,position.y,position.z,point.strength,point.subtract,point.color);
     }
     blob.update();
-    if (showPoints&&(points.length!=lastPointCount)) {
+    if (0&&showPoints&&(points.length!=lastPointCount)) {
       //onsole.log('render points now '+points.length+' '+lastPointCount);
       lastPointCount=points.length;
       if (pointGroup) scene.remove(pointGroup);
@@ -386,14 +387,14 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 </html>
 <script>
 //fr o,24
-//fr o,24,9
-//fr o,24,9,38
-//fr o,24,9,40
-//fr o,24,9,41
-//fr o,24,9,79
-//fr o,24,9,152
-//fr o,24,14
+//fr o,24,10
+//fr o,24,10,38
+//fr o,24,10,40
+//fr o,24,10,41
+//fr o,24,10,79
+//fr o,24,10,152
 //fr o,24,15
 //fr o,24,16
 //fr o,24,17
-//fr p,93,274
+//fr o,24,18
+//fr p,7,289

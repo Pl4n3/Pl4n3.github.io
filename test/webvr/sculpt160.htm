@@ -29,7 +29,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       xrUtil=XrUtil,lsKey='sculpt160_0',
       showPoints=false,lastPointCount=0,pointGroup,pointMaterial,
       colorBlack=new THREE.Color(0,0,0),
-      dimColor=false,dimPoints=false,grid={};
+      dimColor=false,dimPoints=false,grid={},gridw=0.01;
       
   init();
   animate();
@@ -231,7 +231,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     */
     
     ].concat(bgsubtract,bgstrength,bgdiminish,bgcolors);
-    const version='v.0.177 ';//FOLDORUPDATEVERSION
+    const version='v.0.184 ';//FOLDORUPDATEVERSION
     xrUtil.log('Sculpt '+version);
     
     controller1=xrUtil.ctrl0;
@@ -364,12 +364,11 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
         } else {
         
           //grid
-          let gw=0.01;
-          let gx=Math.floor(vector.x/gw+0.5);
-          let gy=Math.floor(vector.y/gw+0.5);
-          let gz=Math.floor(vector.z/gw+0.5);
-        
+          let gx=Math.floor(vector.x/gridw+0.5);
+          let gy=Math.floor(vector.y/gridw+0.5);
+          let gz=Math.floor(vector.z/gridw+0.5); 
           let gkey=gx+'_'+gy+'_'+gz;
+          
           if (!grid[gkey]) {
             vector.x=gx*gw;vector.y=gy*gw;vector.z=gz*gw;let p;
             points.push(p={position:vector,strength:strength,subtract:point.subtract,color:point.color});
@@ -423,9 +422,24 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
   }
   function load(v,initLoad) {
     //---
-    var d=JSON.parse(v);
+    let d=JSON.parse(v),skips=0;
     points.length=2;
-    points=points.concat(d.points);
+    grid={};
+    //points=points.concat(d.points);
+    for (let p of d.points) {
+      let pos=p.position;
+      let gx=Math.floor(pos.x/gridw+0.5);
+      let gy=Math.floor(pos.y/gridw+0.5);
+      let gz=Math.floor(pos.z/gridw+0.5);
+      let gkey=gx+'_'+gy+'_'+gz;
+      if (grid[gkey]) { skips++;continue; }
+      pos.x=gx*gridw;
+      pos.y=gy*gridw;
+      pos.z=gz*gridw;
+      grid[gkey]=p;
+      points.push(p);
+    }
+    if (skips) Conet.log(skips+' grid-skipped.');
     //...
   }
   function serialize() {
@@ -445,7 +459,6 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 </html>
 <script>
 //fr o,24
-//fr o,24,11
 //fr o,24,11,43
 //fr o,24,11,44
 //fr o,24,11,82
@@ -455,4 +468,4 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,24,17
 //fr o,24,18
 //fr o,24,19
-//fr p,14,328
+//fr p,16,143

@@ -231,7 +231,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     */
     
     ].concat(bgsubtract,bgstrength,bgdiminish,bgcolors);
-    const version='v.0.184 ';//FOLDORUPDATEVERSION
+    const version='v.0.185 ';//FOLDORUPDATEVERSION
     xrUtil.log('Sculpt '+version);
     
     controller1=xrUtil.ctrl0;
@@ -370,7 +370,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
           let gkey=gx+'_'+gy+'_'+gz;
           
           if (!grid[gkey]) {
-            vector.x=gx*gw;vector.y=gy*gw;vector.z=gz*gw;let p;
+            vector.x=gx*gridw;vector.y=gy*gridw;vector.z=gz*gridw;let p;
             points.push(p={position:vector,strength:strength,subtract:point.subtract,color:point.color});
             grid[gkey]=p;
           }
@@ -468,4 +468,4 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,24,17
 //fr o,24,18
 //fr o,24,19
-//fr p,16,143
+//fr p,60,74

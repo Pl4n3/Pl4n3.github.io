@@ -29,7 +29,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       xrUtil=XrUtil,lsKey='sculpt160_0',
       showPoints=false,lastPointCount=0,pointGroup,pointMaterial,
       colorBlack=new THREE.Color(0,0,0),
-      dimColor=false,dimPoints=false;
+      dimColor=false,dimPoints=false,grid={};
       
   init();
   animate();
@@ -231,7 +231,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     */
     
     ].concat(bgsubtract,bgstrength,bgdiminish,bgcolors);
-    const version='v.0.168 ';//FOLDORUPDATEVERSION
+    const version='v.0.177 ';//FOLDORUPDATEVERSION
     xrUtil.log('Sculpt '+version);
     
     controller1=xrUtil.ctrl0;
@@ -351,6 +351,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
         const strength=point.strength/2;
         const vector=new THREE.Vector3().setFromMatrixPosition(matrix);
         transformPoint(vector);
+          
         if ((id==1)&&dimPoints) {
           let md=0.05,mi=-1;
           for (let i=2;i<points.length;i++) {
@@ -360,8 +361,21 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
             md=d;mi=i;
           }
           if (mi!=-1) points.splice(mi,1);
-        } else
-          points.push({position:vector,strength:strength,subtract:point.subtract,color:point.color});
+        } else {
+        
+          //grid
+          let gw=0.01;
+          let gx=Math.floor(vector.x/gw+0.5);
+          let gy=Math.floor(vector.y/gw+0.5);
+          let gz=Math.floor(vector.z/gw+0.5);
+        
+          let gkey=gx+'_'+gy+'_'+gz;
+          if (!grid[gkey]) {
+            vector.x=gx*gw;vector.y=gy*gw;vector.z=gz*gw;let p;
+            points.push(p={position:vector,strength:strength,subtract:point.subtract,color:point.color});
+            grid[gkey]=p;
+          }
+        }
       }
     }
     //...
@@ -437,9 +451,8 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,24,11,82
 //fr o,24,11,83
 //fr o,24,11,89
-//fr o,24,11,169
 //fr o,24,16
 //fr o,24,17
 //fr o,24,18
 //fr o,24,19
-//fr p,13,193
+//fr p,14,328

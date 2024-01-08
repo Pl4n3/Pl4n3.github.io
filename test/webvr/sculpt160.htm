@@ -30,6 +30,10 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       showPoints=false,lastPointCount=0,pointGroup,pointMaterial,
       colorBlack=new THREE.Color(0,0,0),
       dimColor=false,dimPoints=false,grid={},gridw=0.01;
+  
+  //const str = "foo".repeat(1000);
+  //const compressedBytes = await Conet.compress(str);
+  //console.log(compressedBytes);
       
   init();
   animate();
@@ -231,7 +235,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     */
     
     ].concat(bgsubtract,bgstrength,bgdiminish,bgcolors);
-    const version='v.0.185 ';//FOLDORUPDATEVERSION
+    const version='v.0.233 ';//FOLDORUPDATEVERSION
     xrUtil.log('Sculpt '+version);
     
     controller1=xrUtil.ctrl0;
@@ -426,6 +430,40 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     points.length=2;
     grid={};
     //points=points.concat(d.points);
+    
+    if (d.dpoints) {
+    Conet.diffInit({
+    fmt:function(h) {
+      //h=JSON.parse(JSON.stringify(h));
+      h.position={x:h.px,y:h.py,z:h.pz};
+      delete(h.px);
+      delete(h.py);
+      delete(h.pz);
+      return h;
+      //...
+    }
+    ,undiff:1
+    });
+    //let pointsh=[];
+    for (let p of d.dpoints) {
+      p=Conet.diff(p);
+      //pointsh.push(Conet.diff(p));
+      let pos=p.position;
+      let gx=Math.floor(pos.x/gridw+0.5);
+      let gy=Math.floor(pos.y/gridw+0.5);
+      let gz=Math.floor(pos.z/gridw+0.5);
+      let gkey=gx+'_'+gy+'_'+gz;
+      if (grid[gkey]) { skips++;continue; }
+      pos.x=gx*gridw;
+      pos.y=gy*gridw;
+      pos.z=gz*gridw;
+      grid[gkey]=p;
+      points.push(p);
+    }
+    //console.log('undiff result');
+    //console.log(pointsh);
+    }
+    else 
     for (let p of d.points) {
       let pos=p.position;
       let gx=Math.floor(pos.x/gridw+0.5);
@@ -444,13 +482,53 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
   }
   function serialize() {
     //---
-    let s='{"points":[\n';
+    let s='{';
+    
+    if (0) {
+    s+='"points":[\n';
     for (let i=2;i<points.length;i++)
       s+=JSON.stringify(points[i])+((i<points.length-1)?',':'')+'\n';
-    s+=']}\n';
+    s+='],\n';
+    }
+    
+    s+='"dpoints":[\n';
+    Conet.diffInit({
+    fmt:function(h) {
+      h=JSON.parse(JSON.stringify(h));
+      h.px=Conet.f4(h.position.x);
+      h.py=Conet.f4(h.position.y);
+      h.pz=Conet.f4(h.position.z);
+      delete(h.position);
+      return h;
+      //...
+    }
+    });
+    for (let i=2;i<points.length;i++)
+      s+=JSON.stringify(Conet.diff(points[i]))+((i<points.length-1)?',':'')+'\n';
+    s+=']';
+    
+    
+    s+='}\n';
     return s;
     //...
   }
+  
+  
+  if (0)
+  Conet.compress('1234').then(function (s) {
+    //---
+    console.log(s);
+    Conet.decompress(s).then(function (v) {
+      //---
+      console.log(v);
+      //...
+    }
+    );
+    //...
+  }
+  );
+  
+  
   //...
 }
 )();
@@ -459,13 +537,15 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 </html>
 <script>
 //fr o,24
-//fr o,24,11,43
-//fr o,24,11,44
-//fr o,24,11,82
-//fr o,24,11,83
-//fr o,24,11,89
-//fr o,24,16
-//fr o,24,17
-//fr o,24,18
-//fr o,24,19
-//fr p,60,74
+//fr o,24,15
+//fr o,24,15,43
+//fr o,24,15,44
+//fr o,24,15,82
+//fr o,24,15,83
+//fr o,24,15,89
+//fr o,24,23
+//fr o,24,23,8
+//fr o,24,24
+//fr o,24,28
+//fr o,24,28,2
+//fr p,1,364

@@ -1,7 +1,7 @@
 var Conet={};
 (function(Conet) {
   Conet.offline=false;
-  Conet.version='1.470 ';//FOLDORUPDATEVERSION
+  Conet.version='1.530 ';//FOLDORUPDATEVERSION
   Conet.files={};
   var uploads={},fns,logc,logs=[],//fn=>data,first
       logSameLineCount=0,ac,downloads={},PI=Math.PI;
@@ -682,7 +682,6 @@ var Conet={};
     }
     //...
   }
-  
   Conet.dAng=function(a0,a1) {
     var da=a0-a1; 
     while (da>PI) da-=PI*2;
@@ -691,14 +690,160 @@ var Conet={};
   }
   
   
+  function jsonStringify(o,replacer,space,ps,path) {
+    //--- same as JSON.strinigfy but replacers returnvalue isnt escaped
+    //onsole.log(path);
+    let s='';
+    if (Array.isArray(o)) {
+      s+='[';let first=true;
+      for (const e of o) {
+        if (ps&&ps.newLine) {
+          if (ps.newLine[path]) s+='\n';
+        }
+        s+=(first?'':',')+jsonStringify(e,replacer,space,ps,path);
+        first=false; 
+      }
+      s+=']';
+    } else
+    if (typeof(o)==='object') {
+      s+='{';
+      const a=Object.keys(o);let first=true;
+      if (path!==undefined) path+='.'; else path='';
+      for (const k of a) {
+        const npath=path+k;
+        if (ps&&ps.newLine) {
+          //onsole.log('nl '+ps.newLine[k]);
+          if (ps.newLine[npath]) s+='\n';
+        }
+        s+=(first?'':',')+'"'+k+'":'+jsonStringify(o[k],replacer,space,ps,path+k);
+        first=false;
+      }
+      s+='}';
+    } else s=JSON.stringify(o);
+    return s;
+    //...
+  }
+  Conet.jsonStringify=jsonStringify;
+  //-------------
+  async function compress(str) {
+    // Convert the string to a byte stream.
+    const stream = new Blob([str]).stream();
+    
+    ReadableStream.prototype[Symbol.asyncIterator] = async function* () {
+      const reader = this.getReader()
+      try {
+        while (true) {
+          const {done, value} = await reader.read()
+          if (done) return
+          yield value
+        }
+      }
+      finally {
+        reader.releaseLock()
+      }
+    }
+    
+    
+    // Create a compressed stream.
+    const compressedStream=stream.pipeThrough(
+      new CompressionStream('gzip')
+    );
+    
+    //onsole.log(compressedStream);
+    
+    // Read all the bytes from this stream.
+    const chunks = [];
+    for await (const chunk of compressedStream) {
+      chunks.push(chunk);
+    }
+    
+    //var uint8array = new TextEncoder().encode("someString");
+    //var string = new TextDecoder().decode(uint8array);
+    
+    let ret=await concatUint8Arrays(chunks);
+    
+    ret=btoa(String.fromCharCode.apply(null,ret));
+    
+    //--- optimal conversion uint8array <-> base64
+    //https://stackoverflow.com/questions/12710001/how-to-convert-uint8-array-to-base64-encoded-string
+    //https://gist.github.com/enepomnyaschih/72c423f727d395eeaa09697058238727
+    
+    return ret;
+  }
+  async function decompress(v) {
+    // Convert the bytes to a stream.
+    
+    v=new Uint8Array(atob(v).split('').map(function (c) {
+      return c.charCodeAt(0);
+    }
+    ));
+    
+    const stream = new Blob([v]).stream();
+    
+    // Create a decompressed stream.
+    const decompressedStream = stream.pipeThrough(
+      new DecompressionStream("gzip")
+    );
+    
+    // Read all the bytes from this stream.
+    const chunks = [];
+    for await (const chunk of decompressedStream) {
+      chunks.push(chunk);
+    }
+    const stringBytes = await concatUint8Arrays(chunks);
+    
+    // Convert the bytes to a string.
+    return new TextDecoder().decode(stringBytes);
+  }
+  async function concatUint8Arrays(uint8arrays) {
+    const blob = new Blob(uint8arrays);
+    const buffer = await blob.arrayBuffer();
+    return new Uint8Array(buffer);
+  }
+  Conet.compress=compress;
+  Conet.decompress=decompress;
+  //const str = "foo".repeat(1000);
+  //const compressedBytes = await compress(str);
+  //console.log(compressedBytes);
+  // => Uint8Array(61) [31, 139, 8, 0, ...]
+  //------------
+  let diffOld={},diffPs;
+  Conet.diffInit=function(ps) {
+    //---
+    diffOld={};
+    diffPs=ps;
+    //...
+  }
+  Conet.diff=function(h) {
+    //---
+    let r={},oh=diffOld;
+    
+    if (diffPs.undiff) {
+    for (let k of Object.keys(h)) oh[k]=h[k];
+    r=JSON.parse(JSON.stringify(oh));
+    if (diffPs.fmt) r=diffPs.fmt(r);
+    return r;
+    }
+    
+    
+    if (diffPs.fmt) h=diffPs.fmt(h);
+    for (let k of Object.keys(h)) {
+      if (oh[k]==h[k]) continue;
+      r[k]=h[k];
+      oh[k]=h[k];
+    }
+    return r;
+    //...
+  }
+  Conet.f4=function(v) {
+    return Math.floor(0.5+v*10000)/10000;//...
+  }
   //---
 }
 )(Conet);
 console.log('Conet '+Conet.version);
 //fr o,1
 //fr o,1,5,4
-//fr o,1,6
-//fr o,1,6,18
 //fr o,1,7,22
 //fr o,1,10,3
 //fr o,1,10,4
@@ -708,8 +853,10 @@ console.log('Conet '+Conet.version);
 //fr o,1,10,20
 //fr o,1,11,1
 //fr o,1,18,4
-//fr o,1,35
 //fr o,1,47,13
-//fr o,1,50
-//fr o,1,52
-//fr p,18,131
+//fr o,1,57,3
+//fr o,1,58,2
+//fr o,1,68
+//fr o,1,69
+//fr o,1,70
+//fr p,24,83

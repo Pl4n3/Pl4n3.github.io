@@ -32,7 +32,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
   //---
   const clock=new THREE.Clock(),xrUtil=XrUtil;
   let container,camera,scene,raycaster,renderer,
-      room,INTERSECTED,controls,o0,panim;
+      room,INTERSECTED,controls,o0,panim,cursorBox;
   
   init();
   animate();
@@ -138,6 +138,8 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     Pd5.boxes.push([0,0,-35,10,10,10]);//,0.09]);
     Pd5.boxes.push([-90,15,-50,25,5,25]);
     
+    Pd5.boxes.push([0,20,35,2,2,2]);//,0.09]);
+    
     var ge=new THREE.Geometry(),w=mb/7,c=new THREE.Color(0.5,0.5,0.5),y0=-1.8,h0=w/3;
     
     for (var i=Pd5.boxes.length-1;i>=0;i--) { var b=Pd5.boxes[i];
@@ -151,6 +153,39 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       threeEnv.addQuad({ge:ge,a0:[x-dx/2,y-dy/2-1.8,z-dz/2],a1:[0,dy,0],a2:[dx,0,0],a3:[dx,dy,0],dim:1,c:c});
       threeEnv.addQuad({ge:ge,a0:[x+dx/2,y-dy/2-1.8,z+dz/2],a1:[0,0,-dz],a2:[0,dy,0],a3:[0,dy,-dz],dim:1,c:c});
     }
+    
+    if (1) {
+      let g=new THREE.BoxGeometry(0.35,0.35,0.35),
+          mat=new THREE.MeshPhongMaterial({flatShading:true,color:0x66aa66//,depthTest:false
+            ,transparent:true,opacity:0.7}),
+          mesh=new THREE.Mesh(g,mat),p=mesh.position;
+      p.set(0,20/13-1.8,35/13);
+      room.add(mesh);cursorBox=mesh;
+    Menu.onMouseMove=function (e) {
+      //---
+      if (xrUtil.isSession) return;
+      let p=cursorBox.position;
+      p.set((e.pageX-window.innerWidth/2)/100,-0.5,(e.pageY-window.innerHeight/2)/100);
+      //console.log(Pd5.boxes.length);
+      let origin=Pd5.boxes[8].body.worldTransform.origin;
+      origin.x=p.x*13;
+      origin.z=p.z*13;
+      //onsole.log(Pd5.boxes[8].body.worldTransform.origin);
+      
+      //var colObj=dynamicsWorld.collisionObjects[oi];
+      //var t=new Bullet.Transform();
+      //t.setIdentity();
+      //t.origin.set3(0,y0,0);
+      //colObj.setWorldTransform(t);
+      //Bullet.RigidBody.upcast(colObj).setActivationState(Bullet.CollisionObject.DISABLE_DEACTIVATION);
+      
+      
+      
+      //...
+    }
+    
+    }
+    
     
     
     ge.computeVertexNormals();
@@ -250,12 +285,24 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     //const cgd=clock.getDelta(),delta=cgd*60,dt=cgd*1000;
     const dt=clock.getDelta()*1000;
     
-    const controller=xrUtil.ctrl0;
+    const ctrl0=xrUtil.ctrl0;//controller
     const ctrl1=xrUtil.ctrl1;
     const gp0=xrUtil.gp0;
     const gp1=xrUtil.gp1;
     
     xrUtil.checkFlight(dt);
+    
+    if (xrUtil.isSession) {
+      //onsole.log(ctrl0.position);
+      let p=cursorBox.position;
+      let pc=ctrl0.position,pr=room.position;
+      p.set(pc.x-pr.x,pc.y-pr.y,pc.z-pr.z);
+      //p.copy(ctrl0.position);//set((e.pageX-window.innerWidth/2)/100,-0.5,(e.pageY-window.innerHeight/2)/100);
+      //console.log(Pd5.boxes.length);
+      let origin=Pd5.boxes[8].body.worldTransform.origin;
+      origin.x=p.x*13;
+      origin.z=p.z*13;
+    }
     
     if (gp1) {
       //panim.gpad=gp1;
@@ -284,8 +331,9 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,30
 //fr o,30,8
 //fr o,30,8,67
-//fr o,30,8,135
+//fr o,30,8,116
 //fr o,30,8,149
+//fr o,30,8,163
 //fr o,30,10
 //fr o,30,11
-//fr p,9,24
+//fr p,4,293

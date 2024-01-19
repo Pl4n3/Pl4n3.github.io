@@ -32,7 +32,8 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
   //---
   const clock=new THREE.Clock(),xrUtil=XrUtil;
   let container,camera,scene,raycaster,renderer,
-      room,INTERSECTED,controls,o0,panim,cursorBox;
+      room,INTERSECTED,controls,o0,panim,
+      cursorBox0,cursorBox1;
   
   init();
   animate();
@@ -138,7 +139,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     Pd5.boxes.push([0,0,-35,10,10,10]);//,0.09]);
     Pd5.boxes.push([-90,15,-50,25,5,25]);
     
-    Pd5.boxes.push([0,20,35,2,2,2]);//,0.09]);
+    //Pd5.boxes.push([0,20,35,2,2,2]);//,0.09]);
     
     var ge=new THREE.Geometry(),w=mb/7,c=new THREE.Color(0.5,0.5,0.5),y0=-1.8,h0=w/3;
     
@@ -154,7 +155,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       threeEnv.addQuad({ge:ge,a0:[x+dx/2,y-dy/2-1.8,z+dz/2],a1:[0,0,-dz],a2:[0,dy,0],a3:[0,dy,-dz],dim:1,c:c});
     }
     
-    if (1) {
+    if (0) {
       let g=new THREE.BoxGeometry(0.35,0.35,0.35),
           mat=new THREE.MeshPhongMaterial({flatShading:true,color:0x66aa66//,depthTest:false
             ,transparent:true,opacity:0.7}),
@@ -294,14 +295,39 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     if (xrUtil.isSession) {
       //onsole.log(ctrl0.position);
-      let p=cursorBox.position;
-      let pc=ctrl0.position,pr=room.position,sc=room.scale;
+      if (!cursorBox0) { 
+        let g=new THREE.BoxGeometry(0.35,0.35,0.35),
+            mat=new THREE.MeshPhongMaterial({flatShading:true,color:0x66aa66//,depthTest:false
+            ,transparent:true,opacity:0.7}),
+            mesh=new THREE.Mesh(g,mat);//,p=mesh.position;
+        room.add(mesh);cursorBox0=mesh;
+        cursorBox0.userData.body=Pd5.bulletBox([0,20,35,2,2,2]);
+        
+        cursorBox1=new THREE.Mesh(g,mat);room.add(cursorBox1);
+        cursorBox1.userData.body=Pd5.bulletBox([0,20,35,2,2,2]);
+      }
+      let pr=room.position,sc=room.scale;
+      {
+      let p=cursorBox0.position;
+      let pc=ctrl0.position;
       p.set((pc.x-pr.x)/sc.x,(pc.y-pr.y)/sc.y,(pc.z-pr.z)/sc.z);
       //p.copy(ctrl0.position);//set((e.pageX-window.innerWidth/2)/100,-0.5,(e.pageY-window.innerHeight/2)/100);
       //console.log(Pd5.boxes.length);
-      let origin=Pd5.boxes[8].body.worldTransform.origin;
+      //let origin=Pd5.boxes[8].body.worldTransform.origin;
+      let origin=cursorBox0.userData.body.worldTransform.origin;
       origin.x=p.x*13;
+      origin.y=(p.y+1.8)*13;
       origin.z=p.z*13;
+      }
+      {
+      let p=cursorBox1.position;
+      let pc=ctrl1.position;
+      p.set((pc.x-pr.x)/sc.x,(pc.y-pr.y)/sc.y,(pc.z-pr.z)/sc.z);
+      let origin=cursorBox1.userData.body.worldTransform.origin;
+      origin.x=p.x*13;
+      origin.y=(p.y+1.8)*13;
+      origin.z=p.z*13;
+      }
     }
     
     if (gp1) {
@@ -329,11 +355,11 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 </body>
 </html><script>
 //fr o,30
-//fr o,30,8
-//fr o,30,8,67
-//fr o,30,8,116
-//fr o,30,8,149
-//fr o,30,8,163
-//fr o,30,10
+//fr o,30,9
+//fr o,30,9,67
+//fr o,30,9,116
+//fr o,30,9,149
+//fr o,30,9,163
 //fr o,30,11
-//fr p,58,292
+//fr o,30,12
+//fr p,23,319

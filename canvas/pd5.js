@@ -1206,7 +1206,8 @@ var Pd5={};
     var body=new Bullet.RigidBody(cInfo);
     body.setWorldTransform(groundTransform);
     Pd5.dynamicsWorld.addRigidBody(body);
-    b.body=body;
+    //b.body=body;
+    return body;
     //---
   }
   Pd5.bulletize=function(o,ps) {
@@ -2312,4 +2313,4 @@ var Pd5={};
 //fr o,2,41,93
 //fr o,2,47,44
 //fr o,2,48,2,3
-//fr p,12,56
+//fr p,2,56

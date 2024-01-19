@@ -295,8 +295,8 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     if (xrUtil.isSession) {
       //onsole.log(ctrl0.position);
       let p=cursorBox.position;
-      let pc=ctrl0.position,pr=room.position;
-      p.set(pc.x-pr.x,pc.y-pr.y,pc.z-pr.z);
+      let pc=ctrl0.position,pr=room.position,sc=room.scale;
+      p.set(pc.x/sc.x-pr.x,pc.y/sc.y-pr.y,pc.z/sc.z-pr.z);
       //p.copy(ctrl0.position);//set((e.pageX-window.innerWidth/2)/100,-0.5,(e.pageY-window.innerHeight/2)/100);
       //console.log(Pd5.boxes.length);
       let origin=Pd5.boxes[8].body.worldTransform.origin;
@@ -336,4 +336,4 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,30,8,163
 //fr o,30,10
 //fr o,30,11
-//fr p,4,293
+//fr p,52,292

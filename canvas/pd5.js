@@ -20,8 +20,7 @@ var Pd5={};
     //[0,50,55,200,50,10],
   ];
   Pd5.onload=undefined;
-  
-  //--
+  //---
   function startsWith(s0,s1) {
     if (s1.length>s0.length) return false;
     if (s0.substr(0,s1.length)==s1) return true;
@@ -186,131 +185,7 @@ var Pd5={};
     }
     //...
   }
-  
-  function panObjOnload(o) {
-    
-    //onsole.log(o.bulletCfg);
-    if (o.ps.diff) o.meshes[0].diff=o.ps.diff;
-    
-    //onsole.log(o);
-    
-    o.o={x:0,y:0,z:0,rot:0,go:{rotofs:o.ps.rotofs}};
-    //Pd5.bulletize(o);
-    Pd5.bulletize(o,{damp0:1,damp1:1});
-    
-    
-    var bc=o.bulletCfg,v;
-    if (bc) {
-      for (var b of bc.bones) {
-        //onsole.log(b);
-        //onsole.log(o.bones);
-        var co=o.bones[b.i].co;
-        if ((v=b.inverseMass)!==undefined) {
-          //console.log(co.inverseMass+' '+v);
-          co.inverseMass=v;
-        }
-        if ((v=b.gravityY)!==undefined) co.gravity.y=v;
-      }
-      //onsole.log(o.bones);
-      //if (1) return;
-      o.pans=[];
-      for (var p of bc.pans) {
-        o[p.name]=p.a;
-        o.pans.push(p);//.a);
-      }
-      o.ps.gravityPull=bc.gravityPull;
-      //console.log(o);
-      //return;
-    }
-    
-    if (o.ps.panOnload) o.ps.panOnload();
-    
-    //...
-  }
-  function panObj(x,z,ps) {
-    var o0;
-    
-    //a.push( 
-    o0=Conet.hcopy(ps,{
-      fn:ps.fn
-      ,pos:new THREE.Vector3(x,-1.8,z),health:5,rotofs:Math.PI
-      ,anim:'idle'
-      ,scale:0.4,v:0.006,vrot:0.01//anim:flat//test0//idle
-      ,onload:ps.onload||panObjOnload//,inverseMass:ps.inverseMass||100,panps:ps
-      });//);
-    //panos.push(o0);
-    return o0;
-    
-    //...
-  }
-  function panStart(o,pan) {
-    //anim=pan;//o0.o.panTurnLeft;
-    //animi=0;t6=0;
-    //onsole.log(pan);
-    if (o.pan===pan) return;
-    
-    if (!o.env) {//--- this was checkstartanims()
-      o.env=true;
-      o.o.anim=undefined;
-      o.o.animInt=undefined;
-    }
-    
-    
-    //for (var b of o.o.bones) if (b.co) b.co.gravity.y=-30;
-    
-    if (o.pan)
-    for (let b of pan[0].a) if (b.gy!==undefined) o.o.bones[b.i].co.gravity.y=b.gy;
-    
-    //o0.o.bones[ab.i].co.gravity.y=ab.gy;
-    
-    
-    o.pan=pan;
-    o.pani=0;
-    o.pant=0;
-    //o.o.bones[7].co.gravity.y=300;
-    //...
-  }
-  function panOnload() {
-    //---
-    var o=this.o;
-    /*
-    if (this===stick15o) {
-      const gp=this.gravityPull;
-      gp.panForward='panForward';//---not panDown
-      //o.panForward[0].a.push({i:7,gy:350});
-      o.panForward=[
-        {t:200,a:[{i:0,x:1.8,dz:0.5},{i:2,x:-1.875},{i:1,x:0.25,dz:0.5},{i:3,x:-0.25},{i:4,x:0},{i:5,x:0},{i:7,gy:280}]}
-       //,{t:200,a:[{i:0,x:0.75,dz:0.5},{i:2,x:-1.25},{i:1,x:0.25,dz:0.5},{i:3,x:-0.25},{i:4,x:0},{i:5,x:0}]}
-       ,{t:300,a:[{i:0,x:0.5,dz:0}   ,{i:2,x:-0.25},{i:1,x:-0.25,dz:0} ,{i:3,x:-0.25},{i:4,x:0},{i:5,x:0}]}
-       ,{t:200,a:[{i:0,x:0.25,dz:0.5},{i:2,x:-0.25},{i:1,x:1.8,dz:0.5},{i:3,x:-1.875},{i:4,x:0},{i:5,x:0}]}
-       ,{t:300,a:[{i:0,x:-0.25,dz:0} ,{i:2,x:-0.25},{i:1,x:0.5,dz:0}   ,{i:3,x:-0.25},{i:4,x:0},{i:5,x:0}]}
-      ];
-      console.log(o.panForward);
-    }
-    */
-    //console.log(o===stick15o);
-    //console.log(this===stick15o);
-    
-    setTimeout(function() {
-      //panStart(o.ps,o.panIdle);//...
-      
-      if (!o.ps.panOnloadNostart) 
-        panStart(o.ps,o.panIdle);//...
-      else {
-        o.ps.env=true;
-        o.anim=undefined;
-        o.animInt=undefined;
-      }
-      //for (var b of o.bones) if (b.co) b.co.gravity.y=-5;
-      
-      
-    }
-    ,1500);
-    //...
-  }
-  Pd5.panObj=panObj;Pd5.panStart=panStart;
-  Pd5.panObjOnload=panObjOnload;Pd5.panOnload=panOnload;
-  
+  //---
   Pd5.vertNew=function(x,y,z,u,v) {
     return {p0:new Vecmath.Vec4(x,y,z,1),p1:new Vecmath.Vec4(0,0,0,1),ts:[],vis:false,u:u,v:v};
   }
@@ -597,6 +472,7 @@ var Pd5={};
     //onsole.log('pd5.calc');
     //if (!anim) anim=lo.anims[0].a;//alert(lo.anims.length);
     var inplace=oo&&o.cm;
+    //onsole.log(inplace?'inplace':'not inplace');
     
     if (bones&&(!lo.animStop||lo.recalc||o.cm)) {
       var f=o.cm?20/100:1;
@@ -1318,17 +1194,20 @@ var Pd5={};
     }
   }
   Pd5.bulletBox=function(b) {
-    var groundShape = new Bullet.BoxShape(new Vecmath.Vec3(b[3],b[4],b[5]));//200,10,200));
-    var groundTransform = new Bullet.Transform();
+    //...
+    var groundShape=new Bullet.BoxShape(new Vecmath.Vec3(b[3],b[4],b[5]));//200,10,200));
+    var groundTransform=new Bullet.Transform();
     groundTransform.setIdentity();
     if (b.length>6) groundTransform.setRotation({x:0,y:0,z:1,w:b[6]});
     groundTransform.origin.set3(b[0],b[1],b[2]);//0,-10,0);//0,-25,0
-    var localInertia = new Vecmath.Vec3(0,0,0);
+    var localInertia=new Vecmath.Vec3(0,0,0);
     //var myMotionState = new Bullet.MotionState(groundTransform);
-    var cInfo = new Bullet.RigidBodyConstructionInfo(0,null,groundShape,localInertia);
-    var body = new Bullet.RigidBody(cInfo);
+    var cInfo=new Bullet.RigidBodyConstructionInfo(0,null,groundShape,localInertia);
+    var body=new Bullet.RigidBody(cInfo);
     body.setWorldTransform(groundTransform);
     Pd5.dynamicsWorld.addRigidBody(body);
+    b.body=body;
+    //---
   }
   Pd5.bulletize=function(o,ps) {
     if (!ps) ps={};
@@ -2428,9 +2307,9 @@ var Pd5={};
 
 //---
 //fr o,2
-//fr o,2,31
-//fr o,2,49
-//fr o,2,49,93
-//fr o,2,55,44
-//fr o,2,56,2,3
-//fr p,2,73
+//fr o,2,40
+//fr o,2,41
+//fr o,2,41,93
+//fr o,2,47,44
+//fr o,2,48,2,3
+//fr p,12,56

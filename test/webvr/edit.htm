@@ -24,11 +24,10 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 (function() {
   //---
   let container,camera,scene,renderer,
-      controller1,controller2,controls,blob,points=[],
+      controls,
       xrUtil=XrUtil,lsKey='editXr_0',
-      showPoints=false,lastPointCount=0,pointGroup,pointMaterial,
       colorBlack=new THREE.Color(0,0,0),
-      dimColor=false,dimPoints=false,grid={},gridw=0.01;
+      grid={},gridw=0.01;
   
   //const str = "foo".repeat(1000);
   //const compressedBytes = await Conet.compress(str);
@@ -76,15 +75,15 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       });
     xrUtil.initHud();
     
-    const version='v.0.14 ';//FOLDORUPDATEVERSION
+    const version='v.0.21 ';//FOLDORUPDATEVERSION
     xrUtil.log('Edit '+version);
     
-    controller1=xrUtil.ctrl0;
-    controller2=xrUtil.ctrl1;
-    controller1.userData.id=0;
-    controller2.userData.id=1;
     
     //
+    
+    let material=new THREE.MeshPhongMaterial({flatShading:true,color:0x66aa66,transparent:true,opacity:0.7});
+    let cmat=new THREE.MeshPhongMaterial({flatShading:true,color:0xaaaaaa});
+    
     
     const pivot = new THREE.Mesh( new THREE.IcosahedronGeometry( 0.01, 3 ) );
     pivot.name = 'pivot';
@@ -92,9 +91,13 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     const group = new THREE.Group();
     group.add( pivot );
+    xrUtil.ctrl0.add( group.clone() );
     
-    controller1.add( group.clone() );
-    controller2.add( group.clone() );
+    let mesh=new THREE.Mesh(new THREE.BoxGeometry(0.01,0.01,0.01),cmat);
+    mesh.position.z=-0.05;
+    xrUtil.ctrl1.add(mesh);
+    //xrUtil.ctrl1.add( group.clone() );
+    
     //
     window.addEventListener( 'resize', onWindowResize );
     
@@ -112,15 +115,6 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     const reflectionCube = new THREE.CubeTextureLoader().load( urls );
     */
     
-    const material = new THREE.MeshStandardMaterial( {
-      color: 0xffffff,
-      // envMap: reflectionCube,
-      roughness: 0.9,
-      metalness: 0.0,
-      transparent: true,
-      vertexColors: true
-    });
-    
     //---menu
     
     xrUtil.menuXr.ms+=' '+version;
@@ -133,14 +127,13 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     
     //pointMaterial=new THREE.MeshPhongMaterial({color:0x77dd77,flatShading:true,transparent:true,opacity:0.7});
-    pointMaterial=new THREE.MeshPhongMaterial({flatShading:true,color:0x66aa66,transparent:true,opacity:0.7});
     
     {
       let g=new THREE.BoxGeometry(0.2,0.2,0.2),
-          mesh=new THREE.Mesh(g,pointMaterial);
+          mesh=new THREE.Mesh(g,material);
       mesh.position.set(0,1,0);
       scene.add(mesh);
-      mesh=new THREE.Mesh(g,pointMaterial);
+      mesh=new THREE.Mesh(g,material);
       mesh.position.set(0.1,1.1,0.1);
       scene.add(mesh);
     }
@@ -173,6 +166,6 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 </html>
 <script>
 //fr o,23
-//fr o,23,15
-//fr o,23,20
-//fr p,74,135
+//fr o,23,14
+//fr o,23,19
+//fr p,66,95

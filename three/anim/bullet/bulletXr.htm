@@ -90,7 +90,19 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     xrUtil.init({scene:scene,renderer:renderer,camera:camera,room:room
       //,XRControllerModelFactory:XRControllerModelFactory
-      });  
+      });
+    xrUtil.initHud();
+    xrUtil.hud.buttons=[
+    
+    {s:'panHit',x:0.5,y:0.7,w:0.45,h:0.25,ondown:function() {
+      //---
+      let o=panim.stick15o;
+      panim.start(o,o.o.panHit);
+      //...
+    }
+    }
+    
+    ];  
     
     
     window.addEventListener('resize',onWindowResize,false);
@@ -118,7 +130,18 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     Menu.init([{s:'&#9776;',noTri:true,fs:1.4,pw:0.05,sub:[
       Menu.mFullscreen
-      ]},xrUtil.menuXr]
+      ]},xrUtil.menuXr
+    
+    ,{s:'panHit',actionf:function() {
+      //---
+      let o=panim.stick15o;
+      panim.start(o,o.o.panHit);
+      //onsole.log(panim.stick15o);
+      //...
+    }
+    }
+    
+      ]
       ,{listen:1});
     
     //Bricks.initLoader({scene:room,scale:0.01,pos:{x:5,y:2,z:0}});
@@ -343,6 +366,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     threeRender(dt);
     controls.update();
+    xrUtil.renderHud();
     
     renderer.render(scene,camera);
     //...
@@ -356,10 +380,12 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 </html><script>
 //fr o,30
 //fr o,30,9
-//fr o,30,9,67
-//fr o,30,9,116
-//fr o,30,9,149
-//fr o,30,9,163
+//fr o,30,9,55
+//fr o,30,9,74
+//fr o,30,9,81
+//fr o,30,9,128
+//fr o,30,9,161
+//fr o,30,9,175
 //fr o,30,11
 //fr o,30,12
-//fr p,23,319
+//fr p,0,363

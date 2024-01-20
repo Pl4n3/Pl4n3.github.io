@@ -20,7 +20,6 @@
 <script type="module">
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { MarchingCubes } from 'three/addons/objects/MarchingCubes.js';
 import { XrUtil } from '/util/gfx/XrUtil.js';
 (function() {
   //---
@@ -77,7 +76,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       });
     xrUtil.initHud();
     
-    const version='v.0.7 ';//FOLDORUPDATEVERSION
+    const version='v.0.14 ';//FOLDORUPDATEVERSION
     xrUtil.log('Edit '+version);
     
     controller1=xrUtil.ctrl0;
@@ -122,20 +121,6 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       vertexColors: true
     });
     
-    
-    blob=new MarchingCubes(64,material,false,true,500000);
-    blob.position.y = 1;
-    scene.add( blob );
-    
-    points=[
-      {position:new THREE.Vector3(),strength:0.04,subtract:10,color:new THREE.Color('white')},
-      {position:new THREE.Vector3(),strength:-0.08,subtract:10,color:colorBlack}
-    ];
-    
-    for (let i=0;i<10;i++) {
-      points.push({position:new THREE.Vector3(0.5+i*0.03,0.5,0.5),strength:0.04,subtract:10,color:new THREE.Color(0.1,0.9,0.1)});
-    }
-    
     //---menu
     
     xrUtil.menuXr.ms+=' '+version;
@@ -148,12 +133,15 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     
     //pointMaterial=new THREE.MeshPhongMaterial({color:0x77dd77,flatShading:true,transparent:true,opacity:0.7});
-    pointMaterial=new THREE.MeshPhongMaterial({flatShading:true,color:0x66aa66,depthTest:false,transparent:true,opacity:0.7});
+    pointMaterial=new THREE.MeshPhongMaterial({flatShading:true,color:0x66aa66,transparent:true,opacity:0.7});
     
     {
       let g=new THREE.BoxGeometry(0.2,0.2,0.2),
           mesh=new THREE.Mesh(g,pointMaterial);
       mesh.position.set(0,1,0);
+      scene.add(mesh);
+      mesh=new THREE.Mesh(g,pointMaterial);
+      mesh.position.set(0.1,1.1,0.1);
       scene.add(mesh);
     }
     
@@ -170,92 +158,9 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
   function animate() {
     renderer.setAnimationLoop(render);
   }
-  function transformPoint( vector ) {
-    //---
-    vector.x=(vector.x+1.0)/2.0;
-    vector.y=(vector.y/2.0);
-    vector.z=(vector.z+1.0)/2.0;
-    //...
-  }
-  function handleController(controller) {
-    //---
-    const pivot=controller.getObjectByName('pivot');
-    if (pivot) {
-      const id=controller.userData.id;
-      const matrix=pivot.matrixWorld;
-      points[id].position.setFromMatrixPosition(matrix);
-      transformPoint(points[id].position);
-    
-      if (controller.userData.isSelecting&&!xrUtil.hud.cursor.vis) {
-        const point=points[id];
-        const strength=point.strength/2;
-        const vector=new THREE.Vector3().setFromMatrixPosition(matrix);
-        transformPoint(vector);
-          
-        if ((id==1)&&dimPoints) {
-          let md=0.05,mi=-1;
-          for (let i=2;i<points.length;i++) {
-            let p=points[i].position,dx=vector.x-p.x,dy=vector.y-p.y,dz=vector.z-p.z,
-                d=dx*dx+dy*dy+dz*dz;
-            if (d>=md) continue;
-            md=d;mi=i;
-          }
-          if (mi!=-1) points.splice(mi,1);
-        } else {
-        
-          //grid
-          let gx=Math.floor(vector.x/gridw+0.5);
-          let gy=Math.floor(vector.y/gridw+0.5);
-          let gz=Math.floor(vector.z/gridw+0.5); 
-          let gkey=gx+'_'+gy+'_'+gz;
-          
-          if (!grid[gkey]) {
-            vector.x=gx*gridw;vector.y=gy*gridw;vector.z=gz*gridw;let p;
-            points.push(p={position:vector,strength:strength,subtract:point.subtract,color:point.color});
-            grid[gkey]=p;
-          }
-        }
-      }
-    }
-    //...
-  }
-  function updateBlob() {
-    //---
-    blob.reset();
-    for (let i=0;i<points.length;i++) {
-      const point=points[i];
-      const position=point.position;
-      blob.addBall(position.x,position.y,position.z,point.strength,point.subtract,point.color);
-    }
-    blob.update();
-    if (showPoints&&(points.length!=lastPointCount)) {
-      //onsole.log('render points now '+points.length+' '+lastPointCount);
-      lastPointCount=points.length;
-      if (pointGroup) scene.remove(pointGroup);
-      pointGroup=new THREE.Group();
-      for (let i=0;i<points.length;i++) {
-        let p=points[i],pos=p.position,w=p.strength,
-            g=new THREE.BoxGeometry(Math.abs(w),w<0?0.001:w,Math.abs(w)),
-            mesh=new THREE.Mesh(g,pointMaterial);
-        //g.computeBoundingSphere();
-        mesh.position.set(pos.x*2-1,pos.y*2,pos.z*2-1);
-        //mesh.updateMatrix();
-        //mesh.matrixAutoUpdate=false;
-        //mesh.castShadow=true;
-        //mesh.receiveShadow=true;
-        pointGroup.add(mesh);
-        //scene.add(mesh);
-      }
-      scene.add(pointGroup);
-      //scene.remove(blob);
-    }
-    //...
-  }
+  
   function render() {
     //---
-    handleController(controller1);
-    handleController(controller2);
-    updateBlob();
     xrUtil.renderHud();
     renderer.render(scene,camera);
     //...
@@ -267,8 +172,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 </body>
 </html>
 <script>
-//fr o,24
-//fr o,24,15
-//fr o,24,21
-//fr o,24,22
-//fr p,18,142
+//fr o,23
+//fr o,23,15
+//fr o,23,20
+//fr p,74,135

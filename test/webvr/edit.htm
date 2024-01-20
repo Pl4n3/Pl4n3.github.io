@@ -77,166 +77,8 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       });
     xrUtil.initHud();
     
-    function selectInButtonGroup(bg,b) {
-      //---
-      for (let bh of bg) bh.selected=(bh==b);
-      //...
-    }
-    function posButtons(ps) {
-      //---
-      let x=ps.x;
-      for (let b of ps.a) {
-        b.x=x;b.y=ps.y;b.z=ps.z;
-        b.w=ps.w;b.h=ps.h;
-        x+=ps.w+ps.b;
-      }
-      return ps.a;
-      //...
-    }
-    
-    
-    function setColor() {
-      //---
-      console.log(this.color);
-      points[0].color=new THREE.Color(this.color);
-      if (dimColor) points[1].color=new THREE.Color(this.color);
-      xrUtil.log('Brush color is set to '+this.color+'.');
-      selectInButtonGroup(bgcolors,this);
-      //...
-    }
-    function setBrush() {
-      //---
-      if (this.subtract) {
-        points[0].subtract=this.subtract;
-        points[1].subtract=this.subtract;
-        xrUtil.log('Brush subtract is set to '+this.subtract+'.');
-        selectInButtonGroup(bgsubtract,this);
-      }
-      //onsole.log(this.s);
-      if (this.strength) {
-        points[0].strength=this.strength;
-        points[1].strength=this.strength*-2;
-        xrUtil.log('Brush strength is set to '+this.strength+'.');
-        selectInButtonGroup(bgstrength,this);
-      }
-      //...
-    }
-    function setDiminish() {
-      //---
-      if (this.s=='d') {
-        dimColor=false;dimPoints=false;
-        points[1].color=colorBlack;
-        xrUtil.log('Diminish sculpt without color.');
-      } else if (this.s=='dc') {
-        dimColor=true;dimPoints=false;
-        points[1].color=points[0].color;
-        xrUtil.log('Diminish sculpt with color.');
-      } else if (this.s=='dp') {
-        dimPoints=true;dimColor=true;
-        points[1].color=colorBlack;
-        xrUtil.log('Diminish sculpt with points.');
-      }
-      selectInButtonGroup(bgdiminish,this);
-      //...
-    }
-    
-    let bgsubtract=posButtons({x:0.05,y:0.4,w:0.085,h:0.1,b:0.03,a:[
-      {s:'u1',ondown:setBrush,subtract:10,selected:1},
-      {s:'u2',ondown:setBrush,subtract:20},
-      {s:'u3',ondown:setBrush,subtract:40}
-    ]});
-    
-    let bgstrength=posButtons({x:0.05,y:0.55,w:0.085,h:0.1,b:0.03,a:[
-      {s:'s1',ondown:setBrush,strength:0.01},
-      {s:'s2',ondown:setBrush,strength:0.02},
-      {s:'s3',ondown:setBrush,strength:0.04,selected:1},
-      {s:'s4',ondown:setBrush,strength:0.16},
-      {s:'s5',ondown:setBrush,strength:0.6}
-    ]});
-    
-    let bgdiminish=posButtons({x:0.45,y:0.4,w:0.085,h:0.1,b:0.03,a:[
-      {s:'d',ondown:setDiminish,selected:1},
-      {s:'dc',ondown:setDiminish},
-      {s:'dp',ondown:setDiminish}
-    ]});
-    
-    let bgcolors=[].concat(
-    posButtons({x:0.05,y:0.7,w:0.075,h:0.1,b:0.03,a:[
-      {color:'rgb(250,0,0)',ondown:setColor},
-      {color:'rgb(250,125,0)',ondown:setColor},
-      {color:'rgb(0,250,0)',ondown:setColor},
-      {color:'rgb(0,0,250)',ondown:setColor},
-    ]}),
-    posButtons({x:0.05,y:0.85,w:0.075,h:0.1,b:0.03,a:[
-      {color:'rgb(250,250,250)',ondown:setColor,selected:1},
-      {color:'rgb(125,125,125)',ondown:setColor},
-      {color:'rgb(0,0,0)',ondown:setColor},
-      {color:'rgb(250,250,0)',ondown:setColor}
-    ]}));
-    
-    xrUtil.hud.buttons=[
-    
-    {s:'1000p',color:'rgba(100,100,100,0.5)',x:0.63,y:0.52,w:0.32,h:0.16,ondown:function() {
-      //---
-      xrUtil.log('Number of points.');
-      //...
-    }
-    ,ondraw:function() {
-      //---
-      this.s=points.length+'p';
-      //...
-    }
-    },
-    
-    {s:'Save',x:0.5,y:0.7,w:0.45,h:0.25,ondown:function() {
-      //---
-      const data=serialize();
-      localStorage[lsKey]=data;
-      xrUtil.log('Saved to localStorage '+data.length+' bytes.');
-      //...
-    }
-    },
-    
-    {x:0.85,y:0.4,w:0.1,h:0.1,s:'P',ondown:function() {
-      //---
-      showPoints=!showPoints;
-      if (showPoints) {
-        this.s='NP';
-        xrUtil.log('Showing points.');
-        lastPointCount=0;
-      } else {
-        this.s='P';
-        if (pointGroup) { scene.remove(pointGroup);pointGroup=undefined; }
-        xrUtil.log('Not showing points.');
-      }
-      
-      //...
-    }
-    }
-    
-    /*
-    
-    ,{x:0.4,y:0.25,w:0.4,h:0.1,s:'DimColor',ondown:function() {
-      //---
-      dimColor=!dimColor;
-      if (dimColor) {
-        points[1].color=points[0].color;
-        this.s='DimNoColor';
-        xrUtil.log('Diminish sculpt with colors.');
-      } else {
-        points[1].color=colorBlack;
-        this.s='DimColor';
-        xrUtil.log('Diminish sculpt without colors.');
-      }
-      //...
-    }
-    }
-    
-    */
-    
-    ].concat(bgsubtract,bgstrength,bgdiminish,bgcolors);
-    const version='v.0.242 ';//FOLDORUPDATEVERSION
-    xrUtil.log('Sculpt '+version);
+    const version='v.0.7 ';//FOLDORUPDATEVERSION
+    xrUtil.log('Edit '+version);
     
     controller1=xrUtil.ctrl0;
     controller2=xrUtil.ctrl1;
@@ -286,14 +128,11 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     scene.add( blob );
     
     points=[
-      {position:new THREE.Vector3(),strength:0.04,subtract:10,color:new THREE.Color(bgcolors[3].color)},
-      {position:new THREE.Vector3(),strength:-0.08,subtract:10,color:colorBlack}//new THREE.Color(bgcolors[3].color)}
+      {position:new THREE.Vector3(),strength:0.04,subtract:10,color:new THREE.Color('white')},
+      {position:new THREE.Vector3(),strength:-0.08,subtract:10,color:colorBlack}
     ];
     
-    let d=localStorage[lsKey];
-    if (d!==undefined)
-      load(d);
-    else for (let i=0;i<10;i++) {
+    for (let i=0;i<10;i++) {
       points.push({position:new THREE.Vector3(0.5+i*0.03,0.5,0.5),strength:0.04,subtract:10,color:new THREE.Color(0.1,0.9,0.1)});
     }
     
@@ -301,17 +140,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     xrUtil.menuXr.ms+=' '+version;
     Menu.init([{s:'&#9776;',noTri:true,fs:1.4,pw:0.05,sub:[
-      Menu.mFullscreen,  
-    {s:'Json',ms:'import/export',doctrl:'Json data',mcfs:0.07,ta:true,jsonCheck:1,wrap:0,tacols:30,tarows:20
-      ,setfunc:load,valuef:serialize}
-    ,{s:'Clear blobs',actionf:function() {
-      //---
-      //alert(23);
-      points.length=2;
-      //...
-    }
-    }
-    
+      Menu.mFullscreen
       ]} 
      ,xrUtil.menuXr  
       ]
@@ -322,8 +151,9 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     pointMaterial=new THREE.MeshPhongMaterial({flatShading:true,color:0x66aa66,depthTest:false,transparent:true,opacity:0.7});
     
     {
-      let g=new THREE.BoxGeometry(0.5,0.5,0.5),
+      let g=new THREE.BoxGeometry(0.2,0.2,0.2),
           mesh=new THREE.Mesh(g,pointMaterial);
+      mesh.position.set(0,1,0);
       scene.add(mesh);
     }
     
@@ -430,96 +260,6 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     renderer.render(scene,camera);
     //...
   }
-  function load(v,initLoad) {
-    //---
-    let d=JSON.parse(v),skips=0;
-    points.length=2;
-    grid={};
-    //points=points.concat(d.points);
-    
-    if (d.dpoints) {
-    let diff=Conet.createDiff({
-    fmt:function(h) {
-      //h=JSON.parse(JSON.stringify(h));
-      h.position={x:h.px,y:h.py,z:h.pz};
-      delete(h.px);
-      delete(h.py);
-      delete(h.pz);
-      return h;
-      //...
-    }
-    ,undiff:1
-    });
-    //let pointsh=[];
-    for (let p of d.dpoints) {
-      p=diff.convert(p);//Conet.diff(p);
-      //pointsh.push(Conet.diff(p));
-      let pos=p.position;
-      let gx=Math.floor(pos.x/gridw+0.5);
-      let gy=Math.floor(pos.y/gridw+0.5);
-      let gz=Math.floor(pos.z/gridw+0.5);
-      let gkey=gx+'_'+gy+'_'+gz;
-      if (grid[gkey]) { skips++;continue; }
-      pos.x=gx*gridw;
-      pos.y=gy*gridw;
-      pos.z=gz*gridw;
-      grid[gkey]=p;
-      points.push(p);
-    }
-    //console.log('undiff result');
-    //console.log(pointsh);
-    }
-    else 
-    for (let p of d.points) {
-      let pos=p.position;
-      let gx=Math.floor(pos.x/gridw+0.5);
-      let gy=Math.floor(pos.y/gridw+0.5);
-      let gz=Math.floor(pos.z/gridw+0.5);
-      let gkey=gx+'_'+gy+'_'+gz;
-      if (grid[gkey]) { skips++;continue; }
-      pos.x=gx*gridw;
-      pos.y=gy*gridw;
-      pos.z=gz*gridw;
-      grid[gkey]=p;
-      points.push(p);
-    }
-    if (skips) Conet.log(skips+' grid-skipped.');
-    //...
-  }
-  function serialize() {
-    //---
-    let s='{';
-    
-    if (0) {
-    s+='"points":[\n';
-    for (let i=2;i<points.length;i++)
-      s+=JSON.stringify(points[i])+((i<points.length-1)?',':'')+'\n';
-    s+='],\n';
-    }
-    
-    
-    s+='"dpoints":[\n';
-    let diff=Conet.createDiff({
-    fmt:function(h) {
-      h=JSON.parse(JSON.stringify(h));
-      h.px=Conet.f4(h.position.x);
-      h.py=Conet.f4(h.position.y);
-      h.pz=Conet.f4(h.position.z);
-      delete(h.position);
-      return h;
-      //...
-    }
-    });
-    for (let i=2;i<points.length;i++)
-      s+=JSON.stringify(diff.convert(points[i]))+((i<points.length-1)?',':'')+'\n';
-    s+=']';
-    
-    
-    s+='}\n';
-    return s;
-    //...
-  }
-  
   //...
 }
 )();
@@ -531,5 +271,4 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,24,15
 //fr o,24,21
 //fr o,24,22
-//fr o,24,23,8
-//fr p,18,238
+//fr p,18,142

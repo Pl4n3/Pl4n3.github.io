@@ -1,5 +1,5 @@
 //----
-console.log('BlockWalk 1.54 ');//FOLDORUPDATEVERSION
+console.log('BlockWalk 1.104 ');//FOLDORUPDATEVERSION
 var BlockWalk=function(ps) {
   //---
   const self=this,PI=Math.PI;
@@ -7,6 +7,8 @@ var BlockWalk=function(ps) {
   
   this.tweens=[];
   this.blockMeshPos={x:0,y:0,z:0};
+  this.units=[];
+  
   function checkWalk(u,dx,dz) {
     //---
     if (u.posytw&&!u.posytw.ended) return false;
@@ -30,7 +32,8 @@ var BlockWalk=function(ps) {
     if (u.bullet) {
       ret=!blockAt(xi,yi,zi)&&!blockAt(xj,yj,zj);
     } else {
-      ret=!blockAt(xi,yi,zi)&&!blockAt(xj,yj,zj)&&!blockAt(xj,yj+1,zj);
+      ret=!blockAt(xi,yi,zi)&&!blockAt(xj,yj,zj,u
+        )&&!blockAt(xj,yj+1,zj);
       //onsole.log('ret='+ret);
       if (ret) { 
         if (!blockAt(xi,yi-1,zi)&&!blockAt(xj,yj-1,zj)) {
@@ -80,9 +83,40 @@ var BlockWalk=function(ps) {
   }
   function steer(u,dt) {
     //---
+    //let animMove=false,animTurn=false;
+    u.speed=0;
+    
+    if (u.hp==0) return;
+    
+    let ps=u.o.ps;
+    
+    if (ps&&ps.hite) { //--- see also planim.hite tech
+      //onsole.log('hite');
+      u.doTurn=0;
+      u.doRun=0;
+      if (ps.hitt==0) {
+        u.hp=Math.max(0,u.hp-1);
+        u.bbdraw(u.bb);
+        ps.hitt++;
+      }
+      //u.animIdle=u.hp==0?'lost':'hit';
+      Pd5.animStart(u.o,u.hp==0?u.animLost:u.animHit);
+      ps.hitt+=dt;
+      if (ps.hitt>250) {
+        //u.animIdle='stand2';
+        delete(ps.hite);
+      }
+      return;
+    } 
+    
+    
+    if (!u.ai) {
+    
     const tsd0=self.tsd0,gpad=self.xrUtil?self.xrUtil.gp1:undefined;
     
     //if (!gpad) return;
+    u.doTurn=0;
+    u.doRun=0;
     
     let dx=0,dy=0;
     if (gpad) {
@@ -95,8 +129,6 @@ var BlockWalk=function(ps) {
     
     //if ((dx==0)&&(dy==0)) return;
     
-    let animMove=false,animTurn=false;
-    u.speed=0;
     if ((dx!=0)||(dy!=0)) {
       let ay=0;
       if (self.camera) {
@@ -113,23 +145,45 @@ var BlockWalk=function(ps) {
             da=Conet.dAng(a2,u.a);//ang);
       //onsole.log(da);
       const mda=0.15;
-      
+      u.doAttack=undefined;
       if (Math.abs(da)>mda) {
-        u.a+=(da<0?-1:1)*dt*0.01;
-        u.o.meshes[0].tmesh.rotation.y=u.a;
-        animTurn=true;
+        //u.a+=(da<0?-1:1)*dt*0.01;
+        ////u.o.meshes[0].tmesh.rotation.y=u.a;
+        //u.o.ay=u.a;
+        //animTurn=true;
+        u.doTurn=da<0?-1:1;
       } else {
-        u.speed=self.speed||0.0002*1;//(Math.abs(a3)-0.1)*((a3<0)?1:-1);
-        animMove=true;
+        //u.speed=u.speedRun||self.speed||0.0002*1;//(Math.abs(a3)-0.1)*((a3<0)?1:-1);
+        //animMove=true;
+        u.doRun=1;
       } 
     }
-    if (animMove||animTurn) {
-      Pd5.animStart(u.o,'run');
+    
     } else {
-      Pd5.animStart(u.o,'stand2');
+      u.ai(dt);//--- ai
     }
     
+    if (u.doAttack) {
+      Pd5.animStart(u.o,u.animAttack);
+      u.attackt+=dt;
+      if (u.attackt>=500) u.doAttack=false;
+    } else if (u.doTurn) {
+      u.a+=u.doTurn*dt*(u.speedTurn||0.01);
+      u.o.ay=u.a;
+      if (u.o.ps) u.o.ps.roty=u.a;
+      Pd5.animStart(u.o,u.animRun);
+    } else if (u.doRun) {
+      u.speed=u.speedRun||self.speed||0.0002*1;//(Math.abs(a3)-0.1)*((a3<0)?1:-1);
+      Pd5.animStart(u.o,u.animRun);
+    } else 
+      Pd5.animStart(u.o,u.animIdle);
     
+    
+    //if (animMove||animTurn) {
+    //  Pd5.animStart(u.o,u.animRun);//'run'
+    //} else {
+    //  Pd5.animStart(u.o,u.animIdle);
+    //}
     
     //u.a-=dx*dt*0.01;
     //u.o.meshes[0].tmesh.rotation.y=u.a;
@@ -143,31 +197,43 @@ var BlockWalk=function(ps) {
     //}
     //...
   }
+  function dist2(p0,p1) {
+    //---
+    const dx=p1.x-p0.x,dy=p1.y-p0.y,dz=p1.z-p0.z;
+    return dx*dx+dy*dy+dz*dz;
+    //...
+  }
+  
   this.calc=function(dt) {
     //---
-    let u=self.unit0;
-    if (!u) return;
-    steer(u,dt);
-    if (u.speed!=0) {
-      const dx=u.speed*dt*Math.sin(u.a);
-      const dz=u.speed*dt*Math.cos(u.a);
-      const m=u.o.meshes[0].tmesh;
-      if (0) {
-        m.position.x+=dx;
-        m.position.z+=dz;
-      } else if (!checkWalk(u,dx,dz)) {
-        if (!checkWalk(u,dx,0)) 
-          checkWalk(u,0,dz);
+    //let unit0=self.unit0,
+    let units=self.units;
+    //if (unit0&&units.length==0) units.push(unit0);
+    //if (!u) return;
+    for (let u of units) {
+      steer(u,dt);
+      if (u.speed!=0) {
+        const dx=u.speed*dt*Math.sin(u.a);
+        const dz=u.speed*dt*Math.cos(u.a);
+        const m=u.o.meshes[0].tmesh;
+        if (0) {
+          m.position.x+=dx;
+          m.position.z+=dz;
+        } else if (!checkWalk(u,dx,dz)) {
+          if (!checkWalk(u,dx,0)) 
+            checkWalk(u,0,dz);
+        }
       }
     }
     Conet.calcTweens(self.tweens,dt);
     //...
   }
   this.checkWalk=checkWalk;
-  this.steer=steer;
+  this.steer=steer;this.dist2=dist2;
   //...
 }
 //...
 //fr o,2
-//fr o,2,8
-//fr p,33,28
+//fr o,2,9
+//fr o,2,12
+//fr p,8,21

@@ -69,7 +69,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       });
     xrUtil.initHud();
     
-    const version='v.0.48 ';//FOLDORUPDATEVERSION
+    const version='v.0.53 ';//FOLDORUPDATEVERSION
     xrUtil.log('Edit '+version);
     
     //
@@ -103,7 +103,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     //pointMaterial=new THREE.MeshPhongMaterial({color:0x77dd77,flatShading:true,transparent:true,opacity:0.7});
     
     {
-      let g=new THREE.BoxGeometry(0.1,0.1,0.1),
+      let g=new THREE.BoxGeometry(0.01,0.01,0.01),
           mesh=new THREE.Mesh(g,matPoint0);
       mesh.position.set(0,1,0);
       scene.add(mesh);points.push(mesh);
@@ -130,7 +130,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     //---
     let ctrl1=xrUtil.ctrl1;
     
-    let np=undefined,nd=0.1;//Number.MAX_VALUE;
+    let np=undefined,nd=0.01;//Number.MAX_VALUE;
     for (let p of points) {
       let d=p.position.distanceToSquared(ctrl1.position);
       if (d<nd) { nd=d;np=p; }
@@ -143,6 +143,9 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
         xrUtil.log('nd='+nd);console.log('nd='+nd);
       }
     }
+    
+    if (nearestPoint&&ctrl1.userData.isSelecting) 
+      nearestPoint.position.copy(ctrl1.position);
     
     xrUtil.renderHud();
     renderer.render(scene,camera);
@@ -158,4 +161,4 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,23
 //fr o,23,10
 //fr o,23,15
-//fr p,23,124
+//fr p,0,137

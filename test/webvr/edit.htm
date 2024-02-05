@@ -26,12 +26,8 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
   let container,camera,scene,renderer,
       controls,
       xrUtil=XrUtil,lsKey='editXr_0',
-      colorBlack=new THREE.Color(0,0,0),
-      grid={},gridw=0.01;
-  
-  //const str = "foo".repeat(1000);
-  //const compressedBytes = await Conet.compress(str);
-  //console.log(compressedBytes);
+      grid={},gridw=0.01,
+      points=[],nearestPoint,matPoint0,matPoint1;
       
   init();
   animate();
@@ -69,51 +65,30 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     renderer.xr.enabled=true;
     container.appendChild(renderer.domElement);
     
-    //document.body.appendChild( XRButton.createButton( renderer ) );
-    
     xrUtil.init({scene:scene,renderer:renderer,camera:camera,room:scene,sculpt:1//,vrPos:vrPos
       });
     xrUtil.initHud();
     
-    const version='v.0.21 ';//FOLDORUPDATEVERSION
+    const version='v.0.41 ';//FOLDORUPDATEVERSION
     xrUtil.log('Edit '+version);
-    
     
     //
     
-    let material=new THREE.MeshPhongMaterial({flatShading:true,color:0x66aa66,transparent:true,opacity:0.7});
+    matPoint0=new THREE.MeshPhongMaterial({flatShading:true,color:0x66aa66,transparent:true,opacity:0.7});
+    matPoint1=new THREE.MeshPhongMaterial({flatShading:true,color:0xaaaa66,transparent:true,opacity:0.7});
     let cmat=new THREE.MeshPhongMaterial({flatShading:true,color:0xaaaaaa});
     
-    
-    const pivot = new THREE.Mesh( new THREE.IcosahedronGeometry( 0.01, 3 ) );
-    pivot.name = 'pivot';
-    pivot.position.z = - 0.05;
-    
-    const group = new THREE.Group();
-    group.add( pivot );
-    xrUtil.ctrl0.add( group.clone() );
-    
-    let mesh=new THREE.Mesh(new THREE.BoxGeometry(0.01,0.01,0.01),cmat);
+    {let mesh=new THREE.Mesh(new THREE.BoxGeometry(0.02,0.02,0.02),cmat);
     mesh.position.z=-0.05;
-    xrUtil.ctrl1.add(mesh);
+    xrUtil.ctrl0.add(mesh);}
+    
+    {let mesh=new THREE.Mesh(new THREE.BoxGeometry(0.01,0.01,0.01),cmat);
+    mesh.position.z=-0.05;
+    xrUtil.ctrl1.add(mesh);}
     //xrUtil.ctrl1.add( group.clone() );
     
     //
     window.addEventListener( 'resize', onWindowResize );
-    
-    //--- initBlob
-    
-    /*
-    const path = 'textures/cube/SwedishRoyalCastle/';
-    const format = '.jpg';
-    const urls = [
-    path + 'px' + format, path + 'nx' + format,
-    path + 'py' + format, path + 'ny' + format,
-    path + 'pz' + format, path + 'nz' + format
-    ];
-    
-    const reflectionCube = new THREE.CubeTextureLoader().load( urls );
-    */
     
     //---menu
     
@@ -129,13 +104,13 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     //pointMaterial=new THREE.MeshPhongMaterial({color:0x77dd77,flatShading:true,transparent:true,opacity:0.7});
     
     {
-      let g=new THREE.BoxGeometry(0.2,0.2,0.2),
-          mesh=new THREE.Mesh(g,material);
+      let g=new THREE.BoxGeometry(0.1,0.1,0.1),
+          mesh=new THREE.Mesh(g,matPoint0);
       mesh.position.set(0,1,0);
-      scene.add(mesh);
-      mesh=new THREE.Mesh(g,material);
-      mesh.position.set(0.1,1.1,0.1);
-      scene.add(mesh);
+      scene.add(mesh);points.push(mesh);
+      mesh=new THREE.Mesh(g,matPoint0);
+      mesh.position.set(0.05,1.05,0.05);
+      scene.add(mesh);points.push(mesh);
     }
     
     //...
@@ -154,6 +129,19 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
   
   function render() {
     //---
+    let ctrl0=xrUtil.ctrl0;
+    
+    let np=undefined,nd=10;//Number.MAX_VALUE;
+    for (let p of points) {
+      let d=p.position.distanceToSquared(ctrl0.position);
+      if (d<nd) { nd=d;np=p; }
+    }
+    if (np!==nearestPoint) {
+      if (nearestPoint) nearestPoint.material=matPoint0;
+      nearestPoint=np;  
+      if (nearestPoint) nearestPoint.material=matPoint1;
+    }
+    
     xrUtil.renderHud();
     renderer.render(scene,camera);
     //...
@@ -166,6 +154,6 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 </html>
 <script>
 //fr o,23
-//fr o,23,14
-//fr o,23,19
-//fr p,66,95
+//fr o,23,10
+//fr o,23,15
+//fr p,25,125

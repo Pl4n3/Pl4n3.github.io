@@ -69,14 +69,14 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       });
     xrUtil.initHud();
     
-    const version='v.0.53 ';//FOLDORUPDATEVERSION
+    const version='v.0.55 ';//FOLDORUPDATEVERSION
     xrUtil.log('Edit '+version);
     
     //
     
     matPoint0=new THREE.MeshPhongMaterial({flatShading:true,color:0x66aa66,transparent:true,opacity:0.7});
     matPoint1=new THREE.MeshPhongMaterial({flatShading:true,color:0xaaaa66,transparent:true,opacity:0.7});
-    let cmat=new THREE.MeshPhongMaterial({flatShading:true,color:0xaaaaaa});
+    let cmat=new THREE.MeshPhongMaterial({flatShading:true,color:0xaaaaaa,transparent:true,opacity:0.7});
     
     {let mesh=new THREE.Mesh(new THREE.BoxGeometry(0.01,0.01,0.01),cmat);
     mesh.position.z=-0.05;
@@ -161,4 +161,4 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,23
 //fr o,23,10
 //fr o,23,15
-//fr p,0,137
+//fr p,23,28

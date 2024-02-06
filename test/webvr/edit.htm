@@ -37,25 +37,25 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     container = document.createElement( 'div' );
     document.body.appendChild( container );
     
-    scene = new THREE.Scene();
-    scene.background = new THREE.Color( 0x222222 );
+    scene=new THREE.Scene();
+    scene.background=new THREE.Color(0x333333);//0x222222
     
-    camera=new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 0.01, 50 );
-    camera.position.set( 0, 1.6, 3 );
+    camera=new THREE.PerspectiveCamera(50,window.innerWidth/window.innerHeight,0.01,50);
+    camera.position.set(0,1.6,2);
     scene.add(camera);
     
-    controls = new OrbitControls( camera, container );
-    controls.target.set( 0, 1.6, 0 );
+    controls=new OrbitControls(camera,container);
+    controls.target.set(0,1.6,0);
     controls.update();
     
-    const grid=new THREE.GridHelper(4,1,0x111111,0x111111);
+    const grid=new THREE.GridHelper(4,1,0xffffff,0x111111);
     scene.add(grid);
     
     scene.add(new THREE.HemisphereLight(0x888877,0x777788,3));
     
     const light=new THREE.DirectionalLight(0xffffff,3);
     light.position.set(0,6,0);
-    scene.add( light );
+    scene.add(light);
     
     //
     
@@ -69,7 +69,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       });
     xrUtil.initHud();
     
-    const version='v.0.61 ';//FOLDORUPDATEVERSION
+    const version='v.0.69 ';//FOLDORUPDATEVERSION
     xrUtil.log('Edit '+version);
     
     //
@@ -104,11 +104,16 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     {
       let g=new THREE.BoxGeometry(0.01,0.01,0.01),
-          mesh=new THREE.Mesh(g,matPoint0);
+      mesh=new THREE.Mesh(g,matPoint0);
       mesh.position.set(0,1,0);
       scene.add(mesh);points.push(mesh);
+    
       mesh=new THREE.Mesh(g,matPoint0);
       mesh.position.set(0.05,1.05,0.05);
+      scene.add(mesh);points.push(mesh);
+    
+      mesh=new THREE.Mesh(g,matPoint0);
+      mesh.position.set(0.1,1.05,0.05);
       scene.add(mesh);points.push(mesh);
     }
     
@@ -164,4 +169,4 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,23
 //fr o,23,10
 //fr o,23,15
-//fr p,31,142
+//fr p,41,40

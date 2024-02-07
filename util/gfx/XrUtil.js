@@ -5,7 +5,7 @@ import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFa
 let XrUtil={};
 (function(pself) {
   //---
-  let version='v.1.162 ',//FOLDORUPDATEVERSION
+  let version='v.1.168 ',//FOLDORUPDATEVERSION
       self=pself,ctrl0,ctrl1,gp0,gp1,camera,scene,room,vrPos,huds=[],hudMesh,
       hud={lines:['XrUtil '+version],cursor:{x:0.5,y:0.5,vis:false},buttons:[]},
       raycaster,INTERSECTED,hudCount=0,needDrawUi=false;
@@ -175,6 +175,12 @@ let XrUtil={};
       await renderer.xr.setSession(session);
       self.isSession=1;
       currentSession=session;
+      
+      let o=hudMesh;
+      if (o) {
+        camera.remove(o); 
+        ctrl0.add(o);o.position.set(-0.2,0,0);o.rotation.x=-1;o.rotation.y=1;
+      }
       //...
     }
     function onSessionEnded() {
@@ -287,11 +293,15 @@ let XrUtil={};
     drawHud();
     const planeMaterial=new THREE.MeshBasicMaterial({map:t1,opacity:1,transparent:true});
     const o=new THREE.Mesh(g,planeMaterial);
-    o.position.set(-0.2,0,-0.5);
-    o.rotation.y=0.3;hudMesh=o;
-    //camera.add(o);o.position.set(-0.2,0,-0.5);o.rotation.y=0.3;
+    //o.position.set(-0.2,0,-0.5);
+    //o.rotation.y=0.3;
+    hudMesh=o;
+    
+    camera.add(o);o.position.set(-0.2,0.1,-0.5);//o.rotation.y=0.3;
     //scene.add(o);
-    ctrl0.add(o);o.position.set(-0.2,0,0);o.rotation.x=-1;o.rotation.y=1;
+    
+    //ctrl0.add(o);o.position.set(-0.2,0,0);o.rotation.x=-1;o.rotation.y=1;
+    
     huds.push(o);
     raycaster=new THREE.Raycaster();
     
@@ -350,16 +360,13 @@ let XrUtil={};
 export { XrUtil };
 //fr o,5
 //fr o,5,10
-//fr o,5,10,8
 //fr o,5,10,10
 //fr o,5,10,57
 //fr o,5,10,80
 //fr o,5,10,81
 //fr o,5,10,83
 //fr o,5,10,89
-//fr o,5,12
-//fr o,5,14
 //fr o,5,16
 //fr o,5,18
 //fr o,5,18,1
-//fr p,18,9
+//fr p,17,117

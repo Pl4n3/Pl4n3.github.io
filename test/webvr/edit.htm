@@ -81,7 +81,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       });
     xrUtil.initHud();
     
-    const version='v.0.105 ';//FOLDORUPDATEVERSION
+    const version='v.0.114 ';//FOLDORUPDATEVERSION
     xrUtil.log('Edit '+version);
     
     //
@@ -110,10 +110,15 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       let a=raycaster.intersectObjects(scene.children);
       
       //onsole.log('mousedown '+a.length);
-      let np=undefined;
+      let np=undefined,hudo=undefined;
       for (let co of a) {
         let o=co.object;
         if (o===grid) continue;
+        if (o===xrUtil.hudMesh) {
+          //onsole.log('hud');
+          hudo=co;
+          break;
+        }
         //onsole.log(o+' '+points.indexOf(o));
         if (points.indexOf(o)!=-1) {
           np=o;//setNearestPoint(o);
@@ -121,9 +126,8 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
         }
       }
       
+      xrUtil.hudIntersects(hudo);
       setNearestPoint(np);
-      
-      
       //...
     }
     ,false);
@@ -235,4 +239,4 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,25,10,67
 //fr o,25,15
 //fr o,25,17
-//fr p,56,6
+//fr p,25,128

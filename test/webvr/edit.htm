@@ -4,6 +4,8 @@
 <title>editXr</title>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<link rel="shortcut icon" sizes="192x192" href="/canvas/paint/catapulto.png">
+<link rel="apple-touch-icon" href="/canvas/paint/catapulto.png">
 <style>body { color:#000;background-color:#aaa;margin:0px;overflow:hidden;font-family:Sans-serif; }</style>
 <script src="/conet.js"></script>
 <script src="/menu.js"></script>
@@ -24,7 +26,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 (function() {
   //---
   let container,camera,scene,renderer,
-      controls,ph,
+      controls,ph,raycaster,
       xrUtil=XrUtil,lsKey='editXr_0',
       grid={},gridw=0.01,cursor0,cursor1,
       points=[],nearestPoint,matPoint0,matPoint1;
@@ -46,9 +48,19 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     controls=new OrbitControls(camera,container);
     controls.target.set(0,1.6,0);
+    
+    
+    let ls=localStorage[lsKey];
+    if (ls) {
+      ls=JSON.parse(ls);
+      if (ls.pt) controls.target.set(ls.pt.x,ls.pt.y,ls.pt.z);
+      if (ls.pc) camera.position.set(ls.pc.x,ls.pc.y,ls.pc.z); 
+    }
+    
+    
     controls.update();
     
-    const grid=new THREE.GridHelper(4,1,0xffffff,0x111111);
+    const grid=new THREE.GridHelper(4,4,0x555555,0x111111);
     scene.add(grid);
     
     scene.add(new THREE.HemisphereLight(0x888877,0x777788,3));
@@ -69,7 +81,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       });
     xrUtil.initHud();
     
-    const version='v.0.69 ';//FOLDORUPDATEVERSION
+    const version='v.0.105 ';//FOLDORUPDATEVERSION
     xrUtil.log('Edit '+version);
     
     //
@@ -86,8 +98,36 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     mesh.position.z=-0.05;
     xrUtil.ctrl1.add(cursor1=mesh);} //right
     
+    raycaster=new THREE.Raycaster();
+    
     //
-    window.addEventListener( 'resize', onWindowResize );
+    window.addEventListener('resize',onWindowResize);
+    renderer.domElement.addEventListener('mousemove',function(e) {
+      //---
+      
+      let p2=new THREE.Vector2(2*e.clientX/window.innerWidth-1,-2*e.clientY/window.innerHeight+1);
+      raycaster.setFromCamera(p2,camera);
+      let a=raycaster.intersectObjects(scene.children);
+      
+      //onsole.log('mousedown '+a.length);
+      let np=undefined;
+      for (let co of a) {
+        let o=co.object;
+        if (o===grid) continue;
+        //onsole.log(o+' '+points.indexOf(o));
+        if (points.indexOf(o)!=-1) {
+          np=o;//setNearestPoint(o);
+          break;
+        }
+      }
+      
+      setNearestPoint(np);
+      
+      
+      //...
+    }
+    ,false);
+    
     
     //---menu
     
@@ -96,6 +136,19 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       Menu.mFullscreen
       ]} 
      ,xrUtil.menuXr  
+    ,{s:'SaveView',ms:'later via xr menu',actionf:function() {
+      //---
+      let pt=controls.target,pc=camera.position;
+      let cfg={
+        pt:{x:Conet.f4(pt.x),y:Conet.f4(pt.y),z:Conet.f4(pt.z)},
+        pc:{x:Conet.f4(pc.x),y:Conet.f4(pc.y),z:Conet.f4(pc.z)}
+      };
+      cfg=JSON.stringify(cfg);
+      console.log(cfg);
+      localStorage[lsKey]=cfg;
+      //...
+    }
+     }
       ]
       ,{listen:1});
     
@@ -134,31 +187,42 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
   
   function render() {
     //---
-    let ctrl1=xrUtil.ctrl1;
+    if (xrUtil.isSession) {
+      let ctrl1=xrUtil.ctrl1;
     
-    ph.setFromMatrixPosition(cursor1.matrixWorld);
+      ph.setFromMatrixPosition(cursor1.matrixWorld);
     
-    let np=undefined,nd=0.01;//Number.MAX_VALUE;
-    for (let p of points) {
-      let d=p.position.distanceToSquared(ph);
-      if (d<nd) { nd=d;np=p; }
-    }
-    if (np!==nearestPoint) {
-      if (nearestPoint) nearestPoint.material=matPoint0;
-      nearestPoint=np;  
-      if (nearestPoint) {
-        nearestPoint.material=matPoint1;
-        xrUtil.log('nd='+nd);console.log('nd='+nd);
+      let np=undefined,nd=0.01;//Number.MAX_VALUE;
+      for (let p of points) {
+        let d=p.position.distanceToSquared(ph);
+        if (d<nd) { nd=d;np=p; }
       }
-    }
+      setNearestPoint(np);
+      //if (np) { xrUtil.log('nd='+nd);console.log('nd='+nd); }
     
-    if (nearestPoint&&ctrl1.userData.isSelecting) 
-      nearestPoint.position.copy(ph);
+      if (nearestPoint&&ctrl1.userData.isSelecting) 
+        nearestPoint.position.copy(ph);
+    }
     
     xrUtil.renderHud();
     renderer.render(scene,camera);
     //...
   }
+  
+  function setNearestPoint(p) {
+    //---
+    if (p!==nearestPoint) {
+      if (nearestPoint) nearestPoint.material=matPoint0;
+      nearestPoint=p;  
+      if (p) {
+        p.material=matPoint1;
+        xrUtil.log('nearest point '+points.indexOf(p));
+      }
+    }
+    //onsole.log('nearestPoint set '+nearestPoint);
+    //...
+  }
+  
   //...
 }
 )();
@@ -166,7 +230,9 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 </body>
 </html>
 <script>
-//fr o,23
-//fr o,23,10
-//fr o,23,15
-//fr p,41,40
+//fr o,25
+//fr o,25,10
+//fr o,25,10,67
+//fr o,25,15
+//fr o,25,17
+//fr p,56,6

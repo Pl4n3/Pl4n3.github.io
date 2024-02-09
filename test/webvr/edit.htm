@@ -26,10 +26,11 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 (function() {
   //---
   let container,camera,scene,renderer,
-      controls,ph,raycaster,
-      xrUtil=XrUtil,lsKey='editXr_0',
+      controls,ph,raycaster,sceneh={},
+      xrUtil=XrUtil,lsKey='editXr_0',sels=[],
       grid={},gridw=0.01,cursor0,cursor1,
-      points=[],nearestPoint,matPoint0,matPoint1;
+      points=[],nearestPoint,
+      matPoint0,matPoint1,matPointSel;
       
   init();
   animate();
@@ -49,14 +50,14 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     controls=new OrbitControls(camera,container);
     controls.target.set(0,1.6,0);
     
-    
+    /*
     let ls=localStorage[lsKey];
     if (ls) {
       ls=JSON.parse(ls);
       if (ls.pt) controls.target.set(ls.pt.x,ls.pt.y,ls.pt.z);
       if (ls.pc) camera.position.set(ls.pc.x,ls.pc.y,ls.pc.z); 
     }
-    
+    */
     
     controls.update();
     
@@ -80,14 +81,25 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     xrUtil.init({scene:scene,renderer:renderer,camera:camera,room:scene,sculpt:1//,vrPos:vrPos
       });
     xrUtil.initHud();
+    xrUtil.hud.buttons=[
+    {s:'Save',x:0.5,y:0.7,w:0.45,h:0.25,ondown:function() {
+      //---
+      let s=serialize();
+      localStorage[lsKey]=s;
+      xrUtil.log('Saved '+s.length+' bytes.');
+      //...
+    }
+    },
+    ];
     
-    const version='v.0.114 ';//FOLDORUPDATEVERSION
+    const version='v.0.189 ';//FOLDORUPDATEVERSION
     xrUtil.log('Edit '+version);
     
     //
     
-    matPoint0=new THREE.MeshPhongMaterial({flatShading:true,color:0x66aa66,transparent:true,opacity:0.7});
-    matPoint1=new THREE.MeshPhongMaterial({flatShading:true,color:0xaaaa66,transparent:true,opacity:0.7});
+    matPoint0  =new THREE.MeshPhongMaterial({flatShading:true,color:0x66aa66,transparent:true,opacity:0.7});
+    matPoint1  =new THREE.MeshPhongMaterial({flatShading:true,color:0xaaaa66,transparent:true,opacity:0.7});
+    matPointSel=new THREE.MeshPhongMaterial({flatShading:true,color:0xdddddd,transparent:true,opacity:0.7});
     let cmat=new THREE.MeshPhongMaterial({flatShading:true,color:0xaaaaaa,transparent:true,opacity:0.7});
     
     {let mesh=new THREE.Mesh(new THREE.BoxGeometry(0.01,0.01,0.01),cmat);
@@ -100,12 +112,9 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     raycaster=new THREE.Raycaster();
     
-    //
-    window.addEventListener('resize',onWindowResize);
-    renderer.domElement.addEventListener('mousemove',function(e) {
+    function point(x,y,down) {
       //---
-      
-      let p2=new THREE.Vector2(2*e.clientX/window.innerWidth-1,-2*e.clientY/window.innerHeight+1);
+      let p2=new THREE.Vector2(2*x/window.innerWidth-1,-2*y/window.innerHeight+1);
       raycaster.setFromCamera(p2,camera);
       let a=raycaster.intersectObjects(scene.children);
       
@@ -126,11 +135,34 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
         }
       }
       
-      xrUtil.hudIntersects(hudo);
-      setNearestPoint(np);
+      xrUtil.hudIntersects(hudo,down);
+      
+      if (down) {
+        select(np);
+      } else setNearestPoint(np);
+      //...
+    }
+    //
+    window.addEventListener('resize',onWindowResize);
+    const canv=renderer.domElement;
+    canv.addEventListener('mousemove',function(e) {
+      //---
+      point(e.clientX,e.clientY,false);
       //...
     }
     ,false);
+    canv.addEventListener('mousedown',function(e) {
+      //---
+      point(e.clientX,e.clientY,true);
+      //...
+    }
+    );
+    canv.parentElement.addEventListener('mouseup',function(e) {
+      //---
+      point(e.clientX,e.clientY,false);
+      //...
+    }
+    );
     
     
     //---menu
@@ -140,6 +172,12 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       Menu.mFullscreen
       ]} 
      ,xrUtil.menuXr  
+     
+     ,{s:'Json',ms:'import/export',doctrl:'Json data',mcfs:0.07,ta:true,jsonCheck:1,wrap:0,tacols:30,tarows:20
+      ,setfunc:load,valuef:serialize}
+     
+     
+     /*
     ,{s:'SaveView',ms:'later via xr menu',actionf:function() {
       //---
       let pt=controls.target,pc=camera.position;
@@ -153,13 +191,19 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       //...
     }
      }
+     */
+     
       ]
       ,{listen:1});
     
     
     //pointMaterial=new THREE.MeshPhongMaterial({color:0x77dd77,flatShading:true,transparent:true,opacity:0.7});
     
-    {
+    ph=new THREE.Vector3();
+    
+    let ls=localStorage[lsKey];
+    if (ls) load(ls);
+    else {
       let g=new THREE.BoxGeometry(0.01,0.01,0.01),
       mesh=new THREE.Mesh(g,matPoint0);
       mesh.position.set(0,1,0);
@@ -173,8 +217,6 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       mesh.position.set(0.1,1.05,0.05);
       scene.add(mesh);points.push(mesh);
     }
-    
-    ph=new THREE.Vector3();
     //...
   }
   function onWindowResize() {
@@ -189,6 +231,26 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     renderer.setAnimationLoop(render);
   }
   
+  function load(v) {
+    //---
+    let h=JSON.parse(v);
+    if (h.pt) controls.target.set(h.pt.x,h.pt.y,h.pt.z);
+    if (h.pc) camera.position.set(h.pc.x,h.pc.y,h.pc.z);
+    
+    let g=new THREE.BoxGeometry(0.01,0.01,0.01);
+    for (let p of h.points) {
+      let mesh=new THREE.Mesh(g,matPoint0);
+      mesh.position.set(p.x,p.y,p.z);
+      scene.add(mesh);points.push(mesh);
+    }
+    
+    sceneh=Conet.hcopy(h,undefined,undefined,{points:1});;
+    controls.update();
+    //onsole.log(v);
+    //...
+  }
+  
+  let wasSelecting=undefined;
   function render() {
     //---
     if (xrUtil.isSession) {
@@ -204,8 +266,17 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       setNearestPoint(np);
       //if (np) { xrUtil.log('nd='+nd);console.log('nd='+nd); }
     
-      if (nearestPoint&&ctrl1.userData.isSelecting) 
-        nearestPoint.position.copy(ph);
+      if (np&&ctrl1.userData.isSelecting) {
+        if (wasSelecting!==np) {
+          wasSelecting=np;
+          select(np);
+        }
+        if (np.userData.selected) np.position.copy(ph);
+      } else wasSelecting=undefined;
+      
+      if ((!np)&&ctrl1.userData.isSelecting) {
+        if (sels.length>0) select(undefined);
+      }
     }
     
     xrUtil.renderHud();
@@ -213,14 +284,69 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     //...
   }
   
+  function select(p) {
+    //---
+    if (p===undefined) {
+      for (let p of sels) {
+        p.userData.selected=0;
+        p.material=matPoint0;
+      }
+      sels.length=0;
+    } else {
+      let i=sels.indexOf(p);
+      if (i!=-1) {
+        sels.splice(i,1);
+        p.userData.selected=0;
+        p.material=matPoint0;
+      } else {
+        sels.push(p);
+        p.material=matPointSel;
+        p.userData.selected=1;
+      }
+    }
+    
+    xrUtil.log('Selected:'+sels.length);
+    //...
+  }
+  
+  function serialize() {
+    //---
+    
+    if (!xrUtil.isSession) {
+      let pt=controls.target,pc=camera.position;
+      sceneh.pt={x:Conet.f4(pt.x),y:Conet.f4(pt.y),z:Conet.f4(pt.z)};
+      sceneh.pc={x:Conet.f4(pc.x),y:Conet.f4(pc.y),z:Conet.f4(pc.z)};
+    }
+    
+    let s='{\n';
+    
+    for (let k of Object.keys(sceneh)) {
+      s+='"'+k+'":'+JSON.stringify(sceneh[k])+',\n';
+    }
+    
+    s+='"points":[\n';
+    let first=true;
+    for (let p of points) {
+      p=p.position;
+      s+=(first?' ':',')+JSON.stringify({x:p.x,y:p.y,z:p.z})+'\n';
+      first=false;
+    }
+    s+=']\n';
+    
+    s+='}';
+    return s;
+    //...
+  }
+  
   function setNearestPoint(p) {
     //---
-    if (p!==nearestPoint) {
-      if (nearestPoint) nearestPoint.material=matPoint0;
+    let op=nearestPoint;
+    if (p!==op) {
+      if (op) op.material=(op.userData.selected?matPointSel:matPoint0);
       nearestPoint=p;  
       if (p) {
         p.material=matPoint1;
-        xrUtil.log('nearest point '+points.indexOf(p));
+        //xrUtil.log('nearest point '+points.indexOf(p));
       }
     }
     //onsole.log('nearestPoint set '+nearestPoint);
@@ -235,8 +361,14 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 </html>
 <script>
 //fr o,25
-//fr o,25,10
-//fr o,25,10,67
-//fr o,25,15
-//fr o,25,17
-//fr p,25,128
+//fr o,25,11
+//fr o,25,11,46
+//fr o,25,11,70
+//fr o,25,11,76
+//fr o,25,11,78
+//fr o,25,16
+//fr o,25,19
+//fr o,25,21
+//fr o,25,23
+//fr o,25,25
+//fr p,41,254

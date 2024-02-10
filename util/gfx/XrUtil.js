@@ -5,7 +5,7 @@ import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFa
 let XrUtil={};
 (function(pself) {
   //---
-  let version='v.1.199 ',//FOLDORUPDATEVERSION
+  let version='v.1.212 ',//FOLDORUPDATEVERSION
       self=pself,ctrl0,ctrl1,gp0,gp1,camera,scene,room,vrPos,huds=[],hudMesh,
       hud={lines:['XrUtil '+version],cursor:{x:0.5,y:0.5,vis:false},buttons:[]},
       raycaster,INTERSECTED,hudCount=0,needDrawUi=false;
@@ -274,7 +274,7 @@ let XrUtil={};
     //...
   }
   
-  function hudIntersects(i0) {
+  function hudIntersects(i0,down) {
     //---
     //onsole.log(i0.distance);
     if (i0) {
@@ -293,7 +293,7 @@ let XrUtil={};
       hud.cursor.y=1-i0.uv.y;
       //onsole.log(hud.cursor.x+' '+hud.cursor.y);
       hud.cursor.vis=true;
-      hud.cursor.down=gp1&&gp1.buttons[0].pressed;
+      hud.cursor.down=down;//gp1&&gp1.buttons[0].pressed;
       drawHud();
       if (self.cursor) self.cursor.visible=false;
     } else {
@@ -327,7 +327,7 @@ let XrUtil={};
     const t1=new THREE.Texture(c);hud.t=t1;
     //t1.needsUpdate=true;
     drawHud();
-    const planeMaterial=new THREE.MeshBasicMaterial({map:t1,opacity:1,transparent:true});
+    const planeMaterial=new THREE.MeshBasicMaterial({map:t1,opacity:1,transparent:true,side:THREE.DoubleSide});
     const o=new THREE.Mesh(g,planeMaterial);
     //o.position.set(-0.2,0,-0.5);
     //o.rotation.y=0.3;
@@ -347,52 +347,23 @@ let XrUtil={};
   
   self.renderHud=function() {
     //---
+    let i0=undefined;
     if (hudMesh.visible) {
       if (self.isSession) {
-      // find intersections
-      tempMatrix.identity().extractRotation(ctrl1.matrixWorld);
-      raycaster.ray.origin.setFromMatrixPosition(ctrl1.matrixWorld);
-      raycaster.ray.direction.set(0,0,-1).applyMatrix4(tempMatrix);
-      raycaster.far=0.1;
-      const intersects=raycaster.intersectObjects(huds),//room.children);
-            cursor=self.cursor;
-      let i0=undefined;
-      if (intersects.length>0) i0=intersects[0];
-      hudIntersects(i0);
-      /*
-      if (intersects.length>0) {
-        const i0=intersects[0];
-        //onsole.log(i0.distance);
-        if (INTERSECTED!=i0.object) {
-          //if (INTERSECTED) INTERSECTED.material.emissive.setHex( INTERSECTED.currentHex );
-          INTERSECTED=i0.object;
-          //INTERSECTED.currentHex = INTERSECTED.material.emissive.getHex();
-          //INTERSECTED.material.emissive.setHex( 0xff0000 );
-          //onsole.log('intersected');
-          hudCount++;    
-        }
-        //hud.lines[0]='c '+hudCount;
-        //hud.lines[1]=i0.uv.x;
-        //hud.lines[2]=i0.uv.y;
-        hud.cursor.x=i0.uv.x;
-        hud.cursor.y=1-i0.uv.y;
-        hud.cursor.vis=true;
-        hud.cursor.down=gp1&&gp1.buttons[0].pressed;
-        drawHud();
-        if (cursor) cursor.visible=false;
-      } else {
-        //if ( INTERSECTED ) INTERSECTED.material.emissive.setHex( INTERSECTED.currentHex );
-        INTERSECTED=undefined;
-        if (cursor) cursor.visible=true;
-        if (hud.cursor.vis) {
-          hud.cursor.vis=false;
-          drawHud();
-        }
-      }
-      */
+        // find intersections
+        tempMatrix.identity().extractRotation(ctrl1.matrixWorld);
+        raycaster.ray.origin.setFromMatrixPosition(ctrl1.matrixWorld);
+        raycaster.ray.direction.set(0,0,-1).applyMatrix4(tempMatrix);
+        raycaster.far=0.1;
+        const intersects=raycaster.intersectObjects(huds),//room.children);
+              cursor=self.cursor;
+        //let i0=undefined;
+        if (intersects.length>0) i0=intersects[0];
+        hudIntersects(i0,i0&&gp1&&gp1.buttons[0].pressed);
       }
       if (needDrawUi) drawHud();
     }
+    return i0;
     //...
   }
   
@@ -412,5 +383,4 @@ export { XrUtil };
 //fr o,5,14
 //fr o,5,19
 //fr o,5,21
-//fr o,5,21,1
-//fr p,1,179
+//fr p,10,152

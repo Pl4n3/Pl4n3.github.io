@@ -111,7 +111,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     ,{s:'Plane'    ,x:0.05,y:0.85,w:0.4,h:0.1}
     ];
     
-    const version='v.0.250 ';//FOLDORUPDATEVERSION
+    const version='v.0.253 ';//FOLDORUPDATEVERSION
     xrUtil.log('Edit '+version);
     
     //
@@ -309,7 +309,9 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
   let wasSelecting=undefined;
   function render() {
     //---
-    if (xrUtil.isSession) {
+    let i0=xrUtil.renderHud();
+    
+    if (xrUtil.isSession&&!i0) {
       let ctrl1=xrUtil.ctrl1;
     
       ph.setFromMatrixPosition(cursor1.matrixWorld);
@@ -335,7 +337,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       }
     }
     
-    xrUtil.renderHud();
+    //xrUtil.renderHud();
     
     if (pointPlane) pointPlane.quaternion.copy(camera.quaternion);
     
@@ -436,4 +438,4 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,25,22
 //fr o,25,24
 //fr o,25,26
-//fr p,2,362
+//fr p,25,305

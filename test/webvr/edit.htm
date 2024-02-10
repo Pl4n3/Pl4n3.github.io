@@ -30,7 +30,8 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       xrUtil=XrUtil,lsKey='editXr_0',sels=[],
       grid={},gridw=0.01,cursor0,cursor1,
       points=[],nearestPoint,
-      matPoint0,matPoint1,matPointSel;
+      matPoint0,matPoint1,matPointSel,
+      pointPlane;
       
   init();
   animate();
@@ -90,9 +91,27 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       //...
     }
     },
+    
+     {s:'New point',x:0.05,y:0.55,w:0.4,h:0.1,ondown:function() {
+      //---
+      let x=0,y=0,z=0;
+      if (sels.length>0) {
+        for (let p of sels) { p=p.position;x+=p.x;y+=p.y;z+=p.z; }; 
+        x/=sels.length;y/=sels.length;z/=sels.length;
+      }
+      let g=new THREE.BoxGeometry(0.01,0.01,0.01);
+      let mesh=new THREE.Mesh(g,matPoint0);
+      mesh.position.set(x,y,z);
+      scene.add(mesh);points.push(mesh);
+      xrUtil.log(points.length+'. point added.');
+      //...
+    }
+     }
+    ,{s:'Del point',x:0.05,y:0.7,w:0.4,h:0.1}
+    ,{s:'Plane'    ,x:0.05,y:0.85,w:0.4,h:0.1}
     ];
     
-    const version='v.0.189 ';//FOLDORUPDATEVERSION
+    const version='v.0.250 ';//FOLDORUPDATEVERSION
     xrUtil.log('Edit '+version);
     
     //
@@ -112,10 +131,20 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     raycaster=new THREE.Raycaster();
     
-    function point(x,y,down) {
+    function point(x,y,mode,e) {
       //---
       let p2=new THREE.Vector2(2*x/window.innerWidth-1,-2*y/window.innerHeight+1);
       raycaster.setFromCamera(p2,camera);
+      
+      if ((mode==2)&&(sels.length>0)&&pointPlane.visible) {//---drag
+        let a=raycaster.intersectObject(pointPlane);
+        //console.log(a.length);
+        if (a.length==1) {
+          sels[sels.length-1].position.copy(a[0].point);
+        }
+        return;
+      }
+      
       let a=raycaster.intersectObjects(scene.children);
       
       //onsole.log('mousedown '+a.length);
@@ -135,31 +164,58 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
         }
       }
       
-      xrUtil.hudIntersects(hudo,down);
+      xrUtil.hudIntersects(hudo,mode==1);
+      if (hudo) return;
       
-      if (down) {
+      let pp=pointPlane;
+      if (mode==1) {
         select(np);
-      } else setNearestPoint(np);
+        if (np) { //---show mouseplane
+          let pp=pointPlane;
+          if (!pp) {
+            const m=new THREE.Mesh(
+              new THREE.PlaneGeometry(0.75,0.75),
+              new THREE.MeshBasicMaterial({color:new THREE.Color(100,100,100),opacity:0.05,transparent:true
+                //,side:THREE.DoubleSide
+              }));
+            scene.add(m);
+            pp=pointPlane=m;
+          } 
+          pp.visible=true;
+          pp.position.copy(np.position);
+          //e.preventDefault();
+          controls.enabled=false;
+        }
+      } else {
+        if (pp&&pp.visible) pp.visible=false;
+        setNearestPoint(np);
+        controls.enabled=true;
+      }
       //...
     }
     //
     window.addEventListener('resize',onWindowResize);
     const canv=renderer.domElement;
-    canv.addEventListener('mousemove',function(e) {
+    
+    canv.parentElement.addEventListener('mousemove',function(e) {
       //---
-      point(e.clientX,e.clientY,false);
+      //onsole.log('mousemove');
+      point(e.clientX,e.clientY,2,e);
       //...
     }
-    ,false);
+    );
+    
     canv.addEventListener('mousedown',function(e) {
       //---
-      point(e.clientX,e.clientY,true);
+      //onsole.log('mousedown');
+      point(e.clientX,e.clientY,1,e);
       //...
     }
     );
     canv.parentElement.addEventListener('mouseup',function(e) {
       //---
-      point(e.clientX,e.clientY,false);
+      //onsole.log('mouseup');
+      point(e.clientX,e.clientY,0,e);
       //...
     }
     );
@@ -280,12 +336,18 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     }
     
     xrUtil.renderHud();
+    
+    if (pointPlane) pointPlane.quaternion.copy(camera.quaternion);
+    
+    
     renderer.render(scene,camera);
     //...
   }
   
   function select(p) {
     //---
+    let l=sels.length;
+    
     if (p===undefined) {
       for (let p of sels) {
         p.userData.selected=0;
@@ -305,7 +367,8 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       }
     }
     
-    xrUtil.log('Selected:'+sels.length);
+    if (l!=sels.length)
+      xrUtil.log('Selected:'+sels.length);
     //...
   }
   
@@ -361,14 +424,16 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 </html>
 <script>
 //fr o,25
-//fr o,25,11
-//fr o,25,11,46
-//fr o,25,11,70
-//fr o,25,11,76
-//fr o,25,11,78
-//fr o,25,16
-//fr o,25,19
-//fr o,25,21
-//fr o,25,23
-//fr o,25,25
-//fr p,41,254
+//fr o,25,12
+//fr o,25,12,46
+//fr o,25,12,49
+//fr o,25,12,75
+//fr o,25,12,80
+//fr o,25,12,83
+//fr o,25,12,85
+//fr o,25,17
+//fr o,25,20
+//fr o,25,22
+//fr o,25,24
+//fr o,25,26
+//fr p,2,362

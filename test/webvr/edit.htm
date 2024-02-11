@@ -120,7 +120,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     }
     ];
     
-    const version='v.0.289 ';//FOLDORUPDATEVERSION
+    const version='v.0.290 ';//FOLDORUPDATEVERSION
     xrUtil.log('Edit '+version);
     
     //
@@ -356,7 +356,10 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
           wasSelecting=np;
           select(np);
         }
-        if (np.userData.selected) np.position.copy(ph);
+        if (np.userData.selected) {
+          np.position.copy(ph);
+          updateMesh();
+        }
       } else wasSelecting=undefined;
       
       if ((!np)&&ctrl1.userData.isSelecting) {
@@ -463,5 +466,6 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 <script>
 //fr o,25
 //fr o,25,20
+//fr o,25,23
 //fr o,25,27
-//fr p,31,70
+//fr p,19,100

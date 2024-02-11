@@ -29,9 +29,10 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       controls,ph,raycaster,sceneh={},
       xrUtil=XrUtil,lsKey='editXr_0',sels=[],
       grid={},gridw=0.01,cursor0,cursor1,
-      points=[],nearestPoint,
+      points=[],faces=[],
+      nearestPoint,
       matPoint0,matPoint1,matPointSel,
-      pointPlane;
+      pointPlane,mesh;
       
   init();
   animate();
@@ -92,7 +93,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     }
     },
     
-     {s:'New point',x:0.05,y:0.55,w:0.4,h:0.1,ondown:function() {
+    {s:'New point',x:0.05,y:0.55,w:0.4,h:0.1,ondown:function() {
       //---
       let x=0,y=0,z=0;
       if (sels.length>0) {
@@ -108,10 +109,18 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     }
      }
     ,{s:'Del point',x:0.05,y:0.7,w:0.4,h:0.1}
-    ,{s:'Plane'    ,x:0.05,y:0.85,w:0.4,h:0.1}
+    ,{s:'Face',x:0.05,y:0.85,w:0.4,h:0.1,ondown:function() {
+      //---
+      if (sels.length!=3) { xrUtil.log('Select 3 points.');return; }
+      faces.push({v0:sels[0],v1:sels[1],v2:sels[2]});
+      xrUtil.log(faces.length+'. face added.');
+      updateMesh();
+      //...
+    }
+    }
     ];
     
-    const version='v.0.253 ';//FOLDORUPDATEVERSION
+    const version='v.0.289 ';//FOLDORUPDATEVERSION
     xrUtil.log('Edit '+version);
     
     //
@@ -141,6 +150,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
         //console.log(a.length);
         if (a.length==1) {
           sels[sels.length-1].position.copy(a[0].point);
+          updateMesh();
         }
         return;
       }
@@ -231,24 +241,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
      
      ,{s:'Json',ms:'import/export',doctrl:'Json data',mcfs:0.07,ta:true,jsonCheck:1,wrap:0,tacols:30,tarows:20
       ,setfunc:load,valuef:serialize}
-     
-     
-     /*
-    ,{s:'SaveView',ms:'later via xr menu',actionf:function() {
-      //---
-      let pt=controls.target,pc=camera.position;
-      let cfg={
-        pt:{x:Conet.f4(pt.x),y:Conet.f4(pt.y),z:Conet.f4(pt.z)},
-        pc:{x:Conet.f4(pc.x),y:Conet.f4(pc.y),z:Conet.f4(pc.z)}
-      };
-      cfg=JSON.stringify(cfg);
-      console.log(cfg);
-      localStorage[lsKey]=cfg;
-      //...
-    }
-     }
-     */
-     
+      
       ]
       ,{listen:1});
     
@@ -287,8 +280,33 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     renderer.setAnimationLoop(render);
   }
   
+  function updateMesh() {
+    //---
+    if (mesh) scene.remove(mesh);
+    
+    let ge=new THREE.BufferGeometry();
+    let a=[];
+    for (let p of points) {
+      p=p.position;a.push(p.x,p.y,p.z);
+    }
+    //onsole.log(a);
+    ge.setAttribute('position',new THREE.BufferAttribute(new Float32Array(a),3));
+    
+    a=[];
+    for (let f of faces) {
+      a.push(points.indexOf(f.v0),points.indexOf(f.v1),points.indexOf(f.v2));
+    }
+    //onsole.log(a);
+    ge.setIndex(a);
+    
+    let m=new THREE.Mesh(ge,matPointSel);
+    scene.add(m);mesh=m;
+    //...
+  }
+  
   function load(v) {
     //---
+    try {
     let h=JSON.parse(v);
     if (h.pt) controls.target.set(h.pt.x,h.pt.y,h.pt.z);
     if (h.pc) camera.position.set(h.pc.x,h.pc.y,h.pc.z);
@@ -300,8 +318,17 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       scene.add(mesh);points.push(mesh);
     }
     
+    if (h.faces) {
+      for (let f of h.faces) {
+        f.v0=points[f.v0];f.v1=points[f.v1];f.v2=points[f.v2];
+        faces.push(f);
+      }
+    }
+    updateMesh();
+    
     sceneh=Conet.hcopy(h,undefined,undefined,{points:1});;
     controls.update();
+    } catch (e) { console.error(e); }
     //onsole.log(v);
     //...
   }
@@ -393,10 +420,19 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     let first=true;
     for (let p of points) {
       p=p.position;
-      s+=(first?' ':',')+JSON.stringify({x:p.x,y:p.y,z:p.z})+'\n';
+      s+=(first?' ':',')+JSON.stringify({x:Conet.f4(p.x),y:Conet.f4(p.y),z:Conet.f4(p.z)})+'\n';
+      first=false;
+    }
+    s+='],\n';
+    
+    s+='"faces":[\n';
+    first=true;
+    for (let f of faces) {
+      s+=(first?' ':',')+JSON.stringify({v0:points.indexOf(f.v0),v1:points.indexOf(f.v1),v2:points.indexOf(f.v2)})+'\n';
       first=false;
     }
     s+=']\n';
+    
     
     s+='}';
     return s;
@@ -426,16 +462,6 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 </html>
 <script>
 //fr o,25
-//fr o,25,12
-//fr o,25,12,46
-//fr o,25,12,49
-//fr o,25,12,75
-//fr o,25,12,80
-//fr o,25,12,83
-//fr o,25,12,85
-//fr o,25,17
 //fr o,25,20
-//fr o,25,22
-//fr o,25,24
-//fr o,25,26
-//fr p,25,305
+//fr o,25,27
+//fr p,31,70

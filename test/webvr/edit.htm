@@ -9,6 +9,9 @@
 <style>body { color:#000;background-color:#aaa;margin:0px;overflow:hidden;font-family:Sans-serif; }</style>
 <script src="/conet.js"></script>
 <script src="/menu.js"></script>
+<script src="/vecmath.js"></script>
+<script src="/canvas/pd5.js"></script>
+<script src="/three/threePd5.js"></script>
 </head>
 <body>
 <script type="importmap">
@@ -30,7 +33,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       xrUtil=XrUtil,lsKey='editXr_0',sels=[],
       grid={},gridw=0.01,cursor0,cursor1,
       points=[],faces=[],
-      nearestPoint,
+      nearestPoint,clock,
       matPoint0,matPoint1,matPointSel,
       pointPlane,mesh;
       
@@ -120,7 +123,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     }
     ];
     
-    const version='v.0.290 ';//FOLDORUPDATEVERSION
+    const version='v.0.302 ';//FOLDORUPDATEVERSION
     xrUtil.log('Edit '+version);
     
     //
@@ -266,6 +269,27 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       mesh.position.set(0.1,1.05,0.05);
       scene.add(mesh);points.push(mesh);
     }
+    
+    clock=new THREE.Clock();
+    
+    window.THREE=THREE;
+    threeEnv.base=scene;
+    threeEnv.scene=scene;
+    threeEnv.path='/shooter/';
+    threeEnv.coBoSp=1;//computeBoundingSphere
+    threeEnv.camera=camera;
+    Conet.download({fn:'/shooter/objs/templar/o5.txt',f:function(v) {
+      //---
+      var o=Pd5.load(v);
+      o.scale=1;
+      Pd5.animStart(o,'stand2');
+      threeAddObj(o,0,0,0,1);
+      //...
+    }
+    });
+    
+    
+    
     //...
   }
   function onWindowResize() {
@@ -336,6 +360,8 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
   let wasSelecting=undefined;
   function render() {
     //---
+    const dt=clock.getDelta()*1000;
+    
     let i0=xrUtil.renderHud();
     
     if (xrUtil.isSession&&!i0) {
@@ -371,6 +397,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     if (pointPlane) pointPlane.quaternion.copy(camera.quaternion);
     
+    threeRender(dt);
     
     renderer.render(scene,camera);
     //...
@@ -464,8 +491,8 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 </body>
 </html>
 <script>
-//fr o,25
-//fr o,25,20
-//fr o,25,23
-//fr o,25,27
-//fr p,19,100
+//fr o,28
+//fr o,28,13
+//fr o,28,13,134
+//fr o,28,23
+//fr p,21,182

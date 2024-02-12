@@ -78,9 +78,10 @@ function threeTexture(ts,o5,tlOnload) {
 }
 function threeCreateMesh(lo,first,px,py,pz,scale,mat) {
   for (var mi=lo.meshes.length-1;mi>=0;mi--) {
-  var m=lo.meshes[mi];
-  var ge=new THREE.Geometry();
-  var ve=lo.verts,ve2=[];
+  let m=lo.meshes[mi];
+  console.log(THREE.REVISION);
+  let useBuff=THREE.REVISION>130,ge=useBuff?new THREE.BufferGeometry():new THREE.Geometry();
+  let ve=lo.verts,ve2=[];
   //for (var h=0;h<ve.length;h++) {
   //  var p=ve[h].p1;
   //  ge.vertices.push(new THREE.Vector3(p.x,-p.y,p.z));
@@ -89,7 +90,8 @@ function threeCreateMesh(lo,first,px,py,pz,scale,mat) {
   if (!first) for (var h=ve.length-1;h>=0;h--) delete ve[h].ive2; 
   first=false;
   
-  var fa=m.fa;
+  let fa=m.fa,verts,indices;
+  if (useBuff) { verts=[];indices=[]; }
   for (var h=0;h<fa.length;h++) {
     var t=fa[h];
     
@@ -99,16 +101,25 @@ function threeCreateMesh(lo,first,px,py,pz,scale,mat) {
     var v1=t.v1;if (v1.nv!==undefined) v1=v1.nv;
     var v2=t.v2;if (v2.nv!==undefined) v2=v2.nv;
   
-    if (v0.ive2===undefined) { var p=v0.p1;ge.vertices.push(new THREE.Vector3(p.x,-p.y,p.z));v0.ive2=ve2.length;ve2.push(v0); }
-    if (v1.ive2===undefined) { var p=v1.p1;ge.vertices.push(new THREE.Vector3(p.x,-p.y,p.z));v1.ive2=ve2.length;ve2.push(v1); }
-    if (v2.ive2===undefined) { var p=v2.p1;ge.vertices.push(new THREE.Vector3(p.x,-p.y,p.z));v2.ive2=ve2.length;ve2.push(v2); }
+    if (v0.ive2===undefined) { var p=v0.p1;if (useBuff) verts.push(p.x,-p.y,p.z); else ge.vertices.push(new THREE.Vector3(p.x,-p.y,p.z));v0.ive2=ve2.length;ve2.push(v0); }
+    if (v1.ive2===undefined) { var p=v1.p1;if (useBuff) verts.push(p.x,-p.y,p.z); else ge.vertices.push(new THREE.Vector3(p.x,-p.y,p.z));v1.ive2=ve2.length;ve2.push(v1); }
+    if (v2.ive2===undefined) { var p=v2.p1;if (useBuff) verts.push(p.x,-p.y,p.z); else ge.vertices.push(new THREE.Vector3(p.x,-p.y,p.z));v2.ive2=ve2.length;ve2.push(v2); }
   
-    var face=new THREE.Face3(v0.ive2,v1.ive2,v2.ive2);
-    //var nl=Math.sqrt(t.nx*t.nx+t.ny*t.ny+t.nz*t.nz);
-    //face.normal.set(t.nx/nl,t.ny/nl,t.nz/nl); 
-    face.normal.set(t.nx,t.ny,t.nz);face.o5t=t;
-    ge.faces.push(face);
-    ge.faceVertexUvs[0].push([new THREE.Vector2(t.v0.u,1-t.v0.v),new THREE.Vector2(t.v1.u,1-t.v1.v),new THREE.Vector2(t.v2.u,1-t.v2.v)]); // uvs
+    if (useBuff) {
+      indices.push(v0.ive2,v1.ive2,v2.ive2);
+    } else {
+      var face=new THREE.Face3(v0.ive2,v1.ive2,v2.ive2);
+      //var nl=Math.sqrt(t.nx*t.nx+t.ny*t.ny+t.nz*t.nz);
+      //face.normal.set(t.nx/nl,t.ny/nl,t.nz/nl); 
+      face.normal.set(t.nx,t.ny,t.nz);face.o5t=t;
+      ge.faces.push(face);
+      ge.faceVertexUvs[0].push([new THREE.Vector2(t.v0.u,1-t.v0.v),new THREE.Vector2(t.v1.u,1-t.v1.v),new THREE.Vector2(t.v2.u,1-t.v2.v)]); // uvs
+    }
+  }
+  if (useBuff) {
+    ge.setIndex(indices);let ba;
+    ge.setAttribute('position',ba=new THREE.BufferAttribute(new Float32Array(verts),3));
+    m.baVerts=ba;
   }
   m.ve2=ve2;
   //console.log(ge.faces[0].vertexTangents[0]);
@@ -597,6 +608,21 @@ function threeRender(dt) {
       if (!mesh1) continue;
       //mesh1.rotation.y=ry;
       //mesh1.rotation.x=rx;
+      let g=mesh1.geometry;
+      let useBuff=g instanceof THREE.BufferGeometry;
+      if (useBuff) {
+        let ve2=m.ve2,a=m.baVerts.array,i=0;//lo.verts;
+        for (let h=0;h<ve2.length;h++) {
+          let v=ve2[h];
+          let p=v.p1;
+          a[i]=p.x;i++;
+          a[i]=-p.y;i++;
+          a[i]=p.z;i++;
+        }
+        //g.setAttribute('position',m.baVerts);//new THREE.BufferAttribute(m.baVerts.array,3));
+        m.baVerts.needsUpdate=true;
+        //continue;
+      } else {
       var mgv=mesh1.geometry.vertices;
       //if (!mgv) continue;
       var ve2=m.ve2;//lo.verts;
@@ -613,8 +639,8 @@ function threeRender(dt) {
         var tf=mesh1.geometry.faces[h],t=tf.o5t;
         tf.normal.set(t.nx,t.ny,t.nz);
       }
-      
-      var g=mesh1.geometry;
+      }
+      //var g=mesh1.geometry;
       g.computeVertexNormals();
       
       //onsole.log(g);
@@ -1042,5 +1068,7 @@ threeEnv.pointLight=function(ps) {
 }
 //---
 //fr o,9,35
+//fr o,10
+//fr o,19
 //fr o,36
-//fr p,8,36
+//fr p,16,156

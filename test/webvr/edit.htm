@@ -69,7 +69,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     const grid=new THREE.GridHelper(4,4,0x555555,0x111111);
     scene.add(grid);
     
-    scene.add(new THREE.HemisphereLight(0x888877,0x777788,3));
+    scene.add(new THREE.HemisphereLight(0x888877,0x777788,1));
     
     const light=new THREE.DirectionalLight(0xffffff,3);
     light.position.set(0,6,0);
@@ -123,7 +123,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     }
     ];
     
-    const version='v.0.302 ';//FOLDORUPDATEVERSION
+    const version='v.0.310 ';//FOLDORUPDATEVERSION
     xrUtil.log('Edit '+version);
     
     //
@@ -284,6 +284,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       o.scale=1;
       Pd5.animStart(o,'stand2');
       threeAddObj(o,0,0,0,1);
+      o.calcVertNorms=1;
       //...
     }
     });
@@ -495,4 +496,4 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,28,13
 //fr o,28,13,134
 //fr o,28,23
-//fr p,21,182
+//fr p,0,183

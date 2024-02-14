@@ -90,23 +90,28 @@ function threeCreateMesh(lo,first,px,py,pz,scale,mat) {
   if (!first) for (var h=ve.length-1;h>=0;h--) delete ve[h].ive2; 
   first=false;
   
-  let fa=m.fa,verts,indices;
-  if (useBuff) { verts=[];indices=[]; }
+  let fa=m.fa,verts,indices,uvs;
+  if (useBuff) { verts=[];indices=[];uvs=[]; }
   for (var h=0;h<fa.length;h++) {
     var t=fa[h];
     
     if (t.p) if (t.p.coll=='c') continue;
   
-    var v0=t.v0;if (v0.nv!==undefined) v0=v0.nv;
-    var v1=t.v1;if (v1.nv!==undefined) v1=v1.nv;
-    var v2=t.v2;if (v2.nv!==undefined) v2=v2.nv;
+    var v0=t.v0;if ((v0.nv!==undefined)&&!useBuff) v0=v0.nv;
+    var v1=t.v1;if ((v1.nv!==undefined)&&!useBuff) v1=v1.nv;
+    var v2=t.v2;if ((v2.nv!==undefined)&&!useBuff) v2=v2.nv;
   
-    if (v0.ive2===undefined) { var p=v0.p1;if (useBuff) verts.push(p.x,-p.y,p.z); else ge.vertices.push(new THREE.Vector3(p.x,-p.y,p.z));v0.ive2=ve2.length;ve2.push(v0); }
-    if (v1.ive2===undefined) { var p=v1.p1;if (useBuff) verts.push(p.x,-p.y,p.z); else ge.vertices.push(new THREE.Vector3(p.x,-p.y,p.z));v1.ive2=ve2.length;ve2.push(v1); }
-    if (v2.ive2===undefined) { var p=v2.p1;if (useBuff) verts.push(p.x,-p.y,p.z); else ge.vertices.push(new THREE.Vector3(p.x,-p.y,p.z));v2.ive2=ve2.length;ve2.push(v2); }
+    if (v0.ive2===undefined) { var p=v0.p1;if (useBuff) { verts.push(p.x,-p.y,p.z);uvs.push(v0.u,1-v0.v); } else ge.vertices.push(new THREE.Vector3(p.x,-p.y,p.z));v0.ive2=ve2.length;ve2.push(v0); }
+    if (v1.ive2===undefined) { var p=v1.p1;if (useBuff) { verts.push(p.x,-p.y,p.z);uvs.push(v1.u,1-v1.v); } else ge.vertices.push(new THREE.Vector3(p.x,-p.y,p.z));v1.ive2=ve2.length;ve2.push(v1); }
+    if (v2.ive2===undefined) { var p=v2.p1;if (useBuff) { verts.push(p.x,-p.y,p.z);uvs.push(v2.u,1-v2.v); } else ge.vertices.push(new THREE.Vector3(p.x,-p.y,p.z));v2.ive2=ve2.length;ve2.push(v2); }
   
     if (useBuff) {
       indices.push(v0.ive2,v1.ive2,v2.ive2);
+      //uvs.push(
+      //  t.v0.u,1-t.v0.v,
+      //  t.v1.u,1-t.v1.v,
+      //  t.v2.u,1-t.v2.v
+      //);
     } else {
       var face=new THREE.Face3(v0.ive2,v1.ive2,v2.ive2);
       //var nl=Math.sqrt(t.nx*t.nx+t.ny*t.ny+t.nz*t.nz);
@@ -120,9 +125,13 @@ function threeCreateMesh(lo,first,px,py,pz,scale,mat) {
     ge.setIndex(indices);let ba;
     ge.setAttribute('position',ba=new THREE.BufferAttribute(new Float32Array(verts),3));
     m.baVerts=ba;
+    ge.setAttribute('normal',ba=new THREE.BufferAttribute(new Float32Array(verts),3));
+    m.baNorms=ba;
+    ge.setAttribute('uv',new THREE.BufferAttribute(new Float32Array(uvs),2));
   }
   m.ve2=ve2;
   //console.log(ge.faces[0].vertexTangents[0]);
+  //if (!useBuff) 
   ge.computeVertexNormals();
   //console.log(ge.faces[0].vertexTangents[0]);
   if (THREE.REVISION<73) ge.computeTangents();
@@ -600,7 +609,8 @@ function threeRender(dt) {
     //console.log('calc obi');
     var calcnorms=true;
     if (!threeEnv.nocalc) calcnorms=Pd5.calc(lo,dt,0,lo.ay||0,lo.scale||1,{x:lo.x||0,y:lo.y||0,z:lo.z||0},0,0,true);
-    if (calcnorms) Pd5.calcNormals(lo,true); //else console.log('calcNormals skipped');
+    if (calcnorms||lo.calcVertNorms) Pd5.calcNormals(lo,!lo.calcVertNorms); //else console.log('calcNormals skipped');
+    //console.log(calcnorms);
   
     for (var mi=lo.meshes.length-1;mi>=0;mi--) {
       var m=lo.meshes[mi];
@@ -611,37 +621,45 @@ function threeRender(dt) {
       let g=mesh1.geometry;
       let useBuff=g instanceof THREE.BufferGeometry;
       if (useBuff) {
-        let ve2=m.ve2,a=m.baVerts.array,i=0;//lo.verts;
+        let ve2=m.ve2,a=m.baVerts.array,na=m.baNorms.array,i=0;//lo.verts;
         for (let h=0;h<ve2.length;h++) {
           let v=ve2[h];
           let p=v.p1;
-          a[i]=p.x;i++;
-          a[i]=-p.y;i++;
-          a[i]=p.z;i++;
+          a[i]=p.x;na[i]=v.nx;i++;
+          a[i]=-p.y;na[i]=v.ny;i++;
+          a[i]=p.z;na[i]=v.nz;i++;
+          if (lo.calcVertNorms) {
+          i-=3;
+          na[i]=v.nx;i++;
+          na[i]=v.ny;i++;
+          na[i]=v.nz;i++;
+          }
         }
         //g.setAttribute('position',m.baVerts);//new THREE.BufferAttribute(m.baVerts.array,3));
         m.baVerts.needsUpdate=true;
+        if (lo.calcVertNorms) m.baNorms.needUpdate=true;
         //continue;
       } else {
-      var mgv=mesh1.geometry.vertices;
-      //if (!mgv) continue;
-      var ve2=m.ve2;//lo.verts;
-      for (var h=0;h<ve2.length;h++) {
-        var v=ve2[h];
-        var p=v.p1;
-        var mp=mgv[h];
-        mp.x=p.x;mp.y=-p.y;mp.z=p.z;
-      }
-      var fa=m.fa;
-      //for (var h=fa.length-1;h>=0;h--) {
-      //  var t=fa[h];
-      for (var h=mesh1.geometry.faces.length-1;h>=0;h--) {
-        var tf=mesh1.geometry.faces[h],t=tf.o5t;
-        tf.normal.set(t.nx,t.ny,t.nz);
-      }
+        var mgv=mesh1.geometry.vertices;
+        //if (!mgv) continue;
+        var ve2=m.ve2;//lo.verts;
+        for (var h=0;h<ve2.length;h++) {
+          var v=ve2[h];
+          var p=v.p1;
+          var mp=mgv[h];
+          mp.x=p.x;mp.y=-p.y;mp.z=p.z;
+        }
+        var fa=m.fa;
+        //for (var h=fa.length-1;h>=0;h--) {
+        //  var t=fa[h];
+        for (var h=mesh1.geometry.faces.length-1;h>=0;h--) {
+          var tf=mesh1.geometry.faces[h],t=tf.o5t;
+          tf.normal.set(t.nx,t.ny,t.nz);
+        }
       }
       //var g=mesh1.geometry;
-      g.computeVertexNormals();
+      //if (!useBuff) 
+      if (!lo.calcVertNorms) g.computeVertexNormals();
       
       //onsole.log(g);
       //for (var f of g.faces) {
@@ -650,9 +668,10 @@ function threeRender(dt) {
       //  //v.normal.set(0,1,0);
       //}
       if (lo.renderNV) lo.renderNV(mi); //---used in voxed.js
-      
-      g.verticesNeedUpdate = true;
-      g.normalsNeedUpdate = true;
+      if (!useBuff) {
+        g.verticesNeedUpdate=true;
+        g.normalsNeedUpdate=true;
+      }
       //g.computeBoundingBox();
       if (lo.cm||threeEnv.coBoSp) 
         g.computeBoundingSphere();//else shadows are wrong for phys objs
@@ -1071,4 +1090,4 @@ threeEnv.pointLight=function(ps) {
 //fr o,10
 //fr o,19
 //fr o,36
-//fr p,16,156
+//fr p,5,207

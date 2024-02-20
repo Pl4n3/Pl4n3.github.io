@@ -79,7 +79,7 @@ function threeTexture(ts,o5,tlOnload) {
 function threeCreateMesh(lo,first,px,py,pz,scale,mat) {
   for (var mi=lo.meshes.length-1;mi>=0;mi--) {
   let m=lo.meshes[mi];
-  console.log(THREE.REVISION);
+  //onsole.log(THREE.REVISION);
   let useBuff=THREE.REVISION>130,ge=useBuff?new THREE.BufferGeometry():new THREE.Geometry();
   let ve=lo.verts,ve2=[];
   //for (var h=0;h<ve.length;h++) {
@@ -1090,4 +1090,4 @@ threeEnv.pointLight=function(ps) {
 //fr o,10
 //fr o,19
 //fr o,36
-//fr p,5,207
+//fr p,2,13

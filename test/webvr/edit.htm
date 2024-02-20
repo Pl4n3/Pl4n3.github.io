@@ -55,25 +55,33 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     controls=new OrbitControls(camera,container);
     controls.target.set(0,1.6,0);
     
-    /*
-    let ls=localStorage[lsKey];
-    if (ls) {
-      ls=JSON.parse(ls);
-      if (ls.pt) controls.target.set(ls.pt.x,ls.pt.y,ls.pt.z);
-      if (ls.pc) camera.position.set(ls.pc.x,ls.pc.y,ls.pc.z); 
-    }
-    */
     
     controls.update();
     
     const grid=new THREE.GridHelper(4,4,0x555555,0x111111);
     scene.add(grid);
     
+    /*
     scene.add(new THREE.HemisphereLight(0x888877,0x777788,1));
-    
     const light=new THREE.DirectionalLight(0xffffff,3);
     light.position.set(0,6,0);
     scene.add(light);
+    */
+    
+    {
+    let c=scene,l=new THREE.AmbientLight(0x555555),f=0.6;c.add(l);//555555
+    //l=new THREE.PointLight(0xffffff,1,0);l.position.set(-1*f,2*f,1*f);scene.add(l);
+    l=new THREE.PointLight(0xffffff,5);l.position.set(-0.5*f,3*f,1*f);
+    l.castShadow=true;
+    l.shadow.camera.near=0.1;
+    l.shadow.camera.far=100;
+    l.shadow.mapSize.width=1024;//2048;
+    l.shadow.mapSize.height=1024;
+    c.add(l);
+    l=new THREE.PointLight(0xaaffff,0.9);l.position.set(1*f,-2*f,-1*f);c.add(l);
+    }
+    
+    
     
     //
     
@@ -81,6 +89,15 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize( window.innerWidth,window.innerHeight );
     renderer.xr.enabled=true;
+    //renderer.outputEncoding=THREE.LinearEncoding;
+    //renderer.outputEncoding=THREE.sRGBEncoding;
+    
+    //renderer.outputColorSpace=THREE.LinearSRGBColorSpace;
+    //THREE.NoColorSpace = ""
+    //THREE.SRGBColorSpace = "srgb"
+    //THREE.LinearSRGBColorSpace = "srgb-linear"
+    
+    
     container.appendChild(renderer.domElement);
     
     xrUtil.init({scene:scene,renderer:renderer,camera:camera,room:scene,sculpt:1//,vrPos:vrPos
@@ -123,7 +140,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     }
     ];
     
-    const version='v.0.310 ';//FOLDORUPDATEVERSION
+    const version='v.0.345 ';//FOLDORUPDATEVERSION
     xrUtil.log('Edit '+version);
     
     //
@@ -494,6 +511,6 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 <script>
 //fr o,28
 //fr o,28,13
-//fr o,28,13,134
+//fr o,28,13,151
 //fr o,28,23
-//fr p,0,183
+//fr p,0,200

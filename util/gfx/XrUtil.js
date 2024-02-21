@@ -5,7 +5,7 @@ import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFa
 let XrUtil={};
 (function(pself) {
   //---
-  let version='v.1.212 ',//FOLDORUPDATEVERSION
+  let version='v.1.214 ',//FOLDORUPDATEVERSION
       self=pself,ctrl0,ctrl1,gp0,gp1,camera,scene,room,vrPos,huds=[],hudMesh,
       hud={lines:['XrUtil '+version],cursor:{x:0.5,y:0.5,vis:false},buttons:[]},
       raycaster,INTERSECTED,hudCount=0,needDrawUi=false;
@@ -111,10 +111,11 @@ let XrUtil={};
     ctrl0.addEventListener('selectend',onSelectEnd);
     
     
-    if (!ps.sculpt) {
+    //if (!ps.sculpt) 
+    {
     ctrl0.addEventListener('connected',function (e) {
       //---
-      this.add(buildController(e.data));
+      if (!ps.sculpt) this.add(buildController(e.data));
       //console.log(e.data.gamepad);
       gp0=e.data.gamepad;self.gp0=gp0;
       //...
@@ -122,7 +123,7 @@ let XrUtil={};
     );
     ctrl0.addEventListener('disconnected',function () {
       //---
-      this.remove( this.children[0]);
+      if (!ps.sculpt) this.remove( this.children[0]);
       //...
     }
     );
@@ -144,7 +145,7 @@ let XrUtil={};
       if (!ps.sculpt) this.add(buildController(e.data));
       gp1=e.data.gamepad;self.gp1=gp1;
       //onsole.log(XrU til.gp1);
-      console.log('ctrl1 connected');
+      //onsole.log('ctrl1 connected');
       //...
     }
     );
@@ -373,14 +374,19 @@ let XrUtil={};
 )(XrUtil);
 export { XrUtil };
 //fr o,5
+//fr o,5,8
+//fr o,5,9
+//fr o,5,10
 //fr o,5,10,10
-//fr o,5,10,57
-//fr o,5,10,80
+//fr o,5,10,41
+//fr o,5,10,43
+//fr o,5,10,58
 //fr o,5,10,81
-//fr o,5,10,83
-//fr o,5,10,89
+//fr o,5,10,82
+//fr o,5,10,84
+//fr o,5,10,90
 //fr o,5,12
 //fr o,5,14
 //fr o,5,19
 //fr o,5,21
-//fr p,10,152
+//fr p,2,143

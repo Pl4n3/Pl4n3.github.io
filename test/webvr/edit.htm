@@ -140,7 +140,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     }
     ];
     
-    const version='v.0.345 ';//FOLDORUPDATEVERSION
+    const version='v.0.375 ';//FOLDORUPDATEVERSION
     xrUtil.log('Edit '+version);
     
     //
@@ -205,7 +205,8 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
           if (!pp) {
             const m=new THREE.Mesh(
               new THREE.PlaneGeometry(0.75,0.75),
-              new THREE.MeshBasicMaterial({color:new THREE.Color(100,100,100),opacity:0.05,transparent:true
+              new THREE.MeshBasicMaterial({color:new THREE.Color(100,100,100),opacity:0.05,
+                transparent:true,depthTest:false,depthWrite:false
                 //,side:THREE.DoubleSide
               }));
             scene.add(m);
@@ -268,6 +269,14 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     //pointMaterial=new THREE.MeshPhongMaterial({color:0x77dd77,flatShading:true,transparent:true,opacity:0.7});
     
+    window.THREE=THREE;
+    threeEnv.base=scene;
+    threeEnv.scene=scene;
+    threeEnv.path='/shooter/';
+    threeEnv.coBoSp=1;//computeBoundingSphere
+    threeEnv.camera=camera;
+    
+    
     ph=new THREE.Vector3();
     
     let ls=localStorage[lsKey];
@@ -289,18 +298,15 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     clock=new THREE.Clock();
     
-    window.THREE=THREE;
-    threeEnv.base=scene;
-    threeEnv.scene=scene;
-    threeEnv.path='/shooter/';
-    threeEnv.coBoSp=1;//computeBoundingSphere
-    threeEnv.camera=camera;
-    Conet.download({fn:'/shooter/objs/templar/o5.txt',f:function(v) {
+    
+    if (0)
+    Conet.download({fn:'/shooter/objs/templar/o5.txt',base:points[3],f:function(v) {
       //---
       var o=Pd5.load(v);
       o.scale=1;
       Pd5.animStart(o,'stand2');
-      threeAddObj(o,0,0,0,1);
+      threeEnv.base=this.base;
+      threeAddObj(o,0,0,0,0.5);
       o.calcVertNorms=1;
       //...
     }
@@ -347,7 +353,11 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
   }
   
   function load(v) {
-    //---
+    //---reset
+    for (let p of points) scene.remove(p);
+    points.length=0;
+    
+    //---load
     try {
     let h=JSON.parse(v);
     if (h.pt) controls.target.set(h.pt.x,h.pt.y,h.pt.z);
@@ -358,6 +368,19 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       let mesh=new THREE.Mesh(g,matPoint0);
       mesh.position.set(p.x,p.y,p.z);
       scene.add(mesh);points.push(mesh);
+      mesh.userData.op=p;
+      if (p.pd5) 
+    Conet.download({fn:p.pd5.fn,base:mesh,f:function(v) {
+      //---
+      var o=Pd5.load(v);
+      o.scale=1;
+      Pd5.animStart(o,'stand2');
+      threeEnv.base=this.base;
+      threeAddObj(o,0,0,0,0.5);
+      o.calcVertNorms=1;
+      //...
+    }
+    });
     }
     
     if (h.faces) {
@@ -409,6 +432,24 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       if ((!np)&&ctrl1.userData.isSelecting) {
         if (sels.length>0) select(undefined);
       }
+      
+      let gp1=xrUtil.gp1,gp0=xrUtil.gp0,md=0.1;
+      //if (gp1&&gp0) {
+      let dx=gp0.axes[2],dy=gp0.axes[3],dz=gp1.axes[3];
+      dx=Math.max(0,Math.abs(dx)-md)/(1-md)*((dx<0)?-1:1);
+      dy=Math.max(0,Math.abs(dy)-md)/(1-md)*((dy<0)?-1:1);
+      dz=Math.max(0,Math.abs(dz)-md)/(1-md)*((dz<0)?-1:1);
+      if ((dx!=0)||(dy!=0)||(dz!=0)) {
+        //onsole.log(dx+' '+dy+' '+dz);
+        let f=0.001;
+        for (let p of points) {
+          p=p.position;
+          p.x+=dx*dt*f;
+          p.y+=dy*dt*f;
+          p.z+=dz*dt*f;
+        }
+      }
+      //}
     }
     
     //xrUtil.renderHud();
@@ -467,8 +508,12 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     s+='"points":[\n';
     let first=true;
     for (let p of points) {
+      let op=p.userData.op||{};
       p=p.position;
-      s+=(first?' ':',')+JSON.stringify({x:Conet.f4(p.x),y:Conet.f4(p.y),z:Conet.f4(p.z)})+'\n';
+      op.x=Conet.f4(p.x);
+      op.y=Conet.f4(p.y);
+      op.z=Conet.f4(p.z);
+      s+=(first?' ':',')+JSON.stringify(op)+'\n';
       first=false;
     }
     s+='],\n';
@@ -511,6 +556,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 <script>
 //fr o,28
 //fr o,28,13
-//fr o,28,13,151
+//fr o,28,13,101
 //fr o,28,23
-//fr p,0,200
+//fr o,28,27
+//fr p,6,260

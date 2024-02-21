@@ -140,7 +140,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     }
     ];
     
-    const version='v.0.376 ';//FOLDORUPDATEVERSION
+    const version='v.0.382 ';//FOLDORUPDATEVERSION
     xrUtil.log('Edit '+version);
     
     //
@@ -370,13 +370,15 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       scene.add(mesh);points.push(mesh);
       mesh.userData.op=p;
       if (p.pd5) 
-    Conet.download({fn:p.pd5.fn,base:mesh,f:function(v) {
+    Conet.download({fn:p.pd5.fn,ps:p.pd5,base:mesh,f:function(v) {
       //---
       var o=Pd5.load(v);
       o.scale=1;
       Pd5.animStart(o,'stand2');
       threeEnv.base=this.base;
       threeAddObj(o,0,0,0,0.5);
+      let ps=this.ps;
+      if (ps.ay) o.ay=ps.ay;
       o.calcVertNorms=1;
       //...
     }
@@ -441,13 +443,14 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
         dz=Math.max(0,Math.abs(dz)-md)/(1-md)*((dz<0)?-1:1);
         if ((dx!=0)||(dy!=0)||(dz!=0)) {
           //onsole.log(dx+' '+dy+' '+dz);
-          let f=0.001;
+          let f=Math.min(0.05,0.001*dt);
           for (let p of points) {
             p=p.position;
-            p.x+=dx*dt*f;
-            p.y+=dy*dt*f;
-            p.z+=dz*dt*f;
+            p.x+=dx*f;
+            p.y+=dy*f;
+            p.z+=dz*f;
           }
+          updateMesh();
         }
       }
     }
@@ -556,7 +559,11 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 <script>
 //fr o,28
 //fr o,28,13
+//fr o,28,13,93
+//fr o,28,13,98
 //fr o,28,13,101
+//fr o,28,20
+//fr o,28,20,17
 //fr o,28,23
 //fr o,28,27
-//fr p,2,269
+//fr p,21,421

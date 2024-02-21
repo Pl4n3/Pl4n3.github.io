@@ -58,8 +58,8 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     controls.update();
     
-    const grid=new THREE.GridHelper(4,4,0x555555,0x111111);
-    scene.add(grid);
+    //const grid=new THREE.GridHelper(4,4,0x555555,0x111111);
+    //scene.add(grid);
     
     /*
     scene.add(new THREE.HemisphereLight(0x888877,0x777788,1));
@@ -71,10 +71,10 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     {
     let c=scene,l=new THREE.AmbientLight(0x555555),f=0.6;c.add(l);//555555
     //l=new THREE.PointLight(0xffffff,1,0);l.position.set(-1*f,2*f,1*f);scene.add(l);
-    l=new THREE.PointLight(0xffffff,5);l.position.set(-0.5*f,3*f,1*f);
+    l=new THREE.PointLight(0xffffff,5,0);l.position.set(-0.5*f,3*f,1*f);
     l.castShadow=true;
     l.shadow.camera.near=0.1;
-    l.shadow.camera.far=100;
+    l.shadow.camera.far=1000;
     l.shadow.mapSize.width=1024;//2048;
     l.shadow.mapSize.height=1024;
     c.add(l);
@@ -140,7 +140,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     }
     ];
     
-    const version='v.0.386 ';//FOLDORUPDATEVERSION
+    const version='v.0.394 ';//FOLDORUPDATEVERSION
     xrUtil.log('Edit '+version);
     
     //
@@ -569,4 +569,4 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,28,20,17
 //fr o,28,23
 //fr o,28,27
-//fr p,8,377
+//fr p,29,78

@@ -140,7 +140,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     }
     ];
     
-    const version='v.0.382 ';//FOLDORUPDATEVERSION
+    const version='v.0.385 ';//FOLDORUPDATEVERSION
     xrUtil.log('Edit '+version);
     
     //
@@ -442,7 +442,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
         dy=Math.max(0,Math.abs(dy)-md)/(1-md)*((dy<0)?-1:1);
         dz=Math.max(0,Math.abs(dz)-md)/(1-md)*((dz<0)?-1:1);
         if ((dx!=0)||(dy!=0)||(dz!=0)) {
-          //onsole.log(dx+' '+dy+' '+dz);
+          xrUtil.log(dx+' '+dy+' '+dz+' dt '+dt);
           let f=Math.min(0.05,0.001*dt);
           for (let p of points) {
             p=p.position;
@@ -566,4 +566,4 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,28,20,17
 //fr o,28,23
 //fr o,28,27
-//fr p,21,421
+//fr p,39,374

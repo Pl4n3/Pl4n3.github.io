@@ -32,10 +32,10 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       controls,ph,raycaster,sceneh={},
       xrUtil=XrUtil,lsKey='editXr_0',sels=[],
       grid={},gridw=0.01,cursor0,cursor1,
-      points=[],faces=[],
+      points=[],faces=[],lines=[],
       nearestPoint,clock,
       matPoint0,matPoint1,matPointSel,
-      pointPlane,mesh;
+      pointPlane,mesh,line;
       
   init();
   animate();
@@ -113,7 +113,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     }
     },
     
-    {s:'New point',x:0.05,y:0.55,w:0.4,h:0.1,ondown:function() {
+    {s:'New point',x:0.05,y:0.4,w:0.4,h:0.1,ondown:function() {
       //---
       let x=0,y=0,z=0;
       if (sels.length>0) {
@@ -128,8 +128,19 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       //...
     }
      }
-    ,{s:'Del point',x:0.05,y:0.7,w:0.4,h:0.1}
-    ,{s:'Face',x:0.05,y:0.85,w:0.4,h:0.1,ondown:function() {
+    ,{s:'Del points',x:0.05,y:0.55,w:0.4,h:0.1,ondown:function() {
+      //---
+      for (let p of sels) {
+        let i=points.indexOf(p);
+        points.splice(i,1);
+        scene.remove(p);
+      }
+      xrUtil.log(sels.length+' points deleted.');
+      sels.length=0;
+      //...
+    }
+    }
+    ,{s:'Face',x:0.05,y:0.7,w:0.4,h:0.1,ondown:function() {
       //---
       if (sels.length!=3) { xrUtil.log('Select 3 points.');return; }
       faces.push({v0:sels[0],v1:sels[1],v2:sels[2]});
@@ -138,9 +149,31 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       //...
     }
     }
+    ,{s:'Line',x:0.05,y:0.85,w:0.4,h:0.1,ondown:function() {
+      //---
+      if (sels.length!=2) { xrUtil.log('Select 2 points.');return; }
+      let v0=sels[0],v1=sels[1],del=false;
+      //for (let l of lines) {
+      for (let i=lines.length-1;i>=0;i--) {
+        let l=lines[i];
+        if (((l.v0===v0)&&(l.v1===v1))||((l.v0===v1)&&(l.v1===v0))) {
+          lines.splice(i,1);
+          xrUtil.log('Line removed, now '+lines.length+'.');
+          del=true;
+          break;
+        }
+      }
+      if (!del) {
+        lines.push({v0:v0,v1:v1});
+        xrUtil.log(lines.length+'. line added.');
+      }
+      updateMesh();
+      //...
+    }
+    }
     ];
     
-    const version='v.0.397 ';//FOLDORUPDATEVERSION
+    const version='v.0.418 ';//FOLDORUPDATEVERSION
     xrUtil.log('Edit '+version);
     
     //
@@ -349,6 +382,15 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     let m=new THREE.Mesh(ge,matPointSel);
     scene.add(m);mesh=m;
+    
+    //---
+    if (line) scene.remove(line);
+    a=[];
+    for (let l of lines) a.push(l.v0.position,l.v1.position);
+    const geometry=new THREE.BufferGeometry().setFromPoints(a);
+    const material=new THREE.LineBasicMaterial({color:0xdddddd});
+    line=new THREE.LineSegments(geometry,material);
+    scene.add(line);
     //...
   }
   
@@ -356,6 +398,8 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     //---reset
     for (let p of points) scene.remove(p);
     points.length=0;
+    faces.length=0;
+    lines.length=0;
     
     //---load
     try {
@@ -391,6 +435,14 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
         faces.push(f);
       }
     }
+    
+    if (h.lines) {
+      for (let l of h.lines) {
+        let v0=points[l.v0],v1=points[l.v1];
+        lines.push({v0:v0,v1:v1,ol:l});
+      }
+    }
+    
     updateMesh();
     
     sceneh=Conet.hcopy(h,undefined,undefined,{points:1});;
@@ -528,7 +580,20 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     s+='"faces":[\n';
     first=true;
     for (let f of faces) {
-      s+=(first?' ':',')+JSON.stringify({v0:points.indexOf(f.v0),v1:points.indexOf(f.v1),v2:points.indexOf(f.v2)})+'\n';
+      let v0=points.indexOf(f.v0),v1=points.indexOf(f.v1),v2=points.indexOf(f.v2);
+      if ((v0==-1)||(v1==-1)||(v2==-1)) continue;
+      s+=(first?' ':',')+JSON.stringify({v0:v0,v1:v1,v2:v2})+'\n';
+      first=false;
+    }
+    s+='],\n';
+    
+    s+='"lines":[\n';
+    first=true;
+    for (let l of lines) {
+      let v0=points.indexOf(l.v0),v1=points.indexOf(l.v1);
+      if ((v0==-1)||(v1==-1)) continue;
+      l=l.ol;l.v0=v0;l.v1=v1;
+      s+=(first?' ':',')+JSON.stringify(l)+'\n';
       first=false;
     }
     s+=']\n';
@@ -563,10 +628,13 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 <script>
 //fr o,28
 //fr o,28,13
-//fr o,28,13,98
+//fr o,28,13,66
+//fr o,28,13,68
+//fr o,28,13,72
 //fr o,28,13,101
+//fr o,28,13,104
+//fr o,28,18
 //fr o,28,20
-//fr o,28,20,17
 //fr o,28,23
 //fr o,28,27
-//fr p,0,61
+//fr p,50,147

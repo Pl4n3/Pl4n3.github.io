@@ -164,7 +164,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
         }
       }
       if (!del) {
-        lines.push({v0:v0,v1:v1});
+        lines.push({v0:v0,v1:v1,ol:{l:Conet.f4(v0.position.distanceTo(v1.position))}});
         xrUtil.log(lines.length+'. line added.');
       }
       updateMesh();
@@ -173,7 +173,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     }
     ];
     
-    const version='v.0.418 ';//FOLDORUPDATEVERSION
+    const version='v.0.420 ';//FOLDORUPDATEVERSION
     xrUtil.log('Edit '+version);
     
     //
@@ -637,4 +637,4 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,28,20
 //fr o,28,23
 //fr o,28,27
-//fr p,50,147
+//fr p,75,153

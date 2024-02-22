@@ -173,7 +173,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     }
     ];
     
-    const version='v.0.420 ';//FOLDORUPDATEVERSION
+    const version='v.0.433 ';//FOLDORUPDATEVERSION
     xrUtil.log('Edit '+version);
     
     //
@@ -515,6 +515,33 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     if (pointPlane) pointPlane.quaternion.copy(camera.quaternion);
     
+    //---lines
+    if (lines.length>0) {
+      for (let p of points) { p=p.userData;p.dx=0;p.dy=0;p.dz=0; }
+      for (let line of lines) {
+        if (line.ol.l===undefined) continue;
+        let v0=line.v0,v1=line.v1,p0=v0.position,p1=v1.position;
+        let dx=p1.x-p0.x,dy=p1.y-p0.y,dz=p1.z-p0.z,l=Math.max(0.01,Math.sqrt(dx*dx+dy*dy+dz*dz));
+        dx/=l;dy/=l;dz/=l;
+        let dl=(line.ol.l-l)/2;
+        v0=v0.userData;v1=v1.userData;
+        v1.dx+=dx*dl;v1.dy+=dy*dl;v1.dz+=dz*dl;
+        v0.dx-=dx*dl;v0.dy-=dy*dl;v0.dz-=dz*dl;
+      }
+      for (let p of points) {
+        let u=p.userData;p=p.position;
+        var d=u.dx*u.dx+u.dy*u.dy+u.dz*u.dz;
+        var md=100;
+        if (d>md) { 
+          d=Math.sqrt(d);md=Math.sqrt(md);
+          u.dx*=md/d;u.dy*=md/d;u.dz*=md/d;
+        }
+        p.x+=u.dx;
+        p.y+=u.dy;
+        p.z+=u.dz;
+      }  
+    }
+    
     threeRender(dt);
     
     renderer.render(scene,camera);
@@ -637,4 +664,4 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,28,20
 //fr o,28,23
 //fr o,28,27
-//fr p,75,153
+//fr p,22,415

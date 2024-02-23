@@ -173,14 +173,14 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     }
     ];
     
-    const version='v.0.433 ';//FOLDORUPDATEVERSION
+    const version='v.0.441 ';//FOLDORUPDATEVERSION
     xrUtil.log('Edit '+version);
     
     //
     
     matPoint0  =new THREE.MeshPhongMaterial({flatShading:true,color:0x66aa66,transparent:true,opacity:0.7});
-    matPoint1  =new THREE.MeshPhongMaterial({flatShading:true,color:0xaaaa66,transparent:true,opacity:0.7});
-    matPointSel=new THREE.MeshPhongMaterial({flatShading:true,color:0xdddddd,transparent:true,opacity:0.7});
+    matPoint1  =new THREE.MeshPhongMaterial({flatShading:true,color:0xaaaa66,transparent:true,opacity:0.8});
+    matPointSel=new THREE.MeshPhongMaterial({flatShading:true,color:0xdddddd,transparent:true,opacity:0.9});
     let cmat=new THREE.MeshPhongMaterial({flatShading:true,color:0xaaaaaa,transparent:true,opacity:0.7});
     
     {let mesh=new THREE.Mesh(new THREE.BoxGeometry(0.01,0.01,0.01),cmat);
@@ -521,9 +521,9 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       for (let line of lines) {
         if (line.ol.l===undefined) continue;
         let v0=line.v0,v1=line.v1,p0=v0.position,p1=v1.position;
-        let dx=p1.x-p0.x,dy=p1.y-p0.y,dz=p1.z-p0.z,l=Math.max(0.01,Math.sqrt(dx*dx+dy*dy+dz*dz));
+        let dx=p1.x-p0.x,dy=p1.y-p0.y,dz=p1.z-p0.z,l=Math.max(0.000001,Math.sqrt(dx*dx+dy*dy+dz*dz));
         dx/=l;dy/=l;dz/=l;
-        let dl=(line.ol.l-l)/2;
+        let dl=(line.ol.l-l)/4;
         v0=v0.userData;v1=v1.userData;
         v1.dx+=dx*dl;v1.dy+=dy*dl;v1.dz+=dz*dl;
         v0.dx-=dx*dl;v0.dy-=dy*dl;v0.dz-=dz*dl;
@@ -561,9 +561,9 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     } else {
       let i=sels.indexOf(p);
       if (i!=-1) {
-        sels.splice(i,1);
-        p.userData.selected=0;
-        p.material=matPoint0;
+        //sels.splice(i,1);
+        //p.userData.selected=0;
+        //p.material=matPoint0;
       } else {
         sels.push(p);
         p.material=matPointSel;
@@ -654,14 +654,13 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 </html>
 <script>
 //fr o,28
-//fr o,28,13
 //fr o,28,13,66
 //fr o,28,13,68
 //fr o,28,13,72
+//fr o,28,13,96
 //fr o,28,13,101
 //fr o,28,13,104
-//fr o,28,18
-//fr o,28,20
 //fr o,28,23
+//fr o,28,25
 //fr o,28,27
-//fr p,22,415
+//fr p,26,122

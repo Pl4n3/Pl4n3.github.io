@@ -5,7 +5,7 @@ import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFa
 let XrUtil={};
 (function(pself) {
   //---
-  let version='v.1.214 ',//FOLDORUPDATEVERSION
+  let version='v.1.224 ',//FOLDORUPDATEVERSION
       self=pself,ctrl0,ctrl1,gp0,gp1,camera,scene,room,vrPos,huds=[],hudMesh,
       hud={lines:['XrUtil '+version],cursor:{x:0.5,y:0.5,vis:false},buttons:[]},
       raycaster,INTERSECTED,hudCount=0,needDrawUi=false;
@@ -234,6 +234,7 @@ let XrUtil={};
     //ct.fillStyle='white';ct.fillText((cur.vis?1:0)+' '+Conet.f4(curx)+' '+Conet.f4(cury),12,40);
     ct.textAlign='center';
     ct.textBaseline='middle';
+    let newMenu;
     for (let b of hud.buttons) {
       const bx=b.x*w,by=b.y*h,bw=b.w*w,bh=b.h*h;
       if (b.pressed&&(!cur.down||!cur.vis)) b.pressed=false;
@@ -241,7 +242,14 @@ let XrUtil={};
         if ((curx>=bx)&&(cury>=by)&&(curx<=bx+bw)&&(cury<=by+bh)) {
           if (cur.down&&!b.pressed) {
             b.pressed=true;
-            b.ondown();
+            if (b.subUp) {
+              newMenu=hud.menu0;
+            } else if (b.sub) {
+              if (!hud.menu0) hud.menu0=hud.buttons;//alternatively maintain hud.menuStack[]
+              newMenu=b.sub;
+              newMenu[0].subUp=true;
+            }  else if (b.ondown) b.ondown();
+            else console.log(b);
           }
           ct.fillStyle=b.pressed?'rgba(150,150,50,0.5)':'rgba(100,100,100,0.5)';
           ct.fillRect(bx,by,bw,bh);
@@ -271,7 +279,12 @@ let XrUtil={};
       ct.strokeRect(curx-5,cury-5,10,10);
     }
     hud.t.needsUpdate=true;
-    needDrawUi=false;
+    
+    if (newMenu) {
+      for (let b of newMenu) b.pressed=true;
+      hud.buttons=newMenu;
+    }
+    needDrawUi=newMenu;
     //...
   }
   
@@ -376,7 +389,6 @@ export { XrUtil };
 //fr o,5
 //fr o,5,8
 //fr o,5,9
-//fr o,5,10
 //fr o,5,10,10
 //fr o,5,10,41
 //fr o,5,10,43
@@ -389,4 +401,4 @@ export { XrUtil };
 //fr o,5,14
 //fr o,5,19
 //fr o,5,21
-//fr p,2,143
+//fr p,73,89

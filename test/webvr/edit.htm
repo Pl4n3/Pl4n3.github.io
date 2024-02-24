@@ -113,7 +113,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     }
     },
     
-    {s:'New point',x:0.05,y:0.4,w:0.4,h:0.1,ondown:function() {
+    {s:'Point',x:0.05,y:0.4,w:0.25,h:0.1,ondown:function() {
       //---
       let x=0,y=0,z=0;
       if (sels.length>0) {
@@ -128,6 +128,28 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       //...
     }
      }
+     
+     ,{s:'\u25bc',x:0.35,y:0.4,w:0.1,h:0.1,sub:[
+       {s:'Point \u25b2',x:0.05,y:0.4,w:0.4,h:0.1},
+       {s:'Pd5',x:0.05,y:0.55,w:0.4,h:0.1,ondown:function() {
+      //---
+      if (sels.length!=1) { xrUtil.log('Select 1 point.');return; }
+      let p=sels[0],op=p.userData.op;
+      if (op.pd5) {
+        delete(op.pd5);
+        scene.remove(p.children[0]);
+        threeRemoveObj(p.userData.o5);
+      } else {
+        op.pd5={fn:'/shooter/objs/templar/o5.txt'};
+        pointPd5(p);
+      }
+      //alert(23);
+      //...
+    }
+       },
+       {s:'Light',x:0.05,y:0.7,w:0.4,h:0.1}
+     ]}
+     
     ,{s:'Del points',x:0.05,y:0.55,w:0.4,h:0.1,ondown:function() {
       //---
       for (let p of sels) {
@@ -173,7 +195,9 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     }
     ];
     
-    const version='v.0.441 ';//FOLDORUPDATEVERSION
+    //\u25b2 \u25bc
+    
+    const version='v.0.468 ';//FOLDORUPDATEVERSION
     xrUtil.log('Edit '+version);
     
     //
@@ -227,6 +251,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
         }
       }
       
+      controls.enabled=!hudo;
       xrUtil.hudIntersects(hudo,mode==1);
       if (hudo) return;
       
@@ -394,6 +419,29 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     //...
   }
   
+  function pointPd5(mesh) {
+    //---
+    let p=mesh.userData.op;
+    if (p.pd5) 
+    Conet.download({fn:p.pd5.fn,ps:p.pd5,base:mesh,f:function(v) {
+      //---
+      var o=Pd5.load(v);
+      o.scale=1;
+      Pd5.animStart(o,'stand2');
+      threeEnv.base=this.base;
+      threeAddObj(o,0,0,0,0.5);
+      let ps=this.ps;
+      if (ps.ay) o.ay=ps.ay;
+      o.calcVertNorms=1;
+      mesh.userData.o5=o;
+      //onsole.log(p);
+      //...
+    }
+    });
+    //console.log(p);
+    //...
+  }
+  
   function load(v) {
     //---reset
     for (let p of points) scene.remove(p);
@@ -413,6 +461,9 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       mesh.position.set(p.x,p.y,p.z);
       scene.add(mesh);points.push(mesh);
       mesh.userData.op=p;
+      pointPd5(mesh);
+    
+    /*  
       if (p.pd5) 
     Conet.download({fn:p.pd5.fn,ps:p.pd5,base:mesh,f:function(v) {
       //---
@@ -427,6 +478,8 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       //...
     }
     });
+    */
+    
     }
     
     if (h.faces) {
@@ -445,7 +498,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     updateMesh();
     
-    sceneh=Conet.hcopy(h,undefined,undefined,{points:1});;
+    sceneh=Conet.hcopy(h,undefined,undefined,{points:1,faces:1,lines:1});;
     controls.update();
     } catch (e) { console.error(e); }
     //onsole.log(v);
@@ -654,13 +707,17 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 </html>
 <script>
 //fr o,28
+//fr o,28,13
 //fr o,28,13,66
-//fr o,28,13,68
-//fr o,28,13,72
-//fr o,28,13,96
-//fr o,28,13,101
-//fr o,28,13,104
-//fr o,28,23
-//fr o,28,25
+//fr o,28,13,71
+//fr o,28,13,76
+//fr o,28,13,80
+//fr o,28,13,106
+//fr o,28,13,111
+//fr o,28,13,114
+//fr o,28,20
+//fr o,28,20,3
+//fr o,28,22
 //fr o,28,27
-//fr p,26,122
+//fr o,28,29
+//fr p,30,134

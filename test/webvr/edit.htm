@@ -71,6 +71,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     {
     let c=scene,l=new THREE.AmbientLight(0x555555),f=0.6;c.add(l);//555555
     //l=new THREE.PointLight(0xffffff,1,0);l.position.set(-1*f,2*f,1*f);scene.add(l);
+    if (0) {
     l=new THREE.PointLight(0xffffff,5,0);l.position.set(-0.5*f,3*f,1*f);
     l.castShadow=true;
     l.shadow.camera.near=0.1;
@@ -78,6 +79,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     l.shadow.mapSize.width=1024;//2048;
     l.shadow.mapSize.height=1024;
     c.add(l);
+    }
     l=new THREE.PointLight(0xaaffff,0.9);l.position.set(1*f,-2*f,-1*f);c.add(l);
     }
     
@@ -216,7 +218,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     //\u25b2 \u25bc
     
-    const version='v.0.486 ';//FOLDORUPDATEVERSION
+    const version='v.0.490 ';//FOLDORUPDATEVERSION
     xrUtil.log('Edit '+version);
     
     //
@@ -551,13 +553,18 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
       ph.setFromMatrixPosition(cursor1.matrixWorld);
     
-      let np=undefined,nd=0.01;//Number.MAX_VALUE;
-      for (let p of points) {
-        let d=p.position.distanceToSquared(ph);
-        if (d<nd) { nd=d;np=p; }
+      let np=undefined;
+      if (ctrl1.userData.isSelecting&&wasSelecting) 
+        np=wasSelecting;
+      else {
+        let nd=0.01;//Number.MAX_VALUE;
+        for (let p of points) {
+          let d=p.position.distanceToSquared(ph);
+          if (d<nd) { nd=d;np=p; }
+        }
+        setNearestPoint(np);
+        //if (np) { xrUtil.log('nd='+nd);console.log('nd='+nd); }
       }
-      setNearestPoint(np);
-      //if (np) { xrUtil.log('nd='+nd);console.log('nd='+nd); }
     
       if (np&&ctrl1.userData.isSelecting) {
         if (wasSelecting!==np) {
@@ -742,18 +749,20 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 <script>
 //fr o,28
 //fr o,28,13
-//fr o,28,13,68
-//fr o,28,13,73
+//fr o,28,13,70
 //fr o,28,13,75
-//fr o,28,13,79
-//fr o,28,13,83
-//fr o,28,13,109
-//fr o,28,13,114
-//fr o,28,13,117
+//fr o,28,13,77
+//fr o,28,13,81
+//fr o,28,13,85
+//fr o,28,13,111
+//fr o,28,13,116
+//fr o,28,13,119
 //fr o,28,20
 //fr o,28,20,3
 //fr o,28,22
 //fr o,28,25
+//fr o,28,28
 //fr o,28,30
 //fr o,28,32
-//fr p,50,195
+//fr o,28,34
+//fr p,1,81

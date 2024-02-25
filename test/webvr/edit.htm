@@ -131,13 +131,13 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
      
      ,{s:'\u25bc',x:0.35,y:0.4,w:0.1,h:0.1,sub:[
        {s:'Point \u25b2',x:0.05,y:0.4,w:0.4,h:0.1},
-       {s:'Pd5',x:0.05,y:0.55,w:0.4,h:0.1,ondown:function() {
+    {s:'Pd5',x:0.05,y:0.55,w:0.4,h:0.1,ondown:function() {
       //---
       if (sels.length!=1) { xrUtil.log('Select 1 point.');return; }
       let p=sels[0],op=p.userData.op;
       if (op.pd5) {
         delete(op.pd5);
-        scene.remove(p.children[0]);
+        p.remove(p.children[0]);
         threeRemoveObj(p.userData.o5);
       } else {
         op.pd5={fn:'/shooter/objs/templar/o5.txt'};
@@ -147,7 +147,23 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       //...
     }
        },
-       {s:'Light',x:0.05,y:0.7,w:0.4,h:0.1}
+    {s:'Light',x:0.05,y:0.7,w:0.4,h:0.1,ondown:function() {
+      //---
+      if (sels.length!=1) { xrUtil.log('Select 1 point.');return; }
+      let p=sels[0],op=p.userData.op;
+      if (op.light) {
+        delete(op.light);
+        console.log(p.children[0]);
+        p.remove(p.children[0]);
+        xrUtil.log('Light removed.');
+      } else {
+        op.light={};
+        pointLight(p);
+        xrUtil.log('Light set.');
+      }
+      //...
+    }
+       },
      ]}
      
     ,{s:'Del points',x:0.05,y:0.55,w:0.4,h:0.1,ondown:function() {
@@ -197,7 +213,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     //\u25b2 \u25bc
     
-    const version='v.0.468 ';//FOLDORUPDATEVERSION
+    const version='v.0.482 ';//FOLDORUPDATEVERSION
     xrUtil.log('Edit '+version);
     
     //
@@ -432,7 +448,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       threeAddObj(o,0,0,0,0.5);
       let ps=this.ps;
       if (ps.ay) o.ay=ps.ay;
-      o.calcVertNorms=1;
+      //o.calcVertNorms=1;
       mesh.userData.o5=o;
       //onsole.log(p);
       //...
@@ -441,6 +457,20 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     //console.log(p);
     //...
   }
+  
+  function pointLight(mesh) {
+    //---
+    let ps=mesh.userData.op.light;
+    let l=new THREE.PointLight(0xffffff,5,0);//l.position.set(-0.5*f,3*f,1*f);
+    l.castShadow=true;
+    l.shadow.camera.near=0.1;
+    l.shadow.camera.far=1000;
+    l.shadow.mapSize.width=1024;//2048;
+    l.shadow.mapSize.height=1024;
+    mesh.add(l);
+    //...
+  }
+  
   
   function load(v) {
     //---reset
@@ -462,6 +492,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       scene.add(mesh);points.push(mesh);
       mesh.userData.op=p;
       pointPd5(mesh);
+      if (p.light) pointLight(mesh);
     
     /*  
       if (p.pd5) 
@@ -710,14 +741,16 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,28,13
 //fr o,28,13,66
 //fr o,28,13,71
-//fr o,28,13,76
-//fr o,28,13,80
-//fr o,28,13,106
-//fr o,28,13,111
-//fr o,28,13,114
+//fr o,28,13,73
+//fr o,28,13,77
+//fr o,28,13,81
+//fr o,28,13,107
+//fr o,28,13,112
+//fr o,28,13,115
 //fr o,28,20
 //fr o,28,20,3
 //fr o,28,22
-//fr o,28,27
-//fr o,28,29
-//fr p,30,134
+//fr o,28,25
+//fr o,28,30
+//fr o,28,32
+//fr p,2,384

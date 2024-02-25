@@ -85,9 +85,11 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     //
     
-    renderer = new THREE.WebGLRenderer( { antialias:true } );
+    renderer=new THREE.WebGLRenderer({antialias:true});
     renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.setSize( window.innerWidth,window.innerHeight );
+    renderer.setSize(window.innerWidth,window.innerHeight);
+    renderer.shadowMap.enabled=true;
+    renderer.shadowMap.type=THREE.BasicShadowMap;
     renderer.xr.enabled=true;
     //renderer.outputEncoding=THREE.LinearEncoding;
     //renderer.outputEncoding=THREE.sRGBEncoding;
@@ -123,7 +125,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       let g=new THREE.BoxGeometry(0.01,0.01,0.01);
       let mesh=new THREE.Mesh(g,matPoint0);
       mesh.position.set(x,y,z);
-      scene.add(mesh);points.push(mesh);
+      scene.add(mesh);points.push(mesh);mesh.userData.op={};
       xrUtil.log(points.length+'. point added.');
       //...
     }
@@ -202,8 +204,9 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
         }
       }
       if (!del) {
-        lines.push({v0:v0,v1:v1,ol:{l:Conet.f4(v0.position.distanceTo(v1.position))}});
-        xrUtil.log(lines.length+'. line added.');
+        let len;
+        lines.push({v0:v0,v1:v1,ol:{l:len=Conet.f4(v0.position.distanceTo(v1.position))}});
+        xrUtil.log(lines.length+'. line added (len='+len+').');
       }
       updateMesh();
       //...
@@ -213,7 +216,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     //\u25b2 \u25bc
     
-    const version='v.0.482 ';//FOLDORUPDATEVERSION
+    const version='v.0.486 ';//FOLDORUPDATEVERSION
     xrUtil.log('Edit '+version);
     
     //
@@ -461,10 +464,10 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
   function pointLight(mesh) {
     //---
     let ps=mesh.userData.op.light;
-    let l=new THREE.PointLight(0xffffff,5,0);//l.position.set(-0.5*f,3*f,1*f);
+    let l=new THREE.PointLight(0xffffff,1);//l.position.set(-0.5*f,3*f,1*f);
     l.castShadow=true;
-    l.shadow.camera.near=0.1;
-    l.shadow.camera.far=1000;
+    l.shadow.camera.near=0.01;
+    l.shadow.camera.far=100;
     l.shadow.mapSize.width=1024;//2048;
     l.shadow.mapSize.height=1024;
     mesh.add(l);
@@ -739,18 +742,18 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 <script>
 //fr o,28
 //fr o,28,13
-//fr o,28,13,66
-//fr o,28,13,71
+//fr o,28,13,68
 //fr o,28,13,73
-//fr o,28,13,77
-//fr o,28,13,81
-//fr o,28,13,107
-//fr o,28,13,112
-//fr o,28,13,115
+//fr o,28,13,75
+//fr o,28,13,79
+//fr o,28,13,83
+//fr o,28,13,109
+//fr o,28,13,114
+//fr o,28,13,117
 //fr o,28,20
 //fr o,28,20,3
 //fr o,28,22
 //fr o,28,25
 //fr o,28,30
 //fr o,28,32
-//fr p,2,384
+//fr p,50,195

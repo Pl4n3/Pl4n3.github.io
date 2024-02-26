@@ -35,15 +35,16 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       points=[],faces=[],lines=[],
       nearestPoint,clock,
       matPoint0,matPoint1,matPointSel,
-      pointPlane,mesh,line;
+      pointPlane,mesh,line,
+      inpLightColor,inpLightIntensity;
       
   init();
   animate();
   
   function init() {
     //---
-    container = document.createElement( 'div' );
-    document.body.appendChild( container );
+    container=document.createElement('div');
+    document.body.appendChild(container);
     
     scene=new THREE.Scene();
     scene.background=new THREE.Color(0x333333);//0x222222
@@ -104,6 +105,13 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     container.appendChild(renderer.domElement);
     
+    function oninput(v) {
+      //---
+      console.log(v);
+      //...
+    }
+    
+    
     xrUtil.init({scene:scene,renderer:renderer,camera:camera,room:scene,sculpt:1//,vrPos:vrPos
       });
     xrUtil.initHud();
@@ -134,7 +142,9 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
      }
      
      ,{s:'\u25bc',x:0.35,y:0.4,w:0.1,h:0.1,sub:[
+     
        {s:'Point \u25b2',x:0.05,y:0.4,w:0.4,h:0.1},
+       
     {s:'Pd5',x:0.05,y:0.55,w:0.4,h:0.1,ondown:function() {
       //---
       if (sels.length!=1) { xrUtil.log('Select 1 point.');return; }
@@ -151,7 +161,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       //...
     }
        },
-    {s:'Light',x:0.05,y:0.7,w:0.4,h:0.1,ondown:function() {
+    {s:'Light',x:0.05,y:0.7,w:0.25,h:0.1,ondown:function() {
       //---
       if (sels.length!=1) { xrUtil.log('Select 1 point.');return; }
       let p=sels[0],op=p.userData.op;
@@ -168,6 +178,32 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       //...
     }
        },
+    {s:'\u25bc',x:0.35,y:0.7,w:0.1,h:0.1,sub:[
+      {s:'Light \u25b2',x:0.05,y:0.4,w:0.4,h:0.1},
+    {s:'Color',dy:0.05,w:0.35,noinp:1},inpLightColor={s:'ffaabb',dx:0.05,oninput:function(v) {
+      //---
+      if (v.length!=6) return;
+      if (sels.length!=1) { xrUtil.log('Select 1 point with light.');return; }
+      let m=sels[0],l=m.userData.light;
+      if (!l) { xrUtil.log('Selected point has no light.');return; }
+      l.color.setStyle('#'+v);
+      m.userData.op.light.color=v;
+      //...
+    }
+      },
+    {s:'Intensity',x:0.05,dy:0.05,noinp:1},inpLightIntensity={s:'2',dx:0.05,oninput:function(v) {
+      //---
+      if (v.length==0) return;
+      if (sels.length!=1) { xrUtil.log('Select 1 point with light.');return; }
+      let m=sels[0],l=m.userData.light;
+      if (!l) { xrUtil.log('Selected point has no light.');return; }
+      l.intensity=parseFloat(v);;
+      m.userData.op.light.intensity=v;
+      //...
+    }
+      }
+    
+    ]}
      ]}
      
     ,{s:'Del points',x:0.05,y:0.55,w:0.4,h:0.1,ondown:function() {
@@ -218,7 +254,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     //\u25b2 \u25bc
     
-    const version='v.0.490 ';//FOLDORUPDATEVERSION
+    const version='v.0.530 ';//FOLDORUPDATEVERSION
     xrUtil.log('Edit '+version);
     
     //
@@ -466,12 +502,13 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
   function pointLight(mesh) {
     //---
     let ps=mesh.userData.op.light;
-    let l=new THREE.PointLight(0xffffff,1);//l.position.set(-0.5*f,3*f,1*f);
+    let l=new THREE.PointLight(ps.color?'#'+ps.color:0xffffff,ps.intensity?parseFloat(ps.intensity):1);//l.position.set(-0.5*f,3*f,1*f);
     l.castShadow=true;
     l.shadow.camera.near=0.01;
     l.shadow.camera.far=100;
     l.shadow.mapSize.width=1024;//2048;
     l.shadow.mapSize.height=1024;
+    mesh.userData.light=l;
     mesh.add(l);
     //...
   }
@@ -557,7 +594,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       if (ctrl1.userData.isSelecting&&wasSelecting) 
         np=wasSelecting;
       else {
-        let nd=0.01;//Number.MAX_VALUE;
+        let nd=0.005;//Number.MAX_VALUE;
         for (let p of points) {
           let d=p.position.distanceToSquared(ph);
           if (d<nd) { nd=d;np=p; }
@@ -662,6 +699,12 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
         sels.push(p);
         p.material=matPointSel;
         p.userData.selected=1;
+        let l=p.userData.light;
+        if (l) {
+          //onsole.log(l);
+          inpLightColor.s=l.color.getHexString();
+          inpLightIntensity.s=l.intensity+'';
+        }
       }
     }
     
@@ -748,21 +791,22 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 </html>
 <script>
 //fr o,28
-//fr o,28,13
-//fr o,28,13,70
-//fr o,28,13,75
-//fr o,28,13,77
-//fr o,28,13,81
-//fr o,28,13,85
-//fr o,28,13,111
-//fr o,28,13,116
-//fr o,28,13,119
-//fr o,28,20
-//fr o,28,20,3
-//fr o,28,22
-//fr o,28,25
-//fr o,28,28
-//fr o,28,30
-//fr o,28,32
-//fr o,28,34
-//fr p,1,81
+//fr o,28,14
+//fr o,28,14,63
+//fr o,28,14,73
+//fr o,28,14,86
+//fr o,28,14,88
+//fr o,28,14,94
+//fr o,28,14,98
+//fr o,28,14,124
+//fr o,28,14,129
+//fr o,28,14,132
+//fr o,28,21
+//fr o,28,21,3
+//fr o,28,23
+//fr o,28,26
+//fr o,28,29
+//fr o,28,31
+//fr o,28,33
+//fr o,28,35
+//fr p,16,501

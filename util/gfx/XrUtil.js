@@ -5,12 +5,31 @@ import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFa
 let XrUtil={};
 (function(pself) {
   //---
-  let version='v.1.224 ',//FOLDORUPDATEVERSION
+  let version='v.1.244 ',//FOLDORUPDATEVERSION
       self=pself,ctrl0,ctrl1,gp0,gp1,camera,scene,room,vrPos,huds=[],hudMesh,
       hud={lines:['XrUtil '+version],cursor:{x:0.5,y:0.5,vis:false},buttons:[]},
-      raycaster,INTERSECTED,hudCount=0,needDrawUi=false;
+      raycaster,INTERSECTED,hudCount=0,needDrawUi=false,input;
   
   const tempMatrix=new THREE.Matrix4(),vt=new THREE.Vector3();
+  
+  function keyDown(e) {
+    //---
+    let b=input;
+    if (!b) return;
+    let kc=e.keyCode;
+    if (kc==8) { //backspace
+      if (b.s.length>0) b.s=b.s.substr(0,b.s.length-1);
+    } else if ((kc==27)||(kc==13)) { //esc,return
+      delete(b.color);
+      input=undefined;
+    } else if (!{16:1,17:1}[kc]) { //shift,ctrl
+      b.s+=e.key;
+      //onsole.log(e);
+    }
+    b.oninput(b.s);
+    needDrawUi=true;
+    //...
+  }
   
   function buildController(data) {
     //---
@@ -220,9 +239,10 @@ let XrUtil={};
     }
       );
     }
+    
+    window.addEventListener('keydown',keyDown);
     //...
   }
-  
   function drawHud() {
     //---
     const ct=hud.ct,c=hud.c,w=c.width,h=c.height;
@@ -234,12 +254,17 @@ let XrUtil={};
     //ct.fillStyle='white';ct.fillText((cur.vis?1:0)+' '+Conet.f4(curx)+' '+Conet.f4(cury),12,40);
     ct.textAlign='center';
     ct.textBaseline='middle';
-    let newMenu;
+    let newMenu,lb;
     for (let b of hud.buttons) {
+      //let dx=b.dx||0,dy=b.dy||0;
+      if (b.w===undefined) b.w=lb.w;
+      if (b.h===undefined) b.h=lb.h;
+      if (b.x===undefined) b.x=lb.x+(b.dx!==undefined?lb.w+b.dx:0);
+      if (b.y===undefined) b.y=lb.y+(b.dy!==undefined?lb.h+b.dy:0);
       const bx=b.x*w,by=b.y*h,bw=b.w*w,bh=b.h*h;
       if (b.pressed&&(!cur.down||!cur.vis)) b.pressed=false;
       if (cur.vis&&hudMesh.visible) {
-        if ((curx>=bx)&&(cury>=by)&&(curx<=bx+bw)&&(cury<=by+bh)) {
+        if ((curx>=bx)&&(cury>=by)&&(curx<=bx+bw)&&(cury<=by+bh)&&!b.noinp) {
           if (cur.down&&!b.pressed) {
             b.pressed=true;
             if (b.subUp) {
@@ -248,15 +273,20 @@ let XrUtil={};
               if (!hud.menu0) hud.menu0=hud.buttons;//alternatively maintain hud.menuStack[]
               newMenu=b.sub;
               newMenu[0].subUp=true;
-            }  else if (b.ondown) b.ondown();
-            else console.log(b);
+            } else if (b.ondown) { b.ondown();
+            } else if (b.oninput) {
+              b.color='rgba(250,250,0,0.5)';
+              input=b;
+            } else console.log(b);
           }
           ct.fillStyle=b.pressed?'rgba(150,150,50,0.5)':'rgba(100,100,100,0.5)';
           ct.fillRect(bx,by,bw,bh);
         }
       } 
-      ct.strokeStyle=b.selected?'#fff':'#222';//#aaa
-      ct.strokeRect(bx,by,bw,bh);
+      if (!b.noinp) {
+        ct.strokeStyle=b.selected?'#fff':'#222';//#aaa
+        ct.strokeRect(bx,by,bw,bh);
+      }
       if (b.ondraw) b.ondraw();
       if (b.color) {
         ct.fillStyle=b.color;
@@ -266,6 +296,7 @@ let XrUtil={};
         ct.fillStyle='#ddd';
         ct.fillText(b.s,bx+bw/2,by+bh/2);
       }
+      lb=b;
     }
     ct.textAlign='start';
     ct.textBaseline='top';
@@ -287,7 +318,6 @@ let XrUtil={};
     needDrawUi=newMenu;
     //...
   }
-  
   function hudIntersects(i0,down) {
     //---
     //onsole.log(i0.distance);
@@ -322,7 +352,6 @@ let XrUtil={};
     //...
   }
   self.hudIntersects=hudIntersects;
-  
   self.log=function(s) {
     //---
     hud.lines.push(s);
@@ -331,7 +360,6 @@ let XrUtil={};
     needDrawUi=true;
     //...
   }
-  
   self.initHud=function(ps) {
     const g=new THREE.PlaneGeometry(0.15,0.15);
     const c=document.createElement('canvas');c.width=256;c.height=256;
@@ -358,7 +386,6 @@ let XrUtil={};
     self.huds=huds;self.hudMesh=hudMesh;self.hud=hud;
     //...
   }
-  
   self.renderHud=function() {
     //---
     let i0=undefined;
@@ -380,7 +407,6 @@ let XrUtil={};
     return i0;
     //...
   }
-  
   console.log('XrUtil '+version);
   //...
 }
@@ -388,17 +414,5 @@ let XrUtil={};
 export { XrUtil };
 //fr o,5
 //fr o,5,8
-//fr o,5,9
-//fr o,5,10,10
-//fr o,5,10,41
-//fr o,5,10,43
-//fr o,5,10,58
-//fr o,5,10,81
-//fr o,5,10,82
-//fr o,5,10,84
-//fr o,5,10,90
-//fr o,5,12
-//fr o,5,14
-//fr o,5,19
-//fr o,5,21
-//fr p,73,89
+//fr o,5,13
+//fr p,62,53

@@ -35,7 +35,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       points=[],faces=[],lines=[],
       nearestPoint,clock,
       matPoint0,matPoint1,matPointSel,
-      pointPlane,mesh,line,
+      pointPlane,mesh,line,gridh,
       inpLightColor,inpLightIntensity;
       
   init();
@@ -59,8 +59,8 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     controls.update();
     
-    const grid=new THREE.GridHelper(4,4,0x555555,0x111111);
-    scene.add(grid);
+    gridh=new THREE.GridHelper(4,4,0x555555,0x111111);
+    scene.add(gridh);
     
     /*
     scene.add(new THREE.HemisphereLight(0x888877,0x777788,1));
@@ -121,6 +121,13 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       let s=serialize();
       localStorage[lsKey]=s;
       xrUtil.log('Saved '+s.length+' bytes.');
+      //...
+    }
+    },
+    
+    {s:'Grid',x:0.7,y:0.4,w:0.25,h:0.1,ondown:function() {
+      //---
+      gridh.visible=!gridh.visible;
       //...
     }
     },
@@ -254,7 +261,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     //\u25b2 \u25bc
     
-    const version='v.0.530 ';//FOLDORUPDATEVERSION
+    const version='v.0.538 ';//FOLDORUPDATEVERSION
     xrUtil.log('Edit '+version);
     
     //
@@ -794,13 +801,14 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,28,14
 //fr o,28,14,63
 //fr o,28,14,73
-//fr o,28,14,86
-//fr o,28,14,88
-//fr o,28,14,94
-//fr o,28,14,98
-//fr o,28,14,124
-//fr o,28,14,129
+//fr o,28,14,76
+//fr o,28,14,89
+//fr o,28,14,91
+//fr o,28,14,97
+//fr o,28,14,101
+//fr o,28,14,127
 //fr o,28,14,132
+//fr o,28,14,135
 //fr o,28,21
 //fr o,28,21,3
 //fr o,28,23
@@ -809,4 +817,4 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,28,31
 //fr o,28,33
 //fr o,28,35
-//fr p,16,501
+//fr p,15,62

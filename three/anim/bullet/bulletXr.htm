@@ -18,15 +18,14 @@
 <script type="importmap">
 {
 "imports": {
-"three": "/three/r124/build/three.module.js",
-"three/addons/": "/three/r124/examples/jsm/"
+"three": "/three/r160/build/three.module.js",
+"three/addons/": "/three/r160/examples/jsm/"
 }
 }
 </script>
 <script type="module">
-import * as THREE from '/three/r124/build/three.module.js';
-import { BoxLineGeometry } from '/three/r124/examples/jsm/geometries/BoxLineGeometry.js';
-import { OrbitControls } from '/three/r124/examples/jsm/controls/OrbitControls.js';
+import * as THREE from '/three/r160/build/three.module.js';
+import { OrbitControls } from '/three/r160/examples/jsm/controls/OrbitControls.js';
 import { XrUtil } from '/util/gfx/XrUtil.js';
 (function() {
   //---
@@ -54,6 +53,8 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     scene.add(camera);
     //console.log(camera);
     
+    //import { BoxLineGeometry } from '/three/r124/examples/jsm/geometries/BoxLineGeometry.js';
+    //
     //room=new THREE.LineSegments(
     //  new BoxLineGeometry(6,6,6,10,10,10).translate(0,3,0),
     //  new THREE.LineBasicMaterial({color:0x808080}));
@@ -68,8 +69,8 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     window.THREE=THREE;
     scene.add(new THREE.AmbientLight(0xffffff,0.3));
-    scene.add(threeEnv.pointLight({x:-4,y:12,z:4,col:0xffffff,dist:25,int:2}));
-    scene.add(threeEnv.pointLight({x:5,y:-5,z:-5,col:0xaaffff,dist:100,int:0.5,castShadow:false}));
+    scene.add(threeEnv.pointLight({x:-4,y:12,z:4,col:0xffffff,dist:25,int:2*200}));
+    scene.add(threeEnv.pointLight({x:5,y:-5,z:-5,col:0xaaffff,dist:100,int:0.5*200,castShadow:false}));
     
     
     //const geometry = new THREE.BoxBufferGeometry( 0.15, 0.15, 0.15 );
@@ -102,7 +103,8 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     }
     }
     
-    ];  
+    ];
+    xrUtil.log('BulletXr v.0.20 ');//FOLDORUPDATEVERSION
     
     
     window.addEventListener('resize',onWindowResize,false);
@@ -164,7 +166,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     //Pd5.boxes.push([0,20,35,2,2,2]);//,0.09]);
     
-    var ge=new THREE.Geometry(),w=mb/7,c=new THREE.Color(0.5,0.5,0.5),y0=-1.8,h0=w/3;
+    var ge=new THREE.BufferGeometry(),w=mb/7,c=new THREE.Color(0.5,0.5,0.5),y0=-1.8,h0=w/3;
     
     for (var i=Pd5.boxes.length-1;i>=0;i--) { var b=Pd5.boxes[i];
       var x=b[0],y=b[1],z=b[2],dx=b[3]*2,dy=b[4]*2,dz=b[5]*2,d=13;
@@ -178,21 +180,23 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       threeEnv.addQuad({ge:ge,a0:[x+dx/2,y-dy/2-1.8,z+dz/2],a1:[0,0,-dz],a2:[0,dy,0],a3:[0,dy,-dz],dim:1,c:c});
     }
     
-    if (0) {
-      let g=new THREE.BoxGeometry(0.35,0.35,0.35),
-          mat=new THREE.MeshPhongMaterial({flatShading:true,color:0x66aa66//,depthTest:false
-            ,transparent:true,opacity:0.7}),
-          mesh=new THREE.Mesh(g,mat),p=mesh.position;
-      p.set(0,20/13-1.8,35/13);
-      room.add(mesh);cursorBox=mesh;
+    ge.setIndex(ge.indices);
+    ge.setAttribute('position',new THREE.BufferAttribute(new Float32Array(ge.vertices),3));
+    ge.setAttribute('color',new THREE.BufferAttribute(new Float32Array(ge.colors),3));
+    
+    
+    
+    if (1) {
     Menu.onMouseMove=function (e) {
       //---
       if (xrUtil.isSession) return;
-      let p=cursorBox.position;
+      checkCreateCursorBoxes();
+      let p=cursorBox0.position;
       p.set((e.pageX-window.innerWidth/2)/100,-0.5,(e.pageY-window.innerHeight/2)/100);
       //console.log(Pd5.boxes.length);
-      let origin=Pd5.boxes[8].body.worldTransform.origin;
+      let origin=cursorBox0.userData.body.worldTransform.origin;
       origin.x=p.x*13;
+      origin.y=(p.y+1.8)*13;
       origin.z=p.z*13;
       //onsole.log(Pd5.boxes[8].body.worldTransform.origin);
       
@@ -213,8 +217,8 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     
     ge.computeVertexNormals();
-    var bge=new THREE.BufferGeometry().fromGeometry(ge);
-    var mh={vertexColors:THREE.FaceColors};
+    var bge=ge;//new THREE.BufferGeometry().fromGeometry(ge);
+    var mh={vertexColors:true};//THREE.FaceColors};
     var m=new THREE.Mesh(bge,new THREE.MeshPhongMaterial(mh));
     m.position.set(0,0,0);
     m.castShadow=true;
@@ -304,6 +308,23 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     renderer.setAnimationLoop( render );
     
   }
+  
+  function checkCreateCursorBoxes() {
+    //---
+    if (!cursorBox0) { 
+      let g=new THREE.BoxGeometry(0.35,0.35,0.35),
+          mat=new THREE.MeshPhongMaterial({flatShading:true,color:0x66aa66//,depthTest:false
+          ,transparent:true,opacity:0.7}),
+          mesh=new THREE.Mesh(g,mat);//,p=mesh.position;
+      room.add(mesh);cursorBox0=mesh;
+      cursorBox0.userData.body=Pd5.bulletBox([0,20,35,2,2,2]);
+      
+      cursorBox1=new THREE.Mesh(g,mat);room.add(cursorBox1);
+      cursorBox1.userData.body=Pd5.bulletBox([0,20,35,2,2,2]);
+    }
+    //...
+  }
+  
   function render() {
     
     //const cgd=clock.getDelta(),delta=cgd*60,dt=cgd*1000;
@@ -318,17 +339,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     if (xrUtil.isSession) {
       //onsole.log(ctrl0.position);
-      if (!cursorBox0) { 
-        let g=new THREE.BoxGeometry(0.35,0.35,0.35),
-            mat=new THREE.MeshPhongMaterial({flatShading:true,color:0x66aa66//,depthTest:false
-            ,transparent:true,opacity:0.7}),
-            mesh=new THREE.Mesh(g,mat);//,p=mesh.position;
-        room.add(mesh);cursorBox0=mesh;
-        cursorBox0.userData.body=Pd5.bulletBox([0,20,35,2,2,2]);
-        
-        cursorBox1=new THREE.Mesh(g,mat);room.add(cursorBox1);
-        cursorBox1.userData.body=Pd5.bulletBox([0,20,35,2,2,2]);
-      }
+      checkCreateCursorBoxes();
       let pr=room.position,sc=room.scale;
       {
       let p=cursorBox0.position;
@@ -378,14 +389,14 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 </script>
 </body>
 </html><script>
-//fr o,30
-//fr o,30,9
-//fr o,30,9,55
-//fr o,30,9,74
-//fr o,30,9,81
-//fr o,30,9,128
-//fr o,30,9,161
-//fr o,30,9,175
-//fr o,30,11
-//fr o,30,12
-//fr p,0,363
+//fr o,29
+//fr o,29,9
+//fr o,29,9,57
+//fr o,29,9,77
+//fr o,29,9,84
+//fr o,29,9,131
+//fr o,29,9,164
+//fr o,29,9,178
+//fr o,29,13
+//fr o,29,15
+//fr p,77,72

@@ -1012,7 +1012,14 @@ threeEnv.pv=function(p) {
   //...
 }
 threeEnv.addTri=function(ps) {
-  var fa,ge=ps.ge,vl=ge.vertices.length,v0,v1,v2,//=ps.v0,v1=ps.v1,v2=ps.v2,
+  let fa,ge=ps.ge,useBuff=ge instanceof THREE.BufferGeometry;
+  if (useBuff&&!ge.vertices) {
+    ge.vertices=[];
+    ge.indices=[];
+    ge.colors=[];
+  }
+  //let vl=ge.vertices.length/(useBuff?3:1),
+  let v0,v1,v2,//=ps.v0,v1=ps.v1,v2=ps.v2,
       a0=ps.a0,k=ps.k,f=ps.f,vis=threeEnv.vertIndices;
   
   if (a0) {
@@ -1035,16 +1042,20 @@ threeEnv.addTri=function(ps) {
   //var i2=v2.flat?-1:ge.vertices.indexOf(v2);if (i2==-1) { ge.vertices.push(v2);i2=ge.vertices.length-1; }
   
   //--- lots faster than above
-  var i0=v0.flat?-1:((v0.vi===undefined)?-1:v0.vi);if (i0==-1) { ge.vertices.push(v0);i0=ge.vertices.length-1;v0.vi=i0; }
-  var i1=v1.flat?-1:((v1.vi===undefined)?-1:v1.vi);if (i1==-1) { ge.vertices.push(v1);i1=ge.vertices.length-1;v1.vi=i1; }
-  var i2=v2.flat?-1:((v2.vi===undefined)?-1:v2.vi);if (i2==-1) { ge.vertices.push(v2);i2=ge.vertices.length-1;v2.vi=i2; }
+  var i0=v0.flat?-1:((v0.vi===undefined)?-1:v0.vi);if (i0==-1) { if (useBuff) { ge.vertices.push(v0.x,v0.y,v0.z);let c=v0.col||ps.c0||ps.c;ge.colors.push(c.r,c.g,c.b); } else ge.vertices.push(v0);i0=ge.vertices.length/(useBuff?3:1)-1;v0.vi=i0; }
+  var i1=v1.flat?-1:((v1.vi===undefined)?-1:v1.vi);if (i1==-1) { if (useBuff) { ge.vertices.push(v1.x,v1.y,v1.z);let c=v1.col||ps.c1||ps.c;ge.colors.push(c.r,c.g,c.b); } else ge.vertices.push(v1);i1=ge.vertices.length/(useBuff?3:1)-1;v1.vi=i1; }
+  var i2=v2.flat?-1:((v2.vi===undefined)?-1:v2.vi);if (i2==-1) { if (useBuff) { ge.vertices.push(v2.x,v2.y,v2.z);let c=v2.col||ps.c2||ps.c;ge.colors.push(c.r,c.g,c.b); } else ge.vertices.push(v2);i2=ge.vertices.length/(useBuff?3:1)-1;v2.vi=i2; }
   
   //var i0=v0.flat?undefined:vis[v0];if (i0===undefined) { ge.vertices.push(v0);i0=ge.vertices.length-1;vis[v0]=i0; }
   //var i1=v1.flat?undefined:vis[v1];if (i1===undefined) { ge.vertices.push(v1);i1=ge.vertices.length-1;vis[v1]=i1; }
   //var i2=v2.flat?undefined:vis[v2];if (i2===undefined) { ge.vertices.push(v2);i2=ge.vertices.length-1;vis[v2]=i2; }
   
-  ge.faces.push(fa=new THREE.Face3(i0,i1,i2));
-  fa.vertexColors=[v0.col||ps.c0||ps.c,v1.col||ps.c1||ps.c,v2.col||ps.c2||ps.c];
+  if (useBuff) {
+    ge.indices.push(i0,i1,i2); 
+  } else {
+    ge.faces.push(fa=new THREE.Face3(i0,i1,i2));
+    fa.vertexColors=[v0.col||ps.c0||ps.c,v1.col||ps.c1||ps.c,v2.col||ps.c2||ps.c];
+  }
   //fa.vertexColors=[v0.col?v0.col:ps.c0,v1.col?v1.col:ps.c1,v2.col?v2.col:ps.c2];
   //...
 }
@@ -1089,5 +1100,8 @@ threeEnv.pointLight=function(ps) {
 //fr o,9,35
 //fr o,10
 //fr o,19
+//fr o,21
+//fr o,33
+//fr o,34
 //fr o,36
-//fr p,2,13
+//fr p,130,369

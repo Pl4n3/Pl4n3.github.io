@@ -58,8 +58,8 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     //room=new THREE.LineSegments(
     //  new BoxLineGeometry(6,6,6,10,10,10).translate(0,3,0),
     //  new THREE.LineBasicMaterial({color:0x808080}));
-    room=new THREE.Group();scene.add(room);
-    room.scale.set(0.5,0.5,0.5);
+    room=new THREE.Group();scene.add(room);let sc=0.25;
+    room.scale.set(sc,sc,sc);
     //room=scene;
     
     //scene.add(new THREE.AmbientLight(0xffffff,0.5));//new THREE.HemisphereLight(0x606060,0x404040));
@@ -104,7 +104,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     }
     
     ];
-    xrUtil.log('BulletXr v.0.20 ');//FOLDORUPDATEVERSION
+    xrUtil.log('BulletXr v.0.30 ');//FOLDORUPDATEVERSION
     
     
     window.addEventListener('resize',onWindowResize,false);
@@ -160,15 +160,21 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     Pd5.boxes.push([0,10,-mb,mb,20,10]);
     Pd5.boxes.push([0,10,10+mb,mb,20,10]);
     
-    Pd5.boxes.push([-75,0,-75,50,10,50]);//,0.09]);
-    Pd5.boxes.push([0,0,-35,10,10,10]);//,0.09]);
+    Pd5.boxes.push([-75,5,-75,50,5,50]);//,0.09]);
+    Pd5.boxes.push([0,5,-35,10,5,10]);//,0.09]);
     Pd5.boxes.push([-90,15,-50,25,5,25]);
+    
+    //Pd5.boxes.push([-75,0,-75,50,10,50]);//,0.09]);
+    //Pd5.boxes.push([0,0,-35,10,10,10]);//,0.09]);
+    //Pd5.boxes.push([-90,15,-50,25,5,25]);
+    
     
     //Pd5.boxes.push([0,20,35,2,2,2]);//,0.09]);
     
     var ge=new THREE.BufferGeometry(),w=mb/7,c=new THREE.Color(0.5,0.5,0.5),y0=-1.8,h0=w/3;
     
     for (var i=Pd5.boxes.length-1;i>=0;i--) { var b=Pd5.boxes[i];
+      if (i<=4) continue;
       var x=b[0],y=b[1],z=b[2],dx=b[3]*2,dy=b[4]*2,dz=b[5]*2,d=13;
       //onsole.log(b);
       x/=d;y/=d;z/=d;dx/=d;dy/=d;dz/=d;
@@ -394,9 +400,9 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,29,9,57
 //fr o,29,9,77
 //fr o,29,9,84
-//fr o,29,9,131
-//fr o,29,9,164
-//fr o,29,9,178
+//fr o,29,9,137
+//fr o,29,9,170
+//fr o,29,9,184
 //fr o,29,13
 //fr o,29,15
-//fr p,77,72
+//fr p,21,162

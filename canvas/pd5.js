@@ -485,7 +485,7 @@ var Pd5={};
         for (var h=0;h<anim.length;h++) { var a=anim[h];aT+=a.t;a.t2=aT; }
         lo.aT=aT;
         if (!lo.ta) lo.ta=0;
-        if (!lo.animStop) lo.ta+=dt;// /(ps.animdiv||1);
+        if (!lo.animStop) lo.ta+=dt*(lo.dtscale||1);// /(ps.animdiv||1);
         var t=lo.ta/1000;
         if (t>aT) {
           lo.ca++;
@@ -597,7 +597,7 @@ var Pd5={};
         matupdate=true;
         //if (lo.eyew&&ego) if (ego.o5==lo) abones[3].q.x+=camAx/2;
         if (key0!=lo.key0) {
-          //console.log('Pd5.calc '+key0+' '+lo.key0);
+          //onsole.log('Pd5.calc '+key0+' '+lo.key0);
           
           if (lo.key0!==undefined) {
             var k=lo.key0;//,c=0;
@@ -1164,9 +1164,10 @@ var Pd5={};
         if (vol>0) Sound.play(src,vol);//vol*(o.vol?o.vol:1)*gvol);
         //console.log('pd5.animText sound '+src);
         //---
-      } else if ((sa0=='attack')&&(o.ps)) {
+      } else if ((sa0=='attack')&&(o.ps)&&!o.animTextSkipAttack) {
         //var oh=o.o;
-        //onsole.log('Pd5.animText attack '+o.ay);//+' '+oh.roty);
+        //onsole.log('Pd5.animText attack');//+o.ay);//+' '+oh.roty);
+        //onsole.log(o.ps);
         //console.log(o);
         var ps=o.ps,e={x:ps.pos.x,y:ps.pos.y,z:ps.pos.z,s:0,t:0,o:ps},
             a=ps.roty+PI/4,l=ps.attackr||((ps.collr||1)*2),os=Pd5.os;
@@ -1174,15 +1175,17 @@ var Pd5={};
         e.z+=(Math.cos(a)+Math.sin(a))*l;
         
         if (window.planim) planim.attackMark(e);//box(e.x,e.y,e.z,0.2,0.2,0.2);
-        
+        //onsole.log(e.x+' '+os.length);
         for (var h=os.length-1;h>=0;h--) {
           var oh=os[h];
           if ((o==oh)||!oh.ps.hitr) continue;
-          if (dist(e,oh.ps.pos)<oh.ps.hitr) {
+          let dh;
+          if ((dh=dist(e,oh.ps.pos))<oh.ps.hitr) {
             oh.ps.hitt=0;oh.ps.hite=e;
             //onsole.log('Pd5.animText attacking '+h);
             //if (Pd5.animAttack) Pd5.animAttack(e);
           }
+          //onsole.log('dh='+dh);
         }
       }
     }
@@ -1192,6 +1195,31 @@ var Pd5={};
       delete(m.matChange);
       if (m.tmesh) { threeSetMeshMaterial(m,o);m.tmesh.material=m.material; }
     }
+  }
+  Pd5.bulletInit=function() {
+    //---
+    var dynamicsWorld=Pd5.dynamicsWorld;
+    
+    if (!dynamicsWorld) {
+    var collision_config = new Bullet.CollisionConfiguration();
+    var dispatcher = new Bullet.Dispatcher(collision_config);
+    var worldAabbMin = new Vecmath.Vec3(-10000, -10000, -10000);
+    var worldAabbMax = new Vecmath.Vec3(10000, 10000, 10000);
+    var overlappingPairCache = new Bullet.BroadphaseInterface(worldAabbMin, worldAabbMax, 0xfffe, 0xffff, 16384, null);
+    var constraintSolver = new Bullet.ConstraintSolver();
+    dynamicsWorld = new Bullet.CollisionWorld(dispatcher, overlappingPairCache, constraintSolver, collision_config);
+    dynamicsWorld.setGravity(new Vecmath.Vec3(0,-30,0));//0,-30,0
+    Pd5.dynamicsWorld=dynamicsWorld;
+    
+    var boxes=Pd5.boxes;
+    
+                    
+    for (var h=0;h<boxes.length;h++) {
+      var b=boxes[h];
+      Pd5.bulletBox(b);
+    }
+    }
+    //...
   }
   Pd5.bulletBox=function(b) {
     //...
@@ -1220,27 +1248,29 @@ var Pd5={};
     if (!o) return;
     if (!o.bones) return; 
     
+    
+    if (!Pd5.dynamicsWorld) Pd5.bulletInit();
     var dynamicsWorld=Pd5.dynamicsWorld;
     
-    if (!dynamicsWorld) {
-    var collision_config = new Bullet.CollisionConfiguration();
-    var dispatcher = new Bullet.Dispatcher(collision_config);
-    var worldAabbMin = new Vecmath.Vec3(-10000, -10000, -10000);
-    var worldAabbMax = new Vecmath.Vec3(10000, 10000, 10000);
-    var overlappingPairCache = new Bullet.BroadphaseInterface(worldAabbMin, worldAabbMax, 0xfffe, 0xffff, 16384, null);
-    var constraintSolver = new Bullet.ConstraintSolver();
-    dynamicsWorld = new Bullet.CollisionWorld(dispatcher, overlappingPairCache, constraintSolver, collision_config);
-    dynamicsWorld.setGravity(new Vecmath.Vec3(0,-30,0));//0,-30,0
-    Pd5.dynamicsWorld=dynamicsWorld;
-    
-    var boxes=Pd5.boxes;
-    
-                    
-    for (var h=0;h<boxes.length;h++) {
-      var b=boxes[h];
-      Pd5.bulletBox(b);
-    }
-    }
+    //if (!dynamicsWorld) {
+    //var collision_config = new Bullet.CollisionConfiguration();
+    //var dispatcher = new Bullet.Dispatcher(collision_config);
+    //var worldAabbMin = new Vecmath.Vec3(-10000, -10000, -10000);
+    //var worldAabbMax = new Vecmath.Vec3(10000, 10000, 10000);
+    //var overlappingPairCache = new Bullet.BroadphaseInterface(worldAabbMin, worldAabbMax, 0xfffe, 0xffff, 16384, null);
+    //var constraintSolver = new Bullet.ConstraintSolver();
+    //dynamicsWorld = new Bullet.CollisionWorld(dispatcher, overlappingPairCache, constraintSolver, collision_config);
+    //dynamicsWorld.setGravity(new Vecmath.Vec3(0,-30,0));//0,-30,0
+    //Pd5.dynamicsWorld=dynamicsWorld;
+    //
+    //var boxes=Pd5.boxes;
+    //
+    //                
+    //for (var h=0;h<boxes.length;h++) {
+    //  var b=boxes[h];
+    //  Pd5.bulletBox(b);
+    //}
+    //}
     //alert('bulletTest '+dynamicsWorld);
     
     o.cm=new Bullet.Transform();
@@ -2310,7 +2340,8 @@ var Pd5={};
 //fr o,2
 //fr o,2,40
 //fr o,2,41
-//fr o,2,41,93
-//fr o,2,47,44
-//fr o,2,48,2,3
-//fr p,2,56
+//fr o,2,42
+//fr o,2,42,95
+//fr o,2,48,44
+//fr o,2,49,2,3
+//fr p,41,96

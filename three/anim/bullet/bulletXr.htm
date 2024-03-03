@@ -104,7 +104,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     }
     
     ];
-    xrUtil.log('BulletXr v.0.62 ');//FOLDORUPDATEVERSION
+    xrUtil.log('BulletXr v.0.71 ');//FOLDORUPDATEVERSION
     
     
     window.addEventListener('resize',onWindowResize,false);
@@ -153,7 +153,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     const tsd=Menu.touchSticksInit({autoKeys:1,skip1:1});
     
     
-    {
+    
     const mb=125;
     Pd5.boxes.push([-mb,10,0,10,20,mb]);
     Pd5.boxes.push([mb,10,0,10,20,mb]);
@@ -223,16 +223,16 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     Menu.onMouseMove=function(e) {
       //---
       if (xrUtil.isSession) return;
-      checkCreateCursorBoxes();
+      //checkCreateCursorBoxes();
       let p=cursorBox0.position;
       p.set((e.pageX-window.innerWidth/2)/100,-0.5,(e.pageY-window.innerHeight/2)/100);
       //console.log(Pd5.boxes.length);
-      if (cursorBox0.userData.body) {
-        let origin=cursorBox0.userData.body.worldTransform.origin;
-        origin.x=p.x*13;
-        origin.y=(p.y+1.8)*13;
-        origin.z=p.z*13;
-      }
+      //if (cursorBox0.userData.body) {
+      //  let origin=cursorBox0.userData.body.worldTransform.origin;
+      //  origin.x=p.x*13;
+      //  origin.y=(p.y+1.8)*13;
+      //  origin.z=p.z*13;
+      //}
       //onsole.log(Pd5.boxes[8].body.worldTransform.origin);
       
       //var colObj=dynamicsWorld.collisionObjects[oi];
@@ -329,7 +329,8 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     panim.xrUtil=xrUtil;panim.camera=camera;
     panim.tsd0=tsd[0];
     panim.controls=controls;
-    }
+    
+    checkCreateCursorBoxes();
     //---
   }
   function onWindowResize() {
@@ -392,6 +393,10 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     //const cgd=clock.getDelta(),delta=cgd*60,dt=cgd*1000;
     const dt=clock.getDelta()*1000;
     
+    panim.calc(dt);
+    if (Pd5.dynamicsWorld) Pd5.dynamicsWorld.stepSimulation1(dt/1000);
+    
+    
     const ctrl0=xrUtil.ctrl0;//controller
     const ctrl1=xrUtil.ctrl1;
     const gp0=xrUtil.gp0;
@@ -401,7 +406,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     if (xrUtil.isSession) {
       //onsole.log(ctrl0.position);
-      checkCreateCursorBoxes();
+      //heckCreateCursorBoxes();
       let pr=room.position,sc=room.scale;
       {
         let p=cursorBox0.position;
@@ -416,36 +421,32 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
             ud.wasSelecting=true;
             cursorBody(cursorBox0);
           }
-        } else ud.wasSelecting=false;
-        
-        
-        if (cursorBox0.userData.body) {
-          let origin=cursorBox0.userData.body.worldTransform.origin;
-          origin.x=p.x*13;
-          origin.y=(p.y+1.8)*13;
-          origin.z=p.z*13;
-        }
+        } else ud.wasSelecting=false;    
       }
       {
         let p=cursorBox1.position;
         let pc=ctrl1.position;
         p.set((pc.x-pr.x)/sc.x,(pc.y-pr.y)/sc.y,(pc.z-pr.z)/sc.z);
-        let ud=ctrl0.userData;
+        let ud=ctrl1.userData;
         if (ud.isSelecting) {
           if (!ud.wasSelecting) {
             ud.wasSelecting=true;
             cursorBody(cursorBox1);
           }
         } else ud.wasSelecting=false;
-        
-        
-        if (cursorBox1.userData.body) {
-          let origin=cursorBox1.userData.body.worldTransform.origin;
-          origin.x=p.x*13;
-          origin.y=(p.y+1.8)*13;
-          origin.z=p.z*13;
-        }
       }
+    }
+    if (cursorBox0.userData.body) {
+      let origin=cursorBox0.userData.body.worldTransform.origin,p=cursorBox0.position;
+      origin.x=p.x*13;
+      origin.y=(p.y+1.8)*13;
+      origin.z=p.z*13;
+    }
+    if (cursorBox1.userData.body) {
+      let origin=cursorBox1.userData.body.worldTransform.origin,p=cursorBox1.position;
+      origin.x=p.x*13;
+      origin.y=(p.y+1.8)*13;
+      origin.z=p.z*13;
     }
     
     if (gp1) {
@@ -455,9 +456,8 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     }
     
     //if (window.panimCalc) 
-    panim.calc(dt);
-    
-    if (Pd5.dynamicsWorld) Pd5.dynamicsWorld.stepSimulation1(dt/1000);
+    //panim.calc(dt);
+    //if (Pd5.dynamicsWorld) Pd5.dynamicsWorld.stepSimulation1(dt/1000);
     
     threeRender(dt);
     controls.update();
@@ -480,9 +480,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,29,9,84
 //fr o,29,9,137
 //fr o,29,9,138
-//fr o,29,9,171
-//fr o,29,9,186
 //fr o,29,13
 //fr o,29,15
 //fr o,29,17
-//fr p,2,199
+//fr p,2,421

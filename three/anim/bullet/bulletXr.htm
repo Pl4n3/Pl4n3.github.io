@@ -32,7 +32,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
   const clock=new THREE.Clock(),xrUtil=XrUtil;
   let container,camera,scene,raycaster,renderer,
       room,INTERSECTED,controls,o0,panim,
-      cursorBox0,cursorBox1;
+      cursorBox0,cursorBox1,moveBoxes=[];
   
   init();
   animate();
@@ -104,7 +104,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     }
     
     ];
-    xrUtil.log('BulletXr v.0.71 ');//FOLDORUPDATEVERSION
+    xrUtil.log('BulletXr v.0.84 ');//FOLDORUPDATEVERSION
     
     
     window.addEventListener('resize',onWindowResize,false);
@@ -167,7 +167,6 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     //Pd5.boxes.push([-75,0,-75,50,10,50]);//,0.09]);
     //Pd5.boxes.push([0,0,-35,10,10,10]);//,0.09]);
     //Pd5.boxes.push([-90,15,-50,25,5,25]);
-    
     
     //Pd5.boxes.push([0,20,35,2,2,2]);//,0.09]);
     
@@ -331,6 +330,18 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     panim.controls=controls;
     
     checkCreateCursorBoxes();
+    
+    if (1) {
+    Pd5.bulletInit();
+    let m;
+    moveBoxes.push({
+      body:Pd5.bulletBox([0,20,35,2,2,2]),
+      mesh:m=new THREE.Mesh(
+        new THREE.BoxGeometry(0.35,0.35,0.35),
+        new THREE.MeshPhongMaterial({flatShading:true,color:0xaaaaaa}))
+    });
+    room.add(m);
+    }
     //---
   }
   function onWindowResize() {
@@ -371,7 +382,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     }
     
     let p0=new THREE.Vector3(),
-        md=Number.MAX_VALUE,nearest;
+        md=20,nearest=undefined;//Number.MAX_VALUE;
     p0.copy(cursorBox.position);
     p0.x=p0.x*13;
     p0.y=(p0.y+1.8)*13;
@@ -383,8 +394,13 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
         md=d;nearest=co;
       }
     }
-    cursorBox.userData.body=nearest;
-    xrUtil.log('Cursorbody set.');
+    if (nearest) {
+      cursorBox.userData.body=nearest;
+      //onsole.log(md);
+      xrUtil.log('Cursorbody set.');
+    } else {
+      xrUtil.log('No near body found.');
+    }
     //...
   }
   
@@ -458,6 +474,10 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     //if (window.panimCalc) 
     //panim.calc(dt);
     //if (Pd5.dynamicsWorld) Pd5.dynamicsWorld.stepSimulation1(dt/1000);
+    for (let b of moveBoxes) {
+      let p=b.body.worldTransform.origin;
+      b.mesh.position.set(p.x/13,p.y/13-1.8,p.z/13);
+    }
     
     threeRender(dt);
     controls.update();
@@ -478,9 +498,9 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,29,9,57
 //fr o,29,9,77
 //fr o,29,9,84
+//fr o,29,9,136
 //fr o,29,9,137
-//fr o,29,9,138
 //fr o,29,13
 //fr o,29,15
 //fr o,29,17
-//fr p,2,421
+//fr p,22,363

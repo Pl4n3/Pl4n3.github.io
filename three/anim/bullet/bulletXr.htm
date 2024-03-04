@@ -104,7 +104,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     }
     
     ];
-    xrUtil.log('BulletXr v.0.111 ');//FOLDORUPDATEVERSION
+    xrUtil.log('BulletXr v.0.112 ');//FOLDORUPDATEVERSION
     
     
     window.addEventListener('resize',onWindowResize,false);
@@ -399,7 +399,8 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     if (nearest) {
     
       var bodyb=new Bullet.RigidBody(0,null,nearest.collisionShape);
-      let hc=new Bullet.HingeConstraint(nearest,bodyb,new Vecmath.Vec3(0,0,0),new Vecmath.Vec3(0,0,0),new Vecmath.Vec3(0.707,0.707,0),new Vecmath.Vec3(0.707,0.707,0));
+      //let hc=new Bullet.HingeConstraint(nearest,bodyb,new Vecmath.Vec3(0,0,0),new Vecmath.Vec3(0,0,0),new Vecmath.Vec3(0.707,0.707,0),new Vecmath.Vec3(0.707,0.707,0));
+      let hc=new Bullet.HingeConstraint(nearest,bodyb,new Vecmath.Vec3(0,0,0),new Vecmath.Vec3(0,0,0),new Vecmath.Vec3(0,0,0),new Vecmath.Vec3(0,0,0));
       Pd5.dynamicsWorld.addConstraint(hc,false);  
     
       cursorBox.userData.body=bodyb;
@@ -518,4 +519,4 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,29,15
 //fr o,29,16
 //fr o,29,18
-//fr p,5,305
+//fr p,4,363

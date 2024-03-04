@@ -104,7 +104,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     }
     
     ];
-    xrUtil.log('BulletXr v.0.84 ');//FOLDORUPDATEVERSION
+    xrUtil.log('BulletXr v.0.111 ');//FOLDORUPDATEVERSION
     
     
     window.addEventListener('resize',onWindowResize,false);
@@ -196,7 +196,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       //---
       if (xrUtil.isSession) return;
       if (e.target===renderer.domElement)
-        cursorBody(cursorBox0);
+        cursorBody(cursorBox0,0);
       
       //if (cursorBox0.userData.body) {
       //  delete(cursorBox0.userData.body);
@@ -331,13 +331,13 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     checkCreateCursorBoxes();
     
-    if (1) {
+    if (0) {
     Pd5.bulletInit();
     let m;
     moveBoxes.push({
       body:Pd5.bulletBox([0,20,35,2,2,2]),
       mesh:m=new THREE.Mesh(
-        new THREE.BoxGeometry(0.35,0.35,0.35),
+        new THREE.BoxGeometry(0.3,0.3,0.3),
         new THREE.MeshPhongMaterial({flatShading:true,color:0xaaaaaa}))
     });
     room.add(m);
@@ -373,16 +373,18 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     //...
   }
   
-  function cursorBody(cursorBox) {
+  function cursorBody(cursorBox,nr) {
     //---
-    if (cursorBox.userData.body) {
-      delete(cursorBox.userData.body);
-      xrUtil.log('Cursorbody removed.');
+    let ud=cursorBox.userData;
+    if (ud.body) {
+      Pd5.dynamicsWorld.removeConstraint(ud.hingeConstraint);  
+      delete(ud.body);
+      xrUtil.log('Cursorbody '+nr+' removed.');
       return;
     }
     
     let p0=new THREE.Vector3(),
-        md=20,nearest=undefined;//Number.MAX_VALUE;
+        md=600,nearest=undefined;//Number.MAX_VALUE;
     p0.copy(cursorBox.position);
     p0.x=p0.x*13;
     p0.y=(p0.y+1.8)*13;
@@ -395,11 +397,33 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       }
     }
     if (nearest) {
-      cursorBox.userData.body=nearest;
+    
+      var bodyb=new Bullet.RigidBody(0,null,nearest.collisionShape);
+      let hc=new Bullet.HingeConstraint(nearest,bodyb,new Vecmath.Vec3(0,0,0),new Vecmath.Vec3(0,0,0),new Vecmath.Vec3(0.707,0.707,0),new Vecmath.Vec3(0.707,0.707,0));
+      Pd5.dynamicsWorld.addConstraint(hc,false);  
+    
+      cursorBox.userData.body=bodyb;
+      cursorBox.userData.bodya=nearest;
+      cursorBox.userData.hingeConstraint=hc;
+      
       //onsole.log(md);
-      xrUtil.log('Cursorbody set.');
+      xrUtil.log('Cursorbody '+nr+' set.');
+      //onsole.log(nearest);
     } else {
-      xrUtil.log('No near body found.');
+      xrUtil.log('No near body found for cursor '+nr+'.');
+    }
+    //...
+  }
+  function cursorBodyMove(cursorBox) {
+    //---
+    let cbody=cursorBox.userData.body;
+    if (cbody) {
+      let origin=cbody.worldTransform.origin,p=cursorBox.position;
+      origin.x=p.x*13;
+      origin.y=(p.y+1.8)*13;
+      origin.z=p.z*13;
+      //cursorBox.userData.body.setActivationState(Bullet.CollisionObject.DISABLE_DEACTIVATION);
+      cursorBox.userData.bodya.setActivationState(Bullet.CollisionObject.DISABLE_DEACTIVATION);
     }
     //...
   }
@@ -435,7 +459,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
         if (ud.isSelecting) {
           if (!ud.wasSelecting) {
             ud.wasSelecting=true;
-            cursorBody(cursorBox0);
+            cursorBody(cursorBox0,0);
           }
         } else ud.wasSelecting=false;    
       }
@@ -447,23 +471,13 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
         if (ud.isSelecting) {
           if (!ud.wasSelecting) {
             ud.wasSelecting=true;
-            cursorBody(cursorBox1);
+            cursorBody(cursorBox1,1);
           }
         } else ud.wasSelecting=false;
       }
     }
-    if (cursorBox0.userData.body) {
-      let origin=cursorBox0.userData.body.worldTransform.origin,p=cursorBox0.position;
-      origin.x=p.x*13;
-      origin.y=(p.y+1.8)*13;
-      origin.z=p.z*13;
-    }
-    if (cursorBox1.userData.body) {
-      let origin=cursorBox1.userData.body.worldTransform.origin,p=cursorBox1.position;
-      origin.x=p.x*13;
-      origin.y=(p.y+1.8)*13;
-      origin.z=p.z*13;
-    }
+    cursorBodyMove(cursorBox0);
+    cursorBodyMove(cursorBox1);
     
     if (gp1) {
       //panim.gpad=gp1;
@@ -502,5 +516,6 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,29,9,137
 //fr o,29,13
 //fr o,29,15
-//fr o,29,17
-//fr p,22,363
+//fr o,29,16
+//fr o,29,18
+//fr p,5,305

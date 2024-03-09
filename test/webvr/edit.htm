@@ -33,8 +33,8 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       xrUtil=XrUtil,lsKey='editXr_0',sels=[],
       grid={},gridw=0.01,cursor0,cursor1,
       points=[],faces=[],lines=[],
-      nearestPoint,clock,
-      matPoint0,matPoint1,matPointSel,
+      nearestPoint,clock,scripts={},
+      matPoint0,matPoint1,matPointSel,matMesh,
       pointPlane,mesh,line,gridh,
       inpLightColor,inpLightIntensity;
       
@@ -261,15 +261,16 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     //\u25b2 \u25bc
     
-    const version='v.0.538 ';//FOLDORUPDATEVERSION
+    const version='v.0.575 ';//FOLDORUPDATEVERSION
     xrUtil.log('Edit '+version);
     
     //
     
-    matPoint0  =new THREE.MeshPhongMaterial({flatShading:true,color:0x66aa66,transparent:true,opacity:0.7});
-    matPoint1  =new THREE.MeshPhongMaterial({flatShading:true,color:0xaaaa66,transparent:true,opacity:0.8});
-    matPointSel=new THREE.MeshPhongMaterial({flatShading:true,color:0xdddddd,transparent:true,opacity:0.9});
-    let cmat=new THREE.MeshPhongMaterial({flatShading:true,color:0xaaaaaa,transparent:true,opacity:0.7});
+    matPoint0  =new THREE.MeshBasicMaterial({color:0x66aa66,transparent:true,opacity:0.7});
+    matPoint1  =new THREE.MeshBasicMaterial({color:0xaaaa66,transparent:true,opacity:0.8});
+    matPointSel=new THREE.MeshBasicMaterial({color:0xdddddd,transparent:true,opacity:0.9});
+    matMesh    =new THREE.MeshPhongMaterial({flatShading:true,color:0xdddddd,transparent:true,opacity:0.9});
+    let cmat   =new THREE.MeshPhongMaterial({flatShading:true,color:0xaaaaaa,transparent:true,opacity:0.7});
     
     {let mesh=new THREE.Mesh(new THREE.BoxGeometry(0.01,0.01,0.01),cmat);
     mesh.position.z=-0.05;
@@ -469,7 +470,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     //onsole.log(a);
     ge.setIndex(a);
     
-    let m=new THREE.Mesh(ge,matPointSel);
+    let m=new THREE.Mesh(ge,matMesh);
     scene.add(m);mesh=m;
     
     //---
@@ -520,6 +521,58 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     //...
   }
   
+  window.w3ditScriptInit=function(initf) {
+    //---
+    let script=document.currentScript;
+    let a=Object.values(scripts);
+    for (let sc of a) {
+      if (sc.script===script) {
+        //onsole.log('script found.');
+        sc.initf=initf;
+        scriptInit(sc);
+        return;
+      }
+    }
+    //onsole.log(fn);
+    //onsole.error('Script not found.');
+    //...
+  }
+  
+  function scriptInit(sc) {
+    //--- should be invoked everytime a point.script could have been changed
+    for (let mesh of sc.waitingForInit) sc.initf({mesh:mesh});
+    sc.waitingForInit.length=0;
+    //...
+  }
+  
+  function pointScript(mesh,p) {
+    //---
+    let fn=p.script;
+    let scr=scripts[fn];
+    if (!scr) {
+      scr={waitingForInit:[]};
+      scripts[fn]=scr;
+      var script=document.createElement('script');
+      scr.script=script;
+    script.onerror=function() {
+      //---
+      xrUtil.log('Script error:');
+      xrUtil.log(fn);
+      //...
+    }
+    script.onload=function() {
+      //---
+      xrUtil.log('Script loaded:');
+      xrUtil.log(fn);
+      //...
+    }
+      script.src=fn;
+      document.head.appendChild(script);
+    }
+    scr.waitingForInit.push(mesh);
+    //...
+  }
+  
   
   function load(v) {
     //---reset
@@ -542,6 +595,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       mesh.userData.op=p;
       pointPd5(mesh);
       if (p.light) pointLight(mesh);
+      if (p.script) pointScript(mesh,p);
     
     /*  
       if (p.pd5) 
@@ -802,19 +856,26 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,28,14,63
 //fr o,28,14,73
 //fr o,28,14,76
+//fr o,28,14,85
 //fr o,28,14,89
 //fr o,28,14,91
 //fr o,28,14,97
 //fr o,28,14,101
-//fr o,28,14,127
-//fr o,28,14,132
-//fr o,28,14,135
+//fr o,28,14,128
+//fr o,28,14,133
+//fr o,28,14,136
+//fr o,28,19
 //fr o,28,21
 //fr o,28,21,3
 //fr o,28,23
-//fr o,28,26
+//fr o,28,25
+//fr o,28,27
 //fr o,28,29
-//fr o,28,31
-//fr o,28,33
+//fr o,28,29,8
+//fr o,28,29,9
+//fr o,28,32
 //fr o,28,35
-//fr p,15,62
+//fr o,28,37
+//fr o,28,39
+//fr o,28,41
+//fr p,56,493

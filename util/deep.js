@@ -1,7 +1,7 @@
 //----
 var Deep=function(ps) {
   var rH=ps.rH?ps.rH:undefined,PI=Math.PI,
-      version='0.328 ',//FOLDORUPDATEVERSION
+      version='0.334 ',//FOLDORUPDATEVERSION
       newView=true,ovs=[],lastcurs=undefined,curso=undefined,
       self=this,dt=0;
   function dkey(x,y,z) {
@@ -465,19 +465,19 @@ var Deep=function(ps) {
     return 0;
     //...
   }
-  this.dista=function(o0,o1) {
+  function dista4(x,y,z,o1) {
     //---
-    var dx=o0.x-o1.x;
+    var dx=x-o1.x;
     if (o1.xw) {
       //onsole.log('deep.dist '+dx+' '+o1.xw);
       if (dx>0) dx=Math.max(0,dx-(o1.xw-1));
     }
-    var dy=o0.y-o1.y;
+    var dy=y-o1.y;
     if (o1.yw) {
       //onsole.log('deep.dist '+dy+' '+o1.yw);
       if (dy>0) dy=Math.max(0,dy-(o1.yw-1));
     }
-    var dz=o0.z-o1.z;
+    var dz=z-o1.z;
     
     if (o1.zw) {
       //onsole.log('deep.dist '+dz+' '+o1.zw);
@@ -485,6 +485,11 @@ var Deep=function(ps) {
     }
     
     return Math.abs(dx)+Math.abs(dy)+Math.abs(dz);
+    //...
+  }
+  function dista(o0,o1) {
+    //---
+    return dista4(o0.x,o0.y,o0.z,o1);
     //...
   }
   function dist(o0,o1) {
@@ -638,16 +643,39 @@ var Deep=function(ps) {
     //...
   }
   
-  this.dist=dist;
+  this.dist=dist;this.dista=dista;this.dista4=dista4;
   this.dAngle=dAngle;
   this.rH=rH;this.dkey=dkey;
   this.getR=getR;
   this.setViews=setViews;
   //----
+  
+  this.dungeonLoad=function(a) {
+    //--- moved here from deep7 to be used in xrEdit
+    var rH={},
+        xmi=1000,ymi=1000,zmi=1000,xma=-1000,yma=-1000,zma=-1000;
+    for (var i=0;i<a.length;i++) {
+      var ah=a[i];
+      for (var j=0;j<(ah[3]||1);j++) {
+        var x=ah[0]+j,y=ah[1],z=ah[2];
+        rH[dkey(x,y,z)]=[x,y,z];
+        xmi=Math.min(xmi,x);ymi=Math.min(ymi,y);zmi=Math.min(zmi,z);
+        xma=Math.max(xma,x);yma=Math.max(yma,y);zma=Math.max(zma,z);
+      }
+    }
+    
+    //var dx=Math.floor((xmax-xmin)/2),dy=
+    
+    return {rH:rH,xmin:xmi,xmax:xma,ymin:ymi,ymax:yma,zmin:zmi,zmax:zma,
+            dx:-(xma-xmi)/2,dy:-ymi,dz:-(zma-zmi)/2};
+    //...
+  }
+  
+  
   console.log('Deep '+version);//+' '+dist);//...
 }
 
 //fr o,1
-//fr o,1,25
-//fr o,1,26
-//fr p,45,46
+//fr o,1,4
+//fr o,1,44
+//fr p,48,49

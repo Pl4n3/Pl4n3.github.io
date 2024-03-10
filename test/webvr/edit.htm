@@ -262,7 +262,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     //\u25b2 \u25bc
     
-    const version='v.0.579 ';//FOLDORUPDATEVERSION
+    const version='v.0.580 ';//FOLDORUPDATEVERSION
     xrUtil.log('Edit '+version);
     
     //
@@ -541,7 +541,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
   
   function scriptInit(sc) {
     //--- should be invoked everytime a point.script could have been changed
-    for (let mesh of sc.waitingForInit) sc.initf({mesh:mesh});
+    for (let mesh of sc.waitingForInit) sc.initf({mesh:mesh,xrUtil:xrUtil});
     sc.waitingForInit.length=0;
     //...
   }
@@ -865,7 +865,8 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,29,14,133
 //fr o,29,14,136
 //fr o,29,21,3
+//fr o,29,27
 //fr o,29,29
 //fr o,29,29,8
 //fr o,29,29,9
-//fr p,34,82
+//fr p,69,59

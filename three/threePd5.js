@@ -932,6 +932,7 @@ function DungeonGeometry(ps,view) {
       x=a[0];y=a[1];z=a[2];
     }
     //if (a.view^view) continue;
+    //a.view=true;
     if (view&&!a.view) continue;
     if (!view&&(a.view||!(a.wview||ps.allwview)
       )) continue;
@@ -1096,12 +1097,154 @@ threeEnv.pointLight=function(ps) {
   return l;
   //...
 }
+threeEnv.dungeonGeometry=function (ps,view) {
+  //---
+  console.log('dungeonGeometry');
+  //console.log(p);
+  let g=new THREE.BufferGeometry();//THREE.BufferGeometry.call( this );
+  var width=50,height=50,depth=50,t='roofCant0';
+  g.type='DungeonGeometry';
+  g.parameters = {
+    width: width,
+    height: height,
+    depth: depth,
+  };
+  
+  var scope=g;
+  
+  // buffers
+  
+  var indices=[];
+  var vertices=[];
+  var normals=[];
+  var uvs=[];
+  var colors=ps.game&&ps.game.voxedColors?[]:undefined;
+  
+  // helper variables
+  
+  var numberOfVertices = 0;
+  var groupStart = 0;
+  
+  // build each side of the box geometry
+  var w=width,h=height,d=depth,a,mx,mz,xz;
+  
+  if (0) {
+  
+  
+    a=[[[-100,100,100,0.27,0.4381],[-100,-100,100,0.27,0.4688],[100,-100,100,0.4688,0.4108],[100,100,100,0.4688,0.3801]
+       ,[-100,-100,-100,0.1563,0.3676],[-100,100,-100,0.1563,0.2142],[100,-100,-100,0.355,0.3096],[100,100,-100,0.355,0.1563]
+       ,[100,100,-100,0.355,0.1563],[-100,100,-100,0.1563,0.2142],[-100,100,100,0.27,0.4381],[100,100,100,0.4688,0.3801],[-100,-100,100,0.27,0.4688],[100,-100,100,0.4688,0.4108],[-100,-100,-100,0.1563,0.3676],[100,-100,-100,0.355,0.3096],[100,100,-100,0.355,0.1563],[100,100,100,0.4688,0.3801],[100,-100,100,0.4688,0.4108],[100,-100,-100,0.355,0.3096],[-100,100,-100,0.1563,0.2142],[-100,100,100,0.27,0.4381],[-100,-100,100,0.27,0.4688],[-100,-100,-100,0.1563,0.3676]],
+       [
+       [2,0,1],[0,2,3]
+       ,[4,7,6],[7,4,5]
+       ,[2,1,4],[4,6,2]
+       //,[15,12,14],[12,15,13]
+       //,[17,19,18],[23,21,22],[10,16,11],[16,10,20],[17,8,19],[9,21,23]
+       ]];
+  
+  //if (0) {
+  var pa=a[0],fa=a[1];
+  for (var i=0;i<pa.length;i++) { var p=pa[i];
+    var x=(mx?-1:1)*(xz?p[2]:p[0]),
+        y=p[1],
+        z=(mz?-1:1)*(xz?p[0]:p[2]);
+    vertices.push(x*w/200,y*h/200,z*d/200);normals.push(0,0,1);uvs.push(p[3],p[4]); }
+  for (var i=0;i<fa.length;i++) { var f=fa[i];
+    if ((mz&&!xz)||(xz&&!mx&&!mz)||(mx&&!xz)) indices.push(f[0],f[1],f[2]); else indices.push(f[0],f[2],f[1]); 
+  }
+  } 
+  let dcolor={r:0.7,g:0.7,b:0.7},color=dcolor,vcols=colors?Voxed.getColors():undefined,vox;
+  function key(x,y,z) {
+    return z+' '+y+' '+x;
+  }
+  function vert(x,y,z,u,v) {
+    x+=b*ps.dx;//-=b*(ps.xmax+ps.xmin)/2;
+    z+=b*ps.dz;//-=b*(ps.zmax+ps.zmin)/2;
+    y+=b*ps.dy;//-=b*ps.ymin;
+    u*=0.5;
+    v*=0.5;
+    vertices.push(x,y,z);normals.push(u,v,0);uvs.push(u||0,v||0);
+    if (colors) colors.push(color.r,color.g,color.b);
+    return vertices.length/3-1;
+  }
+  var rH=ps.rH,b=ps.blockw||10;  
+  for (var k in rH) if (rH.hasOwnProperty(k)) {
+    var a=rH[k],x,y,z;
+    if (a.sky) continue;
+    if (a.x!==undefined) {
+      x=a.x;y=a.y;z=a.z;
+    } else {
+      x=a[0];y=a[1];z=a[2];
+    }
+    //if (a.view^view) continue;
+    //a.view=true;
+    if (view&&!a.view) continue;
+    if (!view&&(a.view||!(a.wview||ps.allwview)
+      )) continue;
+      
+    //let n;
+    if (!rH[key(x,y-1,z)]) {
+      if (colors&&(vox=Voxed.etV(x,y-1,z))) color=vcols[vox.c];
+      var i0=vert(x*b,y*b,z*b,0,0),i1=vert((x+1)*b,y*b,z*b,1,0),i2=vert(x*b,y*b,(z+1)*b,0,1),i3=vert((x+1)*b,y*b,(z+1)*b,1,1);
+      indices.push(i0,i3,i1);indices.push(i0,i2,i3);
+      if (colors) color=dcolor;
+    }
+    if (!rH[key(x,y+1,z)]) {
+      if (colors&&(vox=Voxed.etV(x,y+1,z))) color=vcols[vox.c];
+      var i0=vert(x*b,(y+1)*b,z*b,0,0),i1=vert((x+1)*b,(y+1)*b,z*b,1,0),i2=vert(x*b,(y+1)*b,(z+1)*b,0,1),i3=vert((x+1)*b,(y+1)*b,(z+1)*b,1,1);
+      indices.push(i0,i1,i3);indices.push(i0,i3,i2);
+      if (colors) color=dcolor;
+    }
+    if (!rH[key(x-1,y,z)]) {
+      if (colors&&(vox=Voxed.etV(x-1,y,z))) color=vcols[vox.c];
+      var i0=vert(x*b,y*b,z*b,0,0),i1=vert(x*b,(y+1)*b,z*b,1,0),i2=vert(x*b,(y+1)*b,(z+1)*b,1,1),i3=vert(x*b,y*b,(z+1)*b,0,1);
+      indices.push(i0,i1,i2);indices.push(i0,i2,i3);
+      if (colors) color=dcolor;
+    }
+    if (!rH[key(x+1,y,z)]) {
+      if (colors&&(vox=Voxed.etV(x+1,y,z))) color=vcols[vox.c];
+      var i0=vert((x+1)*b,y*b,z*b,0,0),i1=vert((x+1)*b,(y+1)*b,z*b,1,0),i2=vert((x+1)*b,(y+1)*b,(z+1)*b,1,1),i3=vert((x+1)*b,y*b,(z+1)*b,0,1);
+      indices.push(i0,i2,i1);indices.push(i0,i3,i2);
+      if (colors) color=dcolor;
+    }
+    if (!rH[key(x,y,z-1)]) {
+      if (colors&&(vox=Voxed.etV(x,y,z-1))) color=vcols[vox.c];
+      var i0=vert(x*b,y*b,z*b,0,0),i1=vert((x+1)*b,y*b,z*b,1,0),i2=vert((x+1)*b,(y+1)*b,z*b,1,1),i3=vert(x*b,(y+1)*b,z*b,0,1);
+      indices.push(i0,i1,i2);indices.push(i0,i2,i3);
+      if (colors) color=dcolor;
+    }
+    if (!rH[key(x,y,z+1)]) {
+      if (colors&&(vox=Voxed.etV(x,y,z+1))) color=vcols[vox.c];
+      var i0=vert(x*b,y*b,(z+1)*b,0,0),i1=vert((x+1)*b,y*b,(z+1)*b,1,0),i2=vert((x+1)*b,(y+1)*b,(z+1)*b,1,1),i3=vert(x*b,(y+1)*b,(z+1)*b,0,1);
+      indices.push(i0,i2,i1);indices.push(i0,i3,i2);
+      if (colors) color=dcolor;
+    }
+  }
+  groupCount=indices.length;
+  scope.addGroup( groupStart, groupCount, 0 );
+  groupStart += groupCount;
+  
+  //onsole.log('DungeonGeometry indices.len='+indices.length);
+  
+  g.setIndex(indices);
+  g.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
+  g.setAttribute('normal',  new THREE.Float32BufferAttribute(normals,3));
+  g.setAttribute('uv',      new THREE.Float32BufferAttribute(uvs,2));
+  
+  //onsole.log(normals.length);
+  if (colors)
+  g.setAttribute('color',   new THREE.Float32BufferAttribute(colors,3));
+  
+  if (view) {//view) {
+    //g.computeFaceNormals();
+    g.computeVertexNormals();
+  }
+  return g;
+  //...
+}
 //---
 //fr o,9,35
-//fr o,10
-//fr o,19
-//fr o,21
-//fr o,33
-//fr o,34
-//fr o,36
-//fr p,130,369
+//fr o,25,56
+//fr o,25,57
+//fr o,37
+//fr p,28,39

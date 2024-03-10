@@ -12,6 +12,7 @@
 <script src="/vecmath.js"></script>
 <script src="/canvas/pd5.js"></script>
 <script src="/three/threePd5.js"></script>
+<script src="/util/deep.js"></script>
 </head>
 <body>
 <script type="importmap">
@@ -261,7 +262,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     //\u25b2 \u25bc
     
-    const version='v.0.575 ';//FOLDORUPDATEVERSION
+    const version='v.0.579 ';//FOLDORUPDATEVERSION
     xrUtil.log('Edit '+version);
     
     //
@@ -568,7 +569,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     }
       script.src=fn;
       document.head.appendChild(script);
-    }
+    } else console.error('Re-applying loaded scripts not yet implemented.');
     scr.waitingForInit.push(mesh);
     //...
   }
@@ -851,31 +852,20 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 </body>
 </html>
 <script>
-//fr o,28
-//fr o,28,14
-//fr o,28,14,63
-//fr o,28,14,73
-//fr o,28,14,76
-//fr o,28,14,85
-//fr o,28,14,89
-//fr o,28,14,91
-//fr o,28,14,97
-//fr o,28,14,101
-//fr o,28,14,128
-//fr o,28,14,133
-//fr o,28,14,136
-//fr o,28,19
-//fr o,28,21
-//fr o,28,21,3
-//fr o,28,23
-//fr o,28,25
-//fr o,28,27
-//fr o,28,29
-//fr o,28,29,8
-//fr o,28,29,9
-//fr o,28,32
-//fr o,28,35
-//fr o,28,37
-//fr o,28,39
-//fr o,28,41
-//fr p,56,493
+//fr o,29
+//fr o,29,14,63
+//fr o,29,14,73
+//fr o,29,14,76
+//fr o,29,14,85
+//fr o,29,14,89
+//fr o,29,14,91
+//fr o,29,14,97
+//fr o,29,14,101
+//fr o,29,14,128
+//fr o,29,14,133
+//fr o,29,14,136
+//fr o,29,21,3
+//fr o,29,29
+//fr o,29,29,8
+//fr o,29,29,9
+//fr p,34,82

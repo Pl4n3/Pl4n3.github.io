@@ -36,11 +36,9 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       points=[],faces=[],lines=[],
       nearestPoint,clock,scripts={},
       matPoint0,matPoint1,matPointSel,matMesh,
-      pointPlane,mesh,line,gridh,
-      inpLightColor,inpLightIntensity;
-      
-  init();
-  animate();
+      pointPlane,mesh,line,gridh,dir,
+      inpLightColor,inpLightIntensity,mFn,
+      paint=false,paintmesh;
   
   function init() {
     //---
@@ -60,8 +58,10 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     controls.update();
     
+    if (0) {
     gridh=new THREE.GridHelper(4,4,0x555555,0x111111);
     scene.add(gridh);
+    }
     
     /*
     scene.add(new THREE.HemisphereLight(0x888877,0x777788,1));
@@ -106,27 +106,132 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     container.appendChild(renderer.domElement);
     
+    let mDir;
+    
+    function lsFnKey(fn) {
+      //
+      return lsKey+((fn.length>0)?'file'+fn:'');
+      //...
+    }
     function oninput(v) {
       //---
       console.log(v);
       //...
     }
     
+    function dirFileLoad() {
+      //---
+      let i=this.i,fn=dir.a[i].fn,key=lsFnKey(fn);
+      let ls=localStorage[key];
+      load(ls);
+      if (dir.i!==i) {
+        dir.i=i;
+        mFn.s=fn;
+        localStorage[lsKey+'dir']=JSON.stringify(dir);
+        mDirUpdate();
+      }
+      
+      xrUtil.log('Loaded \''+fn+'\' '+ls.length+'b');
+      xrUtil.uiMenuSet({menu:xrUtil.hud.menu0});
+      //onsole.log(this);
+      //...
+    }
+    function dirFileDel() {
+      //---
+      
+      let i=this.i,fn=dir.a[i].fn,key=lsFnKey(fn);
+      let ls=localStorage[key];
+      if ((dir.i>=i)&&(i!=0)) dir.i--;
+      dir.a.splice(i,1);
+      localStorage[lsKey+'dir']=JSON.stringify(dir);
+      mDirUpdate();
+      localStorage[key]='';
+      console.log('emptied localStorage length='+localStorage[key].length);
+      
+      xrUtil.log('Deleted \''+fn+'\' '+ls.length+'b');
+      xrUtil.uiMenuSet({menu:xrUtil.hud.menu0});
+      //...
+    }
+    
+    function mDirUpdate() {
+      //---
+      mDir.sub.length=1;
+      mDir.ms=(dir.i+1)+'. of '+dir.a.length;
+      //for (let f of dir.a) mDir.sub.push({s:f.fn,dy:0.01,h:0.08});
+      for (let i=0;i<dir.a.length;i++) {
+        mDir.sub.push({s:dir.a[i].fn,x:0.05,dy:0.01,w:0.4,h:0.08,i:i,ondown:dirFileLoad});
+        if (dir.a.length>1) mDir.sub.push({s:'del',dx:0.05,w:0.15,i:i,ondown:dirFileDel});
+      }
+      //...
+    }
     
     xrUtil.init({scene:scene,renderer:renderer,camera:camera,room:scene,sculpt:1//,vrPos:vrPos
       });
     xrUtil.initHud();
     xrUtil.hud.buttons=[
-    {s:'Save',x:0.5,y:0.7,w:0.45,h:0.25,ondown:function() {
+    
+    mFn={s:'filename',ms:'Current file',x:0.05,y:0.85,w:0.4,h:0.1,oninput:function(v) {
       //---
+      //xrUtil.log(v);
+      //...
+    }
+    },
+    
+    mDir={s:'\u25bc',ms:'Files',x:0.5,y:0.85,w:0.1,h:0.1,sub:[
+      {s:'Files \u25b2',x:0.05,y:0.4,w:0.4,h:0.1}
+      ,{s:'File0',dy:0.05}
+    ]},
+    
+    {s:'Save',x:0.65,y:0.85,w:0.3,h:0.1,ondown:function() {
+      //---
+      let fn=mFn.s;
+      if (dir.a[dir.i].fn!=fn) { //---update dir
+        dir.i=undefined;
+        for (let i=dir.a.length-1;i>=0;i--) {
+          if (dir.a[i].fn==fn) {
+            //  if files can be removed via remove button, better do here skip with msg:
+            //  'file already exists, remove it first'
+            xrUtil.log('File already exists, first delete it.');
+            return;
+            //dir.i=i;break;
+          }
+        }
+        if (dir.i===undefined) {
+          dir.a.push({fn:fn});
+          dir.i=dir.a.length-1;
+          mDirUpdate();
+        }
+        localStorage[lsKey+'dir']=JSON.stringify(dir);
+      }
+      
       let s=serialize();
-      localStorage[lsKey]=s;
+      localStorage[lsFnKey(fn)]=s;
       xrUtil.log('Saved '+s.length+' bytes.');
       //...
     }
     },
     
-    {s:'Grid',x:0.7,y:0.4,w:0.25,h:0.1,ondown:function() {
+    {s:'R',x:0.5,y:0.4,w:0.05,h:0.1,ondown:function() {
+      //---
+      xrUtil.rayAll=!xrUtil.rayAll;
+      xrUtil.log('rayAll='+xrUtil.rayAll);
+      //...
+    }
+    },
+    
+    
+    {s:'Paint',x:0.6,y:0.4,w:0.15,h:0.1,ondown:function() {
+      //---
+      paint=!paint;
+      this.s=paint?'NP':'Paint';
+      controls.enabled=!paint;
+      if (paint) scene.add(paintmesh); else scene.remove(paintmesh);
+      //xrUtil.rayAll
+      //...
+    }
+    },
+    
+    {s:'Grid',x:0.8,y:0.4,w:0.15,h:0.1,ondown:function() {
       //---
       gridh.visible=!gridh.visible;
       //...
@@ -212,9 +317,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       }
     
     ]}
-     ]}
-     
-    ,{s:'Del points',x:0.05,y:0.55,w:0.4,h:0.1,ondown:function() {
+    ,{s:'Delete',x:0.05,dy:0.05,w:0.4,ondown:function() {
       //---
       for (let p of sels) {
         let i=points.indexOf(p);
@@ -226,7 +329,9 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       //...
     }
     }
-    ,{s:'Face',x:0.05,y:0.7,w:0.4,h:0.1,ondown:function() {
+     ]}
+     
+    ,{s:'Face',x:0.05,y:0.55,w:0.4,h:0.1,ondown:function() {
       //---
       if (sels.length!=3) { xrUtil.log('Select 3 points.');return; }
       faces.push({v0:sels[0],v1:sels[1],v2:sels[2]});
@@ -235,7 +340,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       //...
     }
     }
-    ,{s:'Line',x:0.05,y:0.85,w:0.4,h:0.1,ondown:function() {
+    ,{s:'Line',x:0.05,y:0.7,w:0.4,h:0.1,ondown:function() {
       //---
       if (sels.length!=2) { xrUtil.log('Select 2 points.');return; }
       let v0=sels[0],v1=sels[1],del=false;
@@ -262,7 +367,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     //\u25b2 \u25bc
     
-    const version='v.0.580 ';//FOLDORUPDATEVERSION
+    const version='v.0.730 ';//FOLDORUPDATEVERSION
     xrUtil.log('Edit '+version);
     
     //
@@ -273,16 +378,53 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     matMesh    =new THREE.MeshPhongMaterial({flatShading:true,color:0xdddddd,transparent:true,opacity:0.9});
     let cmat   =new THREE.MeshPhongMaterial({flatShading:true,color:0xaaaaaa,transparent:true,opacity:0.7});
     
+    function line() {
+      //---
+      let geometry = new THREE.BufferGeometry();
+      geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( [ 0, 0, 0, 0, 0, - 1 ], 3 ) );
+      geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( [ 0.5, 0.5, 0.5, 0, 0, 0 ], 3 ) );
+      
+      let material = new THREE.LineBasicMaterial( { vertexColors: true, blending: THREE.AdditiveBlending } );
+      
+      return new THREE.Line( geometry, material );
+      //...
+    }
+    
+    
     {let mesh=new THREE.Mesh(new THREE.BoxGeometry(0.01,0.01,0.01),cmat);
     mesh.position.z=-0.05;
-    xrUtil.ctrl0.add(cursor0=mesh);} //left
+    xrUtil.ctrl0.add(cursor0=mesh);
+    xrUtil.ctrl0.add(line());
+    } //left
     
     {let mesh=new THREE.Mesh(new THREE.BoxGeometry(0.02,0.02,0.02),cmat);
     mesh.position.z=-0.05;
-    xrUtil.ctrl1.add(cursor1=mesh);} //right
+    xrUtil.ctrl1.add(cursor1=mesh);
+    xrUtil.ctrl1.add(line());
+    } //right
+    
+    {
+    let mesh=new THREE.Mesh(new THREE.BoxGeometry(0.01,0.01,0.01),matPoint1);
+    paintmesh=mesh;//scene.add(mesh);
+    } 
+    
     
     raycaster=new THREE.Raycaster();
     
+    
+    function rayCol(co,down) {
+      //---
+      if (!paint) return;
+      paintmesh.position.copy(co.point);
+      if (down) {
+        let ud=co.object.userData;
+        if (ud.scriptPaint) ud.scriptPaint(co);
+      }
+      //...
+    }
+    xrUtil.rayCol=rayCol;
+    
+    let pointDown=false;
     function point(x,y,mode,e) {
       //---
       let p2=new THREE.Vector2(2*x/window.innerWidth-1,-2*y/window.innerHeight+1);
@@ -300,11 +442,11 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       
       let a=raycaster.intersectObjects(scene.children);
       
-      //onsole.log('mousedown '+a.length);
-      let np=undefined,hudo=undefined;
+      //onsole.log('point a.len='+a.length);
+      let np=undefined,hudo=undefined,paintco=undefined;
       for (let co of a) {
         let o=co.object;
-        if (o===grid) continue;
+        if ((o===gridh)||(o===line)||(o===paintmesh)) continue;
         if (o===xrUtil.hudMesh) {
           //onsole.log('hud');
           hudo=co;
@@ -315,11 +457,26 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
           np=o;//setNearestPoint(o);
           break;
         }
+        if ((!paintco)&&o.userData.scriptPaint) paintco=co;
+        //console.log(co.object);
       }
       
-      controls.enabled=!hudo;
+      controls.enabled=!hudo&&!paint;
       xrUtil.hudIntersects(hudo,mode==1);
       if (hudo) return;
+      
+      if (paint) {
+        if (paintco) {
+          rayCol(paintco,pointDown);
+          //paintmesh.position.copy(paintco.point);
+          //if (pointDown) {
+          //  let ud=paintco.object.userData;
+          //  if (ud.scriptPaint) ud.scriptPaint(paintco);
+          //}
+          //onsole.log(paintco);
+        }
+        return;
+      }
       
       let pp=pointPlane;
       if (mode==1) {
@@ -344,7 +501,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       } else {
         if (pp&&pp.visible) pp.visible=false;
         setNearestPoint(np);
-        controls.enabled=true;
+        controls.enabled=!paint;
       }
       //...
     }
@@ -352,7 +509,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     window.addEventListener('resize',onWindowResize);
     const canv=renderer.domElement;
     
-    canv.parentElement.addEventListener('mousemove',function(e) {
+    canv.parentElement.addEventListener('pointermove',function(e) {
       //---
       //onsole.log('mousemove');
       point(e.clientX,e.clientY,2,e);
@@ -360,16 +517,19 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     }
     );
     
-    canv.addEventListener('mousedown',function(e) {
+    canv.addEventListener('pointerdown',function(e) {
       //---
       //onsole.log('mousedown');
+      pointDown=true;
       point(e.clientX,e.clientY,1,e);
       //...
     }
     );
-    canv.parentElement.addEventListener('mouseup',function(e) {
+    
+    canv.parentElement.addEventListener('pointerup',function(e) {
       //---
       //onsole.log('mouseup');
+      pointDown=false;
       point(e.clientX,e.clientY,0,e);
       //...
     }
@@ -403,7 +563,14 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     ph=new THREE.Vector3();
     
-    let ls=localStorage[lsKey];
+    dir=localStorage[lsKey+'dir'];
+    if (dir) dir=JSON.parse(dir); else dir={i:0,a:[{fn:''}]};
+    //onsole.log(dir);
+    let fn=dir.a[dir.i].fn;
+    //onsole.log(fn);
+    mFn.s=fn;//xrUtil.log(dir.a.length+' files, index='+dir.i+'.');
+    mDirUpdate();
+    let ls=localStorage[lsFnKey(fn)];
     if (ls) load(ls);
     else {
       let g=new THREE.BoxGeometry(0.01,0.01,0.01),
@@ -447,11 +614,9 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     renderer.setSize(window.innerWidth,window.innerHeight);
     //...
   }
-  //
   function animate() {
     renderer.setAnimationLoop(render);
   }
-  
   function updateMesh() {
     //---
     if (mesh) scene.remove(mesh);
@@ -484,7 +649,6 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     scene.add(line);
     //...
   }
-  
   function pointPd5(mesh) {
     //---
     let p=mesh.userData.op;
@@ -507,7 +671,6 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     //console.log(p);
     //...
   }
-  
   function pointLight(mesh) {
     //---
     let ps=mesh.userData.op.light;
@@ -521,7 +684,6 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     mesh.add(l);
     //...
   }
-  
   window.w3ditScriptInit=function(initf) {
     //---
     let script=document.currentScript;
@@ -538,14 +700,12 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     //onsole.error('Script not found.');
     //...
   }
-  
   function scriptInit(sc) {
     //--- should be invoked everytime a point.script could have been changed
-    for (let mesh of sc.waitingForInit) sc.initf({mesh:mesh,xrUtil:xrUtil});
+    for (let h of sc.waitingForInit) sc.initf(h);//{mesh:mesh,xrUtil:xrUtil});
     sc.waitingForInit.length=0;
     //...
   }
-  
   function pointScript(mesh,p) {
     //---
     let fn=p.script;
@@ -569,12 +729,10 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     }
       script.src=fn;
       document.head.appendChild(script);
-    } else console.error('Re-applying loaded scripts not yet implemented.');
-    scr.waitingForInit.push(mesh);
+    } else xrUtil.log('Re-applying loaded scripts not yet implemented.');
+    scr.waitingForInit.push({mesh:mesh,xrUtil:xrUtil,ps:p});
     //...
   }
-  
-  
   function load(v) {
     //---reset
     for (let p of points) scene.remove(p);
@@ -639,7 +797,6 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     //onsole.log(v);
     //...
   }
-  
   let wasSelecting=undefined;
   function render() {
     //---
@@ -740,7 +897,6 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     renderer.render(scene,camera);
     //...
   }
-  
   function select(p) {
     //---
     let l=sels.length;
@@ -774,7 +930,6 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       xrUtil.log('Selected:'+sels.length);
     //...
   }
-  
   function serialize() {
     //---
     
@@ -829,7 +984,6 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     return s;
     //...
   }
-  
   function setNearestPoint(p) {
     //---
     let op=nearestPoint;
@@ -845,6 +999,8 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     //...
   }
   
+  init();
+  animate();
   //...
 }
 )();
@@ -853,20 +1009,15 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 </html>
 <script>
 //fr o,29
-//fr o,29,14,63
-//fr o,29,14,73
-//fr o,29,14,76
-//fr o,29,14,85
-//fr o,29,14,89
-//fr o,29,14,91
-//fr o,29,14,97
-//fr o,29,14,101
-//fr o,29,14,128
-//fr o,29,14,133
-//fr o,29,14,136
-//fr o,29,21,3
-//fr o,29,27
-//fr o,29,29
-//fr o,29,29,8
-//fr o,29,29,9
-//fr p,69,59
+//fr o,29,12
+//fr o,29,12,91
+//fr o,29,12,95
+//fr o,29,12,98
+//fr o,29,12,143
+//fr o,29,12,167
+//fr o,29,12,171
+//fr o,29,15
+//fr o,29,20,8
+//fr o,29,20,9
+//fr o,29,23
+//fr p,24,134

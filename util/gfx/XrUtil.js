@@ -5,10 +5,10 @@ import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFa
 let XrUtil={};
 (function(pself) {
   //---
-  let version='v.1.244 ',//FOLDORUPDATEVERSION
+  let version='v.1.305 ',//FOLDORUPDATEVERSION
       self=pself,ctrl0,ctrl1,gp0,gp1,camera,scene,room,vrPos,huds=[],hudMesh,
       hud={lines:['XrUtil '+version],cursor:{x:0.5,y:0.5,vis:false},buttons:[]},
-      raycaster,INTERSECTED,hudCount=0,needDrawUi=false,input;
+      raycaster,INTERSECTED,hudCount=0,needDrawUi=false,input,uisc=2;
   
   const tempMatrix=new THREE.Matrix4(),vt=new THREE.Vector3();
   
@@ -92,15 +92,15 @@ let XrUtil={};
     //let XRControllerModelFactory=ps.XRControllerModelFactory;
     
     function onSelectStart() {
-      
-      this.userData.isSelecting = true;
-      
+      //---
+      this.userData.isSelecting=true;
+      //...
     }
     
     function onSelectEnd() {
-      
-      this.userData.isSelecting = false;
-      
+      //---
+      this.userData.isSelecting=false;
+      //...
     }
     
     
@@ -243,12 +243,19 @@ let XrUtil={};
     window.addEventListener('keydown',keyDown);
     //...
   }
+  self.uiMenuSet=function(ps) {
+    //--
+    for (let b of ps.menu) b.pressed=true;
+    hud.buttons=ps.menu;
+    //...
+  }
   function drawHud() {
     //---
     const ct=hud.ct,c=hud.c,w=c.width,h=c.height;
     ct.clearRect(0,0,w,h);
+    ct.lineWidth=uisc;
     ct.fillStyle='rgba(0,0,0,0.3)';ct.fillRect(0,0,w,h);
-    ct.font='20px sans-serif';//ct.textBaseline='top';
+    ct.font=(16*uisc)+'px sans-serif';//ct.textBaseline='top';
     //ct.fillText('c='+hudCount,2,2);
     const cur=hud.cursor,curx=cur.x*w,cury=cur.y*h;
     //ct.fillStyle='white';ct.fillText((cur.vis?1:0)+' '+Conet.f4(curx)+' '+Conet.f4(cury),12,40);
@@ -284,13 +291,23 @@ let XrUtil={};
         }
       } 
       if (!b.noinp) {
-        ct.strokeStyle=b.selected?'#fff':'#222';//#aaa
+        ct.strokeStyle=b.selected?'#fff':(b.oninput?'#440':'#222');//#aaa
         ct.strokeRect(bx,by,bw,bh);
       }
       if (b.ondraw) b.ondraw();
       if (b.color) {
         ct.fillStyle=b.color;
         ct.fillRect(bx+4,by+4,bw-8,bh-8);
+      }
+      if (b.ms) {
+        ct.textAlign='left';
+        ct.textBaseline='bottom';
+        ct.font=(7*uisc)+'px sans-serif';
+        ct.fillStyle='#888';
+        ct.fillText(b.ms,bx+2*uisc,by+bh-uisc);
+        ct.textAlign='center';
+        ct.textBaseline='middle';
+        ct.font=(16*uisc)+'px sans-serif';
       }
       if (b.s!==undefined) {
         ct.fillStyle='#ddd';
@@ -301,19 +318,20 @@ let XrUtil={};
     ct.textAlign='start';
     ct.textBaseline='top';
     ct.fillStyle='#ddd';
-    ct.font='14px sans-serif';//ct.textBaseline='top';
+    ct.font=(10*uisc)+'px sans-serif';//ct.textBaseline='top';
     for (let i=0;i<hud.lines.length;i++) {
-      ct.fillText(hud.lines[i],3,3+i*12);
+      ct.fillText(hud.lines[i],3*uisc,(3+i*10)*uisc);
     }
     if (cur.vis) {
       ct.strokeStyle='#fff';
-      ct.strokeRect(curx-5,cury-5,10,10);
+      ct.strokeRect(curx-5*uisc,cury-5*uisc,10*uisc,10*uisc);
     }
     hud.t.needsUpdate=true;
     
     if (newMenu) {
-      for (let b of newMenu) b.pressed=true;
-      hud.buttons=newMenu;
+      self.uiMenuSet({menu:newMenu});
+      //for (let b of newMenu) b.pressed=true;
+      //hud.buttons=newMenu;
     }
     needDrawUi=newMenu;
     //...
@@ -355,14 +373,16 @@ let XrUtil={};
   self.log=function(s) {
     //---
     hud.lines.push(s);
-    while (hud.lines.length>4) hud.lines.splice(0,1);
+    while (hud.lines.length>7) hud.lines.splice(0,1);
     //drawHud();
     needDrawUi=true;
     //...
   }
   self.initHud=function(ps) {
     const g=new THREE.PlaneGeometry(0.15,0.15);
-    const c=document.createElement('canvas');c.width=256;c.height=256;
+    const c=document.createElement('canvas');
+    c.width=256*uisc;
+    c.height=c.width;
     const ct=c.getContext('2d');hud.c=c;hud.ct=ct;
     //ct.fillStyle='rgba(0,0,0,0.3)';ct.fillRect(0,0,c.width,c.height);
     //ct.font='20px sans-serif';ct.textBaseline='top';ct.fillStyle='#ff0';ct.fillText('n/i',2,2);
@@ -375,7 +395,7 @@ let XrUtil={};
     //o.rotation.y=0.3;
     hudMesh=o;
     
-    camera.add(o);o.position.set(-0.2,0.1,-0.5);//o.rotation.y=0.3;
+    camera.add(o);o.position.set(-0.15,0.1,-0.4);//o.rotation.y=0.3;
     //scene.add(o);
     
     //ctrl0.add(o);o.position.set(-0.2,0,0);o.rotation.x=-1;o.rotation.y=1;
@@ -386,6 +406,7 @@ let XrUtil={};
     self.huds=huds;self.hudMesh=hudMesh;self.hud=hud;
     //...
   }
+  self.rayAll=true;
   self.renderHud=function() {
     //---
     let i0=undefined;
@@ -395,11 +416,29 @@ let XrUtil={};
         tempMatrix.identity().extractRotation(ctrl1.matrixWorld);
         raycaster.ray.origin.setFromMatrixPosition(ctrl1.matrixWorld);
         raycaster.ray.direction.set(0,0,-1).applyMatrix4(tempMatrix);
-        raycaster.far=0.1;
-        const intersects=raycaster.intersectObjects(huds),//room.children);
-              cursor=self.cursor;
-        //let i0=undefined;
-        if (intersects.length>0) i0=intersects[0];
+        if (self.rayAll) {
+          raycaster.far=Infinity;
+          let a=raycaster.intersectObjects(scene.children);
+          //onsole.log(a.length);
+          for (let co of a) {
+            let o=co.object;
+            if ((o===hudMesh)&&(co.distance<0.1)) { 
+              i0=co;
+              break;
+              //onsole.log(co);
+            }
+            if (o.userData.scriptPaint) {
+              if (self.rayCol) self.rayCol(co,gp1&&gp1.buttons[0].pressed);
+              break;
+            }
+          }
+        } else {
+          raycaster.far=0.1;
+          const intersects=raycaster.intersectObjects(huds),//room.children);
+                cursor=self.cursor;
+          //let i0=undefined;
+          if (intersects.length>0) i0=intersects[0];
+        }
         hudIntersects(i0,i0&&gp1&&gp1.buttons[0].pressed);
       }
       if (needDrawUi) drawHud();
@@ -414,5 +453,13 @@ let XrUtil={};
 export { XrUtil };
 //fr o,5
 //fr o,5,8
+//fr o,5,10
+//fr o,5,12
+//fr o,5,12,8
+//fr o,5,12,10
+//fr o,5,12,41
+//fr o,5,12,58
 //fr o,5,13
-//fr p,62,53
+//fr o,5,15
+//fr o,5,20
+//fr p,8,234

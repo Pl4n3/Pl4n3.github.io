@@ -1,9 +1,8 @@
 # pl4n3.github.io
-Work in progress:
-
 <!-- 1. [vr cubes](/three/r124/examples/webxr_vr_cubes.html) -->
 <!-- 1. [cubes124](/test/webvr/cubes124.htm) -->
 
+1. [**SimplePaint**](/canvas/paint/simplePaint.htm)
 1. [voxXr](/three/anim/voxed/voxXr.htm)
 1. [sculpt160](/test/webvr/sculpt160.htm)
 

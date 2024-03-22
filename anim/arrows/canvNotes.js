@@ -454,7 +454,7 @@ var CanvNotes=function(gps) {
   function clear() {
     //---
     for (var o of objs) if (o.intern.unHook) o.intern.unHook();
-    Menu.setChecked(mdown,false);
+    if (mdown) Menu.setChecked(mdown,false);
     
     delete(self.audioQueuesStay);
     objs.length=0;
@@ -1133,7 +1133,7 @@ var CanvNotes=function(gps) {
     }
     
     ctx.fillStyle='#000000';
-    ctx.fillText('CanvNotes v.0.873 - '+fpss,10*dpr,10*dpr);//FOLDORUPDATEVERSION
+    ctx.fillText('CanvNotes v.0.877 - '+fpss,10*dpr,10*dpr);//FOLDORUPDATEVERSION
     for (var h=0;h<logs.length;h++)
       ctx.fillText(logs[h],10*dpr,10*dpr+fs+h*fs);
     
@@ -1317,8 +1317,10 @@ var CanvNotes=function(gps) {
 //fr o,1,25
 //fr o,1,30
 //fr o,1,37
+//fr o,1,39
 //fr o,1,42
 //fr o,1,42,9
+//fr o,1,44
 //fr o,1,44,42
 //fr o,1,44,52
 //fr o,1,44,56
@@ -1331,4 +1333,4 @@ var CanvNotes=function(gps) {
 //fr o,1,44,94
 //fr o,1,50
 //fr o,1,52
-//fr p,17,240
+//fr p,40,242

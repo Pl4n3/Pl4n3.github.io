@@ -2,7 +2,7 @@
 <!-- 1. [vr cubes](/three/r124/examples/webxr_vr_cubes.html) -->
 <!-- 1. [cubes124](/test/webvr/cubes124.htm) -->
 
-1. [Learn 𝄞+𝄢 Notenames](http://localhost:7000/anim/arrows/canv.htm?fn=/anim/arrows/canvNotes/learn/main.js)
+1. [Learn 𝄞+𝄢 Notenames](/anim/arrows/canv.htm?fn=/anim/arrows/canvNotes/learn/main.js)
 1. [SimplePaint](/canvas/paint/simplePaint.htm)
 1. [voxXr](/three/anim/voxed/voxXr.htm)
 1. [sculpt160](/test/webvr/sculpt160.htm)

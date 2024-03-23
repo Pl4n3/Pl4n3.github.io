@@ -11,9 +11,10 @@
     let xrUtil=ps.xrUtil,canv,ct,o,mesh,tex;
     
     
-    function scriptPaint(co) {
+    function rayCol(co,down) {
       //---
       //onsole.log(co);
+      if (!down) return;
       if (!canv) {
         xrUtil.log('creating canvas');
         let img=mesh.material.map.image,w=img.width,h=img.height;
@@ -36,7 +37,7 @@
     }
     
     
-    xrUtil.log('Script-Pd5 v.0.45 ');//FOLDORUPDATEVERSION
+    xrUtil.log('Script-Pd5 v.0.50 ');//FOLDORUPDATEVERSION
     //onsole.log(ps);
     if (1)
     Conet.download({fn:ps.ps.fn,ps:ps,base:ps.mesh,f:function(v) {
@@ -63,7 +64,7 @@
       
       mesh=o.meshes[0].tmesh;
       
-      mesh.userData.scriptPaint=scriptPaint;
+      mesh.userData.rayCol=rayCol;
       //...
     }
     });
@@ -77,4 +78,5 @@
 //fr o,1
 //fr o,1,1
 //fr o,1,1,9
-//fr p,4,19
+//fr o,1,1,15
+//fr p,18,16

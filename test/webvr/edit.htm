@@ -367,7 +367,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     //\u25b2 \u25bc
     
-    const version='v.0.730 ';//FOLDORUPDATEVERSION
+    const version='v.0.741 ';//FOLDORUPDATEVERSION
     xrUtil.log('Edit '+version);
     
     //
@@ -416,10 +416,8 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       //---
       if (!paint) return;
       paintmesh.position.copy(co.point);
-      if (down) {
-        let ud=co.object.userData;
-        if (ud.scriptPaint) ud.scriptPaint(co);
-      }
+      let ud=co.object.userData;
+      if (ud.rayCol) ud.rayCol(co,down);
       //...
     }
     xrUtil.rayCol=rayCol;
@@ -457,7 +455,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
           np=o;//setNearestPoint(o);
           break;
         }
-        if ((!paintco)&&o.userData.scriptPaint) paintco=co;
+        if ((!paintco)&&o.userData.rayCol) paintco=co;
         //console.log(co.object);
       }
       
@@ -739,12 +737,25 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     points.length=0;
     faces.length=0;
     lines.length=0;
+    for (let c of camera.children) if (c!==xrUtil.hudMesh) camera.remove(c);
     
     //---load
     try {
     let h=JSON.parse(v);
     if (h.pt) controls.target.set(h.pt.x,h.pt.y,h.pt.z);
     if (h.pc) camera.position.set(h.pc.x,h.pc.y,h.pc.z);
+    if (h.camLights) {
+      for (let ps of h.camLights) {
+        let l=new THREE.PointLight(ps.color?ps.color:0xffffff,ps.intensity?ps.intensity:1);//l.position.set(-0.5*f,3*f,1*f);
+        l.castShadow=true;
+        l.shadow.camera.near=0.01;
+        l.shadow.camera.far=100;
+        l.shadow.mapSize.width=1024;//2048;
+        l.shadow.mapSize.height=1024;
+        l.position.set(ps.x,ps.y,ps.z);
+        camera.add(l);
+      }
+    }
     
     let g=new THREE.BoxGeometry(0.01,0.01,0.01);
     for (let p of h.points) {
@@ -1009,15 +1020,14 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 </html>
 <script>
 //fr o,29
-//fr o,29,12
 //fr o,29,12,91
 //fr o,29,12,95
 //fr o,29,12,98
 //fr o,29,12,143
-//fr o,29,12,167
 //fr o,29,12,171
-//fr o,29,15
+//fr o,29,17
 //fr o,29,20,8
 //fr o,29,20,9
-//fr o,29,23
-//fr p,24,134
+//fr o,29,21
+//fr o,29,25
+//fr p,70,69

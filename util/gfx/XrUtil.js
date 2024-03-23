@@ -5,7 +5,7 @@ import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFa
 let XrUtil={};
 (function(pself) {
   //---
-  let version='v.1.305 ',//FOLDORUPDATEVERSION
+  let version='v.1.310 ',//FOLDORUPDATEVERSION
       self=pself,ctrl0,ctrl1,gp0,gp1,camera,scene,room,vrPos,huds=[],hudMesh,
       hud={lines:['XrUtil '+version],cursor:{x:0.5,y:0.5,vis:false},buttons:[]},
       raycaster,INTERSECTED,hudCount=0,needDrawUi=false,input,uisc=2;
@@ -410,7 +410,7 @@ let XrUtil={};
   self.renderHud=function() {
     //---
     let i0=undefined;
-    if (hudMesh.visible) {
+    //if (hudMesh.visible) {
       if (self.isSession) {
         // find intersections
         tempMatrix.identity().extractRotation(ctrl1.matrixWorld);
@@ -422,27 +422,27 @@ let XrUtil={};
           //onsole.log(a.length);
           for (let co of a) {
             let o=co.object;
-            if ((o===hudMesh)&&(co.distance<0.1)) { 
+            if ((o===hudMesh)&&(co.distance<0.1)&&hudMesh.visible) { 
               i0=co;
               break;
               //onsole.log(co);
             }
-            if (o.userData.scriptPaint) {
+            if (o.userData.rayCol) {
               if (self.rayCol) self.rayCol(co,gp1&&gp1.buttons[0].pressed);
               break;
             }
           }
-        } else {
+        } else if (hudMesh.visible) {
           raycaster.far=0.1;
           const intersects=raycaster.intersectObjects(huds),//room.children);
                 cursor=self.cursor;
           //let i0=undefined;
           if (intersects.length>0) i0=intersects[0];
         }
-        hudIntersects(i0,i0&&gp1&&gp1.buttons[0].pressed);
+        if (hudMesh.visible) hudIntersects(i0,i0&&gp1&&gp1.buttons[0].pressed);
       }
-      if (needDrawUi) drawHud();
-    }
+      if (hudMesh.visible&&needDrawUi) drawHud();
+    //}
     return i0;
     //...
   }
@@ -462,4 +462,4 @@ export { XrUtil };
 //fr o,5,13
 //fr o,5,15
 //fr o,5,20
-//fr p,8,234
+//fr p,32,247

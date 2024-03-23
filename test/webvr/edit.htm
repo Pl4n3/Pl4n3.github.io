@@ -367,7 +367,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     //\u25b2 \u25bc
     
-    const version='v.0.741 ';//FOLDORUPDATEVERSION
+    const version='v.0.742 ';//FOLDORUPDATEVERSION
     xrUtil.log('Edit '+version);
     
     //
@@ -564,6 +564,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     dir=localStorage[lsKey+'dir'];
     if (dir) dir=JSON.parse(dir); else dir={i:0,a:[{fn:''}]};
     //onsole.log(dir);
+    if (dir.i>=dir.a.length) dir.i=0;
     let fn=dir.a[dir.i].fn;
     //onsole.log(fn);
     mFn.s=fn;//xrUtil.log(dir.a.length+' files, index='+dir.i+'.');
@@ -1020,6 +1021,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 </html>
 <script>
 //fr o,29
+//fr o,29,12
 //fr o,29,12,91
 //fr o,29,12,95
 //fr o,29,12,98
@@ -1030,4 +1032,4 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,29,20,9
 //fr o,29,21
 //fr o,29,25
-//fr p,70,69
+//fr p,33,365

@@ -14,7 +14,7 @@
 <script src="/three/threePd5.js"></script>
 <script src="/util/deep.js"></script>
 </head>
-<body>
+<body oncontextmenu="return false;">
 <script type="importmap">
 {
 "imports": {
@@ -38,7 +38,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       matPoint0,matPoint1,matPointSel,matMesh,
       pointPlane,mesh,line,gridh,dir,
       inpLightColor,inpLightIntensity,mFn,
-      paint=false,paintmesh;
+      paint=false,paintmesh,scriptHandlers={};
   
   function init() {
     //---
@@ -165,6 +165,196 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       //...
     }
     
+    function paintMenu() {
+      //---
+      let cols=[[0xff,0,0],[0xff,0x99,0x33],[0xff,0xff,0],[0xff,0x33,0xff],
+        [0x99,0,0x99],[0,0,0xff],[0,0xcc,0xff],[0x33,0xff,0],[0,0x99,0],
+        [0x99,0x66,0],[255,255,255],[175,175,175],[0,0,0]],
+        mapress=[],maradius=[],mcolDiff,mcolNorm,mcolSpec,mode='diff',
+        mcols=[],mnormModes=[];
+      
+      function setPaint(p) {
+        paint=p;
+        xrUtil.log(paint?'Paintmode on.':'Paintmode off.');
+        //this.s=paint?'NP':'Paint';
+        controls.enabled=!paint;
+        if (paint) {
+          scene.add(paintmesh); 
+          if (!sceneh.paint) sceneh.paint={
+            color:[0,255,0,1],
+            radius:10,
+            //specColor:[175,175,175,0.1],
+          };
+          let c=sceneh.paint.color;
+          if (mode=='diff') for (let m of mapress) m.selected=(c[3]==m.s/100);
+          mcolDiff.color='rgb('+c[0]+','+c[1]+','+c[2]+')';
+          c=sceneh.paint.specColor;
+          if (c===undefined) { c=[175,175,175,0.1];sceneh.paint.specColor=c; }
+          mcolSpec.color='rgb('+c[0]+','+c[1]+','+c[2]+')';
+          if (mode=='spec') for (let m of mapress) m.selected=(c[3]==m.s/100);
+          c=sceneh.paint.normColor;
+          if (c===undefined) { c=[128,128,255,0.1];sceneh.paint.normColor=c; }
+          mcolNorm.color='rgb('+c[0]+','+c[1]+','+c[2]+')';
+          if (sceneh.paint.normMode===undefined) sceneh.paint.normMode='up';
+          for (let m of maradius) m.selected=(sceneh.paint.radius==parseFloat(m.s));
+        } else 
+          scene.remove(paintmesh);
+        //...
+      }
+      
+      scriptHandlers.colorChanged=function() {
+        //---
+        let c,mcol;
+        if (mode=='diff') { c=sceneh.paint.color;mcol=mcolDiff; }
+        else if (mode=='spec') { c=sceneh.paint.specColor;mcol=mcolSpec; }
+        else { c=sceneh.paint.normColor;mcol=mcolNorm; } 
+        //let c=sceneh.paint.color;
+        mcol.color='rgb('+c[0]+','+c[1]+','+c[2]+')';
+        xrUtil.setNeedDrawUi();
+        //...
+      }
+      
+      function setColor() {
+        //---
+        let a=cols[this.i],c,mcol;
+        
+        if (mode=='diff') { c=sceneh.paint.color;mcol=mcolDiff; }
+        else if (mode=='spec') { c=sceneh.paint.specColor;mcol=mcolSpec; }
+        else return;
+        c[0]=a[0];//cols[this.i];
+        c[1]=a[1];
+        c[2]=a[2];
+        mcol.color='rgb('+c[0]+','+c[1]+','+c[2]+')';
+        //onsole.log('i='+this.i);
+        //...
+      }
+      
+      function modeColor() {
+        //---
+        return ((mode=='diff')?sceneh.paint.color:((mode=='spec')?sceneh.paint.specColor:sceneh.paint.normColor));
+        //...
+      }
+      
+      function setPress() {
+        //---
+        for (let m of mapress) m.selected=false;
+        this.selected=true;
+        modeColor()[3]=this.s/100;
+        //...
+      }
+      
+      function setRadius() {
+        //---
+        for (let m of maradius) m.selected=false;
+        this.selected=true;
+        sceneh.paint.radius=parseFloat(this.s);
+        //...
+      }
+      
+      function setMode() {
+        //---
+        for (let m of mcols) {
+          let i=a.indexOf(m);if (i!=-1) a.splice(i,1);
+        }
+        for (let m of mnormModes) {
+          let i=a.indexOf(m);if (i!=-1) a.splice(i,1);
+        }
+        mcolDiff.selected=0;
+        mcolNorm.selected=0;
+        mcolSpec.selected=0;
+        this.selected=1;
+        mode=(this===mcolDiff)?'diff':((this===mcolNorm)?'norm':'spec');
+        if (mode=='diff') for (let m of mcols) a.push(m);
+        if (mode=='spec') a.push(mcols[mcols.length-3],mcols[mcols.length-2],mcols[mcols.length-1]);
+        if (mode=='norm') a.push(mnormModes[0],mnormModes[1],mnormModes[2]);
+        
+        let c=modeColor();
+        for (let m of mapress) m.selected=(c[3]==m.s/100);
+        
+        xrUtil.log('Mode='+mode+'.');
+        if (scriptHandlers.setMode) scriptHandlers.setMode(mode);
+        //onsole.log('setMode');
+        //...
+      }
+      
+      function setNormMode() {
+        //---
+        for (let m of mnormModes) m.selected=false;
+        this.selected=true;
+        sceneh.paint.normMode=this.s;
+        //...
+      }
+      
+      
+      let a=[
+      {s:'Paint \u25b2',x:0.05,y:0.4,w:0.3,h:0.1,ondown:function() {
+        //---
+        setPaint(false);
+        //...
+      }
+      },
+      
+      //{s:'',color:'rgb(255,0,0)',x:0.5,y:0.4,w:0.15,h:0.1},
+      //{s:'',color:'rgb(0,255,0)',x:0.65,y:0.4,w:0.15,h:0.1},
+      //{s:'',color:'rgb(0,0,255)',x:0.8,y:0.4,w:0.15,h:0.1}
+      
+      ];
+      
+      let w=0.18,bo=0.01,x=0.95+bo-(w+bo)*3,y=0.4,m;
+      a.push(mcolDiff={s:'',color:'rgb(100,100,100)',x:x,y:y,w:w,h:0.1,selected:1,ondown:setMode});x+=w+bo;
+      a.push(mcolNorm={s:'',color:'rgb(100,100,100)',x:x,y:y,w:w,h:0.1,ondown:setMode});x+=w+bo;
+      a.push(mcolSpec={s:'',color:'rgb(100,100,100)',x:x,y:y,w:w,h:0.1,ondown:setMode});
+      
+      //let x=0.04,w=0.07;
+      x=0.05;w=0.9/cols.length;y=0.53;
+      for (let i=0;i<cols.length;i++) {
+        let c=cols[i];
+        a.push(m={i:i,color:'rgb('+c[0]+','+c[1]+','+c[2]+')',x:x+i*w,y:y,w:w,h:w,ondown:setColor});
+        mcols.push(m);
+      }
+      //onsole.log(w);
+      mnormModes.push(
+        {s:'up',x:x,y:y,w:0.18,h:w,selected:1,ondown:setNormMode},
+        {s:'down',x:x+0.2,y:y,w:0.18,h:w,ondown:setNormMode},
+        {s:'paint',x:x+0.4,y:y,w:0.18,h:w,ondown:setNormMode}
+      );
+      y+=0.1;
+      
+      a.push({s:'Press%',align:'left',x:0.05,y:y,w:0.23,h:0.08,noinp:1});
+      w=0.1;
+      let pr=[1,3,10,30,50,100];
+      for (let i=0;i<pr.length;i++) {
+        let v=pr[i];
+        a.push(m={s:v,x:0.95+bo-pr.length*(w+bo)+i*(w+bo),y:y,w:w,h:0.08,ondown:setPress});
+        mapress.push(m);
+      }
+      y+=0.1;
+      
+      a.push({s:'Radius',align:'left',x:0.05,y:y,w:0.13,h:0.08,noinp:1});
+      w=0.075;
+      let ra=['.1','.5',1,2,3,5,10,50];
+      for (let i=0;i<ra.length;i++) {
+        a.push(m={s:ra[i],x:0.95+bo-ra.length*(w+bo)+i*(w+bo),y:y,w:w,h:0.08,ondown:setRadius});maradius.push(m);
+      }
+      
+      return {
+      s:'Paint',x:0.6,y:0.4,w:0.15,h:0.1,ondown:function() {
+        //---
+        //paint=!paint;
+        //xrUtil.log('paint='+paint);
+        //this.s=paint?'NP':'Paint';
+        //controls.enabled=!paint;
+        //if (paint) scene.add(paintmesh); else scene.remove(paintmesh);
+        //xrUtil.rayAll
+        setPaint(true);
+        //...
+      }
+      ,sub:a
+      };
+      //...
+    }
+    
+    
     xrUtil.init({scene:scene,renderer:renderer,camera:camera,room:scene,sculpt:1//,vrPos:vrPos
       });
     xrUtil.initHud();
@@ -220,16 +410,10 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     },
     
     
-    {s:'Paint',x:0.6,y:0.4,w:0.15,h:0.1,ondown:function() {
-      //---
-      paint=!paint;
-      this.s=paint?'NP':'Paint';
-      controls.enabled=!paint;
-      if (paint) scene.add(paintmesh); else scene.remove(paintmesh);
-      //xrUtil.rayAll
-      //...
-    }
-    },
+    
+    paintMenu(),
+    
+    
     
     {s:'Grid',x:0.8,y:0.4,w:0.15,h:0.1,ondown:function() {
       //---
@@ -367,7 +551,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     //\u25b2 \u25bc
     
-    const version='v.0.742 ';//FOLDORUPDATEVERSION
+    const version='v.0.926 ';//FOLDORUPDATEVERSION
     xrUtil.log('Edit '+version);
     
     //
@@ -412,12 +596,12 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     raycaster=new THREE.Raycaster();
     
     
-    function rayCol(co,down) {
+    function rayCol(co,down,e) {
       //---
       if (!paint) return;
       paintmesh.position.copy(co.point);
       let ud=co.object.userData;
-      if (ud.rayCol) ud.rayCol(co,down);
+      if (ud.rayCol) ud.rayCol(co,down,e);
       //...
     }
     xrUtil.rayCol=rayCol;
@@ -465,7 +649,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       
       if (paint) {
         if (paintco) {
-          rayCol(paintco,pointDown);
+          rayCol(paintco,pointDown,e);
           //paintmesh.position.copy(paintco.point);
           //if (pointDown) {
           //  let ud=paintco.object.userData;
@@ -517,9 +701,10 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     canv.addEventListener('pointerdown',function(e) {
       //---
-      //onsole.log('mousedown');
+      //onsole.log('pointerdown');
       pointDown=true;
       point(e.clientX,e.clientY,1,e);
+      //onsole.log(e);
       //...
     }
     );
@@ -729,7 +914,12 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       script.src=fn;
       document.head.appendChild(script);
     } else xrUtil.log('Re-applying loaded scripts not yet implemented.');
-    scr.waitingForInit.push({mesh:mesh,xrUtil:xrUtil,ps:p});
+    scr.waitingForInit.push({
+      mesh:mesh,
+      xrUtil:xrUtil,
+      ps:p,
+      sceneh:sceneh,
+      scriptHandlers:scriptHandlers});
     //...
   }
   function load(v) {
@@ -742,7 +932,11 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     //---load
     try {
+    xrUtil.log('Loading '+v.length+'b.');
     let h=JSON.parse(v);
+    
+    sceneh=Conet.hcopy(h,undefined,undefined,{points:1,faces:1,lines:1});;
+    
     if (h.pt) controls.target.set(h.pt.x,h.pt.y,h.pt.z);
     if (h.pc) camera.position.set(h.pc.x,h.pc.y,h.pc.z);
     if (h.camLights) {
@@ -803,7 +997,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     updateMesh();
     
-    sceneh=Conet.hcopy(h,undefined,undefined,{points:1,faces:1,lines:1});;
+    //sceneh=Conet.hcopy(h,undefined,undefined,{points:1,faces:1,lines:1});;
     controls.update();
     } catch (e) { console.error(e); }
     //onsole.log(v);
@@ -961,6 +1155,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     let first=true;
     for (let p of points) {
       let op=p.userData.op||{};
+      if (p.userData.onserialize) p.userData.onserialize();
       p=p.position;
       op.x=Conet.f4(p.x);
       op.y=Conet.f4(p.y);
@@ -1022,14 +1217,26 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 <script>
 //fr o,29
 //fr o,29,12
-//fr o,29,12,91
-//fr o,29,12,95
-//fr o,29,12,98
-//fr o,29,12,143
-//fr o,29,12,171
-//fr o,29,17
+//fr o,29,12,75
+//fr o,29,12,75,7
+//fr o,29,12,75,9
+//fr o,29,12,75,11
+//fr o,29,12,75,15
+//fr o,29,12,75,17
+//fr o,29,12,75,19
+//fr o,29,12,75,21
+//fr o,29,12,75,25
+//fr o,29,12,94
+//fr o,29,12,103
+//fr o,29,12,172
+//fr o,29,12,176
+//fr o,29,12,181
+//fr o,29,12,184
+//fr o,29,12,187
+//fr o,29,12,247
+//fr o,29,18
+//fr o,29,19
+//fr o,29,20
 //fr o,29,20,8
 //fr o,29,20,9
-//fr o,29,21
-//fr o,29,25
-//fr p,33,365
+//fr p,18,218

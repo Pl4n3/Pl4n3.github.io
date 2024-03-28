@@ -5,7 +5,7 @@ import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFa
 let XrUtil={};
 (function(pself) {
   //---
-  let version='v.1.310 ',//FOLDORUPDATEVERSION
+  let version='v.1.319 ',//FOLDORUPDATEVERSION
       self=pself,ctrl0,ctrl1,gp0,gp1,camera,scene,room,vrPos,huds=[],hudMesh,
       hud={lines:['XrUtil '+version],cursor:{x:0.5,y:0.5,vis:false},buttons:[]},
       raycaster,INTERSECTED,hudCount=0,needDrawUi=false,input,uisc=2;
@@ -273,18 +273,20 @@ let XrUtil={};
       if (cur.vis&&hudMesh.visible) {
         if ((curx>=bx)&&(cury>=by)&&(curx<=bx+bw)&&(cury<=by+bh)&&!b.noinp) {
           if (cur.down&&!b.pressed) {
-            b.pressed=true;
+            b.pressed=true;let sthdone=false;
             if (b.subUp) {
-              newMenu=hud.menu0;
+              newMenu=hud.menu0;sthdone=true;
             } else if (b.sub) {
               if (!hud.menu0) hud.menu0=hud.buttons;//alternatively maintain hud.menuStack[]
-              newMenu=b.sub;
+              newMenu=b.sub;sthdone=true;
               newMenu[0].subUp=true;
-            } else if (b.ondown) { b.ondown();
+            } //else 
+            if (b.ondown) { b.ondown();sthdone=true;
             } else if (b.oninput) {
               b.color='rgba(250,250,0,0.5)';
-              input=b;
-            } else console.log(b);
+              input=b;sthdone=true;
+            } 
+            if (!sthdone) console.log(b);
           }
           ct.fillStyle=b.pressed?'rgba(150,150,50,0.5)':'rgba(100,100,100,0.5)';
           ct.fillRect(bx,by,bw,bh);
@@ -311,7 +313,12 @@ let XrUtil={};
       }
       if (b.s!==undefined) {
         ct.fillStyle='#ddd';
-        ct.fillText(b.s,bx+bw/2,by+bh/2);
+        if (b.align=='left') {
+          ct.textAlign='start';
+          ct.fillText(b.s,bx,by+bh/2);
+          ct.textAlign='center';
+        } else 
+          ct.fillText(b.s,bx+bw/2,by+bh/2);
       }
       lb=b;
     }
@@ -446,6 +453,11 @@ let XrUtil={};
     return i0;
     //...
   }
+  self.setNeedDrawUi=function() {
+    //---
+    needDrawUi=true;
+    //...
+  }
   console.log('XrUtil '+version);
   //...
 }
@@ -454,12 +466,12 @@ export { XrUtil };
 //fr o,5
 //fr o,5,8
 //fr o,5,10
-//fr o,5,12
 //fr o,5,12,8
 //fr o,5,12,10
 //fr o,5,12,41
 //fr o,5,12,58
 //fr o,5,13
+//fr o,5,14
 //fr o,5,15
-//fr o,5,20
-//fr p,32,247
+//fr o,5,21
+//fr p,27,198

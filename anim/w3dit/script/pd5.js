@@ -50,7 +50,9 @@
     function rayCol(co,down,e) {
       //---
       //onsole.log(co);
-      if (!down) return;
+      let downgp11=xrUtil.isSession&&xrUtil.gp1&&xrUtil.gp1.buttons[1].pressed;
+      
+      if (!down&&!downgp11) return;
       
       //console.log(e.buttons);
       let modeh=modes[mode],canv=modeh.canv,ct=modeh.ct,tex=modeh.tex;
@@ -73,7 +75,7 @@
       
       let uv=co.uv,cw=canv.width,ch=canv.height,xc=(uv.x*cw),yc=((1-uv.y)*ch);
       
-      if (e.buttons==2) {
+      if ((e&&e.buttons==2)||downgp11) {
         //onsole.log('pick');
         let d=ct.getImageData(xc,yc,1,1).data;
         console.log(d);
@@ -168,7 +170,7 @@
     }
     
     
-    xrUtil.log('Script-Pd5 v.0.147 ');//FOLDORUPDATEVERSION
+    xrUtil.log('Script-Pd5 v.0.155 ');//FOLDORUPDATEVERSION
     //onsole.log(ps);
     if (ps0.data) {
       xrUtil.log('scriptPd5: loading data');
@@ -205,4 +207,4 @@
 //fr o,1,1,24
 //fr o,1,1,26
 //fr o,1,1,36
-//fr p,41,108
+//fr p,0,72

@@ -5,7 +5,7 @@ import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFa
 let XrUtil={};
 (function(pself) {
   //---
-  let version='v.1.319 ',//FOLDORUPDATEVERSION
+  let version='v.1.325 ',//FOLDORUPDATEVERSION
       self=pself,ctrl0,ctrl1,gp0,gp1,camera,scene,room,vrPos,huds=[],hudMesh,
       hud={lines:['XrUtil '+version],cursor:{x:0.5,y:0.5,vis:false},buttons:[]},
       raycaster,INTERSECTED,hudCount=0,needDrawUi=false,input,uisc=2;
@@ -396,13 +396,13 @@ let XrUtil={};
     const t1=new THREE.Texture(c);hud.t=t1;
     //t1.needsUpdate=true;
     drawHud();
-    const planeMaterial=new THREE.MeshBasicMaterial({map:t1,opacity:1,transparent:true,side:THREE.DoubleSide});
+    const planeMaterial=new THREE.MeshBasicMaterial({map:t1,opacity:1,transparent:true,side:THREE.DoubleSide,depthTest:false});
     const o=new THREE.Mesh(g,planeMaterial);
     //o.position.set(-0.2,0,-0.5);
     //o.rotation.y=0.3;
     hudMesh=o;
     
-    camera.add(o);o.position.set(-0.15,0.1,-0.4);//o.rotation.y=0.3;
+    camera.add(o);o.position.set(-0.15,0.1,-0.4);//o.rotation.y=0.3; //-0.15,0.1,-0.4
     //scene.add(o);
     
     //ctrl0.add(o);o.position.set(-0.2,0,0);o.rotation.x=-1;o.rotation.y=1;
@@ -471,7 +471,5 @@ export { XrUtil };
 //fr o,5,12,41
 //fr o,5,12,58
 //fr o,5,13
-//fr o,5,14
-//fr o,5,15
-//fr o,5,21
-//fr p,27,198
+//fr o,5,18
+//fr p,120,81

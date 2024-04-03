@@ -202,6 +202,13 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
         //...
       }
       
+      scriptHandlers.togglePaint=function() {
+        //---
+        setPaint(!paint);
+        xrUtil.log('No ui change, todo: button.simulatePress.');
+        //...
+      }
+      
       scriptHandlers.colorChanged=function() {
         //---
         let c,mcol;
@@ -579,7 +586,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     //\u25b2 \u25bc
     
-    const version='v.0.950 ';//FOLDORUPDATEVERSION
+    const version='v.0.972 ';//FOLDORUPDATEVERSION
     xrUtil.log('Edit '+version);
     
     //
@@ -754,12 +761,38 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     xrUtil.menuXr.ms+=' '+version;
     Menu.init([{s:'&#9776;',noTri:true,fs:1.4,pw:0.05,sub:[
+    
+    
       Menu.mFullscreen
+    
+    ,xrUtil.menuXr  
+    
+    ,{s:'Json',ms:'import/export',doctrl:'Json data',mcfs:0.07,ta:true,jsonCheck:1,wrap:0,tacols:30,tarows:20
+     ,setfunc:load,valuef:serialize}
+    
+    ,{s:'Hud',r:1,ms:'Position',autoval:1,setfunc:function(v) {
+      //---
+      if (v=='Desktop') xrUtil.hudMesh.position.set(-0.15,0.1,-0.4);
+      if (v=='Phone') xrUtil.hudMesh.position.set(-0.15,0,-0.25);
+      if (v=='Away') xrUtil.hudMesh.position.set(-0.35,0.1,-0.4);
+      //o.rotation.y=0.3; //-0.15,0.1,-0.4
+      //...
+    }
+    ,sub:[{s:'Phone'},{s:'Desktop'},{s:'Away'}]}
+    
+    
+    ,{s:'Paintmode',r:1,ms:'toggle',actionf:scriptHandlers.togglePaint}
+    
+    ,{checkbox:1,r:1,ms:'Pick color',actionf:function() {
+      //---
+      scriptHandlers.pickMode=this.checked;
+      xrUtil.log('Pick='+this.checked+'.');
+      //...
+    }
+    }
+    
+    
       ]} 
-     ,xrUtil.menuXr  
-     
-     ,{s:'Json',ms:'import/export',doctrl:'Json data',mcfs:0.07,ta:true,jsonCheck:1,wrap:0,tacols:30,tarows:20
-      ,setfunc:load,valuef:serialize}
       
       ]
       ,{listen:1});
@@ -1312,24 +1345,18 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 <script>
 //fr o,29
 //fr o,29,12
+//fr o,29,12,75
 //fr o,29,12,75,7
 //fr o,29,12,75,9
 //fr o,29,12,75,11
-//fr o,29,12,75,15
+//fr o,29,12,75,13
 //fr o,29,12,75,17
 //fr o,29,12,75,19
 //fr o,29,12,75,21
-//fr o,29,12,75,25
-//fr o,29,12,77
-//fr o,29,12,92
-//fr o,29,12,95
-//fr o,29,12,104
+//fr o,29,12,75,23
 //fr o,29,12,176
-//fr o,29,12,185
-//fr o,29,12,188
-//fr o,29,12,191
-//fr o,29,12,257
-//fr o,29,15
+//fr o,29,12,208
+//fr o,29,12,214
 //fr o,29,20,8
 //fr o,29,20,9
-//fr p,72,251
+//fr p,27,158

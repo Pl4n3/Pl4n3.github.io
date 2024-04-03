@@ -75,10 +75,10 @@
       
       let uv=co.uv,cw=canv.width,ch=canv.height,xc=(uv.x*cw),yc=((1-uv.y)*ch);
       
-      if ((e&&e.buttons==2)||downgp11) {
+      if ((e&&e.buttons==2)||downgp11||scriptHandlers.pickMode) {
         //onsole.log('pick');
         let d=ct.getImageData(xc,yc,1,1).data;
-        console.log(d);
+        //onsole.log(d);
         let c=modeColor();//sceneh.paint.color;
         c[0]=d[0];
         c[1]=d[1];
@@ -170,7 +170,7 @@
     }
     
     
-    xrUtil.log('Script-Pd5 v.0.155 ');//FOLDORUPDATEVERSION
+    xrUtil.log('Script-Pd5 v.0.157 ');//FOLDORUPDATEVERSION
     //onsole.log(ps);
     if (ps0.data) {
       xrUtil.log('scriptPd5: loading data');
@@ -207,4 +207,4 @@
 //fr o,1,1,24
 //fr o,1,1,26
 //fr o,1,1,36
-//fr p,0,72
+//fr p,4,76

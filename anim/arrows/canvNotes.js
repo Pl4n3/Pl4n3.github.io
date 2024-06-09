@@ -160,13 +160,16 @@ var CanvNotes=function(gps) {
     movedist=0;
     
     if (mdown.checked) {
-      let o=inpObj();
-      if (o) {
-        if (self.onUp) self.onUp(o);
-        if (o.onUp) o.onUp();
-        movedist=1000;//no other onUp
-        oinp.md=false;//no drag
-      }
+      //let o=inpObj();
+      //if (o) {
+      //  if (self.onUp) self.onUp(o);
+      //  if (o.onUp) o.onUp();
+      //  movedist=1000;//no other onUp
+      //  oinp.md=false;//no drag
+      //}
+      mouseUp(e);
+      movedist=1000;//no other onUp
+      oinp.md=true;
     }
     
     
@@ -174,14 +177,14 @@ var CanvNotes=function(gps) {
     
   }
   function mouseUp(e) {
-    //log("mouseUp");
+    //og("mouseUp");
     oinp.md=false;
     
     var width=canvas.width,height=canvas.height,
         //x=(oinp.x*dpr-width/2)/(dpr*view.scx)-view.posx,
         //y=(oinp.y*dpr-height/2)/(dpr*view.scy)-view.posy,
         ix=oinp.x*dpr,iy=oinp.y*dpr;
-    
+    //onsole.log('movedist='+movedist);
     if (movedist<10) {
     
     //while (sels.length>=self.selCount) {
@@ -210,6 +213,7 @@ var CanvNotes=function(gps) {
     //  }
     //}
     var o=inpObj();//smallo;
+    //onsole.log(o);
     
     if (((!o)&&(sels.length>0))||(o&&(sels.length==self.selCount))) {
       //onsole.log('unselecting '+sels.length);
@@ -486,7 +490,10 @@ var CanvNotes=function(gps) {
         var v=a[0].view;
         if (v) { 
           view.posx=v.posx;view.posy=v.posy;view.scx=v.scx;view.scy=v.scy;
-          if (v.eventsOnDown) Menu.setChecked(mdown,true);
+          if (v.eventsOnDown) {
+            Menu.setChecked(mdown,true);
+            Conet.log('To select switch ondown off.');
+          }
         }
       }
       
@@ -1138,7 +1145,7 @@ var CanvNotes=function(gps) {
     }
     
     ctx.fillStyle='#000000';
-    ctx.fillText('CanvNotes v.0.882 - '+fpss,10*dpr,10*dpr);//FOLDORUPDATEVERSION
+    ctx.fillText('CanvNotes v.0.893 - '+fpss,10*dpr,10*dpr);//FOLDORUPDATEVERSION
     for (var h=0;h<logs.length;h++)
       ctx.fillText(logs[h],10*dpr,10*dpr+fs+h*fs);
     
@@ -1331,7 +1338,12 @@ var CanvNotes=function(gps) {
 //console.log(CanvNotes);
 //...
 //fr o,1
+//fr o,1,22
+//fr o,1,24
+//fr o,1,25
+//fr o,1,42
 //fr o,1,42,9
+//fr o,1,44
 //fr o,1,44,42
 //fr o,1,44,52
 //fr o,1,44,56
@@ -1345,4 +1357,4 @@ var CanvNotes=function(gps) {
 //fr o,1,52
 //fr o,1,54
 //fr o,1,56
-//fr p,0,45
+//fr p,2,109

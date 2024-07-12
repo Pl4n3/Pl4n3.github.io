@@ -18,7 +18,7 @@ function threeImgOnload() {
   this.text.needsUpdate=true;
   this.o5.drawNew=true;
 }
-function threeTexture(ts,o5,tlOnload) {
+function threeTexture(ts,o5,tlOnload,ps) {
   //onsole.log('threeTexture '+ts);
   if ((threeTL===undefined)&&window.THREE&&THREE.TextureLoader)
     threeTL=new THREE.TextureLoader();
@@ -42,7 +42,11 @@ function threeTexture(ts,o5,tlOnload) {
     image.text=text;
     image.o5=o5;
     image.onload=threeImgOnload;
-    image.src=ts;
+  
+    if (ps&&ps.filter) 
+      ps.filter({img:image,data:ts});
+    else 
+      image.src=ts;  
     //text.needsUpdate=true;
   } else { 
     text=threeTexH[ts];
@@ -59,7 +63,13 @@ function threeTexture(ts,o5,tlOnload) {
     img.text=text;
     img.o5=o5;
     img.onload=threeImgOnload;
-    img.src=o.data;
+    
+    if (ps&&ps.filter) 
+      ps.filter({img:img,data:o.data});
+    else 
+      img.src=o.data;
+      
+      
   }
       });
     } else {
@@ -174,7 +184,7 @@ function threeSetMeshMaterial(m,lo) {
   //onsole.log('threeSetMeshMaterial 1');
   var ambient = 0xffffff, diffuse = 0xffffff, specular = 0xffffff, shininess = 35;
   
-  var diff=threeTexture(m.diff?m.diff:"d.jpg",lo);
+  var diff=threeTexture(m.diff?m.diff:"d.jpg",lo,undefined,m.diffFilter?{filter:m.diffFilter}:undefined);
   var spec=threeTexture(m.spec?m.spec:"s.jpg",lo);
   var norm=threeTexture(m.norm?m.norm:"n.jpg",lo);
   
@@ -1099,7 +1109,7 @@ threeEnv.pointLight=function(ps) {
 }
 threeEnv.dungeonGeometry=function (ps,view) {
   //---
-  console.log('dungeonGeometry');
+  //onsole.log('dungeonGeometry');
   //console.log(p);
   let g=new THREE.BufferGeometry();//THREE.BufferGeometry.call( this );
   var width=50,height=50,depth=50,t='roofCant0';
@@ -1243,8 +1253,11 @@ threeEnv.dungeonGeometry=function (ps,view) {
   //...
 }
 //---
-//fr o,9,35
+//fr o,8
+//fr o,9
+//fr o,9,39
+//fr o,11
+//fr o,12
 //fr o,25,56
 //fr o,25,57
-//fr o,37
-//fr p,28,39
+//fr p,21,38

@@ -21,7 +21,7 @@ var Menu={};
   Menu.soff='[ ]';//'\u2610';
   Menu.son='[x]';//'\u2611';
   Menu.pressed=pressed;
-  Menu.version='1.464 ';//FOLDORUPDATEVERSION
+  Menu.version='1.494 ';//FOLDORUPDATEVERSION
   function mCloseAll(a) {
     for (var i=0;i<a.length;i++) {
       var mh=a[i];
@@ -38,11 +38,16 @@ var Menu={};
       e.preventDefault();
       e.stopPropagation();
     }
+    if (Menu.onMouseDown) Menu.onMouseDown(e);
+    //---
   }
   function mouseMove(e) {
     //onsole.log(e);
     scrolls();
     if (!mD||Menu.press) Menu.search(e.pageX-sx,e.pageY-sy);
+    //console.log(e.pageX+' '+e.pageY);
+    if (Menu.onMouseMove) Menu.onMouseMove(e);
+    //---
   }
   function mouseUp(e) {
     //if (nomouse)  { console.log('menu.mouseUp nomouse');
@@ -194,7 +199,7 @@ var Menu={};
       if (m.valuef) {
         m.valuefval=m.valuef();
         if (m.valuefval===undefined) skip=true;
-      }
+      } else if (m.value!==undefined) m.valuefval=m.value;
       //onsole.log('menu.action doctrl skip='+skip+' m.close='+m.close+' ps.prompt='+ps.prompt);
       if (!skip) {
         if (ps.prompt&&!m.ta&&!m.close&&!m.color) {
@@ -301,7 +306,8 @@ var Menu={};
     if (Menu.recent.indexOf(m)==-1) {
       //m.ms='recent';
       Menu.recent.push(m);
-      m.bgcol='rgba(0,100,200,0.3)';
+      //m.bgcol='rgba(0,100,200,0.3)';
+      m.bgcol='rgba(0,100,200,0.7)';
       return true;
     }
     return false;
@@ -398,7 +404,7 @@ var Menu={};
         } else {
           
           if (!m.log) {
-            c.style.textAlign='center';
+            c.style.textAlign=m.textAlign||'center';
             c.style.userSelect='none';c.style.MozUserSelect='none';c.style.WebkitUserSelect='none';
             c.style.cursor='pointer';
           } else {
@@ -486,7 +492,9 @@ var Menu={};
       ////if (m.py===undefined) m.py=0.02+(m.ph+0.01)*i;
       //if (m.py===undefined) m.py=0.02+(m.ph)*i;
         var ccw7=diw;
-        m.cx=Math.floor((m.xright?ccw-m.px*diw-m.pw*diw:m.px*ccw7)+0.5);
+        m.cx=Math.floor((m.xcenter?ccw/2-m.px*diw-m.pw*diw/2
+          :(m.xright?ccw-m.px*diw-m.pw*diw
+          :m.px*ccw7))+0.5);
         m.cw=Math.floor(m.pw*ccw7+0.5)-(cos?0:padding*2);
         m.ch=m.fixh||Math.floor(m.ph*(m.yvh?cch:ccw7)+0.5)-(cos?0:padding*2);
         m.cy=Math.floor(m.py*(m.yvh?cch:ccw7)+0.5);if (m.ydown) m.cy=cch-m.cy-m.ch;
@@ -495,10 +503,11 @@ var Menu={};
         m.cy=cy;//+i*ch;
         m.cw=m.pw?Math.floor(m.pw*diw+0.5):cw;//ccw
         m.ch=m.ph!==undefined?Math.floor(m.ph*diw+0.5):ch-1;
+        if (m.fixCy) ch=m.ch+1;
         cy+=ch;
         if (cy+ch+ch>cch) {
           //onsole.log(menus[1]);
-          var m1=menus[1];
+          var m1=menus[i-1];//1
           cx-=(m1.pw?m1.pw*diw:cw)+1;
           cy=cy0;
         }
@@ -548,7 +557,8 @@ var Menu={};
       if (m.tf) {
         var e=document.getElementById(tfid);
         var file=mco.file;
-        var value=(e?e.value:(mco.value?mco.value:(mco.valuef?mco.valuefval:(mco.ms?mco.ms:''))));
+        //var value=(e?e.value:(mco.value?mco.value:(mco.valuef?mco.valuefval:(mco.ms?mco.ms:''))));
+        var value=(e?e.value:((mco.value!==undefined)?mco.value:(mco.valuef?mco.valuefval:(mco.ms?mco.ms:''))));
         //if (mco.cos) {} else 
         if (mco.co)
           c.innerHTML=m.s+'<br>...';
@@ -724,7 +734,13 @@ var Menu={};
   }
   Menu.initMenu=function(m) {
     //---
-    if ((m.ms===undefined)&&m.keys) { m.ms='<span style="color:#338;">Key:</span> '+String.fromCharCode(m.keys[0]); } 
+    if ((m.ms===undefined)&&m.keys) { 
+      m.ms='<span style="color:#338;">Key:</span> ';
+      let s=m.keys[0]+'';
+      //onsole.log(s);
+      if (s.endsWith('_c')) { m.ms+='ctrl+';s=s.substr(0,s.length-2); }
+      m.ms+=(s==13)?'ret':String.fromCharCode(s); 
+    } 
     if ((m.ms===undefined)&&(m.vertCenter===undefined)&&((m.s||'').indexOf('<br>')==-1)) m.vertCenter=1;
     if (m.lskey) {
       var v=localStorage[m.lskey];
@@ -1095,6 +1111,7 @@ var Menu={};
     }
     document.body.style.overflow='hidden';
     Menu.draw();
+    tsd.ps=ps;
     return tsd;
     //...
   }
@@ -1148,5 +1165,14 @@ var Menu={};
 
 //--
 //fr o,2
+//fr o,2,22
+//fr o,2,23
+//fr o,2,25
+//fr o,2,27
+//fr o,2,37
+//fr o,2,39
+//fr o,2,42
+//fr o,2,43
 //fr o,2,51
-//fr p,24,59
+//fr o,2,63
+//fr p,18,256

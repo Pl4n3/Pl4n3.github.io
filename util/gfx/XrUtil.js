@@ -5,12 +5,12 @@ import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFa
 let XrUtil={};
 (function(pself) {
   //---
-  let version='v.1.325 ',//FOLDORUPDATEVERSION
+  let version='v.1.470 ',//FOLDORUPDATEVERSION
       self=pself,ctrl0,ctrl1,gp0,gp1,camera,scene,room,vrPos,huds=[],hudMesh,
       hud={lines:['XrUtil '+version],cursor:{x:0.5,y:0.5,vis:false},buttons:[]},
-      raycaster,INTERSECTED,hudCount=0,needDrawUi=false,input,uisc=2;
-  
+      raycaster,INTERSECTED,hudCount=0,needDrawUi=false,input,uisc=2,gps;
   const tempMatrix=new THREE.Matrix4(),vt=new THREE.Vector3();
+  self.flightSpeed=0.01;
   
   function keyDown(e) {
     //---
@@ -72,7 +72,7 @@ let XrUtil={};
         adz=(adz-md)/(1-md);adz*=adz*adz*adz;
         vt.set(adx*(dx>0?-1:1),0,adz*(dz>0?-1:1));
         vt.applyMatrix4(tempMatrix);
-        vt.multiplyScalar(dt*0.01);
+        vt.multiplyScalar(dt*self.flightSpeed);
         room.position.x+=vt.x;
         room.position.y+=vt.y;
         room.position.z+=vt.z;
@@ -84,6 +84,7 @@ let XrUtil={};
   }
   self.init=function(ps) {
     //---
+    gps=ps;self.gps=gps;
     let renderer=ps.renderer;
     camera=ps.camera;
     room=ps.room;
@@ -241,6 +242,18 @@ let XrUtil={};
     }
     
     window.addEventListener('keydown',keyDown);
+    
+    self.menuHudPosition={s:'Hud',r:1,ms:'Position',autoval:1,setfunc:function(v) {
+      //---
+      if (v=='Desktop') hudMesh.position.set(-0.15,0.1,-0.4);
+      if (v=='Phone') hudMesh.position.set(-0.15,0,-0.25);
+      if (v=='Away') hudMesh.position.set(-0.35,0.1,-0.4);
+      if (v=='Faraway') hudMesh.position.set(-1,0.1,-0.4);
+      //o.rotation.y=0.3; //-0.15,0.1,-0.4
+      //...
+    }
+    ,sub:[{s:'Phone'},{s:'Desktop'},{s:'Away'},{s:'Faraway'}]};
+    
     //...
   }
   self.uiMenuSet=function(ps) {
@@ -251,6 +264,7 @@ let XrUtil={};
   }
   function drawHud() {
     //---
+    //onsole.log('drawHud');
     const ct=hud.ct,c=hud.c,w=c.width,h=c.height;
     ct.clearRect(0,0,w,h);
     ct.lineWidth=uisc;
@@ -261,7 +275,7 @@ let XrUtil={};
     //ct.fillStyle='white';ct.fillText((cur.vis?1:0)+' '+Conet.f4(curx)+' '+Conet.f4(cury),12,40);
     ct.textAlign='center';
     ct.textBaseline='middle';
-    let newMenu,lb;
+    let newMenu,lb;//,bOndown;
     for (let b of hud.buttons) {
       //let dx=b.dx||0,dy=b.dy||0;
       if (b.w===undefined) b.w=lb.w;
@@ -275,24 +289,39 @@ let XrUtil={};
           if (cur.down&&!b.pressed) {
             b.pressed=true;let sthdone=false;
             if (b.subUp) {
+              delete(hud.menuSub);
               newMenu=hud.menu0;sthdone=true;
             } else if (b.sub) {
               if (!hud.menu0) hud.menu0=hud.buttons;//alternatively maintain hud.menuStack[]
+              hud.menuSub=b;
               newMenu=b.sub;sthdone=true;
               newMenu[0].subUp=true;
             } //else 
-            if (b.ondown) { b.ondown();sthdone=true;
+            if (b.ondown) { 
+              //onsole.log('before ondown');
+              //onsole.log(hud.buttons);
+              //onsole.log(hud.buttons.indexOf(b));
+              cur.down=false;
+              b.ondown();//if (!bOndown) { bOndown=b;b.ondown(); }
+              if (hud.menuSub) if (!hud.menuSub.stay) {
+                delete(hud.menuSub);
+                newMenu=hud.menu0;
+              }
+              sthdone=true;
             } else if (b.oninput) {
               b.color='rgba(250,250,0,0.5)';
-              input=b;sthdone=true;
+              input=b;
+              sthdone=true;
             } 
-            if (!sthdone) console.log(b);
+            if (!sthdone) { console.log('no ondown >:[');console.log(b); }
           }
           ct.fillStyle=b.pressed?'rgba(150,150,50,0.5)':'rgba(100,100,100,0.5)';
           ct.fillRect(bx,by,bw,bh);
         }
       } 
       if (!b.noinp) {
+        ct.strokeStyle='#000';
+        ct.strokeRect(bx+0.5,by+0.5,bw,bh);
         ct.strokeStyle=b.selected?'#fff':(b.oninput?'#440':'#222');//#aaa
         ct.strokeRect(bx,by,bw,bh);
       }
@@ -341,6 +370,7 @@ let XrUtil={};
       //hud.buttons=newMenu;
     }
     needDrawUi=newMenu;
+    //if (bOndown) bOndown.ondown();
     //...
   }
   function hudIntersects(i0,down) {
@@ -385,7 +415,7 @@ let XrUtil={};
     needDrawUi=true;
     //...
   }
-  self.initHud=function(ps) {
+  self.initHud=function() {
     const g=new THREE.PlaneGeometry(0.15,0.15);
     const c=document.createElement('canvas');
     c.width=256*uisc;
@@ -396,7 +426,9 @@ let XrUtil={};
     const t1=new THREE.Texture(c);hud.t=t1;
     //t1.needsUpdate=true;
     drawHud();
-    const planeMaterial=new THREE.MeshBasicMaterial({map:t1,opacity:1,transparent:true,side:THREE.DoubleSide,depthTest:false});
+    const planeMaterial=new THREE.MeshBasicMaterial({map:t1,opacity:1,transparent:true,side:THREE.DoubleSide
+       ,depthTest:gps.depthTest||false
+     });
     const o=new THREE.Mesh(g,planeMaterial);
     //o.position.set(-0.2,0,-0.5);
     //o.rotation.y=0.3;
@@ -411,6 +443,69 @@ let XrUtil={};
     raycaster=new THREE.Raycaster();
     
     self.huds=huds;self.hudMesh=hudMesh;self.hud=hud;
+    
+    if (gps.pointers) {
+    
+    let pointDown=false,rayed=gps.pointers.rayed;
+    
+    function point(x,y,mode,e) {
+      //---
+      let p2=new THREE.Vector2(2*x/window.innerWidth-1,-2*y/window.innerHeight+1);
+      raycaster.setFromCamera(p2,camera);
+      
+      let a=raycaster.intersectObjects(scene.children);
+      
+      //if (mode==1) {
+      //  console.log('point a.len='+a.length);
+      //  console.log(a);
+      //}
+      
+      let np=undefined,hudo=undefined,paintco=undefined;
+      for (let co of a) {
+        let o=co.object;
+        if (o===hudMesh) {
+          //onsole.log('hud');
+          hudo=co;
+          break;
+        }
+      }
+      
+      gps.controls.enabled=!hudo;
+      hudIntersects(hudo,mode==1);
+      if (hudo) return;
+      
+      if (rayed) rayed(a,mode);
+      //...
+    }
+    
+    
+    const canv=gps.renderer.domElement;
+    canv.parentElement.addEventListener('pointermove',function(e) {
+      //---
+      //onsole.log('pointermove');
+      point(e.clientX,e.clientY,2,e);
+      //...
+    }
+    );
+    canv.addEventListener('pointerdown',function(e) {
+      //---
+      //onsole.log('pointerdown');
+      pointDown=true;
+      point(e.clientX,e.clientY,1,e);
+      //onsole.log(e);
+      //...
+    }
+    );
+    canv.parentElement.addEventListener('pointerup',function(e) {
+      //---
+      //onsole.log('mouseup');
+      pointDown=false;
+      point(e.clientX,e.clientY,0,e);
+      //...
+    }
+    );
+    
+    }
     //...
   }
   self.rayAll=true;
@@ -419,34 +514,45 @@ let XrUtil={};
     let i0=undefined;
     //if (hudMesh.visible) {
       if (self.isSession) {
+        //console.log('renderHud 0');
         // find intersections
         tempMatrix.identity().extractRotation(ctrl1.matrixWorld);
         raycaster.ray.origin.setFromMatrixPosition(ctrl1.matrixWorld);
         raycaster.ray.direction.set(0,0,-1).applyMatrix4(tempMatrix);
+        let gp1b0=gp1&&gp1.buttons[0].pressed,rayCheck=self.rayCheck;
         if (self.rayAll) {
+          //console.log('renderHud 1');
           raycaster.far=Infinity;
-          let a=raycaster.intersectObjects(scene.children);
+          
+          let a;
+          if (self.rayObjs) a=raycaster.intersectObjects(self.rayObjs,false);
+          else a=raycaster.intersectObjects(scene.children);
           //onsole.log(a.length);
           for (let co of a) {
             let o=co.object;
-            if ((o===hudMesh)&&(co.distance<0.1)&&hudMesh.visible) { 
+            if ((o===hudMesh)&&(co.distance<0.1)
+              &&hudMesh.visible) { 
+              //onsole.log('renderHud 2 '+co.distance);
               i0=co;
               break;
               //onsole.log(co);
             }
             if (o.userData.rayCol) {
-              if (self.rayCol) self.rayCol(co,gp1&&gp1.buttons[0].pressed);
+              if (self.rayCol) self.rayCol(co,gp1b0);
               break;
             }
+            if (rayCheck) if (rayCheck(co)) break;
           }
         } else if (hudMesh.visible) {
+          //onsole.log('renderHud 3');
           raycaster.far=0.1;
           const intersects=raycaster.intersectObjects(huds),//room.children);
                 cursor=self.cursor;
           //let i0=undefined;
           if (intersects.length>0) i0=intersects[0];
+          //onsole.log('renderHud 3 '+i0);
         }
-        if (hudMesh.visible) hudIntersects(i0,i0&&gp1&&gp1.buttons[0].pressed);
+        if (hudMesh.visible) hudIntersects(i0,i0&&gp1b0);
       }
       if (hudMesh.visible&&needDrawUi) drawHud();
     //}
@@ -458,18 +564,157 @@ let XrUtil={};
     needDrawUi=true;
     //...
   }
+  self.scaleSwitch=function(ps) {
+    //---
+    let scaleCfg=ps.scaleCfg,
+        scfg=ps.noStartScfg?undefined:scaleCfg[0],
+        sc=scfg?scfg.sc:0,bgMat;
+    
+    {
+    let m;
+    room.add(m=new THREE.Mesh(new THREE.BoxGeometry(10,10,10),
+      bgMat=new THREE.MeshBasicMaterial({color:0x555566,transparent:false,opacity:1,side:THREE.BackSide,visible:false})));
+    let sc=ps.bgMeshScale||2.61;
+    m.scale.set(sc,sc,sc);
+    m.position.y=2;
+    }
+    
+    return function() {
+      //---
+      //onsole.log('scale nao');
+      let oscfg=scfg;
+      if (sc==scaleCfg[0].sc) {
+        scfg=scaleCfg[1];//oscfg=scaleCfg[0];
+      } else {
+        scfg=scaleCfg[0];//oscfg=scaleCfg[1];
+      }
+      self.scfg=scfg;
+      if (gps.room0&&!scfg.room0Rot) gps.room0.rotation.y=0;
+      sc=scfg.sc;
+      
+      //onsole.log(scfg);
+      
+      if (ps.pl0) {
+        ps.pl0.intensity=scfg.lint;
+        //onsole.log('setting p0 '+scfg.lint);
+        //ps.pl0.shadow.camera.near=100*sc;
+        //ps.pl0.shadow.camera.far=1000*sc;
+        //ps.pl0.shadow.camera.updateProjectionMatrix(); 
+      }
+      if (ps.pl1) ps.pl1.intensity=scfg.lint/3;
+      
+      if (ps.lights) for (let l of ps.lights) {
+        l.light.intensity=scfg.lint*l.intensity;
+        if (!l.light.castShadow) continue;
+        let c=l.light.shadow.camera;
+        c.near=10*sc;
+        c.far=1000*sc;
+        c.updateProjectionMatrix();
+      }
+      
+      self.flightSpeed=scfg.flightSpeed;
+      room.scale.set(sc,sc,sc);
+      //bgMat.opacity=scfg.bgop;
+      bgMat.visible=scfg.bgop==1?true:false;
+      
+      
+      if (self.isSession) {
+        let rp=room.position;
+        //elf.log('roompos '+Conet.f4(rp.x)+' '+Conet.f4(rp.y)+' '+Conet.f4(rp.z));
+        if (oscfg) oscfg.roomPos={x:rp.x,y:rp.y,z:rp.z}
+        if (scfg.roomPos) {
+          rp.x=scfg.roomPos.x;rp.y=scfg.roomPos.y;rp.z=scfg.roomPos.z;
+        }
+        //self.log('vrPos '+Conet.f4(vrPos.x)+' '+Conet.f4(vrPos.y)+' '+Conet.f4(vrPos.z));
+        //if (oscfg) oscfg.vrPos={x:vrPos.x,y:vrPos.y,z:vrPos.z}
+        //if (scfg.vrPos) {
+        //  vrPos.x=scfg.vrPos.x;vrPos.y=scfg.vrPos.y;vrPos.z=scfg.vrPos.z;
+        //  //blockWalk.tweens.push({o:vrPos,key:'x',t:t,value:scfg.vrPos.x});
+        //  //blockWalk.tweens.push({o:vrPos,key:'y',t:t,value:scfg.vrPos.y});
+        //  //blockWalk.tweens.push({o:vrPos,key:'z',t:t,value:scfg.vrPos.z});
+        //}
+      } else {
+        let cp=camera.position;
+        //elf.log('camPos '+Conet.f4(cp.x)+' '+Conet.f4(cp.y)+' '+Conet.f4(cp.z));
+        if (oscfg) oscfg.camPos={x:cp.x,y:cp.y,z:cp.z}
+        if (scfg.camPos) {
+          cp.x=scfg.camPos.x;cp.y=scfg.camPos.y;cp.z=scfg.camPos.z;
+          //blockWalk.tweens.push({o:cp,key:'x',t:t,value:scfg.camPos.x});
+          //blockWalk.tweens.push({o:cp,key:'y',t:t,value:scfg.camPos.y});
+          //blockWalk.tweens.push({o:cp,key:'z',t:t,value:scfg.camPos.z});
+        }
+      }
+      
+      /*
+      if (sc==0.25) {
+        sc=0.025; 
+        pl0.intensity=0.3;
+        pl1.intensity=0.08;
+        xrUtil.flightSpeed=0.001;
+        //pl0.distance=0.25;
+        //pl1.distance=1.0;
+      } else {
+        sc=0.25;
+        pl0.intensity=30;
+        pl1.intensity=8;
+        xrUtil.flightSpeed=0.01;
+      }
+      room.scale.set(sc,sc,sc);
+      */
+      //...
+    }
+    
+    //...
+  }
+  
+  self.subMenu=function(ps) {
+    //---
+    let ondown=ps.ondown||function() {
+      //---
+      let m=ps.mval;
+      if (m) {
+        m.s=this.s;
+        if (input===m) {
+          input=undefined;
+          delete(m.color);
+        }
+        if (m.oninput) m.oninput(m.s);
+      }
+      //console.log('==>'+this.s);
+      //...
+    }
+    
+    let md=ps.md;
+    if (!md) md={s:'v',dx:0.01,w:0.05};
+    md.sub=[];
+    for (let s of ps.a) {
+      let m={s:s,ondown:ondown};
+      if (md.sub.length==0) {
+        m.x=0.05;m.y=0.4;m.w=0.25;m.h=0.08;
+      } else m.dy=0.015;
+      md.sub.push(m);
+    }
+    return md;
+    //...
+  }
+  
   console.log('XrUtil '+version);
   //...
 }
 )(XrUtil);
 export { XrUtil };
 //fr o,5
-//fr o,5,8
-//fr o,5,10
-//fr o,5,12,8
-//fr o,5,12,10
-//fr o,5,12,41
-//fr o,5,12,58
-//fr o,5,13
-//fr o,5,18
-//fr p,120,81
+//fr o,5,12,9
+//fr o,5,12,11
+//fr o,5,12,42
+//fr o,5,12,59
+//fr o,5,12,85
+//fr o,5,12,97
+//fr o,5,14
+//fr o,5,15
+//fr o,5,18,32
+//fr o,5,18,36
+//fr o,5,18,38
+//fr o,5,18,40
+//fr o,5,22,14
+//fr p,17,33

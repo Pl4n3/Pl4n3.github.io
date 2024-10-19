@@ -1,7 +1,7 @@
 var Conet={};
 (function(Conet) {
   Conet.offline=false;
-  Conet.version='1.530 ';//FOLDORUPDATEVERSION
+  Conet.version='1.581 ';//FOLDORUPDATEVERSION
   Conet.files={};
   var uploads={},fns,logc,logs=[],//fn=>data,first
       logSameLineCount=0,ac,downloads={},PI=Math.PI;
@@ -192,12 +192,21 @@ var Conet={};
         var o=m.files[i],fn=o.fn;
         if (p.noh) if (fn.indexOf('/h/')!=-1) continue;
         if (firstLoadableIndex===undefined) firstLoadableIndex=i;
-        var i0=fn.lastIndexOf('/')+1;//if (i0==-1) i0=0;
-        var i1=fn.indexOf('.',2);//skip path dots
-        if (i1==-1) i1=fn.length;
-        if (i1-i0>10) i0=i1-10;
-        mload.sub.push(mn={s:fn.substr(i0,i1-i0),ms:fn.substr(0,i0)+'^'+fn.substr(i1)//,fs:0.5
-          ,a:fn,actionf:mload1,cfmo:o});
+        if (0) {
+          var i0=fn.lastIndexOf('/')+1;//if (i0==-1) i0=0;
+          var i1=fn.indexOf('.',2);//skip path dots
+          if (i1==-1) i1=fn.length;
+          if (i1-i0>10) i0=i1-10;
+          mload.sub.push(mn={s:fn.substr(i0,i1-i0),ms:fn.substr(0,i0)+'^'+fn.substr(i1)//,fs:0.5
+            ,a:fn,actionf:mload1,cfmo:o});
+        } else {
+          let sh=fn;
+          //let l=30;
+          //for (let i=Math.floor(sh.length/l);i>=1;i--) {
+          //  let p=i*l;
+          //  sh=sh.substr(0,p)+'<br>'+sh.substr(p); }
+          mload.sub.push(mn={s:sh,a:fn,actionf:mload1,cfmo:o,fs:2,pw:0.5,ph:0.02,fixCy:1,vertCenter:0,textAlign:'start'});
+        }
         if (o.isrc) { mn.c2=new Image();mn.c2.src=o.isrc; }
         //if (ps&&ps.urlfn) {
         //  if (fn==ps.urlfn) {
@@ -282,7 +291,7 @@ var Conet={};
       //mloadUpdate();
       //Conet.upload({fn:p.fn,data:JSON.stringify(m.files)});
       checkListFile(v);
-      p.savef(v);
+      p.savef(v,'saveas');
     }
     ,valuef:function() {
       return m.curFn||p.defFn||'';
@@ -653,6 +662,7 @@ var Conet={};
   }
   Conet.calcTweens=function(tweens,dt) {
     //---
+    //onsole.log('calcTweens '+tweens.length);
     for (var i=tweens.length-1;i>=0;i--) {
       var tw=tweens[i];
       tw.tc=Math.min(tw.t,(tw.tc||0)+dt);
@@ -682,6 +692,25 @@ var Conet={};
     }
     //...
   }
+  
+  Conet.tweensAdd=function(ps) {
+    //---
+    for (let i=0;i<ps.kv.length;i++) {
+      let kvi=ps.kv[i],tw;
+      ps.tweens.push(tw={t:ps.t,o:ps.o,key:kvi[0],value:kvi[1]});
+      if (ps.onend&&(i==ps.kv.length-1)) {
+    tw.onend=function() {
+      //---
+      Conet.tweensAdd(ps.onend[0]);
+      if (ps.onend.length>1) throw('more nextKvs n/i');
+      //...
+    }
+      }
+    }
+    //...
+  }
+  
+  
   Conet.dAng=function(a0,a1) {
     var da=a0-a1; 
     while (da>PI) da-=PI*2;
@@ -807,37 +836,77 @@ var Conet={};
   //console.log(compressedBytes);
   // => Uint8Array(61) [31, 139, 8, 0, ...]
   //------------
-  let diffOld={},diffPs;
-  Conet.diffInit=function(ps) {
+  
+  Conet.createDiff=function(ps) {
     //---
-    diffOld={};
-    diffPs=ps;
+    let old={};
+    function convert(h) {
+      //---
+      let r;
+      
+      if (ps.undiff) {
+        for (let k of Object.keys(h)) old[k]=h[k];
+        r=JSON.parse(JSON.stringify(old));
+        if (ps.fmt) r=ps.fmt(r);
+        return r;
+      }
+      
+      r={};
+      if (ps.fmt) h=ps.fmt(h);
+      for (let k of Object.keys(h)) {
+        if (old[k]==h[k]) continue;
+        r[k]=h[k];
+        old[k]=h[k];
+      }
+      return r;
+      //...
+    }
+    return {convert:convert};
     //...
   }
-  Conet.diff=function(h) {
-    //---
-    let r={},oh=diffOld;
-    
-    if (diffPs.undiff) {
-    for (let k of Object.keys(h)) oh[k]=h[k];
-    r=JSON.parse(JSON.stringify(oh));
-    if (diffPs.fmt) r=diffPs.fmt(r);
-    return r;
-    }
-    
-    
-    if (diffPs.fmt) h=diffPs.fmt(h);
-    for (let k of Object.keys(h)) {
-      if (oh[k]==h[k]) continue;
-      r[k]=h[k];
-      oh[k]=h[k];
-    }
-    return r;
-    //...
-  }
+  
   Conet.f4=function(v) {
     return Math.floor(0.5+v*10000)/10000;//...
   }
+  
+  //--- test for minimal object encapsulation without 'new'
+  //--- also used in createDiff
+  
+  /* 
+  Conet.count=function(ps) {
+    let c=ps.c||0;
+    function inc() {
+      c++;
+      return c;
+      //...
+    }
+    function set(v) {
+      c=v;
+      //...
+    }
+    //console.log(this);
+    return {inc:inc,set:set};
+    //...
+  }
+  let c0=Conet.count({c:1000});
+  console.log('c0.inc '+c0.inc());
+  console.log('c0.inc '+c0.inc());
+  let c1=Conet.count({c:2000});
+  console.log('c1.inc '+c1.inc());
+  console.log('c0.inc '+c0.inc());
+  c0.set(200);
+  console.log('c1.inc '+c1.inc());
+  console.log('c0.inc '+c0.inc());
+  */
+  
+  Conet.checkOnline=function() {
+    //---
+    let online=document.URL.indexOf(':7000')!=-1;
+    //--- maybe also set here Conet.offline
+    return online;
+    //...
+  }
+  
   //---
 }
 )(Conet);
@@ -845,18 +914,23 @@ console.log('Conet '+Conet.version);
 //fr o,1
 //fr o,1,5,4
 //fr o,1,7,22
+//fr o,1,10
 //fr o,1,10,3
 //fr o,1,10,4
+//fr o,1,10,5
 //fr o,1,10,6
 //fr o,1,10,7
 //fr o,1,10,19
 //fr o,1,10,20
+//fr o,1,10,30
+//fr o,1,10,33
+//fr o,1,10,34
 //fr o,1,11,1
 //fr o,1,18,4
 //fr o,1,47,13
-//fr o,1,57,3
-//fr o,1,58,2
-//fr o,1,68
-//fr o,1,69
-//fr o,1,70
-//fr p,24,83
+//fr o,1,52
+//fr o,1,52,5
+//fr o,1,61,3
+//fr o,1,62,2
+//fr o,1,106
+//fr p,17,137

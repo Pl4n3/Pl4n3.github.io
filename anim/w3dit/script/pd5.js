@@ -1,6 +1,16 @@
 //----
 (function() {
   //---
+  let first=true,manims,selected;
+  //---
+  function onSelect() {
+    //---
+    selected=this;
+    manims.s=this.o5.anim;
+    manims.ms='Pd5 Anims';
+    //...
+  }
+  //---
   window.w3ditScriptInit(function (ps) {
     //---
     //let m=new THREE.Mesh(
@@ -29,8 +39,10 @@
     //onsole.log(ps);
     ps.mesh.userData.onserialize=function() {
       //---
-      console.log('pd5.onserialize');
+      //onsole.log('pd5.onserialize');
       let data=this.op.data;
+      //console.log(this.op);
+      //console.log(modes.diff.canv);
       if (data) {
         //onsole.log(data.meshes[0].diff);
         //onsole.log(canv.toDataURL());
@@ -38,8 +50,19 @@
         if (modes.norm.canv) data.meshes[0].norm=modes.norm.canv.toDataURL();
         if (modes.spec.canv) data.meshes[0].spec=modes.spec.canv.toDataURL();
       }
+      if (ps0.diff&&modes.diff.canv&&ps0.diff.endsWith('.json')) {
+        //console.log(ps0.diff);
+        //console.log(modes.diff.canv.toDataURL());
+        let h;
+        Conet.upload(h={fn:ps0.diff,data:JSON.stringify({data:modes.diff.canv.toDataURL()})});
+        xrUtil.log('Saved '+h.data.length+' b to '+h.fn+'.');
+      }
+      //onsole.log(this);
+      this.op.animStop=this.o5.animStop?1:undefined;
       //...
     }
+    
+    ps.mesh.userData.onSelect=onSelect;
     
     function modeColor() {
       //---
@@ -159,18 +182,39 @@
       threeAddObj(o,0,0,0,ps0.sc||1);//0.5
       let ps=ps1.ps;
       if (ps.ay) o.ay=ps.ay;
-      //o.calcVertNorms=1;
+      o.calcVertNorms=1;
       ps.mesh.userData.o5=o;
       //onsole.log(p);
       
       mesh=o.meshes[0].tmesh;
       
       mesh.userData.rayCol=rayCol;
+      mesh.userData.editPoint=ps.mesh;
+      ps.scriptHandlers.rayObjsReset();
+      //Pd5.animStart(o,{a:[{s:'nay'},{s:'yay'}]});
+      
       //...
     }
     
+    if (first) {
+      first=false;
+      xrUtil.log('Script-Pd5 v.0.234 ');//FOLDORUPDATEVERSION
+      xrUtil.hud.buttons.push(
+        manims={s:(typeof(ps.ps.anim)=='string')?ps.ps.anim:'random',ms:'Pd5 Anims',x:0.37,y:0.7,w:0.3,h:0.1,
+    ondown:function() {
+      //---
+      //console.log(selected);
+      let o5=selected.o5;
+      console.log(o5.animStop);
+      if (o5.animStop) { o5.animStop=false;Pd5.animStart(o5,o5.anim); }
+      else o5.animStop=true;//!o5.animstop;
+      //...
+    }
+        });
+      selected=ps.mesh.userData;
+      //onsole.log(ps);
+    }
     
-    xrUtil.log('Script-Pd5 v.0.157 ');//FOLDORUPDATEVERSION
     //onsole.log(ps);
     if (ps0.data) {
       xrUtil.log('scriptPd5: loading data');
@@ -185,6 +229,12 @@
       //  return;
       //}
       o=Pd5.load(v);
+      
+      //o.meshes[0].diff=o.meshes[0].norm;
+      //onsole.log(o.meshes[0].diff);
+      if (ps0.diff) o.meshes[0].diff=ps0.diff;//'/shooter/objs/templar/ar_png.json';
+      if (ps0.animStop) o.stopAfterAnim=true;
+      
       //if (1) {
       //  console.log(o);
       //  return;
@@ -201,10 +251,11 @@
 )();
 //----
 //fr o,1
-//fr o,1,1
-//fr o,1,1,16
-//fr o,1,1,20
-//fr o,1,1,24
-//fr o,1,1,26
-//fr o,1,1,36
-//fr p,4,76
+//fr o,1,3
+//fr o,1,5
+//fr o,1,5,16
+//fr o,1,5,20
+//fr o,1,5,28
+//fr o,1,5,35
+//fr o,1,5,47
+//fr p,33,86

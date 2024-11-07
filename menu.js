@@ -21,7 +21,8 @@ var Menu={};
   Menu.soff='[ ]';//'\u2610';
   Menu.son='[x]';//'\u2611';
   Menu.pressed=pressed;
-  Menu.version='1.494 ';//FOLDORUPDATEVERSION
+  Menu.version='1.496 ';//FOLDORUPDATEVERSION
+  Menu.keys=keys;
   function mCloseAll(a) {
     for (var i=0;i<a.length;i++) {
       var mh=a[i];
@@ -711,6 +712,11 @@ var Menu={};
   Menu.getMenus=function() {
     return menus;
   }
+  Menu.getTf=function() {
+    //---
+    return document.getElementById(tfid);
+    //...
+  }
   Menu.init=function(a,p) {
     console.log('Menu '+Menu.version);
     Menu.initLoad(a);
@@ -1165,14 +1171,16 @@ var Menu={};
 
 //--
 //fr o,2
-//fr o,2,22
 //fr o,2,23
-//fr o,2,25
-//fr o,2,27
-//fr o,2,37
-//fr o,2,39
-//fr o,2,42
+//fr o,2,24
+//fr o,2,26
+//fr o,2,28
 //fr o,2,43
-//fr o,2,51
-//fr o,2,63
-//fr p,18,256
+//fr o,2,44
+//fr o,2,45
+//fr o,2,46
+//fr o,2,47
+//fr o,2,48
+//fr o,2,53
+//fr o,2,65
+//fr p,15,24

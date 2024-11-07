@@ -7,6 +7,7 @@
 1. [voxXr](/three/anim/voxed/voxXr.htm)
 1. [sculpt160](/test/webvr/sculpt160.htm)
 1. [editXr:puppetHead](/test/webvr/edit.htm?file=file:puppetHead)
+1. [editXr:cannon0](/test/webvr/edit.htm?file=file:cannon0)
 
 <!-- 1. [local editHist](http://192.168.2.110:7000/util/editHist.htm)
 1. [bulletXr](/three/anim/bullet/bulletXr.htm)

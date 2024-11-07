@@ -21,10 +21,10 @@
     
     
       let c=cannon.ctrl,gp1=xrUtil.gp1;
-      c.fore=Menu.keys[38]||(gp1&&gp1.buttons[0]?.pressed);//gp1.axes[3]<-0.5);
-      c.back=Menu.keys[40]||(gp1&&gp1.buttons[1]?.pressed);//&&gp1.axes[3]>0.5);
-      c.left=Menu.keys[37]||(gp1&&gp1.axes[2]<-0.5);
-      c.right=Menu.keys[39]||(gp1&&gp1.axes[2]>0.5);
+      c.fore=(tsd[0].dy<-0.5)||(gp1&&gp1.buttons[0]?.pressed);//gp1.axes[3]<-0.5);Menu.keys[38]
+      c.back=(tsd[0].dy>0.5)||(gp1&&gp1.buttons[1]?.pressed);//&&gp1.axes[3]>0.5);Menu.keys[40]
+      c.left=(tsd[0].dx<-0.5)||(gp1&&gp1.axes[2]<-0.5);//Menu.keys[37]
+      c.right=(tsd[0].dx>0.5)||(gp1&&gp1.axes[2]>0.5);//Menu.keys[39]
       c.brake=Menu.keys[66]||(gp1&&gp1.buttons[4]?.pressed);
       let z=cannon.ctrlOld,change=false;
       for (let k of Object.keys(c)) {
@@ -597,6 +597,7 @@
         //onsole.log('Cannon Script loaded.');
         //initCannonTrimesh({});
         //onsole.log(ps0.sc);
+        tsd=Menu.touchSticksInit({autoKeys:1,skip1:1});
         
         initCannonRaycastVehicle({ps:ps});
         cannon.o=o;
@@ -632,7 +633,7 @@
     
     if (first) {
       first=false;
-      xrUtil.log('Pd5 v.0.590 ');//FOLDORUPDATEVERSION
+      xrUtil.log('Pd5 v.0.593 ');//FOLDORUPDATEVERSION
       xrUtil.hud.buttons.push(
         manims={s:(typeof(ps.ps.anim)=='string')?ps.ps.anim:'random',ms:'Pd5 Anims',x:0.37,y:0.7,w:0.3,h:0.1,
     ondown:function() {
@@ -695,4 +696,4 @@
 //fr o,1,18,30,40
 //fr o,1,18,30,41
 //fr o,1,18,49
-//fr p,14,438
+//fr p,21,20

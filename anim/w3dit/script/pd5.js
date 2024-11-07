@@ -373,7 +373,7 @@
     };
     
     //xrUtil.log('');
-    xrUtil.log('--> Move car with cursorkeys+b or xr-controller.');
+    xrUtil.log('--> Move car with wasd+b or xr-controller.');
     
     //...
   }
@@ -633,7 +633,7 @@
     
     if (first) {
       first=false;
-      xrUtil.log('Pd5 v.0.593 ');//FOLDORUPDATEVERSION
+      xrUtil.log('Pd5 v.0.594 ');//FOLDORUPDATEVERSION
       xrUtil.hud.buttons.push(
         manims={s:(typeof(ps.ps.anim)=='string')?ps.ps.anim:'random',ms:'Pd5 Anims',x:0.37,y:0.7,w:0.3,h:0.1,
     ondown:function() {
@@ -696,4 +696,4 @@
 //fr o,1,18,30,40
 //fr o,1,18,30,41
 //fr o,1,18,49
-//fr p,21,20
+//fr p,34,313

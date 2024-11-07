@@ -13,6 +13,7 @@
 <script src="/canvas/pd5.js"></script>
 <script src="/three/threePd5.js"></script>
 <script src="/util/deep.js"></script>
+<script src="/util/gfx/phys.js"></script>
 </head>
 <body oncontextmenu="return false;">
 <script type="importmap">
@@ -31,7 +32,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 (function() {
   //---
   let container,camera,scene,renderer,defaultLights=[],
-      controls,ph,raycaster,sceneh={},
+      controls,ph,ph0,raycaster,sceneh={},
       xrUtil=XrUtil,lsKey='editXr_0',sels=[],
       //grid={},gridw=0.01,
       cursor0,cursor1,
@@ -763,7 +764,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     //\u25b2 \u25bc
     
-    const version='v.0.1408 ';//FOLDORUPDATEVERSION
+    const version='v.0.1421 ';//FOLDORUPDATEVERSION
     xrUtil.log('Edit '+version);
     
     //
@@ -1099,7 +1100,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     threeEnv.camera=camera;
     
     
-    ph=new THREE.Vector3();
+    ph=new THREE.Vector3();ph0=new THREE.Vector3();
     
     //if (is
     let fn=Conet.parseUrl().file;
@@ -1110,7 +1111,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     } else {
     
     if (isConet) {
-      xrUtil.log('Fileload: '+dirfn+'.');
+      //xrUtil.log('Fileload: '+dirfn+'.');
       Conet.download({fn:dirfn,f:dirLoaded});
     } else dirLoaded(localStorage[lsKey+'dir']);
     
@@ -1415,7 +1416,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     }
     script.onload=function() {
       //---
-      xrUtil.log('Script loaded: '+fn);
+      //rUtil.log('Script loaded: '+fn);
       //xrUtil.log(fn);
       //...
     }
@@ -1613,15 +1614,17 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       let ctrl1=xrUtil.ctrl1;
     
       ph.setFromMatrixPosition(cursor1.matrixWorld);
+      //ph.sub(room.position);
     
       let np=undefined;
       if (ctrl1.userData.isSelecting&&wasSelecting) 
         np=wasSelecting;
       else {
-        let nd=0.005;//Number.MAX_VALUE;
+        let nd=0.005,rp=room.position;//Number.MAX_VALUE;
+        ph0.subVectors(ph,rp);
         for (let p of points) {
-          let d=p.position.distanceToSquared(ph);
-          if (d<nd) { pdif.set(0,0,0);nd=d;np=p; }
+          let d=p.position.distanceToSquared(ph0);
+          if (d<nd) { pdif.set(-rp.x,-rp.y,-rp.z);nd=d;np=p; }
         }
         setNearestPoint(np);
         //if (np) { xrUtil.log('nd='+nd);console.log('nd='+nd); }
@@ -1705,7 +1708,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     for (let sc of scripta) if (sc.renderf) sc.renderf(dt);
     //console.log(scripta.length);
     
-    threeRender(dt);
+    //threeRender(dt);
     
     renderer.render(scene,camera);
     //...
@@ -1837,27 +1840,28 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 </body>
 </html>
 <script>
-//fr o,30
-//fr o,30,17
-//fr o,30,17,81,9
-//fr o,30,17,83,7
-//fr o,30,17,83,9
-//fr o,30,17,83,11
-//fr o,30,17,83,13
-//fr o,30,17,83,17
-//fr o,30,17,83,19
-//fr o,30,17,83,21
-//fr o,30,17,83,23
-//fr o,30,17,83,74
-//fr o,30,17,99,30
-//fr o,30,17,99,39
-//fr o,30,17,99,49
-//fr o,30,17,99,57
-//fr o,30,17,176
-//fr o,30,17,179
-//fr o,30,17,246
-//fr o,30,28,10
-//fr o,30,28,11
-//fr o,30,37
-//fr o,30,45
-//fr p,6,295
+//fr o,31
+//fr o,31,17
+//fr o,31,17,81,9
+//fr o,31,17,83,7
+//fr o,31,17,83,9
+//fr o,31,17,83,11
+//fr o,31,17,83,17
+//fr o,31,17,83,19
+//fr o,31,17,83,21
+//fr o,31,17,83,23
+//fr o,31,17,83,74
+//fr o,31,17,99,30
+//fr o,31,17,99,39
+//fr o,31,17,99,49
+//fr o,31,17,99,57
+//fr o,31,17,169
+//fr o,31,17,171
+//fr o,31,17,176
+//fr o,31,17,179
+//fr o,31,17,246
+//fr o,31,28,10
+//fr o,31,28,11
+//fr o,31,44
+//fr o,31,45
+//fr p,5,442

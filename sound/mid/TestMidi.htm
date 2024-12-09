@@ -1,1 +1,186 @@
-123
+<!doctype html><html><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, user-scalable=yes, minimum-scale=1.0, maximum-scale=10.0">
+
+<script src="/conet.js"></script>
+<script src="/sound.js"></script>
+<script src="/anim/arrows/canvApps/audio.js"></script>
+
+</head>
+<body style="font-family:Sans-serif;" bgcolor="#aaaaaa">
+
+<script type="text/javascript">
+(function() {
+  //---
+  let b=document.createElement('button'),ta=document.createElement('textarea');
+  b.innerHTML='Record Midi';
+  b.onclick=function() {
+    //---
+    
+    let midi = null; // global MIDIAccess object
+    
+    function onMIDISuccess(midiAccess) {
+      //---
+      console.log('MIDI ready!');
+      midi = midiAccess; // store in the global (in real usage, would probably keep in an object instance)
+      let t0=0;
+      
+      function onMIDIMessage(event) {
+        
+        if (event.data.length==1) return;
+        
+        let t=Math.floor(event.timeStamp+0.5);
+        let str = `MIDI message received at timestamp ${event.timeStamp}[${event.data.length} bytes]: `,
+            a=[t-t0];
+        t0=t;
+        for (const character of event.data) {
+          str += `0x${character.toString(16)} `;
+          a.push(character);
+        }
+        console.log(str);
+        ta.value+=(ta.value.length>0?',':'')+JSON.stringify(a)+'\n';
+      }
+      
+      
+      midiAccess.inputs.forEach((entry) => {
+        entry.onmidimessage = onMIDIMessage;
+      });
+      
+      
+      //---> possible output
+      //MIDI ready!
+      //TestMidi.htm:31 MIDI message received at timestamp 6884.800000190735[3 bytes]: 0x90 0x3c 0x2c 
+      //TestMidi.htm:31 MIDI message received at timestamp 7093.800000190735[3 bytes]: 0x90 0x3c 0x0 
+      //TestMidi.htm:31 MIDI message received at timestamp 8141.900000095367[3 bytes]: 0x90 0x3c 0x2d 
+      //TestMidi.htm:31 MIDI message received at timestamp 8416.800000190735[3 bytes]: 0x90 0x3c 0x0 
+      //TestMidi.htm:31 MIDI message received at timestamp 9064.900000095367[3 bytes]: 0x90 0x3c 0x2c 
+      //TestMidi.htm:31 MIDI message received at timestamp 9984.800000190735[3 bytes]: 0x90 0x3c 0x0 
+      
+      
+      //---
+    }
+    
+    function onMIDIFailure(msg) {
+      console.error(`Failed to get MIDI access - ${msg}`);
+    }
+    
+    navigator.requestMIDIAccess().then(onMIDISuccess, onMIDIFailure);
+    
+    //...
+  }
+  ta.style.width='400px';ta.style.height='400px';
+  
+  ta.value='[0,144,60,51]\n'
+  +',[234,144,60,0]\n'
+  +',[105,144,62,52]\n'
+  +',[179,144,62,0]\n'
+  +',[137,144,64,46]\n'
+  +',[278,144,64,0]\n'
+  +',[35,144,65,51]\n'
+  +',[237,144,65,0]\n'
+  +',[121,144,67,58]\n'
+  +',[245,144,67,0]\n'
+  +',[295,144,67,53]\n'
+  +',[183,144,67,0]\n';
+  
+  document.body.appendChild(b);
+  
+  canvAppsAudio.loadWebaudiofont();
+  b=document.createElement('button');
+  b.innerHTML='Play';
+  b.onclick=function() {
+    //---
+    
+    if (0) {
+    canvAppsAudio.queueNode({
+      //sa:['{\"pitch\":[0,5],\"preset\":\"gp\"}']
+      children:[
+        {sah:{pitch:[0,5],preset:'gp',when:0,duration:0.5}}
+        //{sah:{pitch:[0,5],preset:'gp',when:0.5,duration:2}}
+      ]
+    });
+    return; 
+    }
+    
+    
+    
+    let a=JSON.parse('['+ta.value+']'),t=-a[0][0];
+    //console.log(a);
+    let openNotes={};
+    let queue=[];
+    
+    for (let b of a) {
+      t+=b[0];
+      if (b[3]==0) {
+        let h=openNotes[b[2]];
+        if (!h) continue;
+        let dt=t-h.t;  
+    if (queue) {
+      
+      queue.push({sah:{pitch:b[2],preset:'gp',when:h.t/1000,duration:dt/1000}});
+      
+      
+    } else {
+    let f=440*Math.pow(2,(b[2]-49-24)/12),dt=t-h.t,v=h.v/100;
+    setTimeout(function() {
+      Sound.osc({a:[
+        {f:f,v:v},
+        //{t:10,v:1},
+        {t:dt,v:v},
+        {t:10,v:0}]
+      });
+      console.log(dt);
+    }
+    ,h.t);
+    } 
+        
+        continue;//note off
+      }
+      openNotes[b[2]]={t:t,v:b[3]};  
+    }
+    
+    if (queue) canvAppsAudio.queueNode({children:queue});
+    //Sound.osc({a:[{"fr":[50,500],"v":0,"n":1},{"t":10,"v":1},{"t":200,"v":1},{"t":140,"v":0,"fr":[200,400]}]});
+    //Sound.osc({a:[{f:400,v:1}]});
+    //...
+  }
+  document.body.appendChild(b);
+  
+  b=document.createElement('button');
+  b.onclick=function() {
+    //---
+    if (confirm('Really clear?')) ta.value='';
+    //...
+  }
+  b.innerHTML='Clear';
+  document.body.appendChild(b);
+  
+  
+  b=document.createElement('button');
+  b.onclick=async function() {
+    //---
+    try {
+      await navigator.share({text:ta.value});
+    } catch (err) {
+      console.log(`Error: ${err}`);
+    }
+    //...
+  }
+  b.innerHTML='Share';
+  document.body.appendChild(b);
+  
+  document.body.appendChild(document.createElement('br'));
+  document.body.appendChild(ta);
+  
+  //...
+}
+)();
+</script>
+
+</body>
+</html><script>
+//fr o,12
+//fr o,12,3,4,5
+//fr o,12,3,6
+//fr o,12,24,33
+//fr p,0,53

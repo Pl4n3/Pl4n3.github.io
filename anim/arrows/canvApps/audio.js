@@ -4,7 +4,7 @@
   let url=Conet.parseUrl(),
       audioContext,player,presets,timeoutIds={};
   
-  console.log('v.0.16 ');//FOLDORUPDATEVERSION
+  console.log('v.0.38 ');//FOLDORUPDATEVERSION
   
   function scriptUrls() {
     //---
@@ -32,6 +32,7 @@
     var h,parseErr=undefined;
     depth=depth||0;
     
+    if (o.sah) h=o.sah; else
     try {
     h=JSON.parse(o.sa.join(''));
     } catch (e) { h={};parseErr=1; }
@@ -68,6 +69,7 @@
         player.queueWaveTable(audioContext,audioContext.destination,selectedPreset,audioContext.currentTime+when+0.8,pitch,4);
       }
       
+      if (0&&window.cano) {
       var id=setTimeout(
     function() {
       //---
@@ -87,6 +89,7 @@
     }
       ,when*1000);
       timeoutIds[id]=1;
+      }
     }
     }
     
@@ -98,8 +101,9 @@
     //---
     console.log('audio.js init');
     //Conet.hcopy({scx:1,scy:1},view);
-    cano.smallScale=0.5;
+    if (window.cano) {
     
+    cano.smallScale=0.5;
     cano.onUp=function(o) {
       //...
       if (!cano.audioQueuesStay) {
@@ -109,6 +113,8 @@
       } //else console.log('audio queues stay');
       queueNode(o);
       //---
+    }
+    
     }
     
     var AudioContextFunc=window.AudioContext||window.webkitAudioContext;
@@ -149,6 +155,103 @@
     //...
   }
   //---
+  function parseMusicXml(ps) {
+    //---
+    
+    function dget(p,k) {
+      return p.getElementsByTagName(k)[0];
+      //...
+    }
+    function dgets(p,k) {
+      return dget(p,k).innerHTML;
+      //...
+    }
+    function dgeti(p,k) {
+      return parseInt(dget(p,k).innerHTML);
+      //...
+    }
+    
+    function parse(v) {
+      //---
+      console.log('parse');
+      let steph={C:0,D:2,E:4,F:5,G:7,A:9,B:11};
+      //onsole.log(v.length);
+      let parser=new DOMParser();
+      let doc=parser.parseFromString(v,'application/xml');
+      //onsole.log(doc);
+      window.doc=doc;
+      let a=doc.children[0];
+      //console.log(Object.keys(a));
+      let queue=[],trackt={},t=0,doctave=1,preset='gp';//'ohit';'ahhs';
+      for (let e of a.children) {
+        //onsole.log(e);
+        //onsole.log(e.tagName);
+        if (e.tagName=='part') {
+          //onsole.log(e);
+          let meascount=0;
+          for (let c of e.children) {
+            if (c.tagName=='measure') {
+              //meascount++;
+              //if (meascount<14) continue;
+              //if (meascount>18) break;
+              //onsole.log(c);
+              for (let c0 of c.children) {
+                if (c0.tagName=='forward') t+=dgeti(c0,'duration');
+                if (c0.tagName=='backup') t-=dgeti(c0,'duration'); 
+                if (c0.tagName=='note') {
+                  //onsole.log(c0);
+                  let pitch=dget(c0,'pitch');//c0.getElementsByTagName('pitch')[0];
+                  //if (!pitch) {
+                  //  console.log('no pitch:');
+                  //  console.log(c0);
+                  //  continue;
+                  //}
+                  let track=dgets(c0,'voice');//'stem');
+                  if (trackt[track]===undefined) trackt[track]=0;
+                  let duration=dgeti(c0,'duration');//*0.25;
+                  let chord=dget(c0,'chord');
+                  if (chord) {
+                    //onsole.log('chord!!!');
+                    t-=duration;
+                  }
+                  //if (stem=='up') {
+                    //onsole.log(step+' '+steph[step]+' '+octave+' '+stem+' '+duration);
+                  if (pitch) {
+                    let step=dgets(pitch,'step');
+                    let octave=dgeti(pitch,'octave');
+                    let alter=dgeti(pitch,'alter');
+                    //if (steph[step]===undefined) console.warn('not steph: '+step);
+                    //queue.push({sah:{pitch:steph[step]+alter+(octave+doctave)*12,preset:preset,when:t*0.25,duration:duration*0.25}});
+                    ps.note({pitch:steph[step]+alter+(octave+doctave)*12,when:t,duration:duration,track:track});
+                    //queue.push({sah:{pitch:[steph[step]+alter,octave+doctave],preset:preset,when:t*0.25,duration:duration*0.25}});
+                    //queue.push({sah:{pitch:[steph[step],octave],preset:'gp',when:trackt[track],duration:duration}});
+                  }
+                  trackt[track]+=duration;
+                  t+=duration;
+                  //}
+                  //onsole.log(step.value+' '+octave);
+                }
+              }
+            }
+          }
+        }
+      }
+      if (ps.done) ps.done();
+      //...
+    }
+    
+    if (ps.fn) Conet.download({fn:ps.fn,f:parse});
+    else parse(ps.v);
+    //...
+  }
+  
+  
+  window.canvAppsAudio={
+    loadWebaudiofont:loadWebaudiofont,
+    queueNode:queueNode,
+    parseMusicXml:parseMusicXml,
+  };
+  
   if (window.cano) cano.addScriptHook(loadWebaudiofont);
   //window.canoAudioInit=loadWebaudiofont;
   //...
@@ -158,9 +261,11 @@
 //fr o,1
 //fr o,1,6
 //fr o,1,8
-//fr o,1,8,42
-//fr o,1,8,42,6
+//fr o,1,8,44
+//fr o,1,8,44,6
 //fr o,1,9
-//fr o,1,9,5
+//fr o,1,9,6
 //fr o,1,11
-//fr p,11,151
+//fr o,1,13
+//fr o,1,13,6
+//fr p,9,71

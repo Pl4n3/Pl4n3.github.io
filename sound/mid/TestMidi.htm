@@ -14,7 +14,22 @@ button { font-size:20px;margin-right:4px;margin-bottom:4px; }
 <script type="text/javascript">
 (function() {
   //---
-  let b=document.createElement('button'),ta=document.createElement('textarea');
+  
+  function serialize(d) {
+    //
+    d.count=d.notes.length;
+    let a=Object.keys(d).sort();
+    let s='{';
+    for (let i=0;i<a.length;i++) {
+      let k=a[i];
+      s+='"'+k+'":'+JSON.stringify(d[k])+((i==a.length-1)?'}':',')+'\n';
+    }
+    
+    return s;//JSON.stringify(d,Object.keys(d).sort());
+    //...
+  }
+  
+  let data={},b=document.createElement('button'),ta=document.createElement('textarea');
   b.innerHTML='Record Midi';
   b.onclick=function() {
     //---
@@ -42,8 +57,12 @@ button { font-size:20px;margin-right:4px;margin-bottom:4px; }
           a.push(character);
         }
         console.log(str);
-        ta.value+=(ta.value.length>0?',':'')+JSON.stringify(a)+'\n';
-        ta.oninput();
+        
+        //ta.value+=(ta.value.length>0?',':'')+JSON.stringify(a)+'\n';
+        data.notes.push(a);
+        data.datemod=new Date().toISOString();
+        ta.value=serialize(data);
+        canvas.render();//ta.on input();
       }
       
       
@@ -74,9 +93,11 @@ button { font-size:20px;margin-right:4px;margin-bottom:4px; }
     //...
   }
   ta.style.width='400px';ta.style.height='200px';
-  ta.value='[0,144,60,51]\n'
+  data=JSON.parse('{'
+  +'"notes":[[0,144,60,51]\n'
   +',[234,144,60,0]\n'
   +',[105,144,62,52]\n'
+  
   +',[179,144,62,0]\n'
   +',[137,144,64,46]\n'
   +',[278,144,64,0]\n'
@@ -85,7 +106,14 @@ button { font-size:20px;margin-right:4px;margin-bottom:4px; }
   +',[121,144,67,58]\n'
   +',[245,144,67,0]\n'
   +',[295,144,67,53]\n'
-  +',[183,144,67,0]\n';
+  +',[183,144,67,0]\n'
+  
+  +']}\n');
+  data.descr='Song of ice and fire';
+  data.datenew=new Date().toISOString();
+  data.datemod=new Date().toISOString();
+  ta.value=serialize(data);
+  console.log(data);
   document.body.appendChild(b);
   
   canvAppsAudio.loadWebaudiofont();
@@ -107,7 +135,7 @@ button { font-size:20px;margin-right:4px;margin-bottom:4px; }
     
     
     
-    let a=JSON.parse('['+ta.value+']'),t=-a[0][0];
+    let d=JSON.parse(ta.value),a=d.notes,t=-a[0][0];
     //console.log(a);
     let openNotes={};
     let queue=[];
@@ -152,8 +180,13 @@ button { font-size:20px;margin-right:4px;margin-bottom:4px; }
   b.onclick=function() {
     //---
     //if (confirm('Really clear?')) 
-    ta.value='';
-    ta.oninput();
+    
+    //ta.value='';
+    data.notes.length=0;
+    data.datemod=new Date().toISOString();
+    ta.value=serialize(data);
+    
+    canvas.render();//ta.on input();
     //...
   }
   b.innerHTML='Clear';
@@ -177,7 +210,7 @@ button { font-size:20px;margin-right:4px;margin-bottom:4px; }
   function() {
     //---
     let c=document.createElement('span');c.style.fontSize='12px';
-    let version='v.0.79 ';//FOLDORUPDATEVERSION
+    let version='v.0.135 ';//FOLDORUPDATEVERSION
     c.innerHTML=version;
     document.body.appendChild(c);
     let count=0;
@@ -207,6 +240,22 @@ button { font-size:20px;margin-right:4px;margin-bottom:4px; }
   
   document.body.appendChild(document.createElement('br'));
   document.body.appendChild(ta);
+  ta.oninput=function() {
+    //---
+    try {
+    
+    data=JSON.parse(ta.value);
+    data.datemod=new Date().toISOString();
+    canvas.render();
+    
+    } catch (e) {}
+    //...
+  }
+  ta.onblur=function() {
+    //---
+    ta.value=serialize(data);//to display changed datemod
+    //...
+  }
   
   let canvas=new function() {
     //---
@@ -225,9 +274,16 @@ button { font-size:20px;margin-right:4px;margin-bottom:4px; }
       let ct=c.getContext('2d'),w=c.width,h=c.height;
       ct.strokeStyle='#000';
       ct.clearRect(0,0,w,h);
+      ct.strokeRect(0,0,w,h);
+      ct.fillStyle='#0c0';
       
-      try {
-      let a=JSON.parse('['+ta.value+']'),t=-a[0][0];
+      //try {
+      //let a=JSON.parse('['+ta.value+']')
+      let d=data,//JSON.parse(ta.value),
+          a=d.notes;
+      if (a.length==0) return;
+      let t=-a[0][0];
+      //data=d;
       let openNotes={},na=[],n0=1000,n1=-1000,t1=0;
       for (let b of a) {
         t+=b[0];
@@ -235,7 +291,7 @@ button { font-size:20px;margin-right:4px;margin-bottom:4px; }
         if ((b[3]==0)||(b[1]==128)) {
           let h=openNotes[n];
           if (!h) continue;
-          openNotes[b[2]]=undefined;
+          delete(openNotes[b[2]]);//=undefined;
           let dt=t-h.t;  
           na.push({n:n,t:h.t,dt:dt});    
           n0=Math.min(n,n0);
@@ -246,12 +302,19 @@ button { font-size:20px;margin-right:4px;margin-bottom:4px; }
         openNotes[n]={t:t,v:b[3]};  
       }
       
+      for (let n of Object.keys(openNotes)) {
+        //console.log('still open:'+n);
+        let h=openNotes[n];
+        let dt=t-h.t+10;//t-h.t;  
+        //if (dt<10) dt=10;
+        na.push({n:n,t:h.t,dt:dt});    
+        n0=Math.min(n,n0);
+        n1=Math.max(n,n1);
+        t1=t+10;
+      }
       
       //onsole.log(w+' '+h);
       
-      
-      ct.strokeRect(0,0,w,h);
-      ct.fillStyle='#0c0';
       for (let o of na) {
         let x=0.5+w*o.t/t1,y=0.5+h*(o.n-n0)/(n1-n0+1),wh=w*o.dt/t1-1,hh=h/(n1-n0+1)-1;
         ct.fillRect(x,y,wh,hh);
@@ -260,11 +323,11 @@ button { font-size:20px;margin-right:4px;margin-bottom:4px; }
       
       //ct.strokeRect(0,0,w,h);
       //onsole.log('canvas render');
-      } catch (e) {}
+      //} catch (e) {}
       //...
     }
     
-    ta.oninput=this.render;
+    //ta.oni nput=this.render;
     this.render();
     //...
   }
@@ -279,12 +342,10 @@ button { font-size:20px;margin-right:4px;margin-bottom:4px; }
 </body>
 </html><script>
 //fr o,14
-//fr o,14,3
-//fr o,14,3,4
-//fr o,14,3,4,5
-//fr o,14,3,6
-//fr o,14,26
-//fr o,14,37
-//fr o,14,37,16
-//fr o,14,45,10
-//fr p,25,127
+//fr o,14,6
+//fr o,14,6,4
+//fr o,14,6,4,5
+//fr o,14,49,16
+//fr o,14,59
+//fr o,14,59,10
+//fr p,32,97

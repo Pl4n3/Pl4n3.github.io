@@ -6,12 +6,9 @@
 <style>
 body { font-family:sans-serif;color:#000;background-color:#fff;margin:0px;overflow:hidden; }
 </style>
-<script src="/three/r124/build/three.min.js"></script>
-<script src="/three/r143/examples/js/libs/stats.min.js"></script>
-<script src="/three/r124/examples/js/controls/OrbitControls.js"></script>
-
 <script src="/menu.js"></script>
 <script src="/conet.js"></script>
+<script src="/sound.js"></script>
 <script src="/util/rare/genMaze.js"></script>
 <script src="/util/bricks.js"></script>
 <script src="/vecmath.js"></script>
@@ -20,7 +17,27 @@ body { font-family:sans-serif;color:#000;background-color:#fff;margin:0px;overfl
 <script src="/three/anim/voxed.js"></script>
 <script src="/three/deep/blockWalk.js"></script>
 <title>Bricks</title>
-</head><body><div id="container"></div><script>
+</head>
+
+<body oncontextmenu="return false;">
+<div id="container"></div>
+<script type="importmap">
+{
+"imports": {
+"three": "/three/r160/build/three.module.js",
+"three/addons/": "/three/r160/examples/jsm/"
+}
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import Stats from 'three/addons/libs/stats.module.js';
+import { XrUtil } from '/util/gfx/XrUtil.js';
+window.THREE=THREE;
+window.OrbitControls=OrbitControls;
+window.Stats=Stats;
+window.XrUtil=XrUtil;
 Bricks.initEditor();
 //script src="/three/r124/build/three.min.js">/script>
 //script src="/three/r109/examples/js/libs/stats.min.js">/script>
@@ -28,4 +45,4 @@ Bricks.initEditor();
 //script src="https://threejs.org/build/three.min.js">/script>
 //script src="https://threejs.org/examples/js/libs/stats.min.js">/script>
 </script></body></html><script>
-//fr p,48,3
+//fr p,12,34

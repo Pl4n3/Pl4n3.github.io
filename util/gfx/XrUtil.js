@@ -5,10 +5,11 @@ import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFa
 let XrUtil={};
 (function(pself) {
   //---
-  let version='v.1.470 ',//FOLDORUPDATEVERSION
+  let version='v.1.498 ',//FOLDORUPDATEVERSION
       self=pself,ctrl0,ctrl1,gp0,gp1,camera,scene,room,vrPos,huds=[],hudMesh,
       hud={lines:['XrUtil '+version],cursor:{x:0.5,y:0.5,vis:false},buttons:[]},
-      raycaster,INTERSECTED,hudCount=0,needDrawUi=false,input,uisc=2,gps;
+      raycaster,INTERSECTED,hudCount=0,needDrawUi=false,input,uisc=2,gps,
+      lastLogCount=1;
   const tempMatrix=new THREE.Matrix4(),vt=new THREE.Vector3();
   self.flightSpeed=0.01;
   
@@ -202,6 +203,7 @@ let XrUtil={};
         camera.remove(o); 
         ctrl0.add(o);o.position.set(-0.2,0,0);o.rotation.x=-1;o.rotation.y=1;
       }
+      if (self.onSessionStarted) self.onSessionStarted();
       //...
     }
     function onSessionEnded() {
@@ -291,6 +293,7 @@ let XrUtil={};
             if (b.subUp) {
               delete(hud.menuSub);
               newMenu=hud.menu0;sthdone=true;
+              console.log('delete menuSub 0');
             } else if (b.sub) {
               if (!hud.menu0) hud.menu0=hud.buttons;//alternatively maintain hud.menuStack[]
               hud.menuSub=b;
@@ -306,6 +309,7 @@ let XrUtil={};
               if (hud.menuSub) if (!hud.menuSub.stay) {
                 delete(hud.menuSub);
                 newMenu=hud.menu0;
+                console.log('delete menuSub 1');
               }
               sthdone=true;
             } else if (b.oninput) {
@@ -356,7 +360,8 @@ let XrUtil={};
     ct.fillStyle='#ddd';
     ct.font=(10*uisc)+'px sans-serif';//ct.textBaseline='top';
     for (let i=0;i<hud.lines.length;i++) {
-      ct.fillText(hud.lines[i],3*uisc,(3+i*10)*uisc);
+      ct.fillText(hud.lines[i]+((i==hud.lines.length-1)&&(lastLogCount>1)?'['+lastLogCount+']':'')
+        ,3*uisc,(3+i*10)*uisc);
     }
     if (cur.vis) {
       ct.strokeStyle='#fff';
@@ -409,8 +414,18 @@ let XrUtil={};
   self.hudIntersects=hudIntersects;
   self.log=function(s) {
     //---
-    hud.lines.push(s);
-    while (hud.lines.length>7) hud.lines.splice(0,1);
+    let lines=hud.lines,doAdd=true;
+    if (lines.length>0) {
+      if (lines[lines.length-1]==s) { lastLogCount++;doAdd=false; }
+      else if (lastLogCount>1) {
+        lines[lines.length-1]+='['+lastLogCount+']';
+        lastLogCount=1;
+      }
+    }
+    if (doAdd) {
+      hud.lines.push(s);
+      while (hud.lines.length>7) hud.lines.splice(0,1);
+    }
     //drawHud();
     needDrawUi=true;
     //...
@@ -541,6 +556,7 @@ let XrUtil={};
               if (self.rayCol) self.rayCol(co,gp1b0);
               break;
             }
+            if (o.userData.xrRay) { o.userData.xrRay(co,gp1b0);break; }
             if (rayCheck) if (rayCheck(co)) break;
           }
         } else if (hudMesh.visible) {
@@ -583,6 +599,7 @@ let XrUtil={};
       //---
       //onsole.log('scale nao');
       let oscfg=scfg;
+      let oroomsc=room.scale.x;
       if (sc==scaleCfg[0].sc) {
         scfg=scaleCfg[1];//oscfg=scaleCfg[0];
       } else {
@@ -645,6 +662,8 @@ let XrUtil={};
         }
       }
       
+      if (self.onScaleSwitch) self.onScaleSwitch({oroomsc:oroomsc,scfg:scfg});
+      
       /*
       if (sc==0.25) {
         sc=0.025; 
@@ -704,17 +723,17 @@ let XrUtil={};
 )(XrUtil);
 export { XrUtil };
 //fr o,5
-//fr o,5,12,9
-//fr o,5,12,11
-//fr o,5,12,42
-//fr o,5,12,59
-//fr o,5,12,85
-//fr o,5,12,97
-//fr o,5,14
-//fr o,5,15
-//fr o,5,18,32
-//fr o,5,18,36
-//fr o,5,18,38
-//fr o,5,18,40
-//fr o,5,22,14
-//fr p,17,33
+//fr o,5,13,9
+//fr o,5,13,11
+//fr o,5,13,42
+//fr o,5,13,59
+//fr o,5,13,82
+//fr o,5,13,85
+//fr o,5,13,97
+//fr o,5,19,32
+//fr o,5,19,36
+//fr o,5,19,38
+//fr o,5,19,40
+//fr o,5,23
+//fr o,5,23,14
+//fr p,0,68

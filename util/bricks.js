@@ -1,7 +1,7 @@
 //--- bricks
 var Bricks={};
 (function (Bricks) {
-  let version='1.979 ',stats,//FOLDORUPDATEVERSION
+  let version='1.1531 ',stats,//FOLDORUPDATEVERSION
       brickts={},bricktc=0,
       camera,controls,scene,renderer,sel,mmode,mmenu,mtype,mmultisel,
       mpos,mdim,click,raycaster,//=new THREE.Raycaster(),
@@ -9,20 +9,23 @@ var Bricks={};
       without={mesh:1,light:1,fn:1,omaterial:1},bricks=[],data,
       bw=20,sw=15,sw2=(sw-1)/2,bh=bw/2,grid={},//20,15
       multi=false,mvcol,loaderPs,url=Conet.parseUrl(document.URL),
-      userData,groundBox,clock=new THREE.Clock(),tsd,
-      blockWalk,unitPlayer;
+      userData,groundBox,clock,tsd,
+      blockWalk,unitPlayer,defLights=[],render0,
+      lint=1,xrUtil,room,lights=[],mScale,meditable;
   const PI=Math.PI;
   
   //onsole.log('Brick Construction Tool, Version '+version);
   //---
   function animate() {
     
-    requestAnimationFrame( animate );
+    renderer.setAnimationLoop( render );
     
-    controls.update(); // required if controls.enableDamping = true, or if controls.autoRotate = true
-    if (stats) stats.update();
+    //requestAnimationFrame( animate );
     
-    render();
+    //controls.update(); // required if controls.enableDamping = true, or if controls.autoRotate = true
+    //if (stats) stats.update();
+    
+    //render();
     
   }
   function meshAdd(ps) {
@@ -39,9 +42,8 @@ var Bricks={};
     mesh.matrixAutoUpdate=false;
     mesh.castShadow=true;
     mesh.receiveShadow=true;
-    scene.add(mesh);
+    room.add(mesh);
     return mesh;
-    
     //...
   }
   function box(x,y,z,w,h,b,m,brick) {
@@ -55,7 +57,7 @@ var Bricks={};
     //mesh.matrixAutoUpdate = false;
     //mesh.castShadow=true;
     //mesh.receiveShadow=true;
-    //scene.add(mesh);
+    //sce ne.add(mesh);
     //return mesh;
     
     if (multi&&brick) { x=0;y=0;z=0; }
@@ -80,14 +82,22 @@ var Bricks={};
     b.mesh=mesh;
     if (b.t=='light') {
       if (mesh) mesh.castShadow=false;
-      var l=new THREE.PointLight(0xffaa00,2,300);//l.position.set(b.x*bw,b.y*bh,b.z*bw);
+      var l=new THREE.PointLight(0xffaa00,2*lint*(b.intensity||1),b.distance||300);//l.position.set(b.x*bw,b.y*bh,b.z*bw);
+      lights.push({light:l,intensity:2*(b.intensity||1)});
+      let v;
+      if (v=b.lightColor) { l.color=new THREE.Color(v); }
+      if (v=b.lightIntensity) l.intensity=v*lint;
       l.castShadow=true;
       l.shadow.camera.near=10;
       l.shadow.camera.far=1000;
       l.shadow.mapSize.width=1024;//2048;
       l.shadow.mapSize.height=1024;
+      if (v=b.lightDistance) {
+        l.distance=v;
+        l.shadow.camera.far=v;
+      }
       //l.shadow.bias=0.01;
-      scene.add(l);b.light=l;
+      room.add(l);b.light=l;
     }
     return mesh;
   }
@@ -95,7 +105,7 @@ var Bricks={};
   function brickGeometryFinish(h) {
     
     var br=new THREE.BufferGeometry(),f=1;
-    br.parameters = { width:h.width*f,height:h.height*f,depth:h.depth*f };
+    br.parameters={ width:h.width*f,height:h.height*f,depth:h.depth*f };
     br.setIndex(h.indices);
     br.setAttribute('position',new THREE.Float32BufferAttribute(h.vertices,3));
     br.setAttribute('color',new THREE.Float32BufferAttribute(h.colors,3));
@@ -275,8 +285,8 @@ var Bricks={};
     //...
   }
   function brickRemove(b) {
-    if (b.mesh) scene.remove(b.mesh);
-    if (b.light) scene.remove(b.light);
+    if (b.mesh) room.remove(b.mesh);
+    if (b.light) room.remove(b.light);
     delete(b.omaterial);
     //...
   }
@@ -284,6 +294,7 @@ var Bricks={};
     for (var i=0;i<bricks.length;i++) brickRemove(bricks[i]);
     bricks.length=0;
     brickts={};bricktc=0;
+    lights.length=3;
     //...
   }
   function cloneWithout(o,h) {
@@ -295,6 +306,9 @@ var Bricks={};
     //returns all fields from o1, that are different in o0
     var r={}
     for (var k in o1) if (o1.hasOwnProperty(k)&&(o1[k]!=o0[k])) r[k]=o1[k];
+    for (var k of Object.keys(o0)) {
+      if (o1[k]===undefined) r[k]=null;
+    }
     return r;
   }
   function legoGenMaze() {
@@ -378,8 +392,8 @@ var Bricks={};
       //if (this.s=='\u2193') b.b++;
       //if (this.s=='\u21d1') b.h++;
       //if (this.s=='\u21d3') b.h--;
-      //scene.remove(b.mesh);
-      //if (b.light) scene.remove(b.light);
+      //sc ene.remove(b.mesh);
+      //if (b.light) sce ne.remove(b.light);
       brickRemove(b);
       box0(b);
       return;
@@ -389,6 +403,7 @@ var Bricks={};
     //b.mesh.position.x+=dx;b.mesh.position.y+=dy;b.mesh.position.z+=dz;b.mesh.updateMatrix();
     brickRemove(b);
     box0(b);
+    brickPos(b,0);
     //if (this.s=='\u2192') { if (a==0) b.z++; else if (a==1) b.x++; else if (a==2) b.z--; else b.x--; }
     //if (this.s=='\u2190') { if (a==0) b.z--; else if (a==1) b.x--; else if (a==2) b.z++; else b.x++;  }
     //if (this.s=='\u2191') b.z--;
@@ -408,9 +423,10 @@ var Bricks={};
     c.innerHTML='<input type="color" value="#e66465"></input>"';
     
     //Menu.colBg='rgba(150,150,150,0.2)';
+    Menu.colBg='rgba(150,150,150,0.9)';
     Menu.cpy=0.07;
     var loadMs=false;
-    var cfm=Conet.fileMenu({fn:'/three/lego/files.txt',defFn:'/three/lego/test0.txt',url:'fn',noStartLoad:url.data||url.gen,loadMs:loadMs,
+    var cfm=Conet.fileMenu({fn:'/three/lego/files.txt',defFn:'/three/lego/test0.txt',url:'fn',noStartLoad:url.data||url.gen,loadMs:loadMs,loadList:1,
     loadf:function(v) {
       Conet.download({fn:v+'?1',f:parseLoad});
     }
@@ -445,7 +461,7 @@ var Bricks={};
     );
     
     
-    const dy=0.25;
+    const dy=0.20,lbw=0.1,lbd=0.08,lbx0=0.01,by0=0.02;//lbw=0.116,lbd=0.11,by0=0.02,dy=0.25,lbx0=0.02;
     Menu.init([mmenu={s:'Menu',ms:'Version '+version,msid:'mmenums',sub:
     
     (loadMs?cfm.sub:[cfm]).concat([
@@ -502,7 +518,7 @@ var Bricks={};
         mtype.ms=sel.t;
       } else
         sel.t=a;
-      scene.remove(sel.mesh);
+      room.remove(sel.mesh);
       box0(sel);
     }
     },
@@ -510,20 +526,56 @@ var Bricks={};
     
     {s:'New Brick',r:1,keys:[78],ms:'key: n',actionf:function() {
       //brickPos(sel,0);
-      var b=cloneWithout(sel,without);//{x:sel.x,y:sel.y,z:sel.z,w:sel.w,h:sel.h,b:sel.b,col:sel.col};
-      box0(b);bricks.push(b);
-      select(b);
-      //sel=b;
+      if (mmultisel.checked&&(sels.length>0)) {
+        let bns=[];
+        for (let bo of sels) {
+          let bn=cloneWithout(bo,without);
+          box0(bn);bricks.push(bn);bns.push(bn);
+        }
+        select(bns[0],false);
+        for (let i=1;i<bns.length;i++) select(bns[i],true);
+        Conet.log('New bricks added: '+bns.length);
+      } else {
+        var b=cloneWithout(sel,without);//{x:sel.x,y:sel.y,z:sel.z,w:sel.w,h:sel.h,b:sel.b,col:sel.col};
+        box0(b);bricks.push(b);
+        select(b);
+        //sel=b;
+      }
       Menu.ms(mmenu,bricks.length+' bricks');
       if (mdim.checked) mpos.actionf();
     }
     },
     
     
+    {s:'Brick...',jsonCheck:1,doctrl:'Single brick data',mcfs:0.07,ta:true,_wrap:1,tacols:50,tarows:20,setfunc:function(v,initLoad) {
+      //tridata=v.length==0?undefined:JSON.parse(v);
+      //parseLoad(v);
+      let i=bricks.indexOf(sel);
+      if (i==-1) { Conet.log('i==-1');return; }
+      let b=JSON.parse(v);
+      bricks[i]=b;
+      box0(b);
+      brickPos(b,0);
+      sel=b;
+      //Conet.log(v);
+      //---
+    }
+    ,valuef:function() {
+      //---
+      if (!sel) return undefined;
+      //var r=serialize();
+      //Conet.log('Data: '+r.length+' bytes');
+      return JSON.stringify(cloneWithout(sel,without),undefined,' ');
+      //...
+    }
+    },
+    
+    
+    
     {s:'Del Brick',r:1,keys:[46],ms:'key: del',actionf:function() {
       if (bricks.length<2) return;
       var i=bricks.indexOf(sel);
-      scene.remove(sel.mesh);
+      room.remove(sel.mesh);
       bricks.splice(i,1);
       if (i==bricks.length) i--;
       sel=bricks[i];
@@ -544,6 +596,23 @@ var Bricks={};
     
     ,Menu.mFullscreen
     
+    ,{s:'DefLights',ms:'toggle on/off',r:1,actionf:function() {
+      //---
+      for (l of defLights) l.visible=!l.visible;
+      //...
+    }
+    }
+    
+    ,xrUtil.menuHudPosition
+    
+    //----following to toggle scale with key for test
+    ,{s:'Scale',keys:[77],actionf:function() {
+      //---
+      mScale.ondown();
+      //...
+    }
+    }
+    
     ]},
     
     {s:'Rotate',actionf:function() {
@@ -556,23 +625,24 @@ var Bricks={};
     ])},
     
     
-    
+    xrUtil.menuXr,
+    meditable={ms:'Editable',checkbox:1,checked:1},
     
     //mmode={s:'Mode',ms:'Position',autoval:2,sub:[{s:'Position',r:1},{s:'Dimension',r:1},{s:'Select',r:1}]},
-    {s:'\u2190',px:0.02,py:0.02+dy,pw:0.116,ph:0.116,ydown:true,fs:1.4,actionf:menuArrow},
-    {s:'\u2192',px:0.13,py:0.02+dy,pw:0.116,ph:0.116,ydown:true,fs:1.4,actionf:menuArrow},
-    {s:'\u2191',px:0.13,py:0.13+dy,pw:0.116,ph:0.116,ydown:true,fs:1.4,actionf:menuArrow},
-    {s:'\u2193',px:0.02,py:0.13+dy,pw:0.116,ph:0.116,ydown:true,fs:1.4,actionf:menuArrow},
-    {s:'\u21d1',px:0.13,py:0.24+dy,pw:0.116,ph:0.116,ydown:true,fs:1.4,actionf:menuArrow},
-    {s:'\u21d3',px:0.02,py:0.24+dy,pw:0.116,ph:0.116,ydown:true,fs:1.4,actionf:menuArrow},
-    mdim={s:Menu.soff,px:0.13,py:0.35+dy,pw:0.116,ph:0.116,ydown:true,fs:1.4,checkbox:1,ms:'Dimension',mfs:1.5,msCenter:1,mstop:4,
+    {s:'\u2190',px:lbx0    ,py:by0+dy      ,pw:lbw,ph:lbw,ydown:true,fs:1.4,actionf:menuArrow},
+    {s:'\u2192',px:lbx0+lbd,py:by0+dy      ,pw:lbw,ph:lbw,ydown:true,fs:1.4,actionf:menuArrow},
+    {s:'\u2191',px:lbx0+lbd,py:by0+dy+lbd*1,pw:lbw,ph:lbw,ydown:true,fs:1.4,actionf:menuArrow},
+    {s:'\u2193',px:lbx0    ,py:by0+dy+lbd*1,pw:lbw,ph:lbw,ydown:true,fs:1.4,actionf:menuArrow},
+    {s:'\u21d1',px:lbx0+lbd,py:by0+dy+lbd*2,pw:lbw,ph:lbw,ydown:true,fs:1.4,actionf:menuArrow},
+    {s:'\u21d3',px:lbx0    ,py:by0+dy+lbd*2,pw:lbw,ph:lbw,ydown:true,fs:1.4,actionf:menuArrow},
+    mdim={s:Menu.soff,px:lbx0+lbd,py:by0+dy+lbd*3,pw:lbw,ph:lbw,ydown:true,fs:1.4,checkbox:1,ms:'Dimension',mfs:1.5,msCenter:1,mstop:4,
     actionf:function() {
       //onet.log('mdim.actionf');
       Menu.setChecked(mpos,0);
       Menu.setChecked(mdim,1);
     }
     },
-    mpos={s:Menu.son ,px:0.02,py:0.35+dy,pw:0.116,ph:0.116,ydown:true,fs:1.4,checkbox:1,ms:'Position',checked:1,mfs:1.5,msCenter:1,mstop:4,
+    mpos={s:Menu.son ,px:lbx0,py:by0+dy+lbd*3,pw:lbw,ph:lbw,ydown:true,fs:1.4,checkbox:1,ms:'Position',checked:1,mfs:1.5,msCenter:1,mstop:4,
     actionf:function() {
       //onet.log('mpos.actionf');
       Menu.setChecked(mdim,0);//...
@@ -580,54 +650,73 @@ var Bricks={};
     }
     },
     
-    //---following 2 menus should be inited in blockWalkInit
-    {s:'c',px:0.12,py:0.02,pw:0.116,ph:0.116,ydown:true,xright:true,fs:1.4,keys:[67],actionf:function() {
+    //---following 3 menus should be inited in blockWalkInit
+    /*
+    {s:'c',px:0.12,py:0.02+dy,pw:0.116,ph:0.116,ydown:true,xright:true,fs:1.4,keys:[67],actionf:function() {
       //---
       if (!blockWalk) return;
       let u=unitPlayer;//blockWalk.unit0;
-      if (u.animIdle=='stand2') {
-        u.animIdle='cstand';
-        u.animRun='crun';
-        u.speedRun=0.075;
-        u.bb.y=0.5;
-        u.blockHeight=1;
-      } else {
-        u.animIdle='stand2';
-        u.animRun='run';
-        u.speedRun=0.15;
-        u.bb.y=0.9;
-        u.blockHeight=2;
-      }
-      u.bbdraw(u.bb);
+      blockWalk.setCrouch(u,u.animIdle=='stand2');
       //...
     }
     },
-    {s:'a',px:0.01,py:0.02,pw:0.116,ph:0.116,ydown:true,xright:true,fs:1.4,keys:[86],actionf:function() {
+    {s:'a',px:0.01,py:0.02+dy,pw:0.116,ph:0.116,ydown:true,xright:true,fs:1.4,keys:[86],actionf:function() {
       //---
       if (!blockWalk) return;
       
       let u=unitPlayer;
-      u.animIdle='stand2';//u.animIdle=='attack2'?'stand2':'attack2';
-      u.animRun='run';
-      u.doAttack=true;//!u.doAttack;
-      u.attackt=0;
-      u.speedRun=0.15;
-      u.bb.y=0.9;
-      u.blockHeight=2;
+      if (!u.doAttack) {
+        u.animIdle='stand2';//u.animIdle=='attack2'?'stand2':'attack2';
+        u.animRun='run';
+        u.doAttack=true;//!u.doAttack;
+        u.attackt=0;
+        u.speedRun=0.15;
+        u.bb.y=0.9;
+        u.blockHeight=2;
+      }
       //...
     }
     },
+    {s:'b',px:0.01,py:0.13+dy,pw:0.116,ph:0.116,ydown:true,xright:true,fs:1.4,keys:[66],actionf:function() {
+      //---
+      if (!blockWalk) return;
+      let u=unitPlayer;
+      if (!u.doAttack&&!u.doBlock) {
+        u.doBlock=1;
+        u.blockt=0;
+        //u.animIdle='block';
+      }
+      //...
+    }
+    },
+    */
+    
+    /*
+    
+    //for now without dash focus on basic gameplay
+    
+    {s:'d',px:0.01,py:0.13,pw:0.116,ph:0.116,ydown:true,xright:true,fs:1.4,keys:[66],actionf:function() {
+      //---
+      let u=unitPlayer;
+      Conet.log('Dash nao. '+u.speed);
+      u.speedRun=0.45;
+      //Conet.log('Dash nao. '+u.speed);
+      //...
+    }
+    },
+    */
     
     
     ],{listen:1,_keyLog:1});
     
-    tsd=Menu.touchSticksInit({autoKeys:1,skip1:1});
+    tsd=Menu.touchSticksInit({autoKeys:2});//,skip1:1});
     
     
     if (url.data) parseLoad(atob(url.data));
     //...
   }
   function onClick(e) {
+    //onsole.log(e);
     click=new THREE.Vector2(2*e.clientX/window.innerWidth-1,-2*e.clientY/window.innerHeight+1);
     //console.log(click);
   }
@@ -642,11 +731,12 @@ var Bricks={};
   }
   function loadFinish() {
     var bl,brh=0?undefined:(multi?{}:undefined);
+    //onsole.log('brh='+brh+' multi='+multi);
     for (var i=0;i<bricks.length;i++) {
       var b=bricks[i];
       if (b.omaterial) delete(b.omaterial);
       if (bl) for (var k in bl) if (bl.hasOwnProperty(k)) if (!without[k])
-        if (b[k]===undefined) b[k]=bl[k];
+        if ((b[k]===undefined)&&(bl[k]!==null)) b[k]=bl[k];
       if (!b.t) b.t='block';
       box0(b,brh);//.x,b.y,b.z,b.w,b.h,b.b,ms[b.col]);
       //if (!multi) 
@@ -670,7 +760,10 @@ var Bricks={};
   }
   function parseLoad(d) {
     clear();
-    if (!groundBox.visible) { scene.add(groundBox);groundBox.visible=true; }
+    renderer.setClearColor(0x888888);
+    for (l of defLights) l.visible=true;
+    
+    if (!groundBox.visible) { room.add(groundBox);groundBox.visible=true; }
     var o=JSON.parse(d);
     if (Array.isArray(o)) 
       bricks=o;
@@ -692,9 +785,10 @@ var Bricks={};
       }
       if (o.cam0) camera.position.set(o.cam0.x,o.cam0.y,o.cam0.z);
       if (o.cam1) controls.target.set(o.cam1.x,o.cam1.y,o.cam1.z);
+      if (o.noDefaultLights) for (l of defLights) l.visible=false;
       userData=o.userData;
       if (userData) {
-        if (userData.noground) { scene.remove(groundBox);groundBox.visible=false; }
+        if (userData.noground) { room.remove(groundBox);groundBox.visible=false; }
         if (userData.blockWalk) blockWalkInit(userData.blockWalk);
         if (userData.clearColor) renderer.setClearColor(new THREE.Color(userData.clearColor));
       }
@@ -719,24 +813,27 @@ var Bricks={};
     //for (var i=sels.length-1;i>=0;i--) brickPos(sels[i],3);
     const dt=clock.getDelta()*1000;
     
-    if (click) {
+    xrUtil.checkFlight(dt);
+    
+    if (click&&meditable.checked) {
       raycaster.setFromCamera(click,camera);
-      var intersects=raycaster.intersectObjects(scene.children);
+      var intersects=raycaster.intersectObjects(room.children);
       click=undefined;
       if (intersects.length>0) {
-        //Conet.log('render intersects='+intersects.length);
-        for (var j=0;j<(
-         //mmultisel.checked?intersects.length:
-         1);j++) {
-         var o=intersects[j].object;
-         for (var i=bricks.length-1;i>=0;i--) {
-          var b=bricks[i];
-          if (b.mesh!=o) continue;
-          select(b,mmultisel.checked);
-          //brickPos(sel,0);
-          //sel=b;Menu.ms(mtype,sel.t);
-          break;
-         }
+        //onsole.log('render intersects='+intersects.length);
+        //onsole.log(intersects);
+        for (var j=0;j<intersects.length;j++) {
+          var o=intersects[j].object;
+          for (var i=bricks.length-1;i>=0;i--) {
+            var b=bricks[i];
+            if (b.mesh!=o) continue;
+            select(b,mmultisel.checked);
+            o=undefined;
+            //brickPos(sel,0);
+            //sel=b;Menu.ms(mtype,sel.t);
+            break;
+          }
+          if (!o) break;
         }
       }
     }
@@ -758,13 +855,21 @@ var Bricks={};
     //  }
     //  Conet.calcTweens(blockWalk.tweens,dt);
     //}
-    if (blockWalk) {
-      blockWalk.calc(dt);
-      //copy mesh.position to o.ps.pos
-    }
     
     
     threeRender(dt);
+    
+    
+    //if (blockWalk) {
+    //  blockWalk.calc(dt);
+    //  //copy mesh.position to o.ps.pos
+    //}
+    
+    if (render0) render0(dt);
+    controls.update();
+    if (stats) stats.update();
+    xrUtil.renderHud();
+    
     //---
     renderer.render(scene,camera);
     
@@ -772,8 +877,8 @@ var Bricks={};
   function select(b,multisel) {
     brickPos(sel,0);
     sel=b;Menu.ms(mtype,sel.t);
-    Conet.log('Selected '+sel.x+' '+sel.y+' '+sel.z);
-    //onsole.log(sel);
+    Conet.log('Selected '+sel.x+','+sel.y+','+sel.z+' '+sel.w+','+sel.h+','+sel.b);
+    console.log(sel);
     
     if (!multisel) {
       for (var i=sels.length-1;i>=0;i--) {
@@ -794,8 +899,10 @@ var Bricks={};
     var s='{\n',bl;
     
     let p0=camera.position,p1=controls.target;
-    s+=  '"cam0":{"x":'+Conet.f4(p0.x)+',"y":'+Conet.f4(p0.y)+',"z":'+Conet.f4(p0.z)
+    s+= '"cam0":{"x":'+Conet.f4(p0.x)+',"y":'+Conet.f4(p0.y)+',"z":'+Conet.f4(p0.z)
       +'},"cam1":{"x":'+Conet.f4(p1.x)+',"y":'+Conet.f4(p1.y)+',"z":'+Conet.f4(p1.z)+'},\n';
+      
+    if (!defLights[0].visible) s+='"noDefaultLights":1,\n';
     
     var a=[];
     for (var k in brickts) if (brickts.hasOwnProperty(k)) a.push(k);
@@ -828,16 +935,25 @@ var Bricks={};
   function init() {
     //---
     raycaster=new THREE.Raycaster();
-    mvcol=new THREE.MeshPhongMaterial({flatShading:true,vertexColors:THREE.VertexColors});
+    mvcol=new THREE.MeshPhongMaterial({flatShading:true,
+      //,vertexColors:THREE.VertexColors
+      vertexColors:true
+      });
+    clock=new THREE.Clock();
+    if (THREE.REVISION>155) lint=1500000;
     //...
   }
   function initEditor() {
+    
+    if (url.multi) multi=true;
+    
     init();
-    scene = new THREE.Scene();
-    renderer = new THREE.WebGLRenderer({antialias:true});
+    scene=new THREE.Scene();
+    renderer=new THREE.WebGLRenderer({antialias:true});
     renderer.setClearColor(0x888888);
     renderer.shadowMap.enabled=true;
-    renderer.shadowMap.type=THREE.BasicShadowMap;
+    //renderer.shadowMap.type=THREE.BasicShadowMap;
+    renderer.xr.enabled = true;
     //				renderer.shadowMapEnabled=true;
     //				renderer.shadowMapType=THREE.PCFShadowMap;//PCFShadowMap;
     
@@ -845,22 +961,27 @@ var Bricks={};
     renderer.setSize( window.innerWidth, window.innerHeight );
     var container = document.getElementById('container');
     container.appendChild( renderer.domElement );
-    camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 2000 );
-    camera.position.z = 500;
-    controls = new THREE.OrbitControls( camera, renderer.domElement );
+    camera=new THREE.PerspectiveCamera(60,window.innerWidth/window.innerHeight,0.1,4000);//1,4000
+    camera.position.z=500;scene.add(camera);
+    //onsole.log(camera);
+    controls = new OrbitControls( camera, renderer.domElement );
     //controls.autoRotate=true;
     controls.enableDamping=true;
     controls.dampingFactor=0.25;//0.25;
     controls.enableZoom=true;controls.zoomSpeed=0.5;
     controls.enablePan=true;
-    controls.maxDistance=1000;
+    controls.maxDistance=5000;
     controls.rotateSpeed=0.4;
-    console.log(controls);
+    //onsole.log(controls);
+    
+    room=new THREE.Group();scene.add(room);
+    //let sc=0.1;lint*=sc*sc;room.scale.set(sc,sc,sc);
+    
     
     var ca=[0x666666,0x333333,0xf0f000,0x90f000,0x00f000,0x009090,0x0030d0];
     for (var i=0;i<ca.length;i++) {
       var m=new THREE.MeshPhongMaterial({//color:ca[i],flatShading:true//,shading:THREE.FlatShading
-        vertexColors:THREE.VertexColors
+        //vertexColors:THREE.VertexColors
       });
       ms.push(m);
     }
@@ -869,27 +990,81 @@ var Bricks={};
     //if (!url.noground) 
     (groundBox=box(0,-150,0,600,bw,600,new THREE.MeshPhongMaterial({flatShading:true,color:0x666666}))).castShadow=false;
     
-    var l=new THREE.AmbientLight(0x555555),f=3;scene.add(l);
-    l=new THREE.PointLight(0xffffff,1,0);l.position.set(-100*f,200*f,100*f);scene.add(l);
-    l=new THREE.PointLight(0xffffaa,1,0);l.position.set(100*f,100*f,100*f);
+    let pl0,pl1;
+    if (1) {
+    var l=new THREE.AmbientLight(0x555555),f=3;room.add(l);defLights.push(l);
+    l=new THREE.PointLight(0xffffff,lint,0);l.position.set(-100*f,200*f,100*f);room.add(l);defLights.push(l);lights.push({light:l,intensity:1});
+    l=pl0=new THREE.PointLight(0xffffff,lint,0);l.position.set(100*f,100*f,100*f);defLights.push(l);lights.push({light:l,intensity:1});
     l.castShadow=true;
     l.shadow.camera.near=100;
     l.shadow.camera.far=1000;
     l.shadow.mapSize.width=1024;//2048;
     l.shadow.mapSize.height=1024;
     //l.shadow.bias=0.01;
-    scene.add(l);
-    l=new THREE.PointLight(0xaaffff,1,0);l.position.set(100*f,-200*f,-100*f);scene.add(l);
+    room.add(l);
+    l=pl1=new THREE.PointLight(0xaaffff,lint,0);l.position.set(100*f,-200*f,-100*f);room.add(l);defLights.push(l);lights.push({light:l,intensity:1});
+    }
     
-    if (1) {
+    if (window.Stats) {
     stats=new Stats(),el=stats.domElement,st=el.style;
     st.position='absolute';st.top='0px';st.left='0px';st.zIndex=100;
     container.appendChild(el); }
     
+    xrUtil=XrUtil;
+    xrUtil.init({
+      scene:scene,renderer:renderer,camera:camera,room:room,controls:controls,pointers:1,
+      sculpt:1,
+      });
+    xrUtil.initHud();
+    xrUtil.hud.buttons=[
+    mScale={s:'Scale',x:0.05,y:0.5,w:0.55,h:0.1
+      ,ondown:xrUtil.scaleSwitch({
+        scaleCfg:[
+          //{sc:0.0015,lint:0.000003*lint,bgop:0,flightSpeed:0.001,camPos:{x:0,y:0.24,z:1}   ,roomPos:{x:-0.48,y:0.99,z:-0.65}},
+          {sc:0.0007,lint:0.0000005*lint,bgop:0,flightSpeed:0.001,camPos:{x:0,y:0.24,z:1}   ,roomPos:{x:-0.48,y:0.99,z:-0.65}},
+          {sc:0.025 ,lint:0.001 *lint  ,bgop:1,flightSpeed:0.01 ,camPos:{x:0,y:2.2 ,z:14.7},roomPos:{x:2.43,y:3.38,z:-3.79}},
+        ]
+        //,pl0:pl0,pl1:pl1
+        ,bgMeshScale:100,noStartScfg:1,lights:lights})
+    }
+    
+    ];
+    xrUtil.log('Bricks '+version);
+    xrUtil.onSessionStarted=function() {
+      //---
+      //onsole.log('onSessionStarted');
+      mScale.ondown();
+      xrUtil.log('XR Controls: left stick view, right strick move,');
+      xrUtil.log('crouch: A button.');
+      //...
+    }
+    xrUtil.onScaleSwitch=function(ps) {
+      //---
+      //console.log(ps);//
+      //onsole.log(ps.oroomsc+' -> '+ps.scfg.sc);
+      //onsole.log(lights);
+      for (let l of lights) {
+        if (l.light.distance==0) continue;
+        //onsole.log('dist0 '+l.light.distance);
+        l.light.distance=l.light.distance*ps.scfg.sc/ps.oroomsc;
+        //onsole.log('dist1 '+l.light.distance);
+        //onsole.log(l.light.intensity);
+        //l.light.intensity=0.5;
+      }
+      //...
+    }
+    
     window.addEventListener('resize',onWindowResize,false);
     menuInit();
     onWindowResize();
-    window.addEventListener('click',onClick,false);
+    //window.
+    
+    let c=renderer.domElement;
+    //--- 24-08-11 pointer instead of click event, with touch there was noc click. 
+    //c.addEventListener('click',onClick,false);
+    c.addEventListener('pointerdown',onClick);
+    
+    
     animate();
     
     //...
@@ -897,11 +1072,12 @@ var Bricks={};
   //---
   function blockWalkInit(ps) {
     //---
-    console.log('blockWalkInit '+bricks.length);
+    //onsole.log('blockWalkInit '+bricks.length);
+    Sound.vol=0.1;
     
     let blocks={},bl,bricksCopy=clone(bricks),
-        factor=ps.factor||2,
-        fctrh=factor*1.5;
+        factor=ps.factor||2,shrubIndex=ps.shrubIndex||2,
+        fctrh=factor*1.5,mIsoMenu;
     
     for (var i=0;i<bricksCopy.length;i++) {
       var b=bricksCopy[i];
@@ -947,7 +1123,7 @@ var Bricks={};
                                           //0          //-15       0
     const gw=(factor==2)?40:20,gh=(factor==2)?30:10,bmp={x:-131-ox,y:-142-oy,z:-127-10};
     
-    blockWalk=new BlockWalk();
+    blockWalk=new BlockWalk(ps);
     blockWalk.gw=gw;//20*factor;//voxScale/33.33;
     blockWalk.gh=gh;//15*factor;
     blockWalk.blockMeshPos=bmp;//{x:-131,y:-142-15,z:-127};
@@ -962,13 +1138,14 @@ var Bricks={};
           //console.log(u);
         }
       }
-      return (!h||(h.col==2))?false:true;
+      return (!h||(h.col==shrubIndex))?false:true;
       //...
     }
     
     
     blockWalk.tsd0=tsd[0];
-    //blockWalk.xrUtil=xrUtil;
+    if (!ps.noAttack) blockWalk.tsd1=tsd[1];
+    blockWalk.xrUtil=xrUtil;//250101 reactivated
     blockWalk.camera=camera;
     //blockWalk.speed=0.15;
     
@@ -1023,66 +1200,6 @@ var Bricks={};
       //...
     }
     
-    function getAi(u) {
-      //--
-      let t=0,units=blockWalk.units,dist2=blockWalk.dist2,
-          lastSeen;
-      
-      return function(dt) {
-        //---
-        //t+=dt;
-        //if (t>500) {
-        let p0=u.m.position,u1=unitPlayer,p1=u1.m.position,d2=dist2(p0,p1);
-        //onsole.log(unitPlayer.col);
-        let alerted=d2<(((u1.col==2)&&(u1.blockHeight==1))?2000:20000);
-        if (alerted!=u.alerted) {
-          u.alerted=alerted;
-          bbdraw(u.bb);
-        }
-        u.doTurn=0;
-        u.doRun=0;
-        //u.doAttack=0;
-        if (1&&(alerted||lastSeen)) {
-          if (alerted) {
-            if (!lastSeen) {
-              lastSeen=new THREE.Vector3();
-              console.log('new lastSeen');
-            }
-            lastSeen.copy(p1);
-          } else {
-            p1=lastSeen;
-            d2=dist2(p0,p1);
-          }
-          const dx=p1.x-p0.x,dz=p1.z-p0.z;
-          const a2=Math.atan2(dz,-dx)-PI/2,
-                da=Conet.dAng(a2,u.a);//ang);
-        //u.a=a2;
-        //u.o.ay=u.a;
-        ////onsole.log(da);
-          const mda=0.15;//0.15
-        
-          if (Math.abs(da)>mda) 
-            u.doTurn=da<0?-1:1;
-          else if (d2>(alerted?3000:300))
-            u.doRun=1;
-          else {
-            if (alerted) {
-              u.doAttack=1;
-              u.attackt=0;
-            } else {
-              lastSeen=undefined;
-              console.log('did set lastSeen=undef');
-            }
-          }
-        }
-        //u.doTurn=alerted?1:0;
-          //console.log('scan '+((dist2(u.m.position,unitPlayer.m.position)<20000)?'see':'dont see'));
-        //  t=0;
-        //}
-        //...
-      }
-      //...
-    }
     
     function clone(o) {
       //---
@@ -1117,14 +1234,25 @@ var Bricks={};
       //  m.position.set(bmp.x,bmp.y+15,bmp.z+120); // 0 0 0
       //m.position.set(-171,-142,-47);
       //m.position.set(-131 + 8*40,-142 + 2*30,-7 + 3*40);
-      let u={speed:0,speedRun:0.15,a:0,o:o,m:m,hp:3,ohp:3,ap:1,col:-4,
-        animIdle:'stand2',animRun:'run',animAttack:'attack2',animHit:'hit',animLost:'lost',
-        bbdraw:bbdraw,blockHeight:2
+      let ohp=5;
+      let u={speed:0,speedRun:0.15,a:0,o:o,m:m,hp:ohp,ohp:ohp,ap:1,col:-4,
+        animIdle:'stand2',animRun:'run',animAttack:'attack2',animHit:'hit',
+        animLost:'lost',animBlock:'block',
+        bbdraw:bbdraw,blockHeight:2,collr:20
         };//0.0001
+      //onsole.log(o.ps);
       Conet.hcopy(this,u);
       o.ay=u.a;o.ps.roty=u.a;
-      if (!isAi) { unitPlayer=u; } else u.ai=getAi(u);
+      if (!isAi) { 
+        unitPlayer=u; 
+        if (ps.playerWithLight) {
+          const l=new THREE.PointLight(0xffffff,2,200);l.position.set(0.5,0.5,0);
+          m.add(l);
+        }
+      } else 
+        u.ai=blockWalk.getAi(u);
       blockWalk.units.push(u);
+      //onsole.log(blockWalk.units);
       
       /*
       let vx=-10,vy=-18,vz=8,f=33.33/voxScale;
@@ -1144,47 +1272,43 @@ var Bricks={};
         let sc=0.1,yw=2;
         u.bbdraw=bbdraw;
         u.bb=threeBillboardAdd({x:0,y:0.9,z:0,ar:0.2,s:0.015,transparent:1,gw:20,cw:128,o:u});
-        threeEnv.base=scene;
+        threeEnv.base=room;
       }
+      
+      let g=new THREE.Group();
+      g.position.y=blockWalk.units.length*0.01;//to avoid moire
+      
+      let f=0.01,mesh=new THREE.Mesh(new THREE.BoxGeometry(90*f,10*f,50*f),
+      new THREE.MeshPhongMaterial({flatShading:true,color:0x66aa66,transparent:true,opacity:0.2})
+      );
+      mesh.position.x=0.65;
+      g.add(mesh);
+      
+      //f=f/2;
+      mesh=new THREE.Mesh(new THREE.BoxGeometry((90-0.1)*f,(10-0.1)*f,(50-0.1)*f),
+      new THREE.MeshPhongMaterial({flatShading:true,color:0x66aa66,transparent:true,opacity:0.5})
+      );
+      mesh.scale.x=0.5;
+      mesh.position.x=0.65;
+      mesh.position.y=0.03;
+      g.add(mesh);mesh.visible=false;
+      u.aMark1=mesh;
+      
+      
+      
+      o.meshes[0].tmesh.add(g);
+      u.aMark0=g;g.visible=false;
+      u.aMark0.rotation.y=u.o.ay-PI/2;
+      o.animTextSkipAttack=1;
+      //mesh.position.z=-0.05;
+      //xrUtil.ctrl0.add(cursor0=mesh);} //left
+      blockWalk.stateSave();//---better only once when all is loaded
+      
       //...
     }
     
-    
-    //window.THREE=THREE;
-    threeEnv.base=scene;
-    threeEnv.scene=scene;
-    threeEnv.path='/shooter/';
-    threeEnv.coBoSp=1;//computeBoundingSphere
-    threeEnv.camera=camera;
-    
-    if (0)
-    window.planim={attackMark:function(e) {
+    function generateLevel(ps) {
       //---
-      //onsole.log('attackMark '+JSON.stringify(e));
-      let mat=new THREE.MeshPhongMaterial({flatShading:true,color:0x66aa66//0x99aa66
-        ,depthTest:false,transparent:true,opacity:0.7});
-      let mesh=new THREE.Mesh(new THREE.BoxGeometry(10,10,10),mat);
-      mesh.position.set(e.x,e.y,e.z);
-      scene.add(mesh);
-      //...
-    }
-    };
-    
-    if (ps.player===undefined) ps.player=ps.pos;//---
-    
-    if (1) {
-      let h=ps.player;
-      Conet.download({fn:'/shooter/objs/templar/o5.txt',hp:5,ohp:5,a:h.a||0,pos:{x:h.x,y:h.y,z:h.z},f:o5Loaded});
-    }
-    
-    if (ps.mobs) for (let i=0;i<ps.mobs.length;i++) {
-      let h=ps.mobs[i];
-      Conet.download({fn:'/shooter/objs/templar/o5.txt',a:h.a||0,speedRun:0.075,speedTurn:0.002,isAi:1,pos:{x:h.x,y:h.y,z:h.z},f:o5Loaded});
-    }
-    
-    let mgen;  
-    //Menu.roots[0].sub.push(
-    mgen={s:'Stealth',ms:'generate level',actionf:function() {
       //---
       //onsole.log(blocks);
       //onsole.log(clone(bricks));
@@ -1224,6 +1348,7 @@ var Bricks={};
       }
       }
       
+      if (!ps.skipBush) {
       Conet.seed(100);
       
       let bushc=0,bushm=50;
@@ -1257,16 +1382,18 @@ var Bricks={};
         //bushc++;
       }
       
+      }
       
       for (let k of Object.keys(blocks)) {
         let b=blocks[k],a=k.split('_'),x=parseInt(a[0]),y=parseInt(a[1]),z=parseInt(a[2]);
         bricks.push({x:x*2,y:y*3,z:z*2,w:2,h:3,b:2,col:b.col,t:b.col==2?'roofTop1':'block'});  
       }
       
+      
       //---split bricks
       Conet.seed(100);
       let bh={},
-          cola=[1,1,0,0,3,3];
+          cola=ps.cola||[1,1,0,0,3,3];
           //cola=[1,0,3,0,1],
           ymin=-3,ymax=14,xmin=-2,xmax=19;
       for (let i=bricks.length-1;i>=0;i--) {
@@ -1341,14 +1468,180 @@ var Bricks={};
       
       
       //...
+      //...
+    }
+    
+    //window.THREE=THREE;
+    threeEnv.base=room;
+    threeEnv.scene=room;
+    threeEnv.path='/shooter/';
+    threeEnv.coBoSp=1;//computeBoundingSphere
+    threeEnv.camera=camera;
+    
+    if (0)
+    window.planim={attackMark:function(e) {
+      //---
+      //onsole.log('attackMark '+JSON.stringify(e));
+      let mat=new THREE.MeshPhongMaterial({flatShading:true,color:0x66aa66//0x99aa66
+        ,depthTest:false,transparent:true,opacity:0.7});
+      let mesh=new THREE.Mesh(new THREE.BoxGeometry(10,10,10),mat);
+      mesh.position.set(e.x,e.y,e.z);
+      room.add(mesh);
+      //...
+    }
+    };
+    
+    if (ps.player===undefined) ps.player=ps.pos;//---
+    
+    if (1) {
+      let h=ps.player;
+      Conet.download({fn:'/shooter/objs/templar/o5.txt',hp:5,ohp:5,a:h.a||0,pos:{x:h.x,y:h.y,z:h.z},f:o5Loaded,autoAttack:h.autoAttack});
+    }
+    
+    if (ps.randomSeed) Conet.seed(ps.randomSeed);
+    if (ps.randomCount) {
+      if (!ps.mobs) ps.mobs=[];
+      for (let i=0;i<ps.randomCount;i++) ps.mobs.push({x:Conet.rand()*10,y:0,z:3+Conet.rand()*-10});
+    }
+    
+    if (ps.mobs) for (let i=0;i<ps.mobs.length;i++) {
+      let h=ps.mobs[i];
+      Conet.download(Conet.hcopy(h,{fn:'/shooter/objs/templar/o5.txt',a:h.a||0,speedRun:0.075,speedTurn:0.004,isAi:1,pos:{x:h.x,y:h.y,z:h.z},f:o5Loaded}));
+    }
+    //console.log(blockWalk.units.length);
+    
+    let mgen;  
+    //Menu.roots[0].sub.push(
+    mgen={s:'Stealth',ms:'generate level',actionf:function() {
+      //---
+      generateLevel({});
+      //...
     }
     };
     //);
     
     if (url.generateLevel)
-      mgen.actionf();
+      generateLevel((url.generateLevel==2)?{skipBush:1,cola:[1,0,3,0,1]}:{});
     else 
       Menu.roots[0].sub.push(mgen);
+      
+    Menu.roots[0].sub.push(Menu.initMenu(mIsoView={checkbox:1,r:1,ms:'Iso view',checked:1}));
+    
+    let dy=0.2;
+    Menu.roots.push(
+    Menu.initMenu({s:'c',px:ps.noAttack?-0.005:0.12,py:0.02+dy,pw:0.116,ph:0.116,ydown:true,xright:true,fs:1.4,keys:[67],actionf:function() {
+      //---
+      if (!blockWalk) return;
+      let u=unitPlayer;//blockWalk.unit0;
+      blockWalk.setCrouch(u,u.animIdle=='stand2');
+      //...
+    }
+    }),
+    );
+    if (!ps.noAttack)
+    Menu.push(
+    Menu.initMenu({s:'a',px:0.01,py:0.02+dy,pw:0.116,ph:0.116,ydown:true,xright:true,fs:1.4,keys:[86],actionf:function() {
+      //---
+      if (!blockWalk) return;
+      
+      let u=unitPlayer;
+      if (!u.doAttack) {
+        u.animIdle='stand2';//u.animIdle=='attack2'?'stand2':'attack2';
+        u.animRun='run';
+        u.doAttack=true;//!u.doAttack;
+        u.attackt=0;
+        u.speedRun=0.15;
+        u.bb.y=0.9;
+        u.blockHeight=2;
+      }
+      //...
+    }
+    }),
+    Menu.initMenu({s:'b',px:0.01,py:0.13+dy,pw:0.116,ph:0.116,ydown:true,xright:true,fs:1.4,keys:[66],actionf:function() {
+      //---
+      if (!blockWalk) return;
+      let u=unitPlayer;
+      if (!u.doAttack&&!u.doBlock) {
+        u.doBlock=1;
+        u.blockt=0;
+        //u.animIdle='block';
+      }
+      //...
+    }
+    })
+    );
+    Menu.setChecked(meditable,false);
+    Menu.remove();
+    Menu.setMenus(Menu.roots);
+    Menu.draw();
+    
+    xrUtil.log('Your mission: Sneak to the exit.');
+    xrUtil.log('Controls: WASD move, C crouch.');
+    
+    let gameExited=false;
+    
+    render0=(function() {
+      //---
+      let pt=new THREE.Vector3();
+      return function(dt) {
+        //---
+        if (gameExited) return;
+        blockWalk.calc(dt);
+        
+        let u=unitPlayer;
+        
+        if (!u) return;
+        //console.log(u.pos.x);
+        //check for exit area
+        //onsole.log(Conet.f4(u.pos.x)+' '+Conet.f4(u.pos.y)+' '+Conet.f4(u.pos.z));
+        if (ps.exit) {
+          let pe=ps.exit,p=u.pos;
+          //let min={x:-150,y:-150,z:160},
+          //    max={x:-80 ,y:-130,z:200};
+          //if ((p.x>min.x)&&(p.y>min.y)&&(p.z>min.z)
+          //  &&(p.x<max.x)&&(p.y<max.y)&&(p.z<max.z)) {
+          if ((p.x>pe[0])&&(p.y>pe[1])&&(p.z>pe[2])
+            &&(p.x<pe[3])&&(p.y<pe[4])&&(p.z<pe[5])) {
+            xrUtil.log('GAME OVER, for new game click "Restart".');
+            //todo: freeze units or set player idle or gameover anim
+            for (let u of blockWalk.units) Pd5.animStart(u.o,u==unitPlayer?u.animIdle:u.animLost);
+            gameExited=true;
+          }
+        }
+        
+        if (!mIsoView.checked) {
+          //console.log(u.o.meshes[0].tmesh.position);
+          pt.copy(u.o.meshes[0].tmesh.position);
+          pt.y+=50;
+          controls.target.copy(pt);
+        
+          let pc=camera.position,dx=pt.x-pc.x,dy=pt.y-pc.y,dz=pt.z-pc.z,
+              d=Math.sqrt(dx*dx+dy*dy+dz*dz),dd=(250-d);
+          pc.x-=0.1*dx*dd/d;
+          pc.y-=0.1*dy*dd/d;
+          pc.z-=0.1*dz*dd/d;
+        }
+        
+        //camera.position.set(pt.x+200,pt.y+50,pt.z);
+        //onsole.log(dt);
+        //...
+      }
+      //...
+    }
+    )();
+    
+    xrUtil.hud.buttons.push(
+    {s:'Restart',x:0.05,y:0.85,w:0.9,h:0.1,ondown:function() {
+      //---
+      blockWalk.stateRestore();
+      gameExited=false;
+      xrUtil.log('Game restarted.');
+      //...
+    }
+    }
+    );
+    xrUtil.setNeedDrawUi();
+    
     
     /*
     Conet.seed(100);
@@ -1366,6 +1659,8 @@ var Bricks={};
     }
     */
     
+    //onsole.log(ps.exit);
+    
     //...
   }
   
@@ -1374,7 +1669,7 @@ var Bricks={};
   Bricks.initEditor=initEditor;
   Bricks.initLoader=function(ps) {
     init();
-    scene=ps.scene;
+    room=ps.scene;
     
     multi=true;loaderPs=ps;
     Bricks.parseLoad=parseLoad;
@@ -1386,33 +1681,20 @@ var Bricks={};
 
 
 //fr o,2
-//fr o,2,14
-//fr o,2,32
-//fr o,2,32,17
-//fr o,2,32,21
-//fr o,2,32,32
-//fr o,2,32,35
-//fr o,2,32,36
-//fr o,2,32,50
-//fr o,2,32,54
-//fr o,2,32,58
-//fr o,2,32,66
-//fr o,2,32,73
-//fr o,2,32,100
-//fr o,2,35
-//fr o,2,36
-//fr o,2,37
-//fr o,2,41
-//fr o,2,45,55
-//fr o,2,45,63
-//fr o,2,45,65
-//fr o,2,45,66
-//fr o,2,45,67
-//fr o,2,45,69
-//fr o,2,45,69,4
-//fr o,2,45,71
-//fr o,2,45,73
-//fr o,2,45,101
-//fr o,2,45,101,43
-//fr o,2,45,101,97
-//fr p,88,55
+//fr o,2,33,22
+//fr o,2,33,51
+//fr o,2,33,55
+//fr o,2,33,65
+//fr o,2,33,84
+//fr o,2,33,89
+//fr o,2,44,86
+//fr o,2,46
+//fr o,2,46,67
+//fr o,2,46,68
+//fr o,2,46,69
+//fr o,2,46,76,45
+//fr o,2,46,110
+//fr o,2,46,143
+//fr o,2,46,143,2
+//fr o,2,46,147
+//fr p,2,224

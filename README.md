@@ -9,6 +9,7 @@
 1. [editXr:puppetHead](/test/webvr/edit.htm?file=file:puppetHead)
 1. [editXr:cannon0](/test/webvr/edit.htm?file=file:cannon0)
 1. [Record Midi](/sound/mid/TestMidi.htm)
+1. [Stealth game test (250112)](/three/bricks.htm?fn=/anim/bricks/sneak/noAttack0.json)
 
 <!-- 1. [local editHist](http://192.168.2.110:7000/util/editHist.htm)
 1. [bulletXr](/three/anim/bullet/bulletXr.htm)

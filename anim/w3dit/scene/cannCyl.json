@@ -1,0 +1,44 @@
+{
+"pt":{"x":-0.1919,"y":0.1342,"z":-0.0655},
+"pc":{"x":-0.1314,"y":0.5039,"z":-0.662},
+"defaultLights":"none",
+"gridSnap":0.01,
+"points":[
+ {"x":-0.1678,"y":0.3093,"z":-0.1288}
+,{"x":-0.2694,"y":0.3008,"z":-0.1675}
+,{"x":-0.2424,"y":0.2511,"z":-0.0752}
+,{"x":0.024,"y":0.3135,"z":-0.0269}
+,{"x":0.1317,"y":0.2762,"z":-0.2092}
+,{"x":-0.0709,"y":0.2881,"z":-0.211}
+,{"x":0.0298,"y":0.1712,"z":-0.0851}
+,{"x":0.5412,"y":-0.0454,"z":0.5337,"_script":"/anim/w3dit/script/paths.js","pointLight":1,"intensity":2,"color":"aaaaff"}
+,{"x":0.5412,"y":-0.0454,"z":0.5337,"script":"/anim/w3dit/script/paths.js","ambientLight":1,"intensity":0.5}
+,{"x":-0.17,"y":0.39,"z":0.33,"script":"/anim/w3dit/script/paths.js","directionalLight":1,"castShadow":{"far":2,"near":0.1},"intensity":2,"yd":0,"xd":0,"zd":0}
+,{"x":-0.22,"y":0,"z":-0.08,"script":"/anim/w3dit/script/paths.js","box":1,"scx":7,"scz":2.25,"scy":0.15,"color":"afafaf"}
+,{"x":0.13,"y":0.25,"z":-0.08,"script":"/anim/w3dit/script/paths.js","box":1,"scx":0.2,"scz":2.3,"scy":5,"color":"afafaf","hidden":1}
+,{"x":-0.23,"y":0.25,"z":-0.19,"script":"/anim/w3dit/script/paths.js","box":1,"scx":0.2,"scz":7,"scy":5,"color":"afafaf","qx":0,"qy":1,"qz":0,"qw":1,"hidden":1}
+,{"x":0,"y":0.1,"z":-0.1,"box":1,"scx":0.6,"scz":0.6,"scy":0.6,"color":"afafaf","mass":100,"script":"/anim/w3dit/script/pd5.js","fn":"/shooter/objs/tripod/o5.txt","anim":"idle","animIdle":"idle","animRun":"runRot","sc":0.1,"aiApproach":30,"turnSpeed":0.001}
+,{"x":-0.2051,"y":0.0603,"z":-0.1382,"script":"/anim/w3dit/script/paths.js","box":1,"scx":3,"scz":1,"scy":0.15,"color":"afafaf","qx":0,"qy":0,"qz":1,"qw":0.2}
+,{"x":0.1,"y":0.1,"z":-0.1,"script":"/anim/w3dit/script/paths.js","box":1,"scx":0.5,"scz":0.1,"scy":0.3,"color":"afafaf","mass":1}
+,{"x":-0.0534,"y":0.1,"z":-0.0977,"box":1,"scx":0.3,"scz":0.3,"scy":0.6,"color":"afafaf","mass":1,"player":1,"script":"/anim/w3dit/script/pd5.js","fn":"/shooter/objs/templar/o5.txt","anim":"stand2","sc":0.1,"speed":10}
+,{"x":0.04,"y":0.1,"z":-0.1,"box":1,"scx":0.4,"scz":0.4,"scy":0.4,"color":"afafaf","mass":0.1,"script":"/anim/w3dit/script/pd5.js","fn":"/shooter/objs/tripod/o5.txt","anim":"idle","animIdle":"idle","animRun":"run","sc":0.04,"aiApproach":30,"turnSpeed":0.1}
+,{"x":0,"y":0,"z":0,"script":"/anim/w3dit/script/pd5.js","fn":"/anim/w3dit/objs/car/chassis.json","sc":0.00006,"cannonTest":{"noGround":1,"noCar":1}}
+,{"x":-0.21,"y":0.08,"z":-0.09,"script":"/anim/w3dit/script/paths.js","box":1,"scx":0.2,"scz":2.5,"scy":0.3,"color":"afafaf","qx":0.2,"qy":1,"qz":-0.2,"qw":1}
+,{"x":-0.452,"y":0.1176,"z":-0.0794,"script":"/anim/w3dit/script/paths.js","box":1,"scx":2.25,"scz":2.25,"scy":0.15,"color":"afafaf"}
+,{"x":-0.21,"y":0.17,"z":-0.02,"script":"/anim/w3dit/script/paths.js","box":1,"scx":3,"scz":1,"scy":0.15,"color":"afafaf","qx":0,"qy":0,"qz":1,"qw":-0.2}
+,{"x":-0.2206,"y":0.181,"z":-0.0752,"script":"/anim/w3dit/script/paths.js","box":1,"scx":0.2,"scz":2.7,"scy":0.3,"color":"afafaf","qx":-0.2,"qy":1,"qz":0.2,"qw":1,"hidden":0}
+,{"x":-0.23,"y":0.25,"z":0.03,"script":"/anim/w3dit/script/paths.js","box":1,"scx":0.2,"scz":7,"scy":5,"color":"afafaf","qx":0,"qy":1,"qz":0,"qw":1,"hidden":1}
+,{"x":-0.57,"y":0.25,"z":-0.08,"script":"/anim/w3dit/script/paths.js","box":1,"scx":0.2,"scz":2.3,"scy":5,"color":"afafaf","hidden":1}
+],
+"faces":[
+ {"v0":1,"v1":2,"v2":0}
+],
+"lines":[
+ {"l":0.215,"v0":4,"v1":3}
+,{"l":0.2087,"v0":3,"v1":5}
+,{"l":0.2029,"v0":5,"v1":4}
+,{"l":0.1991,"v0":5,"v1":6}
+,{"l":0.1539,"v0":3,"v1":6}
+,{"l":0.1918,"v0":4,"v1":6}
+]
+}

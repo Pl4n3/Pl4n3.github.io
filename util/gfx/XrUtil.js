@@ -5,12 +5,12 @@ import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFa
 let XrUtil={};
 (function(pself) {
   //---
-  let version='v.1.498 ',//FOLDORUPDATEVERSION
+  let version='v.1.501 ',//FOLDORUPDATEVERSION
       self=pself,ctrl0,ctrl1,gp0,gp1,camera,scene,room,vrPos,huds=[],hudMesh,
       hud={lines:['XrUtil '+version],cursor:{x:0.5,y:0.5,vis:false},buttons:[]},
       raycaster,INTERSECTED,hudCount=0,needDrawUi=false,input,uisc=2,gps,
-      lastLogCount=1;
-  const tempMatrix=new THREE.Matrix4(),vt=new THREE.Vector3();
+      lastLogCount=1,euler=new THREE.Euler(0,1,0,'YXZ'),
+      tempMatrix=new THREE.Matrix4(),vt=new THREE.Vector3();
   self.flightSpeed=0.01;
   
   function keyDown(e) {
@@ -716,6 +716,13 @@ let XrUtil={};
     return md;
     //...
   }
+  self.getAy=function() {
+    //---
+    tempMatrix.identity().extractRotation(camera.matrixWorld);
+    euler.setFromRotationMatrix(tempMatrix);
+    return euler.y;
+    //...
+  }
   
   console.log('XrUtil '+version);
   //...
@@ -723,6 +730,7 @@ let XrUtil={};
 )(XrUtil);
 export { XrUtil };
 //fr o,5
+//fr o,5,12
 //fr o,5,13,9
 //fr o,5,13,11
 //fr o,5,13,42
@@ -734,6 +742,5 @@ export { XrUtil };
 //fr o,5,19,36
 //fr o,5,19,38
 //fr o,5,19,40
-//fr o,5,23
-//fr o,5,23,14
-//fr p,0,68
+//fr o,5,26
+//fr p,58,12

@@ -118,11 +118,24 @@
     
     if (ps.box||ps.brick) {
       let m;
+      //if (ps.color) m=new THREE.MeshBasicMaterial({color:parseInt(ps.color,16),flatShading:true}); else m=m0;
       if (ps.color) m=new THREE.MeshPhongMaterial({color:parseInt(ps.color,16),flatShading:true}); else m=m0;
       let mesh=box(x*w,y*w,z*w,w0*(ps.scx||1),w0*(ps.scy||1),w0*(ps.scz||1),m,ps.t);
       mesh.matrixAutoUpdate=true;
       mesh.rotation.set(ps.xr||0,ps.yr||0,ps.zr||0);
-      return add(c,mesh);//box(x*w,y*w,z*w,w0*(ps.scx||1),w0*(ps.scy||1),w0*(ps.scz||1),m);
+      add(c,mesh);
+      if (ps.hidden) { //---hidden not visible and not clickable (but can make a cannon box)
+        mesh.visible=false;
+        delete(mesh.userData.editPoint);
+      }
+      if (ps.qx!==undefined) {
+        //onsole.log('set quaternion nao.');
+        mesh.quaternion.set(ps.qx,ps.qy,ps.qz,ps.qw);
+        mesh.quaternion.normalize();
+      } else {
+        mesh.rotation.set(ps.xr||0,ps.yr||0,ps.zr||0);
+      }
+      return mesh;//add(c,mesh);//box(x*w,y*w,z*w,w0*(ps.scx||1),w0*(ps.scy||1),w0*(ps.scz||1),m);
     }
     
     if (((!(ps.nx0&&ps.nx1))&&(!(ps.ny0&&ps.ny1))&&(!(ps.nz0&&ps.nz1)))||ps.flypoint) {
@@ -153,7 +166,7 @@
     
     //onsole.log('paths.w3ditScriptInit');
     
-    if (count==0) ps.xrUtil.log('Paths v.0.105 ');//FOLDORUPDATEVERSION
+    if (count==0) ps.xrUtil.log('Paths v.0.121 (cmds: pathsScale)');//FOLDORUPDATEVERSION
     //count++;
     
     let w=0.1;
@@ -182,6 +195,23 @@
       //console.log(m);
     }
     count++;
+    
+    window.pathsScale=function(f) {
+      //---
+      for (let p of ps.points) if (p.userData.op.box) {
+        p.position.x*=f;
+        p.position.y*=f;
+        p.position.z*=f;
+        p.userData.op.scx*=f;
+        p.userData.op.scy*=f;
+        p.userData.op.scz*=f;
+      }
+      console.log('pathsScale done.');
+      //onsole.log(f);
+      //...
+    }
+    
+    
     //...
   }
   ,renderf:function(dt) {
@@ -200,5 +230,6 @@
 //fr o,1,8
 //fr o,1,10
 //fr o,1,15
+//fr o,1,15,38
 //fr o,1,16
-//fr p,25,78
+//fr p,69,126

@@ -14,6 +14,8 @@
 <script src="/three/threePd5.js"></script>
 <script src="/util/deep.js"></script>
 <script src="/util/gfx/phys.js"></script>
+<script src="/sound.js"></script>
+<script src="/canvas/w3dit.js"></script>
 </head>
 <body oncontextmenu="return false;">
 <script type="importmap">
@@ -42,11 +44,11 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       pointPlane,mesh,line,gridh,dir,
       inpLightColor,inpLightIntensity,mFn,
       paint=false,paintmesh,scriptHandlers={rayObjsReset:rayObjsReset},
-      mPindex,stats,rayNp,pdif,room;//,gridf=0.1;
+      mPindex,stats,rayNp,pdif,room,mGridSnap;//,gridf=0.1;
   
   /* issues */ {
     //---
-    // 24.08.18 xrUtil.rayObjs introduced -> to make texpaint on pd5 work, pd5 meshes must be registered via script, maybe via point.userData.rayObjs...
+    // should be solved: 24.08.18 xrUtil.rayObjs introduced -> to make texpaint on pd5 work, pd5 meshes must be registered via script, maybe via point.userData.rayObjs...
     //...
   }
   
@@ -399,7 +401,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       
       a.push({s:'Press%',align:'left',x:0.05,y:y,w:0.23,h:0.08,noinp:1});
       w=0.1;
-      let pr=[1,3,10,30,50,100];
+      let pr=[1,3,10,20,30,50,100];
       for (let i=0;i<pr.length;i++) {
         let v=pr[i];
         a.push(m={s:v,x:0.95+bo-pr.length*(w+bo)+i*(w+bo),y:y,w:w,h:0.08,ondown:setPress});
@@ -408,8 +410,8 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       y+=0.1;
       
       a.push({s:'Radius',align:'left',x:0.05,y:y,w:0.13,h:0.08,noinp:1});
-      w=0.075;
-      let ra=['.1','.5',1,2,3,5,10,50];
+      w=0.070;
+      let ra=['.1','.5',1,2,3,5,10,25,50];
       for (let i=0;i<ra.length;i++) {
         a.push(m={s:ra[i],x:0.95+bo-ra.length*(w+bo)+i*(w+bo),y:y,w:w,h:0.08,ondown:setRadius});maradius.push(m);
       }
@@ -764,7 +766,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     //\u25b2 \u25bc
     
-    const version='v.0.1421 ';//FOLDORUPDATEVERSION
+    const version='v.0.1463 ';//FOLDORUPDATEVERSION
     xrUtil.log('Edit '+version);
     
     //
@@ -879,6 +881,8 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       let p2=new THREE.Vector2(2*x/window.innerWidth-1,-2*y/window.innerHeight+1);
       raycaster.setFromCamera(p2,camera);
       
+      //onsole.log('point mode='+mode);
+      
       if ((mode==2)&&(sels.length>0)&&pointPlane.visible) {//---drag
         let a=raycaster.intersectObject(pointPlane);
         //console.log(a.length);
@@ -919,7 +923,9 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
           np=o;//setNearestPoint(o);
           break;
         }
+        if ((!paintco)&&o.userData.rayCol) paintco=co;//250130 moved this here, now texdraw work again
         if (o.userData.editPoint) { //--- used in paths.js
+          //onsole.log('userData.editPoint');
           np=o.userData.editPoint;
           //let p0=co.point,p1=np.position;
           //if (mode==1) {
@@ -930,9 +936,12 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
           //console.log(p0);
           break;
         }
-        if ((!paintco)&&o.userData.rayCol) paintco=co;
+        //if ((!paintco)&&o.userData.rayCol) paintco=co;
+        if (o.userData.xrRay) o.userData.xrRay(co,mode==1);
         //if (mode==1) console.log(o);//co.object);
       }
+      
+      //onsole.log('point a.len='+a.length+' '+paintco);
       
       if (np) {
         let p0=co.point,p1=np.position;
@@ -1074,7 +1083,14 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       let p=this._p;//sels[0];
       let i=points.indexOf(p);
       pointRemove(p);
-      p=pointAdd(op,i);this._p=p;
+      let pn=pointAdd(op,i);
+      
+      //---following is a hack for pd5, better solution:
+      //---handlerRun('pointPropsChanged',p,pn);
+      if (p.userData.cannonBox)
+        pn.userData.cannonBox=p.userData.cannonBox;
+      
+      p=pn;this._p=p;
       sels[0]=p;
       rayObjsReset();//xrUtil.rayObjs.length=0;
       
@@ -1083,6 +1099,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     }
     }
     
+    ,mGridSnap={checkbox:1,checked:1,ms:'Grid snap if defined'}
     
       ]} 
       
@@ -1229,6 +1246,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       let fn=dir.a[dir.i].fn;
       //onsole.log(fn);
       mFn.s=fn;//xrUtil.log(dir.a.length+' files, index='+dir.i+'.');
+      dirOff=dir.a.length-5;
       mDirUpdate();
       loadfn(fn);
       
@@ -1278,6 +1296,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
   
   function gridSnap(p) {
     //---
+    if (!mGridSnap.checked) return;
     let f=sceneh.gridSnap;//gridf
     if (!f) return;
     p.x=Math.floor(p.x/f+0.5)*f;
@@ -1368,18 +1387,20 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
   window.w3ditScriptInit=function(o) {
     //---
     let h;
-    if (typeof(o)=='function') h= {
-      initf:o
-    }
-    ;
-    else h=o;
+    if (typeof(o)=='function') 
+      h={initf:o};
+    else 
+      h=o;
     //onsole.log(initf);
     let script=document.currentScript;
     let a=Object.values(scripts);
     for (let sc of a) {
       if (sc.script===script) {
         //onsole.log('script found.');
-        if (h.what) xrUtil.log(h.what);
+        if (h.what) {
+          xrUtil.log(h.what);
+          console.log(h.what);
+        }
         sc.initf=h.initf;
         sc.renderf=h.renderf;
         scriptInit(sc);
@@ -1429,7 +1450,9 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       xrUtil:xrUtil,
       ps:p,
       sceneh:sceneh,
-      scriptHandlers:scriptHandlers};
+      scriptHandlers:scriptHandlers,
+      points:points //250307 for pd5, better ref to editxr?
+    };
     
     if (scr.initf) scr.initf(h); else
     scr.waitingForInit.push(h);
@@ -1840,28 +1863,38 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 </body>
 </html>
 <script>
-//fr o,31
-//fr o,31,17
-//fr o,31,17,81,9
-//fr o,31,17,83,7
-//fr o,31,17,83,9
-//fr o,31,17,83,11
-//fr o,31,17,83,17
-//fr o,31,17,83,19
-//fr o,31,17,83,21
-//fr o,31,17,83,23
-//fr o,31,17,83,74
-//fr o,31,17,99,30
-//fr o,31,17,99,39
-//fr o,31,17,99,49
-//fr o,31,17,99,57
-//fr o,31,17,169
-//fr o,31,17,171
-//fr o,31,17,176
-//fr o,31,17,179
-//fr o,31,17,246
-//fr o,31,28,10
-//fr o,31,28,11
-//fr o,31,44
-//fr o,31,45
-//fr p,5,442
+//fr o,33
+//fr o,33,17
+//fr o,33,17,75
+//fr o,33,17,77
+//fr o,33,17,78
+//fr o,33,17,81
+//fr o,33,17,81,9
+//fr o,33,17,81,11
+//fr o,33,17,83,7
+//fr o,33,17,83,9
+//fr o,33,17,83,11
+//fr o,33,17,83,17
+//fr o,33,17,83,19
+//fr o,33,17,83,21
+//fr o,33,17,83,23
+//fr o,33,17,83,27
+//fr o,33,17,83,74
+//fr o,33,17,85
+//fr o,33,17,99
+//fr o,33,17,99,3
+//fr o,33,17,99,11
+//fr o,33,17,99,30
+//fr o,33,17,101
+//fr o,33,17,101,1
+//fr o,33,17,209
+//fr o,33,17,247
+//fr o,33,19
+//fr o,33,26
+//fr o,33,27
+//fr o,33,28
+//fr o,33,28,10
+//fr o,33,28,11
+//fr o,33,29
+//fr o,33,31
+//fr p,31,631

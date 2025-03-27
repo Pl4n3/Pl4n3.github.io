@@ -2,6 +2,7 @@
 <!-- 1. [vr cubes](/three/r124/examples/webxr_vr_cubes.html) -->
 <!-- 1. [cubes124](/test/webvr/cubes124.htm) -->
 
+1. [editXr:tripod,templar,jumpscare](/test/webvr/edit.htm?file=file:cannCyl)
 1. [Learn 𝄞,𝄢 Notenames](/anim/arrows/canv.htm?fn=/anim/arrows/canvNotes/learn/main.js)
 1. [SimplePaint](/canvas/paint/simplePaint.htm)
 1. [voxXr](/three/anim/voxed/voxXr.htm)

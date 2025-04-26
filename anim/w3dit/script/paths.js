@@ -85,13 +85,23 @@
       return l;
     }
     
-    
     if (ps.pointLight) {
       let l=new THREE.PointLight(
         ps.color?parseInt(ps.color,16):0xffffff,
         ps.intensity||1,
         ps.distance||0,
         ps.decay||2
+        );
+      //l.position.set(ps.xd||0,ps.yd||0,ps.zd||0); //default; light shining from top
+      c.add(l);
+      return l;
+    }
+    
+    if (ps.hemisphereLight) {
+      let l=new THREE.HemisphereLight(
+        ps.skyColor?parseInt(ps.skyColor,16):0xffffff,
+        ps.groundColor?parseInt(ps.groundColor,16):0xffffff,
+        ps.intensity||1,
         );
       //l.position.set(ps.xd||0,ps.yd||0,ps.zd||0); //default; light shining from top
       c.add(l);
@@ -166,7 +176,7 @@
     
     //onsole.log('paths.w3ditScriptInit');
     
-    if (count==0) ps.xrUtil.log('Paths v.0.121 (cmds: pathsScale)');//FOLDORUPDATEVERSION
+    if (count==0) ps.xrUtil.log('Paths v.0.122 (cmds: pathsScale)');//FOLDORUPDATEVERSION
     //count++;
     
     let w=0.1;
@@ -232,4 +242,4 @@
 //fr o,1,15
 //fr o,1,15,38
 //fr o,1,16
-//fr p,69,126
+//fr p,37,102

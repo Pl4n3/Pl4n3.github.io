@@ -1,0 +1,30 @@
+{
+"pt":{"x":-1.2515,"y":0.1077,"z":-1.3836},
+"pc":{"x":-0.1876,"y":0.7616,"z":1.7128},
+"defaultLights":"none",
+"gridSnap":0.02,
+"points":[
+ {"x":-0.42,"y":0.66,"z":-1.24}
+,{"x":-0.44,"y":0.4,"z":-1.38}
+,{"x":-0.44,"y":0.42,"z":-1.22}
+,{"x":-0.1192,"y":0.2443,"z":-0.6326}
+,{"x":-0.0767,"y":0.1113,"z":-0.796}
+,{"x":-0.0836,"y":0.0404,"z":-0.606}
+,{"x":0.0253,"y":0.1985,"z":-0.659}
+,{"x":-0.8593,"y":-0.2552,"z":-1.3704,"script":"/anim/w3dit/script/sculpt.js","fn":"/anim/smol/sculpt/landscape.json"}
+,{"x":-1.2622,"y":-1.1171,"z":-1.5494,"_script":"/anim/w3dit/script/paths.js","pointLight":1,"intensity":2,"color":"aaaaff"}
+,{"x":-0.88,"y":-0.6,"z":-0.6,"script":"/anim/w3dit/script/paths.js","hemisphereLight":1,"intensity":3,"skyColor":"888877","groundColor":"777788"}
+,{"x":0.96,"y":1.8,"z":-0.52,"script":"/anim/w3dit/script/paths.js","directionalLight":1,"castShadow":{"far":3,"near":0.01},"intensity":3,"yd":0,"xd":0,"zd":0}
+],
+"faces":[
+ {"v0":1,"v1":2,"v2":0}
+],
+"lines":[
+ {"l":0.215,"v0":4,"v1":3}
+,{"l":0.2087,"v0":3,"v1":5}
+,{"l":0.2029,"v0":5,"v1":4}
+,{"l":0.1991,"v0":5,"v1":6}
+,{"l":0.1539,"v0":3,"v1":6}
+,{"l":0.1918,"v0":4,"v1":6}
+]
+}

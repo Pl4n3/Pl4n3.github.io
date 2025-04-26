@@ -5,13 +5,19 @@ import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFa
 let XrUtil={};
 (function(pself) {
   //---
-  let version='v.1.501 ',//FOLDORUPDATEVERSION
+  let version='v.1.624 ',//FOLDORUPDATEVERSION
       self=pself,ctrl0,ctrl1,gp0,gp1,camera,scene,room,vrPos,huds=[],hudMesh,
       hud={lines:['XrUtil '+version],cursor:{x:0.5,y:0.5,vis:false},buttons:[]},
       raycaster,INTERSECTED,hudCount=0,needDrawUi=false,input,uisc=2,gps,
-      lastLogCount=1,euler=new THREE.Euler(0,1,0,'YXZ'),
+      lastLogCount=1,euler=new THREE.Euler(0,1,0,'YXZ'),//inp,
       tempMatrix=new THREE.Matrix4(),vt=new THREE.Vector3();
   self.flightSpeed=0.01;
+  
+  self.tryHideKeyboard=function() {
+    //---
+    if (self.hideKeyboard) self.hideKeyboard();
+    //...
+  }
   
   function keyDown(e) {
     //---
@@ -23,6 +29,7 @@ let XrUtil={};
     } else if ((kc==27)||(kc==13)) { //esc,return
       delete(b.color);
       input=undefined;
+      self.tryHideKeyboard();
     } else if (!{16:1,17:1}[kc]) { //shift,ctrl
       b.s+=e.key;
       //onsole.log(e);
@@ -79,6 +86,11 @@ let XrUtil={};
         room.position.z+=vt.z;
         if (vrPos) vrPos.add(vt);
         room.updateMatrix();
+        room.updateWorldMatrix(false,true);
+        //onsole.log(room.position);
+        let p=room.position;
+        if (gps.lskey) localStorage[gps.lskey]=JSON.stringify({
+          x:p.x,y:p.y,z:p.z});
       }
     }
     //...
@@ -203,6 +215,18 @@ let XrUtil={};
         camera.remove(o); 
         ctrl0.add(o);o.position.set(-0.2,0,0);o.rotation.x=-1;o.rotation.y=1;
       }
+      if (1&&gps.lskey) {
+        try {
+        let h=JSON.parse(localStorage[gps.lskey]||'{}');
+        console.log('h from ls');
+        console.log(h);
+        if (h.x!==undefined) {
+          room.position.set(h.x,h.y,h.z);
+          room.updateMatrix();
+          room.updateWorldMatrix(false,true);
+        }
+        } catch (e) { console.error(e); }
+      }
       if (self.onSessionStarted) self.onSessionStarted();
       //...
     }
@@ -243,6 +267,7 @@ let XrUtil={};
       );
     }
     
+    //--- not needed if inp would work
     window.addEventListener('keydown',keyDown);
     
     self.menuHudPosition={s:'Hud',r:1,ms:'Position',autoval:1,setfunc:function(v) {
@@ -256,6 +281,25 @@ let XrUtil={};
     }
     ,sub:[{s:'Phone'},{s:'Desktop'},{s:'Away'},{s:'Faraway'}]};
     
+    if (0) /* inp, keyboard not showing up in xr */ {
+      //---
+      let c=document.createElement('input'),s=c.style;inp=c;self.inp=c;
+      c.type='text';c.size=3;c.value='aa';
+      s.position='absolute';s.top='0px';s.left='30px';s.width='1px';s.height='1px';s.zIndex=-1;
+      document.body.appendChild(c);c.setSelectionRange(2,2);//inp.focus();
+      
+      c.addEventListener('input',function(e) {
+        //---
+        self.log('inp='+c.value);
+        //...
+      }
+      );
+      
+      //c.focus();
+      //...
+    }
+    
+    
     //...
   }
   self.uiMenuSet=function(ps) {
@@ -264,6 +308,46 @@ let XrUtil={};
     hud.buttons=ps.menu;
     //...
   }
+  
+  function showKeyboard() {
+    //---
+    let esc,backspace,enter,a=[];
+    
+    function ondown() {
+      //---
+      let s=this.s;
+      //onsole.log('keyOndown '+s);
+      let e={key:s,keyCode:0};
+      if (s==esc) e.keyCode=27;
+      else if (s==backspace) e.keyCode=8;
+      else if (s==enter) e.keyCode=13;
+      keyDown(e);
+      //if (!input) for (let b of a) {
+      //  let i=hud.buttons.indexOf(b);hud.buttons.splice(i,1);
+      //  //console.log('hided keyboard');
+      //}
+      //...
+    }
+    
+    self.hideKeyboard=function() {
+      //---
+      for (let b of a) {
+        let i=hud.buttons.indexOf(b);hud.buttons.splice(i,1);
+        //console.log('hided keyboard');
+      }
+      a.length=0;
+      //...
+    }
+    
+    let ks=[esc='␛','0','1','2','3','4','5','6','7','8','9','.','-',backspace='⇦',enter='⏎'];
+    for (let i=0;i<ks.length;i++) {
+      let b={x:0.02+i*0.06,y:0.3,w:0.05,h:0.07,s:ks[i],ondown:ondown};
+      hud.buttons.push(b);a.push(b);
+    }
+    needDrawUi=true;
+    //...
+  }
+  
   function drawHud() {
     //---
     //onsole.log('drawHud');
@@ -293,7 +377,7 @@ let XrUtil={};
             if (b.subUp) {
               delete(hud.menuSub);
               newMenu=hud.menu0;sthdone=true;
-              console.log('delete menuSub 0');
+              //onsole.log('delete menuSub 0');
             } else if (b.sub) {
               if (!hud.menu0) hud.menu0=hud.buttons;//alternatively maintain hud.menuStack[]
               hud.menuSub=b;
@@ -309,13 +393,17 @@ let XrUtil={};
               if (hud.menuSub) if (!hud.menuSub.stay) {
                 delete(hud.menuSub);
                 newMenu=hud.menu0;
-                console.log('delete menuSub 1');
+                //onsole.log('delete menuSub 1');
               }
               sthdone=true;
             } else if (b.oninput) {
               b.color='rgba(250,250,0,0.5)';
               input=b;
               sthdone=true;
+              showKeyboard();
+              //inp.value=b.s;
+              //inp.focus();
+              //onsole.log('inp.focus');
             } 
             if (!sthdone) { console.log('no ondown >:[');console.log(b); }
           }
@@ -348,7 +436,7 @@ let XrUtil={};
         ct.fillStyle='#ddd';
         if (b.align=='left') {
           ct.textAlign='start';
-          ct.fillText(b.s,bx,by+bh/2);
+          ct.fillText(b.s,bx+3*uisc,by+bh/2);
           ct.textAlign='center';
         } else 
           ct.fillText(b.s,bx+bw/2,by+bh/2);
@@ -723,6 +811,275 @@ let XrUtil={};
     return euler.y;
     //...
   }
+  self.fileMenu=function(ps) {
+    //---analog to conet.fileMenu
+    let path=ps.path,dirfn=ps.path+'/files.json',mFn,mDir,lsKey=ps.lsKey,dir,dirOff=0;
+    //-------temp start (for modularize)
+    //let loadfn=ps.loadfn//,mDirUpdate=ps.mDirUpdate
+        //dirLoaded=ps.dirLoaded
+    //    ;
+    //-------temp end
+    
+    function dirUpload() {
+      //---
+      let s=JSON.stringify(dir);
+      //onsole.log(s);
+      if (isConet) Conet.upload({fn:dirfn,data:s});
+      localStorage[lsKey+'dir']=s;
+      //...
+    }
+    
+    
+    function dirFileLoad() {
+      //---
+      let i=this.i,fn=dir.a[i].fn;
+      //let key=lsFnKey(fn);
+      //console.log('fn='+fn+' key='+key);
+      //let ls=localStorage[key];
+      //load(ls);
+      loadfn(fn);
+      
+      if (dir.i!==i) {
+        dir.i=i;
+        mFn.s=fn;
+        dirUpload();//localStorage[lsKey+'dir']=JSON.stringify(dir);
+        mDirUpdate();
+      }
+      
+      self.log('Loaded \''+fn);//+'\' '+ls.length+'b');
+      self.uiMenuSet({menu:self.hud.menu0});
+      //onsole.log(this);
+      //...
+    }
+    function dirFileDel() {
+      //---
+      
+      let i=this.i,fn=dir.a[i].fn,key=lsFnKey(fn);
+      let ls=localStorage[key];
+      if ((dir.i>=i)&&(i!=0)) dir.i--;
+      dir.a.splice(i,1);
+      dirUpload();//localStorage[lsKey+'dir']=JSON.stringify(dir);
+      mDirUpdate();
+      localStorage[key]='';
+      console.log('emptied localStorage length='+localStorage[key].length);
+      
+      self.log('Deleted \''+fn+'\' '+ls.length+'b');
+      self.uiMenuSet({menu:self.hud.menu0});
+      //...
+    }
+    
+    
+    
+    function mDirUpdate() {
+      //---
+      mDir.sub.length=1;
+      mDir.ms=(dir.i+1)+' / '+dir.a.length;
+      //onsole.log(dirOff);
+      //onsole.log(dir);
+      //for (let f of dir.a) mDir.sub.push({s:f.fn,dy:0.01,h:0.08});
+      for (let ih=0;ih<Math.min(6,dir.a.length-dirOff);ih++) {
+        let i=ih+dirOff;
+        mDir.sub.push({s:' '+i+' '+dir.a[i].fn,x:0.05,dy:0.01,w:0.6,h:0.08,i:i,ondown:dirFileLoad,align:'left'});
+        if (dir.a.length>1) mDir.sub.push({s:'del',dx:0.02,w:0.15,i:i,ondown:dirFileDel});
+      }
+      mDir.sub.push({s:'^',x:0.84,y:0.41,w:0.1,h:0.08,ondown:function() {
+        //---
+        //onsole.log('up');
+        //onsole.trace();
+        dirOff=Math.max(dirOff-6,0);mDir.stay=true;
+        setTimeout(mDirUpdate,0);
+        //...
+      }
+      });
+      mDir.sub.push({s:'V',x:0.84,y:0.5,w:0.1,h:0.08,ondown:function() {
+        //---
+        //onsole.log('down');
+        //onsole.trace();
+        dirOff+=6;mDir.stay=true;
+        setTimeout(mDirUpdate,0);
+        //...
+      }
+      });
+      self.setNeedDrawUi();
+      //...
+    }
+    
+    
+    function dirLoaded(s) {
+      //---
+      dir=s;
+      if (dir) dir=JSON.parse(dir); else dir={i:0,a:[{fn:''}]};
+      //onsole.log(dir);
+      if (dir.i>=dir.a.length) dir.i=0;
+      
+      if (ps.setExamples) ps.setExamples(dir);
+      
+      let fn=dir.a[dir.i].fn;
+      //onsole.log(fn);
+      //if (!ps.skipStartLoad) mFn.s=fn;//xrUtil.log(dir.a.length+' files, index='+dir.i+'.');
+      dirOff=Math.max(0,dir.a.length-5);
+      //ps.tempSetVars({dir:dir,dirOff:dirOff});
+      
+      mDirUpdate();
+      if (!ps.skipStartLoad) {
+        mFn.s=fn;
+        loadfn(fn);
+      }
+      
+      //let ls=localStorage[lsFnKey(fn)];
+      //if (ls) load(ls);
+      //else {
+      //  let g=new THREE.BoxGeometry(0.01,0.01,0.01),
+      //  mesh=new THREE.Mesh(g,matPoint0);
+      //  mesh.position.set(0,1,0);
+      //  scene.add(mesh);points.push(mesh);
+      //
+      //  mesh=new THREE.Mesh(g,matPoint0);
+      //  mesh.position.set(0.05,1.05,0.05);
+      //  scene.add(mesh);points.push(mesh);
+      //
+      //  mesh=new THREE.Mesh(g,matPoint0);
+      //  mesh.position.set(0.1,1.05,0.05);
+      //  scene.add(mesh);points.push(mesh);
+      //}
+      
+      
+      //...
+    }
+    
+    function lsFnKey(fn) {
+      //
+      return lsKey+((fn.length>0)?'file'+fn:'');
+      //...
+    }
+    
+    function loadfn(fn) {
+      //---
+      if (fn.startsWith('file:')) {
+        //onsole.log('load file nao: '+fn);
+        fn=path+'/'+fn.substr(5)+'.json';
+        self.log('Fileload: '+fn);
+        Conet.download({fn:fn,f:ps.load});
+        return;
+      } 
+      let ls=localStorage[lsFnKey(fn)];
+      if (ls) ps.load(ls);
+      //...
+    }
+    
+    function save(ps) {
+      //---
+      let fn=ps.fn;//mFn.s;
+      if (dir.a[dir.i].fn!=fn) { //---update dir
+        dir.i=undefined;
+        for (let i=dir.a.length-1;i>=0;i--) {
+          if (dir.a[i].fn==fn) {
+            //  if files can be removed via remove button, better do here skip with msg:
+            //  'file already exists, remove it first'
+            self.log('File already exists, first delete it.');
+            return;
+            //dir.i=i;break;
+          }
+        }
+        if (dir.i===undefined) {
+          dir.a.push({fn:fn});
+          dir.i=dir.a.length-1;
+          mDirUpdate();
+        }
+        //localStorage[lsKey+'dir']=JSON.stringify(dir);
+        dirUpload();
+      }
+      
+      let s=ps.data;//serialize();
+      if (fn.startsWith('file:')) {
+        fn=path+'/'+fn.substr(5)+'.json';
+        self.log('Filesave: '+fn);
+        Conet.upload({fn:fn,data:s});
+      } else 
+        localStorage[lsFnKey(fn)]=s;
+      self.log('Saved '+s.length+' bytes.');
+      //...
+    }
+    
+    
+    
+    
+    let isConet=Conet.checkOnline();
+    
+    self.hud.buttons.push(
+    mFn={s:'file:test0',ms:'Current file',x:0.05,y:0.85,w:0.4,h:0.1,oninput:function(v) {
+      //---
+      //xrUtil.log(v);
+      //...
+    }
+    },
+    
+    mDir={s:'\u25bc',ms:'Files',x:0.5,y:0.85,w:0.1,h:0.1,sub:[
+      {s:'Files \u25b2',x:0.05,y:0.3,w:0.4,h:0.1}
+      ,{s:'File0',dy:0.05}
+    ]},
+    
+    {s:'Save',x:0.65,y:0.85,w:0.3,h:0.1,ondown:function() {
+      //---
+      save({fn:mFn.s,data:ps.serialize()});
+      //let fn=mFn.s;
+      //if (dir.a[dir.i].fn!=fn) { //---update dir
+      //  dir.i=undefined;
+      //  for (let i=dir.a.length-1;i>=0;i--) {
+      //    if (dir.a[i].fn==fn) {
+      //      //  if files can be removed via remove button, better do here skip with msg:
+      //      //  'file already exists, remove it first'
+      //      xrUtil.log('File already exists, first delete it.');
+      //      return;
+      //      //dir.i=i;break;
+      //    }
+      //  }
+      //  if (dir.i===undefined) {
+      //    dir.a.push({fn:fn});
+      //    dir.i=dir.a.length-1;
+      //    mDirUpdate();
+      //  }
+      //  localStorage[lsKey+'dir']=JSON.stringify(dir);
+      //}
+      //
+      //let s=serialize();
+      //localStorage[lsFnKey(fn)]=s;
+      //xrUtil.log('Saved '+s.length+' bytes.');
+      //...
+    }
+    },
+    
+    
+    );
+    
+    
+    
+    
+    
+    
+    let fn=Conet.parseUrl().file;
+    
+    //console.log('file='+fn);
+    //console.log(encodeURI('file='+fn));
+    //console.log(decodeURI('file%3Acannon0'));
+    
+    if (fn) {
+      mFn.s=fn;
+      loadfn(fn);
+    } else {
+    
+      if (isConet) {
+        //xrUtil.log('Fileload: '+dirfn+'.');
+        Conet.download({fn:dirfn,f:dirLoaded});
+      } else dirLoaded(localStorage[lsKey+'dir']);
+    
+    }
+    
+    //---temp for modularize
+    //return {mFn:mFn};
+    //ps.tempSetVars({mFn:mFn,mDir:mDir});
+    //...
+  }
   
   console.log('XrUtil '+version);
   //...
@@ -730,17 +1087,34 @@ let XrUtil={};
 )(XrUtil);
 export { XrUtil };
 //fr o,5
-//fr o,5,12
-//fr o,5,13,9
-//fr o,5,13,11
-//fr o,5,13,42
-//fr o,5,13,59
-//fr o,5,13,82
-//fr o,5,13,85
-//fr o,5,13,97
-//fr o,5,19,32
-//fr o,5,19,36
-//fr o,5,19,38
-//fr o,5,19,40
+//fr o,5,9
+//fr o,5,11
+//fr o,5,15
+//fr o,5,15,9
+//fr o,5,15,11
+//fr o,5,15,42
+//fr o,5,15,59
+//fr o,5,15,82
+//fr o,5,15,83
+//fr o,5,15,85
+//fr o,5,15,98
+//fr o,5,15,101
+//fr o,5,15,101,6
+//fr o,5,18
+//fr o,5,18,3
+//fr o,5,18,5
+//fr o,5,20
+//fr o,5,21
+//fr o,5,23
+//fr o,5,24,36
+//fr o,5,24,38
+//fr o,5,24,40
 //fr o,5,26
-//fr p,58,12
+//fr o,5,27
+//fr o,5,30
+//fr o,5,30,1
+//fr o,5,32,12
+//fr o,5,32,19
+//fr o,5,32,23
+//fr o,5,32,25
+//fr p,11,31

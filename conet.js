@@ -1,7 +1,7 @@
 var Conet={};
 (function(Conet) {
   Conet.offline=false;
-  Conet.version='1.581 ';//FOLDORUPDATEVERSION
+  Conet.version='1.595 ';//FOLDORUPDATEVERSION
   Conet.files={};
   var uploads={},fns,logc,logs=[],//fn=>data,first
       logSameLineCount=0,ac,downloads={},PI=Math.PI;
@@ -907,6 +907,232 @@ var Conet={};
     //...
   }
   
+  let handlers=[];
+  Conet.handlerAdd=function(k,f) {
+    let a=handlers[k];
+    if (!a) { a=[];handlers[k]=a; }
+    a.push(f);
+    //...
+  }
+  Conet.handlerRun=function(k,p0,p1) {
+    //---
+    let a=handlers[k];
+    if (!a) return;
+    for (let f of a) f(p0,p1);
+    //...
+  }
+  Conet.handlerDel=function(k,f) {
+    let a=handlers[k];
+    let i=a.indexOf(f);
+    a.splice(i,1);
+    //...
+  }
+  
+  
+  Conet.cannonVis=function(ps) {
+    let co;
+    
+    function initCanvas() {
+      let c=document.createElement('canvas');
+      c.width=500;c.height=500;
+      //c.style.backgroundColor='#0f0';
+      
+      if (ps.cont) ps.cont.appendChild(c);
+      else {
+        var myWindow=window.open("","MsgWindow","top=100,left=1000,width=550,height=550");
+        myWindow.document.body.appendChild(c);
+      }
+      
+      //document.body.appendChild(c);
+      canv=c;
+      ct=c.getContext('2d');
+      ct.strokeStyle='#000';
+      ct.strokeRect(0,0,c.width,c.height);
+      co={c:c,ct:ct,ps:[]};
+      //...
+    }
+    
+    function drawCanvas() {
+      //---
+      let ct=co.ct,c=co.c;
+      let f=30;
+      
+      for (let ph of co.ps) {
+        let p=ph.p,x=p.x*f+c.width/2,y=p.z*-f+c.height/2+100;
+        ct.fillStyle='#000';
+        ct.fillRect(x,y,5,5);
+        ct.fillStyle=ph.c;
+        ct.fillRect(x+0.5,y+0.5,4,4);
+      }
+      //...
+    }
+    
+    initCanvas();
+    
+    return {
+      co:co,
+    
+    step:function(dt) {
+      //---
+      if (dt===undefined) dt=10;
+      ps.world.step(1.0/60.0,dt/1000,3);
+      drawCanvas();
+      //...
+    }
+    
+    }
+    
+    //...
+  }
+  
+  Conet.cannonTest=function(ps) {
+    //---
+    
+    //---
+    /*
+    let co;
+    
+    function initCanvas() {
+      let c=document.createElement('canvas');
+      c.width=500;c.height=500;
+      //c.style.backgroundColor='#0f0';
+      
+      var myWindow=window.open("","MsgWindow","top=100,left=1000,width=550,height=550");
+      myWindow.document.body.appendChild(c);
+      
+      //document.body.appendChild(c);
+      canv=c;
+      ct=c.getContext('2d');
+      ct.strokeStyle='#000';
+      ct.strokeRect(0,0,c.width,c.height);
+      co={c:c,ct:ct,ps:[]};
+      //...
+    }
+    
+    function drawCanvas() {
+      //---
+      let ct=co.ct,c=co.c;
+      let f=30;
+      
+      for (let ph of co.ps) {
+        let p=ph.p,x=p.x*f+c.width/2,y=p.z*-f+c.height/2+100;
+        ct.fillStyle='#000';
+        ct.fillRect(x,y,5,5);
+        ct.fillStyle=ph.c;
+        ct.fillRect(x+0.5,y+0.5,4,4);
+      }
+      //...
+    }
+    */
+    
+    console.log('cannon test');
+    
+    // Setup our world
+    var world = new CANNON.World(),size=2.0;
+    
+    
+    var shape = CANNON.Trimesh.createTorus(4, 3.5, 16, 16);
+    
+    // Create world
+    world.gravity.set(0,0,-10);
+    world.broadphase = new CANNON.NaiveBroadphase();
+    world.solver.iterations = 10;
+    
+    world.defaultContactMaterial.contactEquationStiffness = 1e7;
+    world.defaultContactMaterial.contactEquationRelaxation = 4;
+    
+    // ground plane
+    var groundShape = new CANNON.Plane();
+    var groundBody = new CANNON.Body({ mass: 0 });
+    groundBody.addShape(groundShape);
+    world.add(groundBody);
+    //emo.addVisual(groundBody);
+    
+    // sphere
+    var sphereShape = new CANNON.Sphere(1);
+    var sphereBody = new CANNON.Body({
+      mass: 1,
+      shape: sphereShape,
+      position: new CANNON.Vec3(3,3,11)
+    });
+    world.add(sphereBody);
+    //emo.addVisual(sphereBody);
+    
+    // Shape on plane
+    var shapeBody = new CANNON.Body({ mass: 1 });
+    shapeBody.addShape(shape);
+    var pos = new CANNON.Vec3(0,0,size);
+    shapeBody.position.set(0,0,size*2);
+    shapeBody.velocity.set(0,1,1);
+    shapeBody.angularVelocity.set(0,0,0);
+    world.add(shapeBody);
+    //emo.addVisual(shapeBody);
+    
+    if (1) {
+      let cv=Conet.cannonVis({world:world});
+      cv.co.ps.push(
+        {p:shapeBody.position,c:'#ff0'},
+        {p:sphereBody.position,c:'#fff'});
+      return {torus:shapeBody,ball:sphereBody,step:cv.step};
+    }
+    
+    
+    initCanvas();
+    co.ps.push(
+      {p:shapeBody.position,c:'#ff0'},
+      {p:sphereBody.position,c:'#fff'});
+    
+    return {
+    torus:shapeBody,ball:sphereBody,
+    step:function(dt) {
+      //---
+      world.step(1.0/60.0,10/1000,3);
+      drawCanvas();
+      //...
+    }
+    };
+    
+    
+    
+    if (0) {
+    setInterval(function() {
+      //---
+      world.step(1.0/60.0,10/1000,3);
+      drawCanvas();
+      //...
+    }
+      ,10);
+      return;
+    }
+    
+    
+    var fixedTimeStep=1.0/60.0; // seconds
+    var maxSubSteps=3;
+    
+    // Start the simulation loop
+    var lastTime;
+    (function simloop(time) {
+      requestAnimationFrame(simloop);
+      console.log(time);
+      if (lastTime!==undefined){
+         var dt=10/1000;//(time-lastTime)/1000;
+         //onsole.log(dt);
+         world.step(fixedTimeStep,dt,maxSubSteps);
+      }
+      
+      drawCanvas();
+      //onsole.log("Sphere z position: " + sphereBody.position.z);//+' '+x+' '+y);
+      
+      
+      lastTime=time;
+    }
+    )();
+    
+    
+    
+    //...
+  }
+  
   //---
 }
 )(Conet);
@@ -914,7 +1140,6 @@ console.log('Conet '+Conet.version);
 //fr o,1
 //fr o,1,5,4
 //fr o,1,7,22
-//fr o,1,10
 //fr o,1,10,3
 //fr o,1,10,4
 //fr o,1,10,5
@@ -932,5 +1157,6 @@ console.log('Conet '+Conet.version);
 //fr o,1,52,5
 //fr o,1,61,3
 //fr o,1,62,2
-//fr o,1,106
-//fr p,17,137
+//fr o,1,114,2
+//fr o,1,114,11
+//fr p,25,128

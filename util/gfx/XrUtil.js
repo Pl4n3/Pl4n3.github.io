@@ -5,7 +5,7 @@ import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFa
 let XrUtil={};
 (function(pself) {
   //---
-  let version='v.1.624 ',//FOLDORUPDATEVERSION
+  let version='v.1.626 ',//FOLDORUPDATEVERSION
       self=pself,ctrl0,ctrl1,gp0,gp1,camera,scene,room,vrPos,huds=[],hudMesh,
       hud={lines:['XrUtil '+version],cursor:{x:0.5,y:0.5,vis:false},buttons:[]},
       raycaster,INTERSECTED,hudCount=0,needDrawUi=false,input,uisc=2,gps,
@@ -970,6 +970,7 @@ let XrUtil={};
     function save(ps) {
       //---
       let fn=ps.fn;//mFn.s;
+      if (dir)
       if (dir.a[dir.i].fn!=fn) { //---update dir
         dir.i=undefined;
         for (let i=dir.a.length-1;i>=0;i--) {
@@ -1113,8 +1114,9 @@ export { XrUtil };
 //fr o,5,27
 //fr o,5,30
 //fr o,5,30,1
+//fr o,5,32
 //fr o,5,32,12
 //fr o,5,32,19
 //fr o,5,32,23
 //fr o,5,32,25
-//fr p,11,31
+//fr p,8,635

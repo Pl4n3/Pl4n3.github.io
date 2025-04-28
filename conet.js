@@ -1,7 +1,7 @@
 var Conet={};
 (function(Conet) {
   Conet.offline=false;
-  Conet.version='1.595 ';//FOLDORUPDATEVERSION
+  Conet.version='1.608 ';//FOLDORUPDATEVERSION
   Conet.files={};
   var uploads={},fns,logc,logs=[],//fn=>data,first
       logSameLineCount=0,ac,downloads={},PI=Math.PI;
@@ -32,6 +32,17 @@ var Conet={};
       return;
     }
     
+    if (!Conet.checkOnline()) { //no upload possible
+      console.log('Uploaded to ls: '+p.fn);
+      localStorage['conet2d'+p.fn]=p.data;
+      if (p.f) p.f();
+      let index=JSON.parse(localStorage['conet2index']||'{}');
+      if (!index[p.fn]) index[p.fn]={uploads:0};
+      index[p.fn].uploads++;
+      console.log(index);
+      localStorage['conet2index']=JSON.stringify(index);
+      return;
+    }
     
     var fn=p.fn,uh=uploads[fn];
     if (uh) {  uh.data=p.data;uh.first=!p.append;return; }//true
@@ -81,6 +92,14 @@ var Conet={};
       fh:1, //used in Conet.load
     });
     
+    if (!Conet.checkOnline()) {
+      let data=localStorage['conet2d'+p.fn];
+      if (data) {
+        console.log('Download from ls: '+p.fn);
+        p.f(data);
+        return;
+      }
+    }
     
     if (p.cache) {
       var dl=downloads[p.fn];
@@ -902,7 +921,9 @@ var Conet={};
   Conet.checkOnline=function() {
     //---
     let online=document.URL.indexOf(':7000')!=-1;
-    //--- maybe also set here Conet.offline
+    //--- probably dont set here Conet.offline, as Conet.offline is
+    //--- for broken connections to :7000. If connection if ok again
+    //--- with Conet.offline, changed files from ls are uploaded to :7000
     return online;
     //...
   }
@@ -1139,7 +1160,10 @@ var Conet={};
 console.log('Conet '+Conet.version);
 //fr o,1
 //fr o,1,5,4
-//fr o,1,7,22
+//fr o,1,6
+//fr o,1,7
+//fr o,1,7,28
+//fr o,1,7,30
 //fr o,1,10,3
 //fr o,1,10,4
 //fr o,1,10,5
@@ -1157,6 +1181,7 @@ console.log('Conet '+Conet.version);
 //fr o,1,52,5
 //fr o,1,61,3
 //fr o,1,62,2
+//fr o,1,106
 //fr o,1,114,2
 //fr o,1,114,11
-//fr p,25,128
+//fr p,11,229

@@ -1,0 +1,75 @@
+<!doctype html><html><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, user-scalable=yes, minimum-scale=1.0, maximum-scale=10.0">
+</head>
+<body bgcolor="#aaaaaa" style="font-family:sans-serif;box-sizing:border-box;">
+<h1>LocalStorage Uploads:</h1>
+Following files were uploaded to localStorage:
+<script type="text/javascript">
+(function() {
+  //--
+  let s=localStorage['conet2index'];
+  if (!s) return;
+  let d=JSON.parse(s);
+  for (let fn of Object.keys(d)) {
+    let c=document.createElement('div');
+    let fdata=localStorage['conet2d'+fn];
+    let b=document.createElement('button');
+    b.innerHTML='Share';
+  b.onclick=function() {
+    //---
+    //alert(fn);
+    async function share() {
+      //---
+      try {
+        await navigator.share({title:fn,text:fdata});
+        console.log('share success');
+      } catch (err) {
+        console.log(`Error: ${err}`);
+      }
+      //...
+    }
+    
+    share();
+    //...
+  }
+    c.appendChild(b);
+    c.appendChild(document.createTextNode(fn+' '+JSON.stringify(d[fn])+' '+fdata.length+'b'));
+    d[fn].data=fdata;
+    document.body.appendChild(c);
+  
+    c=document.createElement('div');
+    c.style.paddingRight='5px';
+    let ta=document.createElement('textarea');
+    ta.style.width='100%';
+    ta.style.height='100px';
+    ta.value=fdata;
+    c.appendChild(ta);
+    document.body.appendChild(c);
+  }
+  //onsole.log(d);
+  let c=document.createElement('div');
+  c.style.marginTop='10px';
+  let alldata=JSON.stringify({what:'lsUploads',files:d});
+  c.appendChild(document.createTextNode('Everything '+alldata.length+'b'));
+  document.body.appendChild(c);
+  
+  c=document.createElement('div');
+  c.style.paddingRight='5px';
+  let ta=document.createElement('textarea');
+  ta.style.width='100%';
+  ta.style.height='200px';
+  ta.value=alldata;
+  c.appendChild(ta);
+  document.body.appendChild(c);
+  //...
+}
+)();
+</script>
+
+</body>
+</html><script>
+//fr o,8
+//fr o,8,9
+//fr o,8,9,2
+//fr p,15,11

@@ -5,7 +5,7 @@ function Sculpt(gps) {
   
   this.load=function(v,initLoad) {
     //---
-    let d=JSON.parse(v),skips=0;
+    let d=((typeof(v)=='string')?JSON.parse(v):v),skips=0;
     points.length=2;
     grid={};
     //points=points.concat(d.points);
@@ -131,7 +131,7 @@ function Sculpt(gps) {
 
 (function() {
   //---
-  let what='Sculpt v.0.193 ';//FOLDORUPDATEVERSION
+  let what='Sculpt v.0.205 ';//FOLDORUPDATEVERSION
   //let sculptUpdate;
   
   if (window.w3ditScriptInit)
@@ -140,10 +140,10 @@ function Sculpt(gps) {
     //et sculpt=new Sculpt();
     let xrUtil=ips.xrUtil;
     //onsole.log(sculpt.blob);
-    Conet.download({fn:ips.mesh.userData.op.fn,f:function(v) {
+    function init(v) {
       //---
       //onsole.log(v.length);
-      xrUtil.log('Sculpt loaded: '+this.fn);
+      //xrUtil.log('Sculpt loaded: '+this.fn);
       let sculpt=new Sculpt(),needUpdate=false,ui=undefined,
           lastSelectedPoint;
           //points=[];//---editxr points with ref to sculpt points
@@ -353,17 +353,35 @@ function Sculpt(gps) {
       
       ips.mesh.userData.onserialize=function() {
         //---
-        let d=sculpt.serialize(),
-            fn=ips.mesh.userData.op.fn;
+        let d=sculpt.serialize();
         //for (let p of points) {}
-        
-        ips.xrUtil.log('Saving sculpt '+fn+' '+d.length);//+modes.diff.canv+' '+modes.norm.canv+' '+modes.spec.canv);
-        Conet.upload({fn:fn,data:d});
+        if (0) {
+          let fn=ips.mesh.userData.op.fn;
+          ips.xrUtil.log('Saving sculpt '+fn+' '+d.length);//+modes.diff.canv+' '+modes.norm.canv+' '+modes.spec.canv);
+          Conet.upload({fn:fn,data:d});
+        } else {
+          ips.mesh.userData.op.data=JSON.parse(d);
+          delete(ips.mesh.userData.op.fn);
+        }
         //...
       }
       //...
     }
-    }); 
+    //---
+    let op=ips.mesh.userData.op;
+    if (op.fn)
+    Conet.download({fn:op.fn,f:function(v) {
+      //---
+      //onsole.log(v.length);
+      xrUtil.log('Sculpt loaded: '+this.fn);
+      init(v);
+      //...
+    }
+    });
+    else {
+      xrUtil.log('Sculpt via embedded data.');
+      init(op.data);
+    }
     //...
   }
   ,_renderf:function(dt) {
@@ -386,15 +404,5 @@ function Sculpt(gps) {
 //fr o,1,9
 //fr o,3
 //fr o,3,5
-//fr o,3,5,4
-//fr o,3,5,4,7
-//fr o,3,5,4,9
-//fr o,3,5,4,12
-//fr o,3,5,4,15
-//fr o,3,5,4,18
-//fr o,3,5,4,18,16
-//fr o,3,5,4,18,21
-//fr o,3,5,4,18,26
-//fr o,3,5,4,51
 //fr o,3,6
-//fr p,2,267
+//fr p,34,127

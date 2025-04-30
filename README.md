@@ -3,7 +3,7 @@
 <!-- 1. [cubes124](/test/webvr/cubes124.htm) -->
 
 1. [localStorage uploads](/util/io/lsUploads.htm)
-1. [editXr file:sculptScape](/test/webvr/edit.htm?file=file:sculptScape)
+1. [editXr file:sculptScape](/test/webvr/edit.htm?file=file:sculptScapeEmbed)
 1. [editXr file:cannCyl (tripod,templar,jumpscare)](/test/webvr/edit.htm?file=file:cannCyl)
 1. [Learn 𝄞,𝄢 Notenames](/anim/arrows/canv.htm?fn=/anim/arrows/canvNotes/learn/main.js)
 1. [SimplePaint](/canvas/paint/simplePaint.htm)

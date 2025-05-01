@@ -131,7 +131,7 @@ function Sculpt(gps) {
 
 (function() {
   //---
-  let what='Sculpt v.0.205 ';//FOLDORUPDATEVERSION
+  let what='Sculpt v.0.209 ';//FOLDORUPDATEVERSION
   //let sculptUpdate;
   
   if (window.w3ditScriptInit)
@@ -192,14 +192,14 @@ function Sculpt(gps) {
         
         
         let op=pn.userData.op,newParams=op.sculpt;
-        console.log('pointPropsChanged '+(newParams?1:0));
+        console.log('pointPropsChanged newParams:'+(newParams?1:0));
         if (!newParams) return;
         
         let sp;
         if (p) sp=p.userData.sculptp;
         else { //---create new sculptp
           //hrow('n/i');
-          sp={position:{}}
+          sp=newParams;//{position:{}}
           sculpt.etPoints().push(sp);
         }
         
@@ -404,5 +404,9 @@ function Sculpt(gps) {
 //fr o,1,9
 //fr o,3
 //fr o,3,5
+//fr o,3,5,4
+//fr o,3,5,4,12
+//fr o,3,5,4,18
+//fr o,3,5,4,51
 //fr o,3,6
-//fr p,34,127
+//fr p,17,155

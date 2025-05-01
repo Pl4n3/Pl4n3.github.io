@@ -450,7 +450,10 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
           x/=sels.length;y/=sels.length;z/=sels.length;
         }
         
-        let op=sels.length==1?Conet.hcopy(sels[0].userData.op):{};
+        //let op=sels.length==1?Conet.hcopy(sels[0].userData.op):{};
+        //--- for sculpt we need deep copy
+        let op=sels.length==1?JSON.parse(JSON.stringify(sels[0].userData.op)):{};
+        
         op.x=x;op.y=y;op.z=z;
         
         //let g=new THREE.BoxGeometry(0.01,0.01,0.01);
@@ -664,7 +667,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     //\u25b2 \u25bc
     
-    const version='v.0.1633 ';//FOLDORUPDATEVERSION
+    const version='v.0.1641 ';//FOLDORUPDATEVERSION
     xrUtil.log('Edit '+version);
     
     //
@@ -902,7 +905,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
         }
         //with right click add new point copy
         //onsole.log(e);
-        if (doAdd) mPoint.ondown();
+        if (doAdd&&np) mPoint.ondown();
       } else {
         if (pp&&pp.visible) pp.visible=false;
         setNearestPoint(np);
@@ -1719,7 +1722,9 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     mPindex.s=sels.length==0?'':points.indexOf(sels[sels.length-1]);
     
     if (l!=sels.length)
-      xrUtil.log('Selected:'+sels.length);
+      xrUtil.log('Selected:'+sels.length
+        //+(sels.length>0?' #'+points.indexOf(sels[sels.length-1]):'')
+        );
     //...
   }
   function serialize() {
@@ -1834,7 +1839,6 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,34,20,87
 //fr o,34,20,87,1
 //fr o,34,20,155
-//fr o,34,20,159
 //fr o,34,20,164
 //fr o,34,20,167
 //fr o,34,20,170
@@ -1845,8 +1849,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,34,20,243
 //fr o,34,31,10
 //fr o,34,31,11
-//fr o,34,34
-//fr o,34,44
+//fr o,34,32
 //fr o,34,45
 //fr o,34,47
-//fr p,29,749
+//fr p,0,430

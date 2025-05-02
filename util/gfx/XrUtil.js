@@ -5,7 +5,7 @@ import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFa
 let XrUtil={};
 (function(pself) {
   //---
-  let version='v.1.626 ',//FOLDORUPDATEVERSION
+  let version='v.1.629 ',//FOLDORUPDATEVERSION
       self=pself,ctrl0,ctrl1,gp0,gp1,camera,scene,room,vrPos,huds=[],hudMesh,
       hud={lines:['XrUtil '+version],cursor:{x:0.5,y:0.5,vis:false},buttons:[]},
       raycaster,INTERSECTED,hudCount=0,needDrawUi=false,input,uisc=2,gps,
@@ -959,7 +959,7 @@ let XrUtil={};
         //onsole.log('load file nao: '+fn);
         fn=path+'/'+fn.substr(5)+'.json';
         self.log('Fileload: '+fn);
-        Conet.download({fn:fn,f:ps.load});
+        Conet.download({fn:fn,f:ps.load,log:self.log});
         return;
       } 
       let ls=localStorage[lsFnKey(fn)];
@@ -994,11 +994,11 @@ let XrUtil={};
       let s=ps.data;//serialize();
       if (fn.startsWith('file:')) {
         fn=path+'/'+fn.substr(5)+'.json';
-        self.log('Filesave: '+fn);
-        Conet.upload({fn:fn,data:s});
+        //elf.log('Filesave: '+fn);
+        Conet.upload({fn:fn,data:s,log:self.log});
       } else 
         localStorage[lsFnKey(fn)]=s;
-      self.log('Saved '+s.length+' bytes.');
+      self.log('Saved '+s.length+'b.');
       //...
     }
     
@@ -1119,4 +1119,4 @@ export { XrUtil };
 //fr o,5,32,19
 //fr o,5,32,23
 //fr o,5,32,25
-//fr p,8,635
+//fr p,29,663

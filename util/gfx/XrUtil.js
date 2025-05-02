@@ -5,7 +5,7 @@ import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFa
 let XrUtil={};
 (function(pself) {
   //---
-  let version='v.1.629 ',//FOLDORUPDATEVERSION
+  let version='v.1.635 ',//FOLDORUPDATEVERSION
       self=pself,ctrl0,ctrl1,gp0,gp1,camera,scene,room,vrPos,huds=[],hudMesh,
       hud={lines:['XrUtil '+version],cursor:{x:0.5,y:0.5,vis:false},buttons:[]},
       raycaster,INTERSECTED,hudCount=0,needDrawUi=false,input,uisc=2,gps,
@@ -339,9 +339,14 @@ let XrUtil={};
       //...
     }
     
-    let ks=[esc='␛','0','1','2','3','4','5','6','7','8','9','.','-',backspace='⇦',enter='⏎'];
-    for (let i=0;i<ks.length;i++) {
-      let b={x:0.02+i*0.06,y:0.3,w:0.05,h:0.07,s:ks[i],ondown:ondown};
+    let ks=[
+    [esc='␛','0','1','2','3','4','5','6','7','8','9','.','-',backspace='⇦',enter='⏎']
+    ,['A','B','C','D','E','F']
+    ];
+    for (let i=0;i<ks.length;i++) 
+    for (let j=0;j<ks[i].length;j++) 
+    {
+      let b={x:0.02+j*0.06,y:0.29+i*0.05,w:0.05,h:0.05,s:ks[i][j],ondown:ondown};
       hud.buttons.push(b);a.push(b);
     }
     needDrawUi=true;
@@ -1119,4 +1124,4 @@ export { XrUtil };
 //fr o,5,32,19
 //fr o,5,32,23
 //fr o,5,32,25
-//fr p,29,663
+//fr p,29,274

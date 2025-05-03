@@ -14,6 +14,7 @@ Following files were uploaded to localStorage:
   for (let fn of Object.keys(d)) {
     let c=document.createElement('div');
     let fdata=localStorage['conet2d'+fn];
+    
     let b=document.createElement('button');
     b.innerHTML='Share';
   b.onclick=function() {
@@ -34,8 +35,22 @@ Following files were uploaded to localStorage:
     //...
   }
     c.appendChild(b);
+    
+    b=document.createElement('button');
+    b.innerHTML='Delete';
+  b.onclick=function()   {
+    //---
+    localStorage['conet2d'+fn]=undefined;
+    delete(d[fn]);
+    localStorage['conet2index']=JSON.stringify(d);
+    window.location.reload();
+    //...
+  }
+    c.appendChild(b);
+    
+    
     c.appendChild(document.createTextNode(fn+' '+JSON.stringify(d[fn])+' '+fdata.length+'b'));
-    d[fn].data=fdata;
+    //d[fn].data=fdata; //needed for alldata but problematic in delete, dont bloat d
     document.body.appendChild(c);
   
     c=document.createElement('div');
@@ -48,6 +63,7 @@ Following files were uploaded to localStorage:
     document.body.appendChild(c);
   }
   //onsole.log(d);
+  if (0) { 
   let c=document.createElement('div');
   c.style.marginTop='10px';
   let alldata=JSON.stringify({what:'lsUploads',files:d});
@@ -62,6 +78,7 @@ Following files were uploaded to localStorage:
   ta.value=alldata;
   c.appendChild(ta);
   document.body.appendChild(c);
+  }
   //...
 }
 )();
@@ -70,6 +87,7 @@ Following files were uploaded to localStorage:
 </body>
 </html><script>
 //fr o,8
-//fr o,8,9
-//fr o,8,9,2
-//fr p,15,11
+//fr o,8,10
+//fr o,8,10,2
+//fr o,8,15
+//fr p,82,52

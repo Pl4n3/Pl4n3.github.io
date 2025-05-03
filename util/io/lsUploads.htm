@@ -3,8 +3,8 @@
 <meta name="viewport" content="width=device-width, user-scalable=yes, minimum-scale=1.0, maximum-scale=10.0">
 </head>
 <body bgcolor="#aaaaaa" style="font-family:sans-serif;box-sizing:border-box;">
-<h1>LocalStorage Uploads:</h1>
-Following files were uploaded to localStorage:
+<h1>LocalStorage Uploads</h1>
+V.0.1 <b>Following files were uploaded to localStorage:</b>
 <script type="text/javascript">
 (function() {
   //--
@@ -40,7 +40,7 @@ Following files were uploaded to localStorage:
     b.innerHTML='Delete';
   b.onclick=function()   {
     //---
-    localStorage['conet2d'+fn]=undefined;
+    localStorage.removeItem('conet2d'+fn);
     delete(d[fn]);
     localStorage['conet2index']=JSON.stringify(d);
     window.location.reload();
@@ -90,4 +90,4 @@ Following files were uploaded to localStorage:
 //fr o,8,10
 //fr o,8,10,2
 //fr o,8,15
-//fr p,82,52
+//fr p,59,6

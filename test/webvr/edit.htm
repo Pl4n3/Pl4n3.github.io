@@ -667,7 +667,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     //\u25b2 \u25bc
     
-    const version='v.0.1641 ';//FOLDORUPDATEVERSION
+    const version='v.0.1646 ';//FOLDORUPDATEVERSION
     xrUtil.log('Edit '+version);
     
     //
@@ -1051,6 +1051,17 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       //...
     }
     }
+      
+    ,{ms:'AutoRotate',checkbox:1,
+    actionf:function() {
+      //---
+      //console.log(this.checked);
+      controls.autoRotate=this.checked;
+      //...
+    }
+    }
+      
+      
       ]} 
       
       ]
@@ -1640,6 +1651,8 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
           updateMesh();
         }
       }
+    } else {
+      controls.update();
     }
     
     //xrUtil.renderHud();
@@ -1675,7 +1688,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     //for (let sc of Object.values(scripts)) if (sc.renderf) sc.renderf(dt);
     for (let sc of scripta) if (sc.renderf) sc.renderf(dt);
-    Conet.handlerRun('render');
+    Conet.handlerRun('render',dt);
     //console.log(scripta.length);
     
     //threeRender(dt);
@@ -1846,10 +1859,11 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,34,20,203
 //fr o,34,20,204
 //fr o,34,20,205
-//fr o,34,20,243
+//fr o,34,20,249
 //fr o,34,31,10
 //fr o,34,31,11
 //fr o,34,32
+//fr o,34,44
 //fr o,34,45
 //fr o,34,47
-//fr p,0,430
+//fr p,28,981

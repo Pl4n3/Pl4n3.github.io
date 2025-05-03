@@ -131,7 +131,7 @@ function Sculpt(gps) {
 
 (function() {
   //---
-  let what='Sculpt v.0.209 ';//FOLDORUPDATEVERSION
+  let what='Sculpt v.0.225 ';//FOLDORUPDATEVERSION
   //let sculptUpdate;
   
   if (window.w3ditScriptInit)
@@ -145,8 +145,29 @@ function Sculpt(gps) {
       //onsole.log(v.length);
       //xrUtil.log('Sculpt loaded: '+this.fn);
       let sculpt=new Sculpt(),needUpdate=false,ui=undefined,
-          lastSelectedPoint;
+          lastSelectedPoint,
+          anim=undefined;
           //points=[];//---editxr points with ref to sculpt points
+      
+      //onsole.log('cmd: sculptAnimate();');
+      function sculptAnimate() {
+        //---
+        if (anim) {
+          sculpt.etPoints(anim.ogPoints);
+          anim=undefined;
+        } else {
+          anim={
+            ogPoints:sculpt.etPoints(),
+            t:0,
+          };
+          anim.a=[anim.ogPoints[0]];
+          sculpt.etPoints(anim.a);
+        }
+        needUpdate=true;
+        //...
+      }
+      xrUtil.hud.buttons.push({s:'Anim',ms:'sculpt',x:0.37,y:0.7,w:0.2,h:0.08,ondown:sculptAnimate});
+      
       
       function onchange(p) {
         //---
@@ -167,8 +188,23 @@ function Sculpt(gps) {
         //...
       }
       
-      Conet.handlerAdd('render',function() {
+      Conet.handlerAdd('render',function(dt) {
         //---
+        if (anim) {
+          anim.t+=dt;
+          let mt=25;
+          while (anim.t>mt) {
+            anim.t-=mt;
+            needUpdate=true;
+            if (anim.a.length<anim.ogPoints.length)
+              anim.a.push(anim.ogPoints[anim.a.length]);
+            else {
+              sculptAnimate();break;//anim.a.length=1;
+            }
+          }
+        }
+        
+        
         //if (sculptUpdate) { sculptUpdate.updateBlob();sculptUpdate=undefined; }
         if (!needUpdate) return;
         needUpdate=false;
@@ -401,12 +437,15 @@ function Sculpt(gps) {
 //fr o,1
 //fr o,1,3
 //fr o,1,3,8
+//fr o,1,5
 //fr o,1,9
 //fr o,3
 //fr o,3,5
 //fr o,3,5,4
-//fr o,3,5,4,12
+//fr o,3,5,4,9
+//fr o,3,5,4,15
 //fr o,3,5,4,18
-//fr o,3,5,4,51
+//fr o,3,5,4,24
+//fr o,3,5,4,57
 //fr o,3,6
-//fr p,17,155
+//fr p,11,159

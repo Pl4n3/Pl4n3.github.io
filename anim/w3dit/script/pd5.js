@@ -5,11 +5,14 @@
       phys,physWalks=[],pha=[0,0,0,0,0,0],tsd,cannon,
       q0=new THREE.Quaternion(),q1=new THREE.Quaternion(),
       v0=new THREE.Vector3(),xrUtil,
-      grabMesh,grabMeshMatrix,
-      initps,tweens=[];//---here to prototype, suboptimal as there could be different initps, 
+      grabMesh,grabMeshMatrix,room,
+      initps,tweens=[],//---here to prototype, suboptimal as there could be different initps, 
+      m0=new THREE.Matrix4(),m1=new THREE.Matrix4(),m2=new THREE.Matrix4(),
+      rotateRoom=1,roomAngleD=Math.PI;
   
   //----cannonstuff
-  let cannonsc=0,player;
+  let cannonsc=0,player,cannonTriMesh=undefined,triMeshBody,sculptBody,sculptVersion=-1,
+      groundMaterial;
   function cannonBoxMeshUpdate(box) {
     //---
     let sc=cannonsc,pos=box.pos;
@@ -37,122 +40,248 @@
       //o5.x=(sc*pos.x-p.position.x)*s2;
       //o5.y=(sc*pos.z-p.position.y-sc*box.dim.z)*s2;
       //o5.z=(sc*-pos.y-p.position.z)*s2;
-      let m=o5.meshes[0].tmesh;
-      m.position.set(
-        sc*pos.x-p.position.x,
-        sc*pos.z-p.position.y-sc*box.dim.z,
-        sc*-pos.y-p.position.z);
+      let m=o5.meshes[0].tmesh,mpos=m.position,ppos=p.position;
+      mpos.set(
+        sc*pos.x-ppos.x,
+        sc*pos.z-ppos.y-sc*box.dim.z,
+        sc*-pos.y-ppos.z);
+      if (player===box) {
+        //onsole.log('set room');
+        let vp=initps.editxr.vrPos;
+        ////console.log(vp.x+' '+vp.y+' '+vp.z);
+        //room.position.set(-mpos.x+vp.x,-mpos.y+vp.y,-mpos.z+vp.z);
+        ////onsole.log(o5.ay);
+        if (rotateRoom) {
+          //room.rotation.y=-o5.ay;
+          room.matrixAutoUpdate=false;
+          room.matrix.identity();
+          
+          room.matrix.multiply(m0.makeScale(room.scale.x,room.scale.y,room.scale.z));
+          
+          room.matrix.multiply(m0.makeTranslation(vp.x+ppos.x,vp.y+ppos.y,vp.z+ppos.z));
+          room.matrix.multiply(m0.makeRotationY(-o5.ay+roomAngleD));//---add a offset here
+          room.matrix.multiply(m0.makeTranslation(-mpos.x-ppos.x,-mpos.y-ppos.y,-mpos.z-ppos.z));
+          //250619 no effect here: 
+          room.matrixWorldNeedsUpdate=true;
+        } else { 
+          room.matrixAutoUpdate=true;
+        }
+      }
     }
     //...
   }
-  //--------------
-  
-  
-  //---
-  function onSelect() {
+  function cannonRender(dt) {
     //---
-    selected=this;
-    manims.s=this.o5.anim;
-    manims.ms='Pd5 Anims';
-    //...
-  }
-  //---
-  function render(dt) {
-    //---
-    Conet.calcTweens(tweens,dt);
-    
-    if (cannon) {
-    
-    
-      let c=cannon.ctrl,gp1=xrUtil.gp1,carControl=(player===undefined);
-      c.fore=(tsd[0].dy<-0.5)||(gp1&&(carControl?gp1.buttons[0]?.pressed:(gp1.axes[3]<-0.5)));//gp1.axes[3]<-0.5);Menu.keys[38]
-      c.back=(tsd[0].dy>0.5) ||(gp1&&(carControl?gp1.buttons[1]?.pressed:(gp1.axes[3]>0.5)));//&&gp1.axes[3]>0.5);Menu.keys[40]
-      c.left=(tsd[0].dx<-0.5)||(gp1&&gp1.axes[2]<-0.5);//Menu.keys[37]
-      c.right=(tsd[0].dx>0.5)||(gp1&&gp1.axes[2]>0.5);//Menu.keys[39]
-      c.brake=Menu.keys[66]||(gp1&&gp1.buttons[4]?.pressed);
-      let z=cannon.ctrlOld,change=false;
-      for (let k of Object.keys(c)) {
-        if (z[k]!=c[k]) { z[k]=c[k];change=true; }
+    if (cannonTriMesh!=initps.editxr.mesh) {
+      cannonTriMesh=initps.editxr.mesh;
+      let bg=cannonTriMesh.geometry;
+      //let pos=bg.getAttribute('position');
+      
+      //onsole.log(cannonTriMesh);
+      console.log('cannon trimesh update.');
+      //onsole.log(pos.array.length);
+      //onsole.log(bg.index.array.length);
+      Sound.vol=0.1;
+      
+      if (triMeshBody) cannon.world.remove(triMeshBody);
+      let a0=bg.getAttribute('position').array,a1=[];
+      let i=0,sc=cannonsc;
+      while (i<a0.length) {
+        let x=a0[i],y=a0[i+1],z=a0[i+2];
+        a1.push(x/sc,-z/sc,y/sc);
+        i+=3;
       }
-      //f (xrUtil.gp1) console.log(xrUtil.gp1.buttons[0].pressed+' '+xrUtil.gp1.buttons[1].pressed+' '+xrUtil.gp1.buttons[2].pressed+' '+xrUtil.gp1.buttons[3].pressed+' '+xrUtil.gp1.buttons[4].pressed+' '+xrUtil.gp1.buttons[5].pressed+' '+xrUtil.gp1.buttons[6].pressed);
-      //f (gp1) console.log(gp1.axes);
-      if (carControl&&change) {
-        //onsole.log(c);//Menu.keys[38]);
+      
+      
+      let shape=new CANNON.Trimesh(a1,bg.index.array);//[0,0,0, 9,0,0, 0,0,9],[0,1,2,0,2,1]);
+      let shapeBody = new CANNON.Body({ mass:0 });
+      shapeBody.addShape(shape);
+      //var pos = new CANNON.Vec3(0,0,size);
+      shapeBody.position.set(0,0,0);
+      //shapeBody.velocity.set(0,1,1);
+      //shapeBody.angularVelocity.set(0,0,0);
+      cannon.world.add(shapeBody);triMeshBody=shapeBody;
+    }
     
-        let maxSteerVal=0.5,
-            maxForce=1000,
-            brakeForce=1000000,
-            vehicle=cannon.vehicle;
-        
-        vehicle.setBrake(0, 0);
-        vehicle.setBrake(0, 1);
-        vehicle.setBrake(0, 2);
-        vehicle.setBrake(0, 3);
+    let smi=initps.editxr.sculptMeshInfo;
+    //onsole.log('smi='+smi);
+    if (smi) {
+      if (!smi.anim&&(smi.version>sculptVersion)) {
+        sculptVersion=smi.version;
+        console.log('cannon update sculptBody');
+        //onsole.log(smi.mesh);
+        if (sculptBody) cannon.world.remove(sculptBody);
+        let bg=smi.mesh.geometry;
+        let a0=bg.getAttribute('position').array;
     
-        let f=((c.fore?-1:0)+(c.back?1:0))*maxForce;
-        vehicle.applyEngineForce(f,2);
-        vehicle.applyEngineForce(f,3);
+        console.log('drawRange.count='+bg.drawRange.count);
+        //for (let i=0;i<bg.drawRange.count/1;i++) 
+        //for (let i=30000;i<60000;i++)
+        //let i0=30000,i1=60000;
+        let maxVerts=63000;
+        let i0=0,//126000,
+            i1=0;//153000;
+            
+        while (1) {
+          i0=i1;
+          if (i0==bg.drawRange.count*3) break;
+          i1=Math.min(i0+maxVerts,bg.drawRange.count*3);
+          console.log('i0='+i0+' i1='+i1);
+            
+        let index=[],a1=[];
+        for (let i=i0;i<i1;i++)
+          index.push(i-i0);//[i*3,i*3+1,i*3+2]);//Mi);
+    let i=i0,sc=cannonsc,pp=smi.mesh.parent.position;
+    //onsole.log('pp '+pp.x+' '+pp.y+' '+pp.z);
+    while (i<i1) {//bg.drawRange.count*3) {
+      let x=a0[i],y=a0[i+1],z=a0[i+2];
+      //let x=a0[i]+pp.x,y=a0[i+1]+pp.y,z=a0[i+2]+pp.z;
+      x+=pp.x;y+=pp.y;z+=pp.z;
+      //a1.push(x/sc,-z/sc,y/sc);
+      a1.push(Conet.f4(x/sc),Conet.f4(-z/sc),Conet.f4(y/sc));
+      i+=3;
+    }
+    
         
-        if (c.brake) {
-          vehicle.setBrake(brakeForce, 0);
-          vehicle.setBrake(brakeForce, 1);
-          vehicle.setBrake(brakeForce, 2);
-          vehicle.setBrake(brakeForce, 3);
+        if (0) {
+          let g=new THREE.BufferGeometry();
+          //g.setAttribute('position',bg.getAttribute('position'));
+          g.setAttribute('position',new THREE.Float32BufferAttribute(a1,3));
+          
+          g.setIndex(index);
+          //g.drawRange=bg.drawRange;
+          let m=new THREE.Mesh(g,
+            new THREE.MeshBasicMaterial({color:0x66aa66,transparent:true,opacity:0.7,depthTest:false})
+          );
+          m.scale.set(sc,sc,sc);
+          initps.editxr.room.add(m);
         }
         
-        let s=((c.right?-1:0)+(c.left?1:0))*maxSteerVal;
-        vehicle.setSteeringValue(s,0);
-        vehicle.setSteeringValue(s,1);
-        
-      }
+        if (1) {
+        //onsole.log(bg.drawRange);
     
-      let xrAy=xrUtil.getAy();
-      if (1) 
-      for (let p of initps.points) if (p.userData.op.box
-        &&p.userData.cannonBox
-        ) {
-        //p.userData.cannonBox.mesh.position.x+=0.001;
-        let op=p.userData.op;
-        
-        
-        
-        op.x=p.position.x;
-        op.y=p.position.y;
-        op.z=p.position.z;
-        //onsole.log(op.x);
-        let box=p.userData.cannonBox,f=0.1/cannonsc;
-        if (op.mass) {
-          //onsole.log(box.body.position.z);
-          let body=box.body,p0=body.position;
-          box.pos.x=p0.x;box.pos.y=p0.y;box.pos.z=p0.z;
-          //body.quaternion.set(b.quat.x,b.quat.y,b.quat.z,b.quat.w);
-          if (!box.quat) box.quat={};
-          let q=body.quaternion;
-          box.quat.x=q.x;
-          box.quat.y=q.y;
-          box.quat.z=q.z;
-          box.quat.w=q.w;
-          let o5=box.point.userData.o5;
-          if (o5&&(o5.ay===undefined)) o5.ay=0;
-          if (box.ay===undefined) box.ay=0;
-          let turna=undefined;
-          let fore=undefined;
-          if (box===player) {
-            let x0=(c.left?-1:0)+(c.right?1:0);
-            let y0=(c.fore?1:0)+(c.back?-1:0);
-            //body.velocity.x=0;
-            //body.velocity.y=0;
-            if ((x0!=0)||(y0!=0)) {
-              //let a=xrUtil.getAy();
-              //console.log('a='+a);
-              //let x1=x0*Math.cos(ay)-y0*Math.sin(ay);
-              //let y1=y0*Math.cos(ay)+x0*Math.sin(ay);
-              //body.velocity.x=x1*6;
-              //body.velocity.y=y1*6;
-              //let o5=box.point.userData.o5;
-              //if (o5) {
-                turna=Math.atan2(y0,x0)+xrAy+Math.PI/2;
-                fore=true;
+        let shape=new CANNON.Trimesh(a1,index);
+        let shapeBody=new CANNON.Body({mass:0,material:groundMaterial});
+        shapeBody.addShape(shape);
+        shapeBody.position.set(0,0,0);
+        cannon.world.add(shapeBody);sculptBody=shapeBody;
+        if (0)
+        shapeBody.addEventListener('collide',
+    function (e) {
+      //---
+      console.log(e.contact);
+      let c=e.contact;
+      //contactpoints (via https://github.com/schteppe/cannon.js/issues/303)
+      //c.bi.position + c.ri
+      //c.bj.position + c.rj
+      
+      //...
+    }
+        ); 
+     
+        //let sh=JSON.stringify([a1,index]);
+        //Conet.upload({fn:'/anim/w3dit/sculptCannonTriMesh.json',data:sh});
+        //console.log('sh.len='+sh.length); 
+        }
+        }
+      }
+    }
+    
+    let c=cannon.ctrl,gp1=xrUtil.gp1,carControl=(player===undefined);
+    c.fore=(tsd[0].dy<-0.5)||(gp1&&(carControl?gp1.buttons[0]?.pressed:(gp1.axes[3]<-0.5)));//gp1.axes[3]<-0.5);Menu.keys[38]
+    c.back=(tsd[0].dy>0.5) ||(gp1&&(carControl?gp1.buttons[1]?.pressed:(gp1.axes[3]>0.5)));//&&gp1.axes[3]>0.5);Menu.keys[40]
+    c.left=(tsd[0].dx<-0.5)||(gp1&&gp1.axes[2]<-0.5);//Menu.keys[37]
+    c.right=(tsd[0].dx>0.5)||(gp1&&gp1.axes[2]>0.5);//Menu.keys[39]
+    c.brake=Menu.keys[66]||(gp1&&gp1.buttons[4]?.pressed);
+    c.up=Menu.keys[32];
+    let z=cannon.ctrlOld,change=false;
+    for (let k of Object.keys(c)) {
+      if (z[k]!=c[k]) { z[k]=c[k];change=true; }
+    }
+    //f (xrUtil.gp1) console.log(xrUtil.gp1.buttons[0].pressed+' '+xrUtil.gp1.buttons[1].pressed+' '+xrUtil.gp1.buttons[2].pressed+' '+xrUtil.gp1.buttons[3].pressed+' '+xrUtil.gp1.buttons[4].pressed+' '+xrUtil.gp1.buttons[5].pressed+' '+xrUtil.gp1.buttons[6].pressed);
+    //f (gp1) console.log(gp1.axes);
+    if (carControl&&change) {
+      //onsole.log(c);//Menu.keys[38]);
+    
+      let maxSteerVal=0.5,
+          maxForce=1000,
+          brakeForce=1000000,
+          vehicle=cannon.vehicle;
+      
+      vehicle.setBrake(0, 0);
+      vehicle.setBrake(0, 1);
+      vehicle.setBrake(0, 2);
+      vehicle.setBrake(0, 3);
+    
+      let f=((c.fore?-1:0)+(c.back?1:0))*maxForce;
+      vehicle.applyEngineForce(f,2);
+      vehicle.applyEngineForce(f,3);
+      
+      if (c.brake) {
+        vehicle.setBrake(brakeForce, 0);
+        vehicle.setBrake(brakeForce, 1);
+        vehicle.setBrake(brakeForce, 2);
+        vehicle.setBrake(brakeForce, 3);
+      }
+      
+      let s=((c.right?-1:0)+(c.left?1:0))*maxSteerVal;
+      vehicle.setSteeringValue(s,0);
+      vehicle.setSteeringValue(s,1);
+      
+    }
+    
+    let xrAy=xrUtil.getAy();
+    if (1) 
+    for (let p of initps.points) if (p.userData.op.box
+      &&p.userData.cannonBox
+      ) {
+      //p.userData.cannonBox.mesh.position.x+=0.001;
+      let op=p.userData.op;
+      
+      
+      
+      op.x=p.position.x;
+      op.y=p.position.y;
+      op.z=p.position.z;
+      //onsole.log(op.x);
+      let box=p.userData.cannonBox,f=0.1/cannonsc;
+      if (op.mass) {
+        //onsole.log(box.body.position.z);
+        let body=box.body,p0=body.position;
+        box.pos.x=p0.x;box.pos.y=p0.y;box.pos.z=p0.z;
+        //body.quaternion.set(b.quat.x,b.quat.y,b.quat.z,b.quat.w);
+        if (!box.quat) box.quat={};
+        let q=body.quaternion;
+        box.quat.x=q.x;
+        box.quat.y=q.y;
+        box.quat.z=q.z;
+        box.quat.w=q.w;
+        let o5=box.point.userData.o5;
+        if (o5&&(o5.ay===undefined)) o5.ay=0;
+        if (box.ay===undefined) box.ay=0;
+        let turna=undefined;
+        let fore=undefined;//,up=undefined;
+        if (box===player) {
+          let x0=(c.left?-1:0)+(c.right?1:0);
+          let y0=(c.fore?1:0)+(c.back?-1:0);
+          //body.velocity.x=0;
+          //body.velocity.y=0;
+          if ((x0!=0)||(y0!=0)) {
+            //let a=xrUtil.getAy();
+            //console.log('a='+a);
+            //let x1=x0*Math.cos(ay)-y0*Math.sin(ay);
+            //let y1=y0*Math.cos(ay)+x0*Math.sin(ay);
+            //body.velocity.x=x1*6;
+            //body.velocity.y=y1*6;
+            //let o5=box.point.userData.o5;
+            //if (o5) {
+            if (rotateRoom) {
+              turna=-x0*0.05+o5.ay;
+              fore=y0>0;
+            } else {
+              turna=Math.atan2(y0,x0)+xrAy+Math.PI/2;
+              fore=true;
+            } 
     
     //            let da=Conet.dAng(an,box.ay),ada=Math.abs(da);
     //            box.ay+=Math.min(ada,0.005*dt)*(da<0?-1:1);
@@ -171,9 +300,9 @@
     //              body.velocity.x=x1*6;body.velocity.y=y1*6;
     //              //body.force.x=x1*20;body.force.y=y1*20;
     //            }
-                
-              //}
-              //box.point.userData.o5.ay=ay;
+              
+            //}
+            //box.point.userData.o5.ay=ay;
     //          if (o5) {
     //            console.log(o5.x);
     //            if (isNaN(o5.x)) { o5.x=0;o5.y=0;o5.z=0; }
@@ -181,133 +310,156 @@
     //            o5.y=cannonsc*p0.z;
     //            o5.z=cannonsc*-p0.y;
     //          }
-              //onsole.log(body.quaternion);
-            } else {
-              //if (o5) Pd5.animStart(o5,'stand2');
-            }
-            //let o5=box.point.userData.o5;
-            //if (o5) o5.ay=ay+Math.PI;
-            //let v;
-            //v=(c.fore?1:0)+(c.back?-1:0);if (v!=0) body.velocity.x=v*6;
-            //v=(c.left?1:0)+(c.right?-1:0);if (v!=0) body.velocity.y=v*6;
-          } else { //ai
-            let dx=player.pos.x-box.pos.x,
-                dy=player.pos.y-box.pos.y,
-                dz=player.pos.z-box.pos.z;
-            turna=Math.atan2(dy,dx)+Math.PI/2;
-            if (op.aiApproach) { 
-              let d2=dx*dx+dy*dy+dz*dz;
-              //console.log('aiApproach d2='+d2); 
-              if (d2>op.aiApproach) fore=true;
-            }
-            if (op.animRun=='run') {
-              //console.log('scale.x='+o5.meshes[0].tmesh.scale.x);
-              if (c.brake!=p.userData.wasBrake) {
-                if (c.brake) new Audio('https://cdn.freesound.org/previews/534/534218_11864320-lq.mp3').play();
-                p.userData.wasBrake=c.brake;
-                let sc=c.brake?0.5:0.04,t=100,scale=o5.meshes[0].tmesh.scale;
-                tweens.push({t:t,o:scale,key:'x',value:sc});
-                tweens.push({t:t,o:scale,key:'y',value:sc});
-                tweens.push({t:t,o:scale,key:'z',value:sc});
-                //onsole.log('sc='+sc);
-                //o5.meshes[0].tmesh.scale.set(sc,sc,sc);
-              }
-            }
-            //if (o5) { o5.ay=Math.random()*Math.PI; }
+            //onsole.log(body.quaternion);
+          } else {
+            //if (o5) Pd5.animStart(o5,'stand2');
           }
-          if (turna!==undefined) {
-            let da=Conet.dAng(turna,box.ay),ada=Math.abs(da);
-            box.ay+=Math.min(ada,(op.turnSpeed||0.005)*dt)*(da<0?-1:1);
-            //o5.ay=an;
-            if (o5) {
-              o5.ay=box.ay;
-              //Pd5.animStart(o5,'run');
+          //let o5=box.point.userData.o5;
+          //if (o5) o5.ay=ay+Math.PI;
+          //let v;
+          //v=(c.fore?1:0)+(c.back?-1:0);if (v!=0) body.velocity.x=v*6;
+          //v=(c.left?1:0)+(c.right?-1:0);if (v!=0) body.velocity.y=v*6;
+        } else { //ai
+          let dx=player.pos.x-box.pos.x,
+              dy=player.pos.y-box.pos.y,
+              dz=player.pos.z-box.pos.z;
+          turna=Math.atan2(dy,dx)+Math.PI/2;
+          if (op.aiApproach) { 
+            let d2=dx*dx+dy*dy+dz*dz;
+            //console.log('aiApproach d2='+d2); 
+            if (d2>op.aiApproach) fore=true;
+          }
+          if (op.animRun=='run') {
+            //console.log('scale.x='+o5.meshes[0].tmesh.scale.x);
+            if (c.brake!=p.userData.wasBrake) {
+              if (c.brake) new Audio('https://cdn.freesound.org/previews/534/534218_11864320-lq.mp3').play();
+              p.userData.wasBrake=c.brake;
+              let sc=c.brake?0.5:0.04,t=100,scale=o5.meshes[0].tmesh.scale;
+              tweens.push({t:t,o:scale,key:'x',value:sc});
+              tweens.push({t:t,o:scale,key:'y',value:sc});
+              tweens.push({t:t,o:scale,key:'z',value:sc});
+              //onsole.log('sc='+sc);
+              //o5.meshes[0].tmesh.scale.set(sc,sc,sc);
             }
-            if (fore&&(ada>0.3)) fore=undefined;
-            if (ada<0.01) turna=undefined;
+          }
+          //if (o5) { o5.ay=Math.random()*Math.PI; }
+        }
+        if (turna!==undefined) {
+          let da=Conet.dAng(turna,box.ay),ada=Math.abs(da);
+          box.ay+=Math.min(ada,(op.turnSpeed||0.005)*dt)*(da<0?-1:1);
+          //o5.ay=an;
+          if (o5) {
+            o5.ay=box.ay;
+            //Pd5.animStart(o5,'run');
+          }
+          if (fore&&(ada>0.3)) fore=undefined;
+          if (ada<0.01) turna=undefined;
     //        {
-              //let a=xrAy;
-              //console.log(a);
+            //let a=xrAy;
+            //console.log(a);
     //          let a=box.ay-Math.PI;x0=0;y0=1;
     //          let x1=x0*Math.cos(a)-y0*Math.sin(a);
     //          let y1=y0*Math.cos(a)+x0*Math.sin(a);
     //          body.velocity.x=x1*6;body.velocity.y=y1*6;
-              //body.force.x=x1*20;body.force.y=y1*20;
-    //        }
-          }
-          if (fore) {
-            //let a=xrAy;
-            //console.log(a);
-            let a=box.ay-Math.PI;x0=0;y0=1;
-            let x1=x0*Math.cos(a)-y0*Math.sin(a);
-            let y1=y0*Math.cos(a)+x0*Math.sin(a);
-            let speed=op.speed||6;
-            body.velocity.x=x1*speed;body.velocity.y=y1*speed;
             //body.force.x=x1*20;body.force.y=y1*20;
-          }
-          if (o5) {
-            //try { 
-            Pd5.animStart(o5,turna||fore?(op.animRun||'run'):(op.animIdle||'stand2'));
-            //} catch (e) {}
-          }
-          body.quaternion.setFromAxisAngle(new CANNON.Vec3(0,0,1),box.ay-Math.PI);//o5?o5.ay-Math.PI:xrAy);
-          //---for force-use
-          //let v=body.velocity,vl=Math.sqrt(v.x*v.x+v.y*v.y),maxvl=10;
-          //if (vl>maxvl) { v.x*=maxvl/vl;v.y*=maxvl/vl; }      
-          
-          //let o5=box.point.userData.o5;
-          //if (o5) o5.x+=1;
-          //console.log(box.point);//.mesh?.userData.o5);
-          //body.velocity.x=(c.fore?1:0)+(c.back?-1:0);
-          //body.velocity.z=(c.left?1:0)+(c.right?-1:0);
-        } else {
-          box.pos.x=op.x*10*f;
-          box.pos.y=-op.z*10*f;
-          box.pos.z=op.y*10*f;
+    //        }
         }
-        box.dim.x=op.scx*0.5*f;
-        box.dim.y=op.scz*0.5*f;
-        box.dim.z=op.scy*0.5*f;
-        cannonBoxMeshUpdate(box);
-        //console.log('update pos');
-      }
-    
-      cannon.step(dt);//--- 10
-      //onsole.log(dt/1000);
-      //cannon.world.step(1.0/60.0,10/1000,3);
-      //console.log(cannon.bodies[0]);
-      let sc=cannon.sc;//0.5;
-      for (let i=cannon.bodies.length-1;i>=0;i--) {
-        let bp=cannon.bodies[i].position,o=cannon.meshes[i].position;
-        o.y=bp.z*sc;
-        o.x=bp.x*sc;
-        o.z=-bp.y*sc;
-        let bq=cannon.bodies[i].quaternion,oq=cannon.meshes[i].quaternion;
-        
-        if (1) {
-          oq.set(bq.x,bq.z,-bq.y,bq.w);
-        } else {
-          v0.set(1,0,0);
-        
-          q0.setFromAxisAngle(v0,Math.PI/2);
-          q1.set(bq.x,bq.y,bq.z,bq.w);
-          //oq.copy(q1);
-          oq.multiplyQuaternions(q1,q0);
-          q0.setFromAxisAngle(v0,Math.PI/2);
-          oq.multiplyQuaternions(q0,oq);
+        if (fore) {
+          //let a=xrAy;
+          //console.log(a);
+          let a=box.ay-Math.PI;x0=0;y0=1;
+          let x1=x0*Math.cos(a)-y0*Math.sin(a);
+          let y1=y0*Math.cos(a)+x0*Math.sin(a);
+          let speed=op.speed||6;
+          body.velocity.x=x1*speed;body.velocity.y=y1*speed;
+          //body.force.x=x1*20;body.force.y=y1*20;
         }
+        if (c.up) body.velocity.z=(op.speed||6);// /2
+        if (o5) {
+          //try { 
+          Pd5.animStart(o5,turna||fore?(op.animRun||'run'):(op.animIdle||'stand2'));
+          //} catch (e) {}
+        }
+        body.quaternion.setFromAxisAngle(new CANNON.Vec3(0,0,1),box.ay-Math.PI);//o5?o5.ay-Math.PI:xrAy);
+        //---for force-use
+        //let v=body.velocity,vl=Math.sqrt(v.x*v.x+v.y*v.y),maxvl=10;
+        //if (vl>maxvl) { v.x*=maxvl/vl;v.y*=maxvl/vl; }      
         
-        //oq.y=bq.x;
-        //oq.x=bq.y;
-        //oq.z=bq.z;
-        //oq.w=bq.w;
+        //let o5=box.point.userData.o5;
+        //if (o5) o5.x+=1;
+        //console.log(box.point);//.mesh?.userData.o5);
+        //body.velocity.x=(c.fore?1:0)+(c.back?-1:0);
+        //body.velocity.z=(c.left?1:0)+(c.right?-1:0);
+      } else {
+        box.pos.x=op.x*10*f;
+        box.pos.y=-op.z*10*f;
+        box.pos.z=op.y*10*f;
       }
-      //let o=cannon.o.meshes[0].tmesh.position,bp=cannon.ball.position;
-      //o.y=bp.z-5;
-      //o.x=bp.x;
-      //o.z=bp.y;
-      //onsole.log(o.y);
+      box.dim.x=op.scx*0.5*f;
+      box.dim.y=op.scz*0.5*f;
+      box.dim.z=op.scy*0.5*f;
+      cannonBoxMeshUpdate(box);
+      //console.log('update pos');
     }
+    
+    cannon.step(dt);//--- 10
+    //onsole.log(dt/1000);
+    //cannon.world.step(1.0/60.0,10/1000,3);
+    //console.log(cannon.bodies[0]);
+    let sc=cannon.sc;//0.5;
+    for (let i=cannon.bodies.length-1;i>=0;i--) {
+      let body=cannon.bodies[i],bp=bp.position,o=cannon.meshes[i].position;
+      o.y=bp.z*sc;
+      o.x=bp.x*sc;
+      o.z=-bp.y*sc;
+      let bq=cannon.bodies[i].quaternion,oq=cannon.meshes[i].quaternion;
+      
+      if (1) {
+        oq.set(bq.x,bq.z,-bq.y,bq.w);
+      } else {
+        v0.set(1,0,0);
+      
+        q0.setFromAxisAngle(v0,Math.PI/2);
+        q1.set(bq.x,bq.y,bq.z,bq.w);
+        //oq.copy(q1);
+        oq.multiplyQuaternions(q1,q0);
+        q0.setFromAxisAngle(v0,Math.PI/2);
+        oq.multiplyQuaternions(q0,oq);
+      }
+      
+      //oq.y=bq.x;
+      //oq.x=bq.y;
+      //oq.z=bq.z;
+      //oq.w=bq.w;
+    }
+    //console.log(player);
+    //let o=cannon.o.meshes[0].tmesh.position,bp=cannon.ball.position;
+    //o.y=bp.z-5;
+    //o.x=bp.x;
+    //o.z=bp.y;
+    //onsole.log(o.y);
+    
+    //...
+  }
+  //--------------
+  
+  
+  //---
+  function onSelect() {
+    //---
+    selected=this;
+    if (manims) {
+      manims.s=this.o5.anim;
+      manims.ms='Pd5 Anims';
+    }
+    //...
+  }
+  //---
+  function render(dt) {
+    //---
+    Conet.calcTweens(tweens,dt);
+    
+    if (cannon) cannonRender(dt);
     
     //onsole.log(physWalks.length);
     for (let o of physWalks) {
@@ -424,18 +576,20 @@
     
     var mass = 150;
     var vehicle;
+    let cfg=initps.ps.cannonTest;
     
     world.broadphase = new CANNON.SAPBroadphase(world);
-    world.gravity.set(0, 0, -10);
+    world.gravity.set(0,0,cfg.gravityZ||-10);
     world.defaultContactMaterial.friction = 0;
     
-    var groundMaterial = new CANNON.Material("groundMaterial");
-    groundMaterial.friction=0.05;
+    groundMaterial=new CANNON.Material("groundMaterial");
+    let sphereMovers=1;//if 0 its boxMovers
+    groundMaterial.friction=sphereMovers?0.3:0.05;
     
-    let noCar=initps.ps.cannonTest.noCar;
+    let noCar=cfg.noCar;
     if (noCar) {
       //ps.ps.mesh.removeFromParent();
-      console.log(ps.ps);
+      //onsole.log(ps.ps);
     } else {
     var wheelMaterial = new CANNON.Material("wheelMaterial");
     var wheelGroundContactMaterial = window.wheelGroundContactMaterial = new CANNON.ContactMaterial(wheelMaterial, groundMaterial, {
@@ -574,9 +728,14 @@
     //console.log(boxes[2].pos);console.log(boxes[2].dim);
     
     for (let box of boxes) {
-      let h=box,shape=new CANNON.Box(new CANNON.Vec3(h.dim.x,h.dim.y,h.dim.z));
-      let body=new CANNON.Body({mass:box.point?.userData.op.mass||0,material:groundMaterial});
-      body.angularDamping=1; 
+      let mass=box.point?.userData.op.mass||0;
+      //if (mass!=0) console.log('box.dim='+box.dim.x+' '+box.dim.y+' '+box.dim.z);
+      let h=box,shape=((mass!=0)&&sphereMovers)?
+        new CANNON.Sphere(h.dim.z):
+        new CANNON.Box(new CANNON.Vec3(h.dim.x,h.dim.y,h.dim.z));
+      let body=new CANNON.Body({mass:mass,material:groundMaterial});
+      body.angularDamping=1;
+      //body.linearDamping=0.8;
       //onsole.log('body.mass='+body.mass);
       body.addShape(shape);
       body.position.set(h.pos.x,h.pos.y,h.pos.z);
@@ -590,6 +749,29 @@
       }
      
       world.add(body);box.body=body;
+      
+      if (mass!=0)
+    if (0) body.addEventListener('collide',
+    function (e) {
+      //---
+      //onsole.log(e.contact);
+      let c=e.contact;
+      //contactpoints (via https://github.com/schteppe/cannon.js/issues/303)
+      //c.bi.position + c.ri
+      //c.bj.position + c.rj
+      let sc=cannonsc;
+      let p0=c.bi.position,p1=c.ri,
+          x=(p0.x+p1.x)*sc,
+          y=(p0.z+p1.z)*sc,
+          z=-(p0.y+p1.y)*sc;
+      //x*=sc;y*=sc;z*=sc;
+      initps.editxr.pointAdd({x:x,y:y,z:z,noSerialize:1});
+      //onsole.log('collide');//+x+' '+y+' '+z);
+      //...
+    }
+    ); 
+      
+      
       //demo.addVisual(boxBody2);
     }
     
@@ -686,7 +868,8 @@
       step:step,
       bodies:noCar?[]:wheelBodies.concat([chassisBody]),
       sc:cannonsc,
-      ctrl:{},ctrlOld:{},vehicle:vehicle
+      ctrl:{},ctrlOld:{},vehicle:vehicle,
+      world:world
     };
     
     //xrUtil.log('');
@@ -694,6 +877,38 @@
       '--> Move knight with WASD, Jump-Scare B or xr-ctrl.':
       '--> Move car with wasd+b or xr-controller.');
     
+    //...
+  }
+  
+  function bbdraw(bb) {
+    //--- copied from /util/bricks.js
+    
+    var c=bb.c,w=c.width,h=c.height*bb.ar,ct=bb.ct,//c.getContext('2d');
+        bo=bb.o,u=bo;//undefined;
+    
+    ct.clearRect(0,0,w,h);
+    //ct.fillStyle=(bo?.hitt===undefined)?'rgba(0,0,0,0.5)':'#f00';
+    ct.fillStyle=u.alerted?'rgba(250,250,0,0.9)':'rgba(0,0,0,0.5)';
+    ct.fillRect(0,0,w,h);//p.c=c;p.ct=ct;
+    
+    
+    var h2=h,b=w/40;
+    var f=bo.hp/bo.ohp;
+    ct.fillStyle='#0f0';
+    ct.fillRect(b,b+h-h2,(w-2*b)*f,h2-2*b);
+    ct.fillStyle='#f00';
+    ct.fillRect(b+(w-2*b)*f,b+h-h2,(w-2*b)*(1-f),h2-2*b);
+    
+    ct.textBaseline='top';
+    ct.font='16px sans-serif';
+    let sh='\u2694'+bo.ap+' \u2665'+bo.hp
+        //+(((bo.col==2)&&(u.blockHeight==1))?' stealth':'')
+        ,//unicode swords,heart,iceshoe
+        x=w/25,y=x;
+    ct.fillStyle='#fff';ct.fillText(sh,x+1,y+1);
+    ct.fillStyle='#000';ct.fillText(sh,x,y);
+    
+    bb.threeTex.needsUpdate=true;
     //...
   }
   
@@ -707,7 +922,7 @@
     
     xrUtil=ps.xrUtil;
         //canv,ct,tex,
-    let o,mesh,ps0=ps.ps,sceneh=ps.sceneh,
+    let o,mesh,ps0=ps.ps,sceneh=ps.sceneh,lights=[],editxr=ps.editxr,
         scriptHandlers=ps.scriptHandlers,mode='diff',
         modes={
           diff:{tex:'map'},
@@ -715,6 +930,7 @@
           spec:{tex:'specularMap'}
         };//,initps=ps;
     initps=ps;
+    room=editxr.room;
     
     console.log('initf ps0.fn='+ps0.fn+' ps0.cannonTest='+ps0.cannonTest);
     //onsole.log(this);
@@ -896,6 +1112,7 @@
       threeAddObj(o,0,0,0,ps0.sc||1);//0.5
       let ps=ps1.ps;
       if (ps.ay) o.ay=ps.ay;
+      if (ps0.ay) o.ay=ps0.ay;//250615 added and tested, is ps.ay check still needed?
       o.calcVertNorms=1;
       ps.mesh.userData.o5=o;
       //onsole.log(p);
@@ -904,6 +1121,16 @@
       grabMesh=mesh;
       
       
+      //u.bbdraw=bbdraw;
+      //u.bb=
+      if (ps0.bb) {
+        let tb=threeEnv.base,m=o.meshes[0].tmesh;
+        threeEnv.base=m;
+        o.ap=2;o.hp=5;o.ohp=10;
+        o.bbdraw=bbdraw;
+        threeBillboardAdd({x:0,y:0.9,z:0,ar:0.2,s:0.015,transparent:true,gw:20,cw:128,o:o});
+        threeEnv.base=tb;
+      }
       //xrUtil.rayObjs.push(mesh);//250130
       //console.log('xrUtil.rayObjs.length='+xrUtil.rayObjs.length);
       //console.log(mesh);
@@ -978,14 +1205,66 @@
       }
         script.src='/anim/cannon/v062/cannon.min.js';
         document.head.appendChild(script);
+        //script.onload();
+      }
+      
+      if (ps0.player) {
+        //onsole.log('@@@@@@@@@@@@ add light');
+        let l=new THREE.PointLight(0xffffff,0.05,0.1);
+        l.position.set(0.3,0.3,0.3);//0.3,0.9,0.3
+        l.castShadow=true;
+        l.shadow.mapSize.width=2048; // default
+        l.shadow.mapSize.height=2048; // default
+        l.shadow.camera.near=0.01; // default
+        l.shadow.camera.far=1; // defaul
+        mesh.add(l);
+        lights.push({light:l});
+        
+        if (1) {
+        //onsole.log('pd5.initObj '+editxr.points.length);
+        for (let p of editxr.points) {
+          if (p.children.length==0) continue;
+          for (let ch of p.children) {
+            if (!(ch instanceof THREE.DirectionalLight)) continue;
+            //onsole.log(ch);
+            lights.push({light:ch});
+          }
+        }
+        let bgMesh=editxr.sceneh.bgMesh;
+        //onsole.log('bgMesh');
+        //nsole.log(bgMesh);
+        if (1) xrUtil.hud.buttons.push(
+        {s:'Scale',ms:'Pd5',x:0.55,y:0.7,w:0.16,h:0.1
+        ,ondown:xrUtil.scaleSwitch({
+          scaleCfg:[
+            ////{sc:0.0015,lint:0.000003*lint,bgop:0,flightSpeed:0.001,camPos:{x:0,y:0.24,z:1}   ,roomPos:{x:-0.48,y:0.99,z:-0.65}},
+            //{sc:0.5,lint:0.9,bgop:0,flightSpeed:0.001,rotateRoom:0,_camPos:{x:0,y:0.24,z:1}   ,_roomPos:{x:-0.48,y:0.99,z:-0.65},vrPos:{x:-0.121,y:1.5728,z:-0.4666}},
+            {sc:0.25,lint:0.8,bgop:0,flightSpeed:0.001,rotateRoom:0,_camPos:{x:0,y:0.24,z:1}   ,_roomPos:{x:-0.48,y:0.99,z:-0.65},vrPos:{x:-0.121,y:1.5728,z:-0.4666}},
+            {sc:15  ,lint:50 ,bgop:1,flightSpeed:0.001,rotateRoom:1,_camPos:{x:0,y:2.2 ,z:14.7},_roomPos:{x:2.43,y:3.38,z:-3.79} ,vrPos:{x:0.058,y:-0.1197,z:0.0373}},
+          ]
+          //,pl0:pl0,pl1:pl1
+          ,bgMeshScale:bgMesh?bgMesh.scale:0.2
+          ,bgMeshPosition:bgMesh?new THREE.Vector3(bgMesh.pos.x,bgMesh.pos.y,bgMesh.pos.z):new THREE.Vector3(0,0,0)
+          ,noStartScfg:1,lights:lights})
+        }   
+        );
+      xrUtil.onScaleSwitch=function(ps) {
+        rotateRoom=ps.scfg.rotateRoom;
+        console.log('rotateRoom='+rotateRoom);
+        //...
+      }
+        }  
+        
       }
       //...
     }
     
     if (first) {
       first=false;
-      xrUtil.log('Pd5 v.0.1048 ');//FOLDORUPDATEVERSION
-      xrUtil.hud.buttons.push(
+      xrUtil.log('Pd5 v.0.1477 ');//FOLDORUPDATEVERSION
+      
+      
+      if (0) xrUtil.hud.buttons.push(
         manims={s:(typeof(ps.ps.anim)=='string')?ps.ps.anim:'random',ms:'Pd5 Anims',x:0.37,y:0.7,w:0.3,h:0.1,
     ondown:function() {
       //---
@@ -997,7 +1276,20 @@
       //...
     }
         }
-        );
+      );
+      if (0) //250616 for now just use fix value
+      if (rotateRoom) xrUtil.hud.buttons.push(
+        {s:''+roomAngleD,ms:'delta room rotation',x:0.37,y:0.7,w:0.3,h:0.1,
+    oninput:function(v) {
+      //---
+      //console.log(v);
+      if (v.length>0) try {
+      roomAngleD=parseFloat(v);
+      } catch(e) {};
+      //...
+    }
+        }
+      );
       selected=ps.mesh.userData;
       //onsole.log(ps);
     }
@@ -1039,14 +1331,12 @@
 )();
 //----
 //fr o,1
-//fr o,1,10
-//fr o,1,17
-//fr o,1,23
-//fr o,1,23,88
-//fr o,1,23,250
-//fr o,1,26
-//fr o,1,26,35
-//fr o,1,26,35,48
-//fr o,1,26,35,49
-//fr o,1,26,55
-//fr p,53,631
+//fr o,1,13
+//fr o,1,14
+//fr o,1,21
+//fr o,1,27,90
+//fr o,1,27,177
+//fr o,1,27,264
+//fr o,1,32,36,106
+//fr o,1,32,64
+//fr p,44,108

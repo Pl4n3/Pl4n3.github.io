@@ -75,6 +75,14 @@ function Sculpt(gps) {
       blob.addBall(position.x,position.y,position.z,point.strength,point.subtract,point.color);
     }
     blob.update();
+    //console.log(o);
+    //console.log(blob);
+    //let g=blob.geometry;
+    //console.log(g.drawRange);
+    //let a=g.getAttribute('position').array;
+    //console.log(a.length);
+    //console.log(a);
+    //console.log('sculpt index len='+g.index.array.length);
     //...
   }
   
@@ -131,7 +139,7 @@ function Sculpt(gps) {
 
 (function() {
   //---
-  let what='Sculpt v.0.225 ';//FOLDORUPDATEVERSION
+  let what='Sculpt v.0.253 ';//FOLDORUPDATEVERSION
   //let sculptUpdate;
   
   if (window.w3ditScriptInit)
@@ -163,10 +171,11 @@ function Sculpt(gps) {
           anim.a=[anim.ogPoints[0]];
           sculpt.etPoints(anim.a);
         }
+        ips.editxr.sculptMeshInfo.anim=anim;//store anim sth pd5 script doesnt do cannon trimesh update
         needUpdate=true;
         //...
       }
-      xrUtil.hud.buttons.push({s:'Anim',ms:'sculpt',x:0.37,y:0.7,w:0.2,h:0.08,ondown:sculptAnimate});
+      xrUtil.hud.buttons.push({s:'Anim',ms:'sculpt',x:0.37,y:0.7,w:0.16,h:0.1,ondown:sculptAnimate});
       
       
       function onchange(p) {
@@ -209,6 +218,9 @@ function Sculpt(gps) {
         if (!needUpdate) return;
         needUpdate=false;
         sculpt.updateBlob();
+        //if (!ips.editxr.sculptMeshInfo) ips.editxr.sculptMeshInfo={mesh:sculpt.blob,version:0};
+        ips.editxr.sculptMeshInfo.version++;
+        console.log('smi.version='+ips.editxr.sculptMeshInfo.version);
         //...
       }
       );
@@ -363,23 +375,29 @@ function Sculpt(gps) {
       ]);
       sculpt.load(v);
       sculpt.updateBlob();
+      ips.editxr.sculptMeshInfo={mesh:sculpt.blob,version:0};
+      
       sculpt.blob.castShadow=true;
       sculpt.blob.receiveShadow=true;
       ips.mesh.add(sculpt.blob);
       let ed=ips.editxr,pp=ips.mesh.position,f=2,ofs={x:-1,y:-1,z:-1};
+      //console.log(ed.points.length);
+      //console.log(ed.points[0].userData.op);
+      let inv=ed.points.length>0?ed.points[0].userData.op.inv:undefined;
       //onsole.log(pp);
       let pts=sculpt.etPoints();
       for (let p of pts) {
         //onsole.log(p);
         let pos=p.position;
-        let pm=ed.pointAdd({
+        let h={
           x:2*pos.x+pp.x+ofs.x,
           y:2*pos.y+pp.y+ofs.y,
           z:2*pos.z+pp.z+ofs.z,
           noSerialize:1
           ,sculpt:p
-          //,inv:1
-          });
+          };
+        if (inv) h.inv=inv;
+        let pm=ed.pointAdd(h);
         pm.userData.editPoint=-1;
         pm.userData.onchange=onchange;
         pm.userData.sculptp=p;
@@ -438,6 +456,7 @@ function Sculpt(gps) {
 //fr o,1,3
 //fr o,1,3,8
 //fr o,1,5
+//fr o,1,7
 //fr o,1,9
 //fr o,3
 //fr o,3,5
@@ -446,6 +465,7 @@ function Sculpt(gps) {
 //fr o,3,5,4,15
 //fr o,3,5,4,18
 //fr o,3,5,4,24
-//fr o,3,5,4,57
+//fr o,3,5,4,63
+//fr o,3,5,8
 //fr o,3,6
-//fr p,11,159
+//fr p,95,165

@@ -5,7 +5,7 @@ import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFa
 let XrUtil={};
 (function(pself) {
   //---
-  let version='v.1.635 ',//FOLDORUPDATEVERSION
+  let version='v.1.658 ',//FOLDORUPDATEVERSION
       self=pself,ctrl0,ctrl1,gp0,gp1,camera,scene,room,vrPos,huds=[],hudMesh,
       hud={lines:['XrUtil '+version],cursor:{x:0.5,y:0.5,vis:false},buttons:[]},
       raycaster,INTERSECTED,hudCount=0,needDrawUi=false,input,uisc=2,gps,
@@ -685,7 +685,8 @@ let XrUtil={};
       bgMat=new THREE.MeshBasicMaterial({color:0x555566,transparent:false,opacity:1,side:THREE.BackSide,visible:false})));
     let sc=ps.bgMeshScale||2.61;
     m.scale.set(sc,sc,sc);
-    m.position.y=2;
+    if (ps.bgMeshPosition) m.position.copy(ps.bgMeshPosition);
+    else m.position.y=2;
     }
     
     return function() {
@@ -713,13 +714,35 @@ let XrUtil={};
       }
       if (ps.pl1) ps.pl1.intensity=scfg.lint/3;
       
+      console.log('xrUtil.scaleSwitch ps.lights.length='+ps.lights.length);
       if (ps.lights) for (let l of ps.lights) {
-        l.light.intensity=scfg.lint*l.intensity;
+        if (l.light instanceof THREE.PointLight) {
+          if (l.intensity===undefined) l.intensity=l.light.intensity;
+          l.light.intensity=scfg.lint*l.intensity;
+        }
+      
+        if (l.distance===undefined) l.distance=l.light.distance;
+        if (l.distance) l.light.distance=l.distance*sc;
         if (!l.light.castShadow) continue;
         let c=l.light.shadow.camera;
-        c.near=10*sc;
-        c.far=1000*sc;
+        if (l.near===undefined) { 
+          l.near=c.near;
+          l.far=c.far; 
+          l.top=c.top;
+          l.bottom=c.bottom;
+          l.left=c.left;
+          l.right=c.right;
+        }
+        c.near=l.near*sc;//10*sc;
+        c.far=l.far*sc;//1000*sc;
+        c.top=l.top*sc;
+        c.bottom=l.bottom*sc;
+        c.left=l.left*sc;
+        c.right=l.right*sc;
         c.updateProjectionMatrix();
+        //onsole.log('xrUtil.scaleSwitch '+l.intensity+' '+l.near+' '+l.far
+        //  +' -> '+l.light.intensity+' '+c.near+' '+c.far);
+        //onsole.log(l.light);
       }
       
       self.flightSpeed=scfg.flightSpeed;
@@ -735,14 +758,14 @@ let XrUtil={};
         if (scfg.roomPos) {
           rp.x=scfg.roomPos.x;rp.y=scfg.roomPos.y;rp.z=scfg.roomPos.z;
         }
-        //self.log('vrPos '+Conet.f4(vrPos.x)+' '+Conet.f4(vrPos.y)+' '+Conet.f4(vrPos.z));
-        //if (oscfg) oscfg.vrPos={x:vrPos.x,y:vrPos.y,z:vrPos.z}
-        //if (scfg.vrPos) {
-        //  vrPos.x=scfg.vrPos.x;vrPos.y=scfg.vrPos.y;vrPos.z=scfg.vrPos.z;
+        self.log('vrPos '+Conet.f4(vrPos.x)+' '+Conet.f4(vrPos.y)+' '+Conet.f4(vrPos.z));
+        if (oscfg) oscfg.vrPos={x:vrPos.x,y:vrPos.y,z:vrPos.z}
+        if (scfg.vrPos) {
+          vrPos.x=scfg.vrPos.x;vrPos.y=scfg.vrPos.y;vrPos.z=scfg.vrPos.z;
         //  //blockWalk.tweens.push({o:vrPos,key:'x',t:t,value:scfg.vrPos.x});
         //  //blockWalk.tweens.push({o:vrPos,key:'y',t:t,value:scfg.vrPos.y});
         //  //blockWalk.tweens.push({o:vrPos,key:'z',t:t,value:scfg.vrPos.z});
-        //}
+        }
       } else {
         let cp=camera.position;
         //elf.log('camPos '+Conet.f4(cp.x)+' '+Conet.f4(cp.y)+' '+Conet.f4(cp.z));
@@ -1095,6 +1118,7 @@ export { XrUtil };
 //fr o,5
 //fr o,5,9
 //fr o,5,11
+//fr o,5,14
 //fr o,5,15
 //fr o,5,15,9
 //fr o,5,15,11
@@ -1117,6 +1141,8 @@ export { XrUtil };
 //fr o,5,24,40
 //fr o,5,26
 //fr o,5,27
+//fr o,5,28
+//fr o,5,28,15
 //fr o,5,30
 //fr o,5,30,1
 //fr o,5,32
@@ -1124,4 +1150,4 @@ export { XrUtil };
 //fr o,5,32,19
 //fr o,5,32,23
 //fr o,5,32,25
-//fr p,29,274
+//fr p,4,609

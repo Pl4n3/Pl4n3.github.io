@@ -30,6 +30,9 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { MarchingCubes } from 'three/addons/objects/MarchingCubes.js';
+import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
+import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
+import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
 import Stats from 'three/addons/libs/stats.module.js';
 import { XrUtil } from '/util/gfx/XrUtil.js';
 (new function() {
@@ -69,7 +72,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     camera.position.set(0,1.6,2);
     scene.add(camera);
     
-    room=new THREE.Group();scene.add(room);
+    room=new THREE.Group();scene.add(room);self.room=room;
     
     
     controls=new OrbitControls(camera,container);
@@ -353,8 +356,9 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       container.appendChild(el); 
     //}
     
+    self.vrPos=new THREE.Vector3(0,0,0);
     xrUtil.init({scene:scene,renderer:renderer,camera:camera,room:room,sculpt:1//,vrPos:vrPos
-      ,lskey:'editxr'});
+      ,lskey:'editxr',vrPos:self.vrPos});
     xrUtil.initHud();
     
     /* hud buttons 0 */ {
@@ -667,7 +671,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     //\u25b2 \u25bc
     
-    const version='v.0.1646 ';//FOLDORUPDATEVERSION
+    const version='v.0.1756 ';//FOLDORUPDATEVERSION
     xrUtil.log('Edit '+version);
     
     //
@@ -1254,16 +1258,24 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     if (mesh) room.remove(mesh);
     
     let ge=new THREE.BufferGeometry();
+    
+    for (let p of points) p._inface=undefined;
+    for (let f of faces) { f.v0._inface=1;f.v1._inface=1;f.v2._inface=1; }
+    
     let a=[];
+    
+    let fpoints=[];
     for (let p of points) {
+      if (!p._inface) continue;
+      fpoints.push(p);
       p=p.position;a.push(p.x,p.y,p.z);
     }
-    //onsole.log(a);
+    //onsole.log('updateMesh a.len='+a.length);
     ge.setAttribute('position',new THREE.BufferAttribute(new Float32Array(a),3));
     
     a=[];
     for (let f of faces) {
-      a.push(points.indexOf(f.v0),points.indexOf(f.v1),points.indexOf(f.v2));
+      a.push(fpoints.indexOf(f.v0),fpoints.indexOf(f.v1),fpoints.indexOf(f.v2));
     }
     //onsole.log(a);
     ge.setIndex(a);
@@ -1271,15 +1283,24 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     let m=new THREE.Mesh(ge,matMesh);
     m.castShadow=true;
     m.receiveShadow=true;
-    room.add(m);mesh=m;
+    room.add(m);mesh=m;self.mesh=mesh;
     
     //---
     if (line) room.remove(line);
     a=[];
-    for (let l of lines) a.push(l.v0.position,l.v1.position);
-    const geometry=new THREE.BufferGeometry().setFromPoints(a);
-    const material=new THREE.LineBasicMaterial({color:0xdddddd});
-    line=new THREE.LineSegments(geometry,material);
+    if (0) {
+      for (let l of lines) a.push(l.v0.position,l.v1.position);
+      const geometry=new THREE.BufferGeometry().setFromPoints(a);
+      const material=new THREE.LineBasicMaterial({color:0xdddddd});
+      line=new THREE.LineSegments(geometry,material);
+    } else {
+      for (let l of lines) {//a.push(l.v0.position,l.v1.position);
+        let p0=l.v0.position,p1=l.v1.position;
+        a.push(p0.x,p0.y,p0.z,p1.x,p1.y,p1.z); }
+      const geometry=new LineSegmentsGeometry().setPositions(a);
+      const material=new LineMaterial({color:0xaaaaaa,linewidth:0.003,worldUnits:true});
+      line=new LineSegments2(geometry,material);
+    }
     room.add(line);
     //...
   }
@@ -1393,6 +1414,34 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     scr.waitingForInit.push(h);
     //...
   }
+  
+  function bbdraw(bb) {
+    //--- copied from /util/bricks.js
+    
+    var c=bb.c,w=c.width,h=c.height*bb.ar,ct=bb.ct,//c.getContext('2d');
+        bo=bb.o,u=bo;//undefined;
+    
+    ct.clearRect(0,0,w,h);
+    //ct.fillStyle=(bo?.hitt===undefined)?'rgba(0,0,0,0.5)':'#f00';
+    ct.fillStyle='rgba(200,200,200,0.5)';
+    ct.fillRect(0,0,w,h);//p.c=c;p.ct=ct;
+    
+    
+    ct.textBaseline='top';
+    let fs=bo.bb.fs||16;
+    ct.font='bold '+fs+'px sans-serif';//16px
+    //let sh=bo.bb.text,
+    let x=2,y=2;
+    //ct.fillStyle='#fff';ct.fillText(sh,x+1,y+1);
+    ct.fillStyle='#000';
+    for (let i=0;i<bo.bb.sa.length;i++)
+      ct.fillText(bo.bb.sa[i],x,y+i*fs);
+    
+    bb.threeTex.needsUpdate=true;
+    //...
+  }
+  
+  
   function pointAdd(p,index) {
     //---
     let g=new THREE.BoxGeometry(0.01,0.01,0.01);
@@ -1401,6 +1450,16 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     room.add(mesh);
     if (index!==undefined) points.splice(index,0,mesh); else points.push(mesh);
     mesh.userData.op=p;
+    
+    if (p.bb) {
+      let tb=threeEnv.base;//,m=o.meshes[0].tmesh;
+      threeEnv.base=mesh;
+      //o.ap=2;o.hp=5;o.ohp=10;
+      p.bbdraw=bbdraw;
+      p.bb.tbb=threeBillboardAdd({x:0,y:0,z:0,ar:0.008+0.004*(p.bb.fs||16)*p.bb.sa.length,s:(p.bb.scale||0.015),transparent:true,gw:20,cw:128*2,o:p});
+      threeEnv.base=tb;
+    }
+    
     pointPd5(mesh);
     if (p.light) pointLight(mesh);
     if (p.script) pointScript(mesh,p);
@@ -1441,7 +1500,8 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     xrUtil.log('Loading '+v.length+'b.');
     let h=JSON.parse(v);
     
-    sceneh=Conet.hcopy(h,undefined,undefined,{points:1,faces:1,lines:1});;
+    sceneh=Conet.hcopy(h,undefined,undefined,{points:1,faces:1,lines:1});
+    self.sceneh=sceneh;
     
     if (h.pt) controls.target.set(h.pt.x,h.pt.y,h.pt.z);
     if (h.pc) camera.position.set(h.pc.x,h.pc.y,h.pc.z);
@@ -1800,12 +1860,15 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     //---
     let op=nearestPoint;
     if (p!==op) {
+      let bb;
       if (op) {
         op.material=(op.userData.selected?matPointSel:(childEditPoint(op)||op.userData.op.inv?matPointInv:matPoint0));
+        if (bb=op.userData.op.bb) if (bb.scaleHover) bb.tbb.threeMesh.scale.set(bb.scale,bb.scale,bb.scale);
       }
       nearestPoint=p;  
       if (p) {
         p.material=matPoint1;
+        if (bb=p.userData.op.bb) if (bb.scaleHover) bb.tbb.threeMesh.scale.set(bb.scaleHover,bb.scaleHover,bb.scaleHover);
         //xrUtil.log('nearest point '+points.indexOf(p));
       }
     }
@@ -1826,6 +1889,9 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
   //onsole.log(self);
   self.pointAdd=pointAdd;
   self.rayObjsReset=rayObjsReset;
+  self.lines=lines;
+  self.updateMesh=updateMesh;
+  self.points=points;
   //...
 }
 );//();
@@ -1833,37 +1899,34 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 </body>
 </html>
 <script>
-//fr o,34
-//fr o,34,20
-//fr o,34,20,73
-//fr o,34,20,73,7
-//fr o,34,20,73,9
-//fr o,34,20,73,11
-//fr o,34,20,73,13
-//fr o,34,20,73,17
-//fr o,34,20,73,19
-//fr o,34,20,73,21
-//fr o,34,20,73,23
-//fr o,34,20,73,27
-//fr o,34,20,73,74
-//fr o,34,20,85
-//fr o,34,20,85,70
-//fr o,34,20,85,89
-//fr o,34,20,87
-//fr o,34,20,87,1
-//fr o,34,20,155
-//fr o,34,20,164
-//fr o,34,20,167
-//fr o,34,20,170
-//fr o,34,20,197
-//fr o,34,20,203
-//fr o,34,20,204
-//fr o,34,20,205
-//fr o,34,20,249
-//fr o,34,31,10
-//fr o,34,31,11
-//fr o,34,32
-//fr o,34,44
-//fr o,34,45
-//fr o,34,47
-//fr p,28,981
+//fr o,37
+//fr o,37,20
+//fr o,37,20,73,7
+//fr o,37,20,73,9
+//fr o,37,20,73,11
+//fr o,37,20,73,13
+//fr o,37,20,73,17
+//fr o,37,20,73,19
+//fr o,37,20,73,21
+//fr o,37,20,73,23
+//fr o,37,20,73,27
+//fr o,37,20,73,74
+//fr o,37,20,86
+//fr o,37,20,86,57
+//fr o,37,20,86,70
+//fr o,37,20,86,89
+//fr o,37,20,86,95
+//fr o,37,20,88,1
+//fr o,37,20,165
+//fr o,37,20,168
+//fr o,37,20,171
+//fr o,37,20,198
+//fr o,37,20,204
+//fr o,37,20,205
+//fr o,37,20,206
+//fr o,37,20,250
+//fr o,37,31,10
+//fr o,37,31,11
+//fr o,37,40
+//fr o,37,51
+//fr p,82,66

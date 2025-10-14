@@ -2,7 +2,7 @@
 <!-- 1. [vr cubes](/three/r124/examples/webxr_vr_cubes.html) -->
 <!-- 1. [cubes124](/test/webvr/cubes124.htm) -->
 
-1  [Rate Playlist](/forms/rate/table0.htm)
+1. [Rate Playlist](/forms/rate/table0.htm)
 1. [editXr file:sculptCann, cannon trimesh collision on sculpt landscape](/test/webvr/edit.htm?file=file:sculptCann)
 1. [localStorage uploads](/util/io/lsUploads.htm)
 1. [editXr file:sculptScapeEmbed](/test/webvr/edit.htm?file=file:sculptScapeEmbed)

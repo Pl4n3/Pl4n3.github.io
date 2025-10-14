@@ -1,1 +1,478 @@
-123
+<!doctype html><html><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, user-scalable=yes, minimum-scale=1.0, maximum-scale=10.0">
+<style>
+
+body {
+  background:#aaa;
+}
+
+body,input,select,button,textarea {
+  font-family:sans-serif;
+  font-size:20px;
+}
+
+table,
+th,
+td {
+  border: 1px solid black;
+}
+
+table {
+  overflow: auto;
+  width: 100%;
+  max-width: fit-content; /*706px; calc( 100vw - 40px );*/ 
+  max-height: calc( 100vh - 80px );
+  display: block;
+  margin: 0 auto;
+  border-spacing: 0;
+}
+
+tbody {
+  white-space: nowrap;
+}
+
+th,
+td {
+  padding: 5px 10px;
+  border-top-width: 0;
+  border-left-width: 0;
+}
+
+th {
+  position: sticky;
+  top: 0;
+  background: lightgray;
+  vertical-align: bottom;
+}
+
+
+th:last-child,
+td:last-child {
+  border-right-width: 0;
+}
+
+tr:last-child td {
+  border-bottom-width: 0;
+}
+
+tfoot tr td {
+  border-top-width: 1px;
+  font-size:0.7em;
+}
+
+tr:nth-child(even) {
+  background: #a0a0a0;
+}
+
+
+</style>
+<script src="/conet.js"></script>
+</head>
+<body>
+
+<script type="text/javascript">
+(function () {
+  //---
+  let fn='songRates.json';
+  
+  
+  function create(s) {
+    //---
+    return document.createElement(s);
+    //...
+  }
+  
+  function drawAlbum(td,v) {
+    //---
+    let key='album'+v,img=imgs[key];
+    if (!img) {
+      img=new Image();
+      img.width=34;
+      for (let i=albums.rows.length-1;i>=0;i--) {
+        if (albums.rows[i][0]==v) { img.src=albums.rows[i][4];break; }
+      }
+      if (!img.src) console.error('img not found key='+key);
+      img.style.marginBottom='-2px';
+      imgs[key]=img;
+    }
+    td.style.verticalAlign='top';
+    //td.style.overflow='hidden';
+    td.appendChild(img.cloneNode());
+    //...
+  }
+  
+  function drawChanged(td,v) {
+    //---
+    if (v) td.innerHTML=v.substr(2,8)+'<br>'+v.substr(11,5);
+    td.style.padding='1px';
+    td.style.textAlign='center';
+    td.style.fontSize='0.55em';
+    //...
+  }
+  
+  function drawRate(td,v) {
+    //---
+    td.style.textAlign='center';
+    td.innerHTML=v;
+    let m=4,f1=(Math.max(m,v)-m)/(10-m),f0=1-f1,
+      r0=255,g0=0,b0=0,
+      r1=0,g1=255,b1=0,
+      r=f1*r1+f0*r0,
+      g=f1*g1+f0*g0,
+      b=f1*b1+f0*b0;
+      
+    
+    td.style.background='rgb('+r+','+g+','+b+')';
+    //...
+  }
+  
+  function editRate(td,v) {
+    //---
+    let sel=create('select');
+    for (let i=10;i>=0;i--) {
+      let opt;
+      opt=create('option');
+      opt.value=i;opt.text=i;
+      sel.add(opt);
+    }
+    sel.value=v;
+    td.appendChild(sel);
+    return sel;
+    //...
+  }
+  
+  function editDescr(td,v) {
+    //---
+    let ta=create('textarea');
+    ta.value=v;ta.rows=3;
+    td.appendChild(ta);
+    return ta;
+    //...
+  }
+  
+  function table(t) {
+    //---
+    
+    function clickCol() {
+      //---
+      //onsole.log(23);
+      ths[t.sortCol].style.background='lightgray';
+      this.style.background='#dd4';
+      t.sortCol=ths.indexOf(this);
+      
+      drawRows();
+      //...
+    }
+    
+    function sort3(a,b,i) {
+      //---
+      let v0=a[i],v1=b[i],col=t.cols[i];
+      if (col.sortNum) return v1-v0;
+      if (col.sortTitle) {
+        let i0,i1,i;
+        i=v0.indexOf(' ');i0=parseFloat(v0.substr(0,i));v0=v0.substr(i+1);
+        i=v1.indexOf(' ');i1=parseFloat(v1.substr(0,i));v1=v1.substr(i+1);
+        let r=i0-i1;
+        if (r==0) r=v0.localeCompare(v1);
+        return r;
+      }
+      return (''+v0).localeCompare(''+v1);
+      //...
+    }
+    
+    function sort(a,b) {
+      //---
+      let i=t.sortCol,col=t.cols[i];
+      let r=sort3(a,b,i);
+      if ((r==0)&&(col.sort2nd!==undefined))
+        r=sort3(a,b,col.sort2nd);
+      return r;
+      //...
+    }
+    
+    function clickRow() {
+      //---
+      //onsole.log(this._row);
+      if (editTable) editTable.remove();
+      let row=this._row;
+      
+      let table=create('table');table.style.marginBottom='8px';
+      editTable=table;
+      
+      let thead=create('thead');table.appendChild(thead);
+      let tr=create('tr');thead.appendChild(tr);
+      let th=create('th');
+      tr.appendChild(th);
+      //th.innerHTML='42';
+      th=create('th');
+      tr.appendChild(th);
+      //th.innerHTML='[Save] [Close]';
+      let bu=create('button');
+      bu.innerHTML='Save';
+      th.appendChild(bu);
+      bu.style.marginRight='8px';
+      bu.onclick=function() {
+        //---
+        let old=[];
+        for (let i=0;i<inputs.length;i++) {
+          let col=t.cols[i];
+          let v;
+          if (col.ts) v=new Date().toISOString();
+          else if (col.hide) v=row[i];
+          else v=inputs[i].value;
+        
+          old[i]=(col.id||(row[i]!=v))?row[i]:undefined;
+          row[i]=v;
+          //onsole.log(inputs[i].value);
+        }
+        t.oldRows.splice(0,0,old);
+        Conet.lsUpload({fn:fn,data:JSON.stringify({rows:t.rows,oldRows:t.oldRows},undefined,' ')});
+        drawRows();
+        
+        table.remove();
+        //...
+      }
+      
+      bu=create('button');
+      bu.innerHTML='Close';
+      bu.onclick=function() {
+        //---
+        table.remove();
+        //...
+      }
+      th.appendChild(bu);
+      
+      let tbody=create('tbody');
+      table.appendChild(tbody);
+      let inputs=[];
+      
+      for (let i=0;i<t.cols.length;i++) {
+        let col=t.cols[i];
+        if (col.ts||col.hide) {
+          inputs.push(undefined);
+          continue;
+        }
+        let tr=create('tr');
+        tbody.appendChild(tr);
+        let td=create('td');
+        tr.appendChild(td);
+        td.innerHTML=col.sedit||col.s;
+        td=create('td');
+        tr.appendChild(td);
+        let v=row[i],input;
+        if (col.edit) 
+          input=col.edit(td,v); 
+        else {
+          input=create('input');
+          input.value=v;
+          td.appendChild(input);//innerHTML=row[i];
+        }
+        inputs.push(input);
+      }
+      
+      //document.body.appendChild(table);
+      document.body.insertBefore(table,document.body.firstChild);
+      
+      //...
+    }
+    
+    function drawRows() {
+      //---
+      tbody.innerHTML='';
+      
+      let rows=[];
+      
+      //---remove old versions
+      for (let r of t.rows) rows.push(r);
+      
+      rows.sort(sort);
+      
+      for (let i=0;i<rows.length;i++) {
+        let tr=create('tr');
+        tbody.appendChild(tr);
+        tr.style.cursor='pointer';
+        tr.onclick=clickRow;
+        let ai=rows[i];
+        tr._row=ai;
+        //if (i==0) tr.onclick();//temp for test
+        for (let j=0;j<ai.length;j++) {
+          let o=t.cols[j];
+          if (o.hide) continue;
+          let td=create('td');
+          let style=td.style;
+          let s=ai[j];
+          if (1&&(typeof(o)=='object')) {
+            if (o.fs) style.fontSize=o.fs;
+            //style.fontSize=o.fs||'0.4em';
+            if (0) {
+            style.padding='1px';
+            style.paddingLeft='3px';
+            style.paddingBottom=o.pb||'10px';
+            }
+            if (o.padding) style.padding=o.padding;
+            if (o.textAlign) style.textAlign=o.textAlign;
+            if (o.width) style.width=o.width;
+            if (o.width) s='<div style="max-height:30px;overflow:hidden;text-wrap:wrap;width:'+o.width+'">'+s+'</div>';
+            if (o.draw) { o.draw(td,s);s=undefined; }
+          }    
+          tr.appendChild(td);
+          if (s!==undefined) td.innerHTML=s;
+        }
+      }
+      
+      tdFoot.innerHTML='Rows:'+t.rows.length+' Old versions:'+t.oldRows.length+' <a href="/util/io/lsUploads.htm">Data</a>';
+      //...
+    }
+    
+    let ths=[],editTable;
+    if (t.sortCol===undefined) t.sortCol=0;
+    
+    let tr=create('tr'),visCols=0;
+    for (let i=0;i<t.cols.length;i++) {
+      let o=t.cols[i],s=o,oo=(typeof(o)=='object');
+      if (oo&&o.hide) { ths.push(undefined);continue; }
+      visCols++;
+      let th=create('th');ths.push(th);
+      let style=th.style;
+      if (oo) {
+        s=o.s;
+        if (!o.defaultHead) {
+          style.fontSize=o.fs||'0.4em';
+          style.padding='2px';
+          style.paddingBottom=o.pbh||o.pb||'10px';
+        }
+      }
+      style.cursor='pointer';
+      th.innerHTML=''+s;
+      th.onclick=clickCol;
+      if (t.sortCol==ths.length-1) style.background='#dd4';
+      tr.appendChild(th);
+    }
+    let thead=create('thead');
+    thead.appendChild(tr);
+    let table=create('table');
+    table.appendChild(thead);
+    
+    /*
+    let colgroup=create('colgroup');
+    table.appendChild(colgroup);
+    for (let i=0;i<a[0].length;i++) {
+      let col=create('col');
+      let o=a[0][i];
+      if (o.width) col.style.width=o.width;
+      colgroup.appendChild(col);
+    }
+    */
+    
+    let tbody=create('tbody');
+    table.appendChild(tbody);
+    
+    //rawRows();
+    
+    let tfoot=create('tfoot');
+    table.appendChild(tfoot);
+    tr=create('tr');tfoot.appendChild(tr);
+    let td=create('td');
+    let tdFoot=td;
+    //onsole.log(visCols);
+    td.setAttribute('colspan',visCols);
+    //onsole.log(td.colspan);
+    tr.appendChild(td);
+    //d.innerHTML='Anzahl: '+table.rows.length;
+    
+    drawRows();
+    
+    
+    document.body.appendChild(table);
+    //...
+  }
+  
+  let songs,albums,imgs={};
+  
+  /* start data */ {
+    //---
+    songs={
+    sortCol:1,
+    cols:[{s:'Id',hide:1,id:1},
+     {s:'Album',draw:drawAlbum,padding:'0px',_textAlign:'center',fs:'0.4em',sort2nd:2},
+     {s:'Songtitle',defaultHead:1,sortTitle:1},
+     {s:'Run<br>Rate',fs:'0.6em',pb:'3px',draw:drawRate,sortNum:1,sort2nd:4,sedit:'Run Rate',edit:editRate},
+     {s:'Rate',fs:'0.6em',pb:'3px',pbh:'9px',draw:drawRate,sortNum:1,sort2nd:3,edit:editRate},
+     {s:'Changed',fs:'0.6em',pb:'9px',draw:drawChanged,ts:1},
+     {s:'Description',width:'200px',defaultHead:1,fs:'0.6em',pb:'3px',pbh:'9px',padding:'1px 3px',edit:editDescr}
+    ],
+    rows:[
+    [0,0,'1 Apocalypse',8,9,'2025-10-10T17:51:32.018Z','Slow. Not as screamy as a later version.'],
+    [1,0,'2 Mind Corruption',8,8,'2025-10-10T17:51:32.018Z','Speed'],
+    [2,0,'3 Reincarnation',8,8,'2025-10-10T17:51:32.018Z','Midtempo'],
+    [3,0,'4 Reborn',8,8,undefined,'Speed'],
+    [4,0,'5 Black Forest',8,8,undefined,'Starts midtempo, then it gets speedy deathnroll, ends slow and hymnic.'],
+    [5,0,'6 Never to Return',8,8,undefined,'Midtempo'],
+    [6,0,'7 Path to Babylon',8,8,undefined,'Deathnroll with slower parts'],
+    [7,0,'8 Slaughtered',7,8,undefined,'Slow'],
+    [8,0,'9 Orgy in Blood',8,8,undefined,'Speed'],
+    [9,0,'10 The North Wind',8,8,undefined,'Midtempo with slow parts.'],
+    [10,0,'11 T.E.M.P.T.',8,8,undefined,'Speed with deathnroll and midtempo'],
+    [11,0,'12 The Forth Dimension',8,10,undefined,'Slow & epic'],
+    [12,0,'13 The Arrival Of The Demons',7,8,undefined,'Instrumental'],
+    [13,1,'1 Jeg bærer deres lig',7,7,undefined,'n.d.'],
+    [14,1,'2 Skær',7,7,undefined,'n.d.'],
+    [15,1,'3 Sorte vand',9,10,undefined,'n.d.'],
+    [16,1,'4 Stjernerne slukkes',7,7,undefined,'n.d.'],
+    [17,1,'5 Vættekongen',9,9,undefined,'n.d.'],
+    [18,1,'6 Glemsomhedens elv',7,7,undefined,'n.d.'],
+    [19,1,'7 Oh måneløse nat',7,7,undefined,'n.d.'],
+    [20,2,'1 Auf dem Kreuzzug ins Glück',10,10,undefined,'n.d.'],
+    [21,2,'3 Glückspiraten',8,8,undefined,'n.d.'],
+    [22,2,'5 Geld $ Gold',9,8,undefined,'n.d.'],
+    [23,2,'10 All die ganzen Jahre',8,9,undefined,'n.d.'],
+    [24,2,'20 Azzurro',8,8,undefined,'n.d.'],
+    [25,2,'30 Geld $ Gold (Demo)',9,8,undefined,'n.d.'],
+    [26,2,'31 All die ganzen Jahre (Demo)',8,9,undefined,'n.d.'],
+    ],
+    oldRows:[]
+    };
+    albums={
+    cols:['Id','Title','Band','Year','Image'],
+    rows:[
+    [0,'The Fourth Dimension','Hypocrisy',1994,'data:image/jpeg;base64,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'],
+    [1,'Sorg','AFSKY',2018,'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDABsSFBcUERsXFhceHBsgKEIrKCUlKFE6PTBCYFVlZF9VXVtqeJmBanGQc1tdhbWGkJ6jq62rZ4C8ybqmx5moq6T/2wBDARweHigjKE4rK06kbl1upKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKT/wAARCABEAEQDASIAAhEBAxEB/8QAGgAAAgMBAQAAAAAAAAAAAAAAAAUBAwQCBv/EADYQAAEEAQICBwUGBwAAAAAAAAEAAgMRBBIhBTEGEyJBUWHBFTI1gZEUI0JUcXJSYpKhsdHx/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAH/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwD0he1pouANXV70hjw9rXDk4WLWLiTG9l5oEkCyqY8mZrra1jiI6O3IC/8AqCOOZ+RhPhEDmgOBu234JUeO8QH42f0Baekbi77K5wolpJH0SY80DKLjee94brZv/IFbFxrLc7SacfJoShhqRp81t4WLyZI6sEHuvkoGR4jn1tE/5MBWccYzjZAsXXuDmteNG1vEWMDKuNxO1d4WfAZUcpLXV15FgjxRTnAlkmw4pJffcN9qQusXbHaCCOfP9UKomdrXMJcAdIvdZnQV1bW9glpsgfotrhYIXOn7y/AUgQ9JG6XYredNI/wkvenvSUHrceh3O9ElNBBwNja04WUMeZ0hAdfnS5hxZcg/ds2/iOwHzWmLhfXMBjkLa2Lnt2J8lBa3i4bkNlEYBa0jnd3X+lRBnCNjwWg6pC9VyYkOPK6KYyOeBvpoBVmKBw7Ezmkdz27fVB6vhsnXYMUlVqBNfNC54Q3TwyAWDTeY5c0KjYoUoQKOOBpMZLg0hpO/fySmOKJ4D5naWu5ULK3dJnlr4AK3DvRJBM8MLL2tRThk7C49TqOkbXVAIdlvrtS0PJJ2SFrgbVkztbA6yXDnZtBfkOflaC1pe8GtXiO5VOY6OxJAXHzVf2iUt0l5LfBQZpNNazsbCD1vCfhsHZ0dn3fDdCjgxJ4Xjk7nT6oVRtQuXktYS0aiBsPFUwzTPk0yQ6BV3doFHSYAyY9+DvRInMIGqtk66VOIlxq8HeiSC3OAcduWyDm1bHKW7f2PerH4ZFmOVkg57KgxuBpBLq5t+i5JU04Lk3e6D2PBPhOP+31KEcE+E4/7fUoQbkIQgoyMTHyS0zwtkLeWoclWOGYTTYxmD9AhCCfZ+H+Xj+ig8Nwjzx2H5IQgj2Xg/lo/oj2Xg/lY/ohCDTFEyGMRxtDWN5AdyEIQf//Z'],
+    [2,'Auf dem Kreuzzug ins Glück','Die Toten Hosen',1990,'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wCEAAkGBwgHBgkIBwgKCgkLDRYPDQwMDRsUFRAWIB0iIiAdHx8kKDQsJCYxJx8fLT0tMTU3Ojo6Iys/RD84QzQ5OjcBCgoKDQwNGg8PGjclHyU3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3N//AABEIADgAOAMBIgACEQEDEQH/xAAbAAACAgMBAAAAAAAAAAAAAAAFBgADAQQHAv/EADQQAAIBAgUBBQUHBQAAAAAAAAECAwQRAAUSITEGEyJBUWEUcYGh8BUyM0KRsdEHI0Niwf/EABgBAQEBAQEAAAAAAAAAAAAAAAECAwAE/8QAIBEAAgICAwADAQAAAAAAAAAAAAECEQMSITFBUVKBMv/aAAwDAQACEQMRAD8Aa2y6HM6ZnqnqGVW/DiYXG3JuR9HFDZHl0SgRU1Q4bTq1MoI9253xpSz18BLOsbC/4cK/ucVwTSVjlZMxWBx/iRd/gTzjyuDv+jeNyXEegnHlFKoHaU0wVr7xuCRbzBsBj3Jk1KtJLPEamMqtwJmAUny2OBcmXzyPvUy6RxZiCf8AmPUdJWuyo8iQwg2ILFyw+vTHLHk+xO0fgxlKK8YmWUSnf7u4P84oqKV5Kh6iaaxXYNqIsD8cDumMvm6Uyo0eZTBjJUFYhGdekHjYfO384N1Rlp4x3BIxPgbWxq5pq10Tq+gX7P24skUpiW5DyOQB52v++MYF5/V5k1NIKd0E2hgoVbm3r6YmJWWIvEx+bIRHPoWpd734PG3J+WBU2QTyTezhVUfnlHG9/wBSPlt8G6aJpEF4pLBwwCLzY8b+fGB81bTQyx08tA0c8ptGkjWv4k7HYcC/mRicmKORpvw1w5pYbr0F1OV1KII4jOUHirAfO98IvVuYz0UZbLZVZxKIzJIdRS45O+w538hh8z7Ovs6nkSWKGKSRCqqkzOR6/DHGOoJYXlQQz9tJLa9hbQTzv4kfpf3YW7kojGGuN5H+DqepIKeeiNNLLWUlUGAqHUaQVYAxrtcMBc6m5Ftt74ZKKOSVV00lQw51dqoHA9ccbooAuc0dOlTMsbATtfcB7He23h8sdsySoikgtqSxIU9mxBJvYHm9r4ibWJ62Ebyx2fZuSZTSSBXkBDsO8Njbbf0xMDVzIHNpaEJUaRUCJXWY2GwvyD/twcTG6SZlbQczTqkUlHUyiLS0SnQTIGDNbYC3N8cozDqpPtRpWqezqpYNLVE4Wa1zq1KCRpI8Bxtxi7qOWtq80OZwxmly0N/Yjl0AoF7rcuLm4PA2wn13tVR1FCuXBsxla3s1lPeJ37o5IHHpY4FyQ7sNZh1fl1SoR6aKvq9JX2yqj7qi25AFjf44CmuOc1NPHDQQx1NxEskbMNQOwGkkgbYPTZKuY15paqIe2doIp5murSzFRcKqjZRqAvpJPJ4wx5F/Tyjnyh6oytGneRZaaIltSnZtTkHnc2twB54YuK5oqW7VWIFJKW6vJVnMYeRdzdiigr+tlGHVqgRyyZfTVgjqaeVKpZpFAZ4jvp28e+PD8o88VZd0lQJUmCGepaanDoZVjFm1nYfe35A95GGR+gEqa2pnppZY3lI7ZZUO6qANN/L64xnNbStFwk4Ir6azmfOo0hgMUcgq2mRgh0yFtQPuG4N8TDBk3ScmVsZzXFJeA+kWiW/Cg7el7Xt44xio2lyDls7oa0nhmVpIKksoNmsw2Pr5Y0K2lWpp5I6fMGjkZGXWFVymrm1lxMTD5YVzQOyDprLcopAtVO01cx1GdpXVzY35JuRfex2wVSok1dk1DLLHe11KlT8AbYxiYdeDr5LYcoy6KZKqKjVJlJK6rnSfMC9gfXGKmZBJ35mG+4vxiYmGkgYMqKjLFZvae0kBO5lR9IxMTEwHM//Z'],
+    ]
+    };
+    //...
+  }
+  
+  let d=localStorage['conet2d'+fn];
+  if (d) {
+    d=JSON.parse(d);
+    songs.rows=d.rows;
+    songs.oldRows=d.oldRows;
+  }
+  
+  table(songs);
+  //onsole.log(songs);
+  //...
+}
+)();
+</script>
+
+</body>
+</html><script>
+//fr o,74
+//fr o,74,6
+//fr o,74,8
+//fr o,74,10
+//fr o,74,12
+//fr o,74,14
+//fr o,74,16
+//fr o,74,16,2
+//fr o,74,16,4
+//fr o,74,16,6
+//fr o,74,16,8
+//fr o,74,16,8,20
+//fr o,74,16,8,24
+//fr o,74,16,10
+//fr o,74,20
+//fr p,87,225

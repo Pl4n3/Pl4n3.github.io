@@ -1,7 +1,7 @@
 var Conet={};
 (function(Conet) {
   Conet.offline=false;
-  Conet.version='1.615 ';//FOLDORUPDATEVERSION
+  Conet.version='1.667 ';//FOLDORUPDATEVERSION
   Conet.files={};
   var uploads={},fns,logc,logs=[],//fn=>data,first
       logSameLineCount=0,ac,downloads={},PI=Math.PI;
@@ -21,6 +21,20 @@ var Conet={};
     } catch (e) { console.log('Conet.xhr err');console.log(e); }
     return x;
   }
+  function lsUpload(p) {
+    //---
+    let slog='Uploaded to ls: '+p.fn;
+    if (p.log) p.log(slog); else console.log(slog);
+    localStorage['conet2d'+p.fn]=p.data;
+    if (p.f) p.f();
+    let index=JSON.parse(localStorage['conet2index']||'{}');
+    if (!index[p.fn]) index[p.fn]={uploads:0};
+    index[p.fn].uploads++;
+    console.log(index);
+    localStorage['conet2index']=JSON.stringify(index);
+    //...
+  }
+  Conet.lsUpload=lsUpload;
   function upload(p) {
     //onsole.log('Conet.upload 0');
     //onsole.trace();
@@ -33,15 +47,18 @@ var Conet={};
     }
     
     if (!Conet.checkOnline()) { //no upload possible
-      let slog='Uploaded to ls: '+p.fn;
-      if (p.log) p.log(slog); else console.log(slog);
-      localStorage['conet2d'+p.fn]=p.data;
-      if (p.f) p.f();
-      let index=JSON.parse(localStorage['conet2index']||'{}');
-      if (!index[p.fn]) index[p.fn]={uploads:0};
-      index[p.fn].uploads++;
-      console.log(index);
-      localStorage['conet2index']=JSON.stringify(index);
+    
+      lsUpload(p);
+      //let slog='Uploaded to ls: '+p.fn;
+      //if (p.log) p.log(slog); else console.log(slog);
+      //localStorage['conet2d'+p.fn]=p.data;
+      //if (p.f) p.f();
+      //let index=JSON.parse(localStorage['conet2index']||'{}');
+      //if (!index[p.fn]) index[p.fn]={uploads:0};
+      //index[p.fn].uploads++;
+      //console.log(index);
+      //localStorage['conet2index']=JSON.stringify(index);
+    
       return;
     }
     
@@ -286,6 +303,25 @@ var Conet={};
     
     if (p.loadMs) {
       mload.ms='';mload.msid=msid;
+    }
+    
+    if (p.grid) {
+    m.sub.push({s:'Loadgrid..',actionf:function() {
+      //---
+      //let md=new Mdiv.Cont(50,50,Math.min(800,window.innerWidth-100),Math.min(600,window.innerHeight-100));
+      let md=new Mdiv.Cont(20,20,window.innerWidth-140,window.innerHeight-100);
+      Conet.grid({cont:md.c,dir:'/blog',closeButton:1,files:m.files,
+      onclick:function(fh) {
+        //---
+        Conet.lastLoadMenu={cfmo:fh};
+        p.loadf(fh.fn);
+        //...
+      }
+      }); 
+      //onsole.log(m.files);
+      //...
+    }
+      });
     }
     
     if (p.savef) {
@@ -747,10 +783,11 @@ var Conet={};
     if (Array.isArray(o)) {
       s+='[';let first=true;
       for (const e of o) {
+        let npath=path+'A';//250627
         if (ps&&ps.newLine) {
-          if (ps.newLine[path]) s+='\n';
+          if (ps.newLine[npath]) s+='\n';
         }
-        s+=(first?'':',')+jsonStringify(e,replacer,space,ps,path);
+        s+=(first?'':',')+jsonStringify(e,replacer,space,ps,npath);
         first=false; 
       }
       s+=']';
@@ -763,6 +800,7 @@ var Conet={};
         const npath=path+k;
         if (ps&&ps.newLine) {
           //onsole.log('nl '+ps.newLine[k]);
+          //onsole.log('npath='+npath);
           if (ps.newLine[npath]) s+='\n';
         }
         s+=(first?'':',')+'"'+k+'":'+jsonStringify(o[k],replacer,space,ps,path+k);
@@ -1156,35 +1194,244 @@ var Conet={};
     //...
   }
   
+  Conet.grid=function(gps) {
+    let dir=gps.dir,syncAdd=1,cont=gps.cont;
+    
+    
+    function addImage(ps) {
+      //...
+      var img=new Image();
+      img.src=ps.src;
+      img.title=ps.title;
+      var s=img.style;
+      s.maxWidth='200px';s.maxHeight='200px';
+      if (ps.height) img.height=ps.height;
+      //add(img,ps);
+      ps.el.appendChild(document.createElement('br'));
+      ps.el.appendChild(img);
+      if (!syncAdd)
+      setTimeout(function() {
+        cont.appendChild(ps.el);
+      }
+      ,10);
+      //...
+    }
+    function addFolder(ps) {
+      //---
+      let e=document.createElement('div'),s=e.style;
+      s.cursor='pointer';
+      s.background='#ee8';s.borderColor='#444';
+      s.borderRadius='0px 0.5em 0.5em';
+      s.border='1px solid';
+      s.padding='2px';
+      s.margin='2px';
+      e.innerHTML=ps.fn0;
+      cont.appendChild(e);
+      e.onclick=function() {
+        //---
+        
+        var done=false;
+        if (ps.fn0=='..') {
+          var i=dir.lastIndexOf('/');
+          if (i>0) {//(i!=-1) {
+            if (dir.substr(i)!='/..') {
+              dir=dir.substr(0,i);
+              done=true;
+            }
+          }
+        }
+        
+        if (!done) dir=dir+'/'+ps.fn0;
+        //onsole.log('thumbs.addFolder 1 dir='+dir);
+        dodir();
+        
+        //...
+      }
+      //...
+    }
+    
+    function encode(input) {
+      var keyStr = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
+      var output = "";
+      var chr1, chr2, chr3, enc1, enc2, enc3, enc4;
+      var i = 0;
+      
+      while (i < input.length) {
+          chr1 = input[i++];
+          chr2 = i < input.length ? input[i++] : Number.NaN; // Not sure if the index 
+          chr3 = i < input.length ? input[i++] : Number.NaN; // checks are needed here
+      
+          enc1 = chr1 >> 2;
+          enc2 = ((chr1 & 3) << 4) | (chr2 >> 4);
+          enc3 = ((chr2 & 15) << 2) | (chr3 >> 6);
+          enc4 = chr3 & 63;
+      
+          if (isNaN(chr2)) {
+              enc3 = enc4 = 64;
+          } else if (isNaN(chr3)) {
+              enc4 = 64;
+          }
+          output += keyStr.charAt(enc1) + keyStr.charAt(enc2) +
+                    keyStr.charAt(enc3) + keyStr.charAt(enc4);
+      }
+      return output;
+    }
+    
+    function start(title) {
+      //---
+      cont.innerHTML='';let s=cont.style;
+      cont.style.display='grid';
+      cont.style.gridTemplateColumns='repeat(auto-fill, minmax(210px, 1fr))';
+      cont.style.background='#777';
+      s.fontSize='12px';
+      s.color='#000';
+      
+      let e=document.createElement('div');s=e.style;
+      e.innerHTML=title;//dir;
+      s.fontSize='18px';
+      s.background='#aaa';s.borderColor='#444';
+      //s.gridColumn='1 / -1';
+      s.borderRadius='0px 0.5em 0.5em';
+      s.border='1px solid';
+      s.padding='2px';
+      s.margin='2px';
+      if (gps.closeButton) {
+        let c=document.createElement('button');
+        c.innerHTML='X';
+        let s=c.style;s.float='left';s.transform='rotate(90deg);';s.margin='2px';
+      //s.position='absolute';s.top='2px';s.left='2px';
+      c.onclick=function() {
+        cont.parentNode.removeChild(cont);
+      }
+        e.appendChild(c);
+      }
+      cont.appendChild(e);
+      //...
+    }
+    
+    function dodir() {
+      Conet.dir({fn:dir,f:function(a) {
+        //---
+        start(dir);
+        
+        for (let fn of a) {
+          if (fn.indexOf('.')>0) continue;
+          addFolder({fn0:fn});
+        }
+        for (let fn0 of a) {
+          if (fn0.indexOf('.')<=0) continue;
+          let fn=dir+'/'+fn0,fnl=fn.toLowerCase();
+          let el=document.createElement('div'),s=el.style;
+          s.background='#888';s.borderColor='#444';
+          s.borderRadius='0px 0.5em 0.5em';
+          s.border='1px solid';
+          s.padding='2px';
+          s.margin='2px';
+          s.wordBreak='break-all';
+          el.innerHTML=fn0;
+          if (syncAdd) cont.appendChild(el);
+          if (fnl.endsWith('.json')) {
+          
+        Conet.download({fn:fn,_el:el,f:function(v) {
+          //---
+          let d;
+          try {
+            d=JSON.parse(v);
+          } catch (e) {
+            if (!syncAdd) cont.appendChild(this._el);return;
+          }
+          if (!d.data) { 
+            if (!syncAdd) cont.appendChild(this._el);return; 
+          }
+          addImage({src:d.data,el:this._el});
+          //...
+        }
+        })
+        
+          } else if (fnl.endsWith('.png')||fnl.endsWith('.jpg')||fnl.endsWith('.gif')) addImage({src:fn,el:el,title:fn});
+          
+          else if (fnl.endsWith('.c')) {
+          var x=new XMLHttpRequest();
+          x.responseType='arraybuffer';//
+          x.open('GET',fn,true);x.ps={fn:fn,fn0:fn0,el:el};
+        x.onload=function() {
+          var a=new Uint8Array(this.response);
+          addImage({src:'data:image/jpeg;base64,'+encode(a),el:this.ps.el});
+        }
+          x.send(null);
+        }
+          
+          
+          else if (!syncAdd) cont.appendChild(el);
+        }
+        
+        //...
+      }
+      });
+    }
+    
+    if (gps.files) {
+      start('Files');
+      for (let f of gps.files) {
+        let el=document.createElement('div'),s=el.style;
+        s.background='#888';s.borderColor='#444';
+        s.borderRadius='0px 0.5em 0.5em';
+        s.border='1px solid';
+        s.padding='2px';
+        s.margin='2px';
+        s.wordBreak='break-all';
+        s.cursor='pointer';
+        el.innerHTML=f.fn;el._fh=f;
+        cont.appendChild(el);
+        if (f.isrc) addImage({src:f.isrc,el:el,height:50});
+    el.onclick=function() {
+      //---
+      cont.parentNode.removeChild(cont);
+      gps.onclick(this._fh);
+      //console.log('load file nao: '+this._fn);
+      //...
+    }
+      }
+    } else dodir();
+  }
+  
+  
   //---
 }
 )(Conet);
 console.log('Conet '+Conet.version);
 //fr o,1
 //fr o,1,5,4
-//fr o,1,6
-//fr o,1,6,30
-//fr o,1,7
-//fr o,1,7,29
-//fr o,1,7,31
-//fr o,1,10,3
-//fr o,1,10,4
-//fr o,1,10,5
-//fr o,1,10,6
-//fr o,1,10,7
-//fr o,1,10,19
-//fr o,1,10,20
-//fr o,1,10,30
-//fr o,1,10,33
-//fr o,1,10,34
-//fr o,1,11,1
-//fr o,1,18,4
-//fr o,1,47,13
-//fr o,1,52
-//fr o,1,52,5
-//fr o,1,61,3
-//fr o,1,62,2
-//fr o,1,106
-//fr o,1,114,2
-//fr o,1,114,11
-//fr p,11,260
+//fr o,1,8,33
+//fr o,1,9,29
+//fr o,1,9,31
+//fr o,1,12
+//fr o,1,12,3
+//fr o,1,12,4
+//fr o,1,12,5
+//fr o,1,12,6
+//fr o,1,12,7
+//fr o,1,12,19
+//fr o,1,12,20
+//fr o,1,12,29
+//fr o,1,12,29,4
+//fr o,1,12,35
+//fr o,1,12,38
+//fr o,1,12,39
+//fr o,1,13,1
+//fr o,1,20,4
+//fr o,1,49,13
+//fr o,1,63,3
+//fr o,1,64,2
+//fr o,1,108
+//fr o,1,116,2
+//fr o,1,116,11
+//fr o,1,120
+//fr o,1,120,3
+//fr o,1,120,4
+//fr o,1,120,8
+//fr o,1,120,8,22
+//fr o,1,120,10
+//fr o,1,120,10,0
+//fr o,1,120,26
+//fr p,24,9

@@ -68,13 +68,15 @@ tr:nth-child(even) {
 
 </style>
 <script src="/conet.js"></script>
+<script src="/menu.js"></script>
 </head>
 <body>
 
 <script type="text/javascript">
 (function () {
   //---
-  let fn='songRates.json';
+  let fn='songRates.json',isAll,fnAll='/forms/rate/all.songs.json',
+      about='Playlist v.0.152 ';//FOLDORUPDATEVERSION
   
   
   function create(s) {
@@ -102,12 +104,47 @@ tr:nth-child(even) {
     //...
   }
   
-  function drawChanged(td,v) {
+  function drawChanged(td,v,t,j) {
     //---
     if (v) td.innerHTML=v.substr(2,8)+'<br>'+v.substr(11,5);
     td.style.padding='1px';
     td.style.textAlign='center';
     td.style.fontSize='0.55em';
+    //if (i==0)
+    //  console.log('drawChanged '+i+' '+j+' todo: get minmax');
+    let col=t.cols[j],f1;
+    if (col.min&&v) {
+      f1=(Date.parse(v)-col.min)/(col.max-col.min);
+      //onsole.log(v);
+      f1=0.2+f1*0.8;
+    } else f1=0;
+    let f0=1-f1,
+      r0=120,g0=120,b0=120,
+      r1=250,g1=250,b1=250,
+      r=f1*r1+f0*r0,
+      g=f1*g1+f0*g0,
+      b=f1*b1+f0*b0;
+    
+    td.style.background='rgb('+r+','+g+','+b+')';
+    //...
+  }
+  
+  function dataChanged(t,j) {
+    //---
+    //onsole.log('...dataChanged');
+    let min=Number.MAX_VALUE,max=0;
+    for (let i=0;i<t.rows.length;i++) {
+      let v=t.rows[i][j];
+      if (!v) continue;
+      v=Date.parse(v);
+      //onsole.log('...dataChanged v='+v+' min='+min+' max='+max);
+      min=Math.min(min,v);
+      max=Math.max(max,v);
+    }
+    let col=t.cols[j];
+    col.min=min;
+    col.max=max;
+    //onsole.log(min+' '+max);
     //...
   }
   
@@ -142,12 +179,55 @@ tr:nth-child(even) {
     //...
   }
   
+  function editAlbum(td,v) {
+    //---
+    let r;
+    for (r of albums.rows) if (v==r[0]) break;
+    //onsole.log(r);
+    td.style.fontSize='0.75em';
+    td.innerHTML=r[1]+'<br>'+r[2]+'<br>'+r[3]+' Id:'+r[0];
+    let img=new Image();
+    img.width=68;
+    img.style.float='left';
+    img.style.marginRight='4px';
+    img.src=r[4];
+    td.insertBefore(img,td.firstChild);
+    //return {value:v};//fake input
+    //...
+  }
+  
   function editDescr(td,v) {
     //---
     let ta=create('textarea');
     ta.value=v;ta.rows=3;
     td.appendChild(ta);
     return ta;
+    //...
+  }
+  
+  function serialize(t) {
+    //---
+    //return Conet.jsonStringify({rows:t.rows,oldRows:t.oldRows}
+    //  ,undefined,undefined,{newLine:{rows:1,rowsA:1,oldRows:1,oldRowsA:1}})
+    //if (!t) t={songs:songs,albums:albums};
+    
+    
+    return Conet.jsonStringify(t//{songs:songs,albums:albums}
+    ,undefined,undefined,{newLine:{
+      'songs.cols':1,'songs.colsA':1,'songs.rows':1,'songs.rowsA':1,'songs.oldRows':1,'songs.oldRowsA':1,
+      'albums.cols':1,'albums.rows':1,'albums.rowsA':1,
+    }});
+    //...
+  }
+  
+  function load(d) {
+    //---
+    d=JSON.parse(d);
+    songs.rows=d.songs.rows;
+    songs.oldRows=d.songs.oldRows||[];
+    ////albums=d.albums;
+    albums.rows=d.albums.rows;
+    albums.oldRows=d.albums.oldRows||[];
     //...
   }
   
@@ -177,6 +257,7 @@ tr:nth-child(even) {
         if (r==0) r=v0.localeCompare(v1);
         return r;
       }
+      if (col.ts) return (v1?v1:'').localeCompare(v0?v0:'');
       return (''+v0).localeCompare(''+v1);
       //...
     }
@@ -194,6 +275,7 @@ tr:nth-child(even) {
     function clickRow() {
       //---
       //onsole.log(this._row);
+      console.log('isAll='+isAll);
       if (editTable) editTable.remove();
       let row=this._row;
       
@@ -219,7 +301,7 @@ tr:nth-child(even) {
           let col=t.cols[i];
           let v;
           if (col.ts) v=new Date().toISOString();
-          else if (col.hide) v=row[i];
+          else if (col.hide||!inputs[i]) v=row[i];
           else v=inputs[i].value;
         
           old[i]=(col.id||(row[i]!=v))?row[i]:undefined;
@@ -227,7 +309,11 @@ tr:nth-child(even) {
           //onsole.log(inputs[i].value);
         }
         t.oldRows.splice(0,0,old);
-        Conet.lsUpload({fn:fn,data:JSON.stringify({rows:t.rows,oldRows:t.oldRows},undefined,' ')});
+        let data=serialize({songs:songs,albums:albums});
+        if (isAll) 
+          Conet.upload({fn:fnAll,data:data});
+        else 
+          Conet.lsUpload({fn:fn,data:data});//JSON.stringify({rows:t.rows,oldRows:t.oldRows},undefined,' ')});
         drawRows();
         
         table.remove();
@@ -266,6 +352,7 @@ tr:nth-child(even) {
         else {
           input=create('input');
           input.value=v;
+          input.style.width='230px';
           td.appendChild(input);//innerHTML=row[i];
         }
         inputs.push(input);
@@ -285,6 +372,12 @@ tr:nth-child(even) {
       
       //---remove old versions
       for (let r of t.rows) rows.push(r);
+      
+      //--- todo: following shouldnt run for each sort but after each data change (after new table,update)
+      for (let j=0;j<t.cols.length;j++) {
+        let col=t.cols[j];
+        if (col.onData) col.onData(t,j);
+      }
       
       rows.sort(sort);
       
@@ -312,16 +405,19 @@ tr:nth-child(even) {
             }
             if (o.padding) style.padding=o.padding;
             if (o.textAlign) style.textAlign=o.textAlign;
-            if (o.width) style.width=o.width;
-            if (o.width) s='<div style="max-height:30px;overflow:hidden;text-wrap:wrap;width:'+o.width+'">'+s+'</div>';
-            if (o.draw) { o.draw(td,s);s=undefined; }
+            //if (o.width) style.width=o.width;
+            //if (o.overflow) style.overflow=o.overflow;
+            if (o.width) s='<div style="max-height:30px;overflow:hidden;'
+              +(o.wrap?'text-wrap:wrap;':'')
+              +'width:'+o.width+'">'+s+'</div>';
+            if (o.draw) { o.draw(td,s,t,j);s=undefined; }
           }    
           tr.appendChild(td);
           if (s!==undefined) td.innerHTML=s;
         }
       }
       
-      tdFoot.innerHTML='Rows:'+t.rows.length+' Old versions:'+t.oldRows.length+' <a href="/util/io/lsUploads.htm">Data</a>';
+      tdFoot.innerHTML='Rows:'+t.rows.length+' Old versions:'+t.oldRows.length+' <a href="/util/io/lsUploads.htm">Data</a> '+about;
       //...
     }
     
@@ -385,22 +481,88 @@ tr:nth-child(even) {
     
     
     document.body.appendChild(table);
+    
+    if (isAll) Menu.init([
+    {s:'ReImport..',ms:about,doctrl:'Changed partial playlist',ta:1,value:'{}',jsonCheck:1
+    ,setfunc:function(v) {
+      //---
+      //onsole.log('reimport nao');
+      let sd=JSON.parse(v).songs,updates=0;
+      for (let rn of sd.rows) {
+        for (let i=0;i<songs.rows.length;i++) {
+          let r=songs.rows[i];
+          if (r[0]==rn[0]) {
+            if (JSON.stringify(r)!=JSON.stringify(rn)) {
+              songs.rows[i]=rn;
+              updates++;
+            }
+            break;
+          }
+        }
+      }
+      if (!sd.oldRows) sd.oldRows=[];
+      if (!songs.oldRows) songs.oldRows=[];
+      songs.oldRows=sd.oldRows.concat(songs.oldRows);
+      drawRows();
+      let data=serialize({songs:songs,albums:albums});
+      Conet.upload({fn:fnAll,data:data});
+      alert('Reimport done.\nUpdated songs:'+updates+',\nAdded oldRows:'+sd.oldRows.length);
+      //...
+    }
+    },
+    {s:'Export..',ms:'partial playlist',doctrl:'Partial playlist',ta:1,jsonCheck:1
+    ,valuef:function() {
+      //---
+      let s=prompt('Partial playlist params','{"albums":[0,1,2]}');
+      if (!s) return;
+      let ps=JSON.parse(s);
+      return songsExport(ps);
+      //...
+    }
+    }
+    ],{listen:1});
+    
+    
     //...
   }
   
   let songs,albums,imgs={};
+  
+  //let s='playlist console functions';
+  ////console.log('%c'+s,'background: #9f9; font-size: large');
+  //console.group('%c'+s,'background: #9f9; font-size: large');
+  ////console.group(s);
+  //console.info('songsExport');
+  //console.groupEnd(s);//'%c'+s);
+  
+  Conet.consoleInfo({head:'playlist console functions',funcs:['console.log(songsExport({albums:[0,1,2]})); //example']});
+  
+  
+  function songsExport(ps) {
+    let songs0={rows:[]},albums0={rows:[]};
+    if (ps.albums) for (let i of ps.albums) {
+      for (let r of albums.rows) 
+        if (r[0]==i) albums0.rows.push(r);
+      for (let r of songs.rows) 
+        if (r[1]==i) songs0.rows.push(r);  
+    }
+    return serialize({songs:songs0,albums:albums0});
+    //...
+  }
+  
+  window.songsExport=songsExport;
   
   /* start data */ {
     //---
     songs={
     sortCol:1,
     cols:[{s:'Id',hide:1,id:1},
-     {s:'Album',draw:drawAlbum,padding:'0px',_textAlign:'center',fs:'0.4em',sort2nd:2},
-     {s:'Songtitle',defaultHead:1,sortTitle:1},
+     {s:'Album',draw:drawAlbum,padding:'0px',_textAlign:'center',fs:'0.4em',sort2nd:2,edit:editAlbum},
+     {s:'Songtitle',defaultHead:1,sortTitle:1,width:'270px',overflow:'hidden'},
      {s:'Run<br>Rate',fs:'0.6em',pb:'3px',draw:drawRate,sortNum:1,sort2nd:4,sedit:'Run Rate',edit:editRate},
      {s:'Rate',fs:'0.6em',pb:'3px',pbh:'9px',draw:drawRate,sortNum:1,sort2nd:3,edit:editRate},
-     {s:'Changed',fs:'0.6em',pb:'9px',draw:drawChanged,ts:1},
-     {s:'Description',width:'200px',defaultHead:1,fs:'0.6em',pb:'3px',pbh:'9px',padding:'1px 3px',edit:editDescr}
+     {s:'Changed',fs:'0.6em',pb:'9px',draw:drawChanged,ts:1,onData:dataChanged},
+     {s:'Description',width:'200px',wrap:1,defaultHead:1,fs:'0.6em',pb:'3px',pbh:'9px',padding:'1px 3px',edit:editDescr}
     ],
     rows:[
     [0,0,'1 Apocalypse',8,9,'2025-10-10T17:51:32.018Z','Slow. Not as screamy as a later version.'],
@@ -444,14 +606,41 @@ tr:nth-child(even) {
     //...
   }
   
-  let d=localStorage['conet2d'+fn];
-  if (d) {
-    d=JSON.parse(d);
-    songs.rows=d.rows;
-    songs.oldRows=d.oldRows;
-  }
+  isAll=Conet.parseUrl().partial?false:Conet.checkOnline();
   
-  table(songs);
+  if (isAll) {
+    //console.log(songs);
+    //let d={rows:songs.rows,oldRows:songs.oldRows};
+    //console.log(Conet.jsonStringify(d,undefined,undefined,{newLine:{rowsA:1,oldRows:1}}));
+    //camPos:1,targetPos:1,boxes:1,segments:1,segmentsA:1}
+    //let v=serialize();
+    //console.log(v);
+    //onsole.log('v.len='+v.length);
+  Conet.download({fn:fnAll,f:function(d) {
+    //---
+    //d=JSON.parse(d);
+    //songs.rows=d.songs.rows;
+    //songs.oldRows=d.songs.oldRows;
+    //albums=d.albums;
+    load(d);
+    table(songs);
+    //console.log(serialize({songs:songs,albums:albums}));
+    //...
+  }
+    });
+  } else {
+    let d=localStorage['conet2d'+fn];
+    if (1&&d) {
+      //d=JSON.parse(d);
+      //songs.rows=d.songs.rows;
+      //songs.oldRows=d.songs.oldRows;
+      //albums=d.albums;
+      load(d);
+      //onsole.log(serialize(d));
+    }
+    table(songs);
+  }
+  console.log(about);
   //onsole.log(songs);
   //...
 }
@@ -460,19 +649,19 @@ tr:nth-child(even) {
 
 </body>
 </html><script>
-//fr o,74
-//fr o,74,6
-//fr o,74,8
-//fr o,74,10
-//fr o,74,12
-//fr o,74,14
-//fr o,74,16
-//fr o,74,16,2
-//fr o,74,16,4
-//fr o,74,16,6
-//fr o,74,16,8
-//fr o,74,16,8,20
-//fr o,74,16,8,24
-//fr o,74,16,10
-//fr o,74,20
-//fr p,87,225
+//fr o,75
+//fr o,75,7
+//fr o,75,17
+//fr o,75,19
+//fr o,75,21
+//fr o,75,23
+//fr o,75,25
+//fr o,75,25,8
+//fr o,75,25,8,21
+//fr o,75,25,8,25
+//fr o,75,25,75
+//fr o,75,25,78
+//fr o,75,39
+//fr o,75,43
+//fr o,75,55
+//fr p,25,251

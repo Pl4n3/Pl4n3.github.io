@@ -1,7 +1,7 @@
 var Conet={};
 (function(Conet) {
   Conet.offline=false;
-  Conet.version='1.667 ';//FOLDORUPDATEVERSION
+  Conet.version='1.675 ';//FOLDORUPDATEVERSION
   Conet.files={};
   var uploads={},fns,logc,logs=[],//fn=>data,first
       logSameLineCount=0,ac,downloads={},PI=Math.PI;
@@ -780,7 +780,9 @@ var Conet={};
     //--- same as JSON.strinigfy but replacers returnvalue isnt escaped
     //onsole.log(path);
     let s='';
-    if (Array.isArray(o)) {
+    if (o===undefined) 
+      s='null';
+    else if (Array.isArray(o)) {
       s+='[';let first=true;
       for (const e of o) {
         let npath=path+'A';//250627
@@ -791,8 +793,7 @@ var Conet={};
         first=false; 
       }
       s+=']';
-    } else
-    if (typeof(o)==='object') {
+    } else if ((typeof(o)==='object')&&(o!==null)) {
       s+='{';
       const a=Object.keys(o);let first=true;
       if (path!==undefined) path+='.'; else path='';
@@ -807,7 +808,9 @@ var Conet={};
         first=false;
       }
       s+='}';
-    } else s=JSON.stringify(o);
+    } else if (typeof(o)=='function')
+      s='null';
+    else s=JSON.stringify(o);
     return s;
     //...
   }
@@ -1395,7 +1398,19 @@ var Conet={};
     } else dodir();
   }
   
-  
+  Conet.consoleInfo=function(ps) {
+    //--- used in pointGraph.js, tabl0.htm
+    
+    let s=ps.head;//'playlist console functions';
+    //console.log('%c'+s,'background: #9f9; font-size: large');
+    console.group('%c'+s,'background: #9f9; font-size: large');
+    //console.group(s);
+    for (let f of ps.funcs) 
+      console.info(f);//'songsExport');
+    console.groupEnd(s);//'%c'+s);
+    
+    //...
+  }
   //---
 }
 )(Conet);
@@ -1405,7 +1420,6 @@ console.log('Conet '+Conet.version);
 //fr o,1,8,33
 //fr o,1,9,29
 //fr o,1,9,31
-//fr o,1,12
 //fr o,1,12,3
 //fr o,1,12,4
 //fr o,1,12,5
@@ -1421,17 +1435,15 @@ console.log('Conet '+Conet.version);
 //fr o,1,13,1
 //fr o,1,20,4
 //fr o,1,49,13
+//fr o,1,60
 //fr o,1,63,3
 //fr o,1,64,2
-//fr o,1,108
 //fr o,1,116,2
 //fr o,1,116,11
-//fr o,1,120
 //fr o,1,120,3
 //fr o,1,120,4
 //fr o,1,120,8
 //fr o,1,120,8,22
-//fr o,1,120,10
-//fr o,1,120,10,0
 //fr o,1,120,26
-//fr p,24,9
+//fr o,1,122
+//fr p,38,162

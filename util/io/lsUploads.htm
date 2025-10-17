@@ -1,6 +1,9 @@
 <!doctype html><html><head>
 <meta http-equiv="content-type" content="text/html; charset=UTF-8">
 <meta name="viewport" content="width=device-width, user-scalable=yes, minimum-scale=1.0, maximum-scale=10.0">
+<style>
+button { margin:2px; }
+</style>
 </head>
 <body bgcolor="#aaaaaa" style="font-family:sans-serif;box-sizing:border-box;">
 <h1>LocalStorage Uploads</h1>
@@ -15,7 +18,20 @@ V.0.1 <b>Following files were uploaded to localStorage:</b>
     let c=document.createElement('div');
     let fdata=localStorage['conet2d'+fn];
     
-    let b=document.createElement('button');
+    let b;
+    b=document.createElement('button');
+    b.innerHTML='Import';
+  b.onclick=function() {
+    //---
+    //onsole.log('import fn='+fn+' data='+ta.value);
+    localStorage['conet2d'+fn]=ta.value;
+    console.log('import done, fn='+fn+' '+ta.value.length+'chars');
+    //...
+  }
+    c.appendChild(b);
+    
+    
+    b=document.createElement('button');
     b.innerHTML='Share';
   b.onclick=function() {
     //---
@@ -38,7 +54,7 @@ V.0.1 <b>Following files were uploaded to localStorage:</b>
     
     b=document.createElement('button');
     b.innerHTML='Delete';
-  b.onclick=function()   {
+  b.onclick=function() {
     //---
     localStorage.removeItem('conet2d'+fn);
     delete(d[fn]);
@@ -86,8 +102,9 @@ V.0.1 <b>Following files were uploaded to localStorage:</b>
 
 </body>
 </html><script>
-//fr o,8
-//fr o,8,10
-//fr o,8,10,2
-//fr o,8,15
-//fr p,59,6
+//fr o,11
+//fr o,11,11
+//fr o,11,17
+//fr o,11,17,2
+//fr o,11,22
+//fr p,2,25

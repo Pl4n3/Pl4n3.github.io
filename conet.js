@@ -1,7 +1,7 @@
 var Conet={};
 (function(Conet) {
   Conet.offline=false;
-  Conet.version='1.675 ';//FOLDORUPDATEVERSION
+  Conet.version='1.700 ';//FOLDORUPDATEVERSION
   Conet.files={};
   var uploads={},fns,logc,logs=[],//fn=>data,first
       logSameLineCount=0,ac,downloads={},PI=Math.PI;
@@ -1284,11 +1284,13 @@ var Conet={};
       //---
       cont.innerHTML='';let s=cont.style;
       cont.style.display='grid';
-      cont.style.gridTemplateColumns='repeat(auto-fill, minmax(210px, 1fr))';
+      //cont.style.gridTemplateColumns='repeat(auto-fill, minmax(210px, 1fr))';
+      cont.style.gridTemplateColumns='repeat(auto-fill, minmax('+(gps.min||'210px')+', 1fr))';
       cont.style.background='#777';
+      cont.style.padding='4px';
       s.fontSize='12px';
       s.color='#000';
-      
+      if (gps.skipStart) return;
       let e=document.createElement('div');s=e.style;
       e.innerHTML=title;//dir;
       s.fontSize='18px';
@@ -1374,19 +1376,22 @@ var Conet={};
     }
     
     if (gps.files) {
-      start('Files');
+      start(gps.startText||'Files');
       for (let f of gps.files) {
         let el=document.createElement('div'),s=el.style;
-        s.background='#888';s.borderColor='#444';
+        s.background='#888';
+        s.borderColor='#444';
         s.borderRadius='0px 0.5em 0.5em';
         s.border='1px solid';
         s.padding='2px';
         s.margin='2px';
         s.wordBreak='break-all';
-        s.cursor='pointer';
-        el.innerHTML=f.fn;el._fh=f;
+        //s.filter='grayscale(1)';
+        el.innerHTML=f.text||f.fn;el._fh=f;
         cont.appendChild(el);
         if (f.isrc) addImage({src:f.isrc,el:el,height:50});
+        if (gps.onclick) {    
+        s.cursor='pointer';
     el.onclick=function() {
       //---
       cont.parentNode.removeChild(cont);
@@ -1394,6 +1399,8 @@ var Conet={};
       //console.log('load file nao: '+this._fn);
       //...
     }
+        }
+        if (f.draw) f.draw(el);
       }
     } else dodir();
   }
@@ -1440,10 +1447,9 @@ console.log('Conet '+Conet.version);
 //fr o,1,64,2
 //fr o,1,116,2
 //fr o,1,116,11
+//fr o,1,120
 //fr o,1,120,3
 //fr o,1,120,4
 //fr o,1,120,8
-//fr o,1,120,8,22
-//fr o,1,120,26
-//fr o,1,122
-//fr p,38,162
+//fr o,1,120,8,24
+//fr p,0,203

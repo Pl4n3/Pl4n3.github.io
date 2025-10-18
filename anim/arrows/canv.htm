@@ -1,3 +1,4 @@
+<!doctype html>
 <html>
 <head>
 <meta charset="utf-8">
@@ -6,17 +7,23 @@
 <link rel="apple-touch-icon" href="/canvas/penrose0.png">
 <title>Cano</title>
 <style>
-html, body { border:0;margin:0;width:100%;height:100%;font-family:arial; }
+html, body { border:0;margin:0;width:100%;height:100%;font-family:arial;overflow:hidden; }
 </style>
 <script src="/conet.js"></script>
 <script src="/menu.js"></script>
 <script src="canvNotes.js"></script>
 <script src="/util/io/json5.min.js"></script>
+<script src="/util/md5.js"></script>
+<script src="/util/mdiv.js"></script>
 </head>
 <body bgcolor="#aaaaaa">
 <script>
 (function() {
   //----
+  
+  // script md5,mdiv needed for wikidata.canoScript.js
+  
+  //
   var url=Conet.parseUrl(),
       cano=new CanvNotes({nomenu:url.testHistories||url.test10000||url.testTbs}),objs=cano.objs,sels=cano.sels,view=cano.view;
   
@@ -107,5 +114,5 @@ html, body { border:0;margin:0;width:100%;height:100%;font-family:arial; }
 </script>
 </body>
 </html><script>
-//fr o,17
-//fr p,57,5
+//fr o,20
+//fr p,88,9

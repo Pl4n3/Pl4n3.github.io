@@ -7,7 +7,7 @@ var CanvNotes=function(gps) {
       tweens=[],mautolayout,mtime,mdown,//,mdrag;
       arrow=[[0,-0.3],[0.7,-0.3],[0.7,-0.6],[1,0],[0.7,0.6],
       [0.7,0.3],[0,0.3]//,[0,-0.3]
-      ],images={},grid=2,scripts={},handlers={};
+      ],images={},grid=1,scripts={},handlers={};
   
   self.selCount=3;
   //---- --
@@ -52,14 +52,14 @@ var CanvNotes=function(gps) {
     if (o.dontmove) return;
     if (isNaN(o.intern.selx)) { console.error('isnan');return; }
     
-    o.x=o.intern.selx+(x-oinp.x)/view.scx;
+    if (!o.autoYfixX) o.x=o.intern.selx+(x-oinp.x)/view.scx;
     o.y=o.intern.sely+(y-oinp.y)/view.scy;
     //var grid=2;
     if (!o.nogrid) {
       o.x=Math.floor(0.5+o.x/grid)*grid;
       o.y=Math.floor(0.5+o.y/grid)*grid;
     }
-    if (o.children&&!mautolayout.checked) for (var o0 of o.children) moveObj(o0,x,y);
+    if (o.children&&!mautolayout?.checked) for (var o0 of o.children) moveObj(o0,x,y);
     handlerRun('change',o);
     
     if (0)
@@ -83,6 +83,11 @@ var CanvNotes=function(gps) {
     //...
   }
   function delObj(o) {
+    
+    //---- first del children
+    if (o.children) for (let i=o.children.length-1;i>=0;i--) delObj(o.children[i]);
+    
+    
     if (o.intern.unHook) o.intern.unHook();
     
     for (var oh of objs) {
@@ -108,6 +113,7 @@ var CanvNotes=function(gps) {
     //...
   }
   
+  //---250404 following copied to Conet for editxr, todo: remove and use conet
   function handlerAdd(k,f) {
     let a=handlers[k];
     if (!a) { a=[];handlers[k]=a; }
@@ -159,7 +165,7 @@ var CanvNotes=function(gps) {
     oinp.px=view.posx;oinp.py=view.posy;
     movedist=0;
     
-    if (mdown.checked) {
+    if (mdown?.checked) {
       //let o=inpObj();
       //if (o) {
       //  if (self.onUp) self.onUp(o);
@@ -214,6 +220,8 @@ var CanvNotes=function(gps) {
     //}
     var o=inpObj();//smallo;
     //onsole.log(o);
+    
+    handlerRun('select',o);
     
     if (((!o)&&(sels.length>0))||(o&&(sels.length==self.selCount))) {
       //onsole.log('unselecting '+sels.length);
@@ -305,7 +313,7 @@ var CanvNotes=function(gps) {
         moveObj(o,x,y);
       }
       //...
-    } else {
+    } else if (!self.noDragScene) {
       movedist=Math.max(movedist,Math.abs(x-oinp.x)+Math.abs(y-oinp.y));
       view.posx=oinp.px+(x-oinp.x)/view.scx;
       view.posy=oinp.py+(y-oinp.y)/view.scy;
@@ -494,6 +502,7 @@ var CanvNotes=function(gps) {
             Menu.setChecked(mdown,true);
             Conet.log('To select switch ondown off.');
           }
+          if (v.startAnimated) mtime.animate=true;
         }
       }
       
@@ -713,6 +722,7 @@ var CanvNotes=function(gps) {
     ,setfunc:function(v) {
       var o=JSON.parse(v);
       //onsole.log(o);
+      if (sels.length==0) return;
       if (sels[0].intern.unHook) sels[0].intern.unHook();
       Conet.hcopy(o,sels[0],undefined,undefined,undefined,{delall:1});
       o=initObj(sels[0]);
@@ -895,16 +905,25 @@ var CanvNotes=function(gps) {
       //console.log('animate mtime '+v);
     }
     
-    drawShapes(ctx);
+    //drawShapes(ctx);
     //onsole.log(tweens.length);
     
+    let th=mtime.value;
+    for (var ti=tweens.length-1;ti>=0;ti--) {
+      var t=tweens[ti],f;
+      if (!t.wasActive) continue;
+      if (th<t.t) t.o[t.k]=t.v0;
+      if (th>t.mt) t.o[t.k]=t.v1;
+      delete(t.wasActive);
+    }
     for (var ti=tweens.length-1;ti>=0;ti--) {
       var t=tweens[ti],f;
       
       if (t.mtime) {
-        var th=mtime.value;
+        //var th=mtime.value;
         if ((th<t.t)||(th>t.mt)) continue;
         f=(th-t.t)/(t.mt-t.t);
+        t.wasActive=1;
         //ontinue;
       } else {
         //onsole.log(t.t+' '+t.mt+dt);
@@ -931,6 +950,8 @@ var CanvNotes=function(gps) {
     ctx.font=fs+'px sans-serif';
     ctx.textBaseline='top';
     var smallScale=self.smallScale||0.5;//1
+    
+    //andlerRun('drawAuto',dt,ctx);
     
     if (mautolayout&&mautolayout.checked) {
       for (var o of objs) {
@@ -983,10 +1004,11 @@ var CanvNotes=function(gps) {
       if (o.children) for (var q of o.children) {
         var oi=o.intern,qi=q.intern,col='rgba(50,50,50,0.2)';
         ctx.strokeStyle=col;//'rgba(0,0,0,0.1)';
-        ctx.lineWidth=0.5*view.dpr*scx;
+        let lw=0.5*view.dpr*scx;
+        ctx.lineWidth=lw;
         ctx.beginPath();
-        ctx.moveTo(oi.x,oi.y);
-        ctx.lineTo(qi.x,qi.y);
+        ctx.moveTo(oi.x+lw/2,oi.y+lw/2);
+        ctx.lineTo(qi.x+lw/2,qi.y+lw/2);
         ctx.stroke();
         ctx.fillStyle=col;//'rgba(0,0,0,0.1)';
         var w=2*view.dpr*scx;
@@ -999,7 +1021,8 @@ var CanvNotes=function(gps) {
         ctx.strokeStyle=col;
         ctx.lineWidth=lw*view.dpr*scx;
         ctx.beginPath();
-        ctx.moveTo(p0.x,p0.y);
+        let offy=eh.offy?eh.offy*view.dpr*scx:0;
+        ctx.moveTo(p0.x,p0.y+offy);
         var tx1=p0.x-p1.x,
             tx2=p2.x-p1.x,
             ty1=p0.y-p1.y,
@@ -1014,7 +1037,7 @@ var CanvNotes=function(gps) {
         ctx.stroke();
         ctx.fillStyle=col;//'rgba(0,0,0,0.1)';
         var w=(lw*3)*view.dpr*scx;
-        ctx.fillRect(p0.x-w/2,p0.y-w/2,w,w);
+        ctx.fillRect(p0.x-w/2,p0.y+offy-w/2,w,w);
         w=(lw*1.5)*view.dpr*scx;
         ctx.fillRect(p1.x-w/2,p1.y-w/2,w,w);
       }
@@ -1103,7 +1126,10 @@ var CanvNotes=function(gps) {
               iw=o.img.width,ih=o.img.height,wh=w,hh=h-(withText?fs:0);
           if (iw&&ih) {
             var sc=Math.min(wh/iw,hh/ih)*(o.imgscale||1);
-            ctx.drawImage(o.img,x+(o.imgx||0)*sc,y+(o.imgy||0)*sc+(withText?1+fs:0),iw*sc,ih*sc);
+            ctx.drawImage(o.img,
+              x+(o.imgx||0)*sc+((ih>iw)?(ih-iw)*sc:0),
+              y+(o.imgy||0)*sc+(withText?1+fs:0),
+              iw*sc,ih*sc);
           }
         }}
         ctx.restore();
@@ -1145,113 +1171,11 @@ var CanvNotes=function(gps) {
     }
     
     ctx.fillStyle='#000000';
-    ctx.fillText('CanvNotes v.0.893 - '+fpss,10*dpr,10*dpr);//FOLDORUPDATEVERSION
+    ctx.fillText('CanvNotes v.0.937 - '+fpss,10*dpr,10*dpr);//FOLDORUPDATEVERSION
     for (var h=0;h<logs.length;h++)
       ctx.fillText(logs[h],10*dpr,10*dpr+fs+h*fs);
     
     setTimeout(draw,10);
-  }
-  
-  function drawShapes(ct) {
-    //---
-    //console.log(this);
-    var posx=view.posx,posy=view.posy,scx=view.scx,scy=view.scy;
-    
-    
-    
-    for (var obj of objs) if (obj.shapeDefs) {
-      if (!obj.intern.shapeDefs) {
-        //---remove tweens
-        for (var i=tweens.length-1;i>=0;i--) {
-          var tw=tweens[i];
-          if (tw.mtime) { console.log('removing tween');tweens.splice(i,1); }
-        }
-        obj.intern.shapeDefs=JSON.parse(JSON.stringify(obj.shapeDefs));
-        var vars={};
-        for (var sd of obj.intern.shapeDefs) {
-          if (sd.id) vars[sd.id]=sd;
-          var prevsp=undefined;
-          if (sd.shapes)
-          for (var sp of sd.shapes) {
-            if (sp.pos) { var p=vars[sp.pos];sp.x=(sp.x||0)+p.x;sp.y=(sp.y||0)+p.y; }
-            if (sp.pos0) { var p=vars[sp.pos0];sp.x0=(sp.x0||0)+p.x;sp.y0=(sp.y0||0)+p.y; }
-            if (sp.pos1) { var p=vars[sp.pos1];sp.x1=(sp.x1||0)+p.x;sp.y1=(sp.y1||0)+p.y; }
-            if (prevsp) {
-            
-              //--- initially the plan was to fill up all missing key-values
-              // for simple transitions (dont have to check if key is there),
-              // but now using tweens, initially only for changing values but
-              // then render for random times doesnt work, this needs also tweens
-              // for fix values. thus tweens are now made for defined values,
-              // without fillup (fillup would just add unnessary fix tweens)
-            
-              //for (var k of Object.keys(prevsp)) {
-              for (var k of Object.keys(sp)) {
-                var v=sp[k],pv=prevsp[k];
-                //if (v===undefined) sp[k]=pv;
-                //else if ((v!=pv)&&(k!='t')) {
-                if ((v!==undefined)&&(pv!==undefined)&&(k!='t')) {
-                  //console.log('add tween k='+k+' '+pv+' '+v);
-                  var tw={mtime:1,o:sd.currentShape,k:k,v0:pv,v1:v,t:prevsp.t,mt:sp.t};
-                  if (!sp.spring) tw.linear=1;
-                  tweens.push(tw);
-                  //onsole.log('add tween k='+k+' '+pv+' '+v);
-                  //onsole.log(tw);
-                }
-              }
-            } else {
-              if (sp.t===undefined) sp.t=0;
-              sd.currentShape=JSON.parse(JSON.stringify(sp));
-            }
-            prevsp=sp;
-          }
-        }
-        console.log('created intern.shapeDefs');
-        console.log(vars);
-        //console.log(obj.intern.shapeDefs);
-      }
-      for (var sd of obj.intern.shapeDefs) {
-        var sp=sd.currentShape;//shapes[0];//--- next sp generated via mtime
-        if (!sp) continue;
-        ct.fillStyle='rgba('+(sp.r||0)+','+(sp.g||0)+','+(sp.b||0)+','+(sp.a||0.5)+')';
-        if (sd.isArrow) {
-          //ct.strokeStyle='rgba(0,0,0,0.5)';
-          //ct.beginPath();
-          //ct.moveTo(width/2+(sp.x0+posx)*dpr*scx,height/2+(sp.y0+posy)*dpr*scy);
-          //ct.lineTo(width/2+(sp.x1+posx)*dpr*scx,height/2+(sp.y1+posy)*dpr*scy);
-          //ct.stroke();
-        
-          var dx=sp.x1-sp.x0,dy=sp.y1-sp.y0,len=Math.sqrt(dx*dx+dy*dy);
-          var a=Math.atan2(dy,dx),sin=Math.sin(a),cos=Math.cos(a);
-        
-          ct.beginPath();
-          //ct.lineWidth=dpr*scx;
-          for (var i=0;i<arrow.length;i++) {
-            var x=arrow[i][0],y=arrow[i][1];
-            x*=len;y*=20;
-            var x1=x*cos-y*sin,y1=x*sin+y*cos;
-            x=x1;y=y1;
-            x=width /2+(sp.x0+x+posx)*dpr*scx;
-            y=height/2+(sp.y0+y+posy)*dpr*scy;
-            if (i==0) ct.moveTo(x,y); else ct.lineTo(x,y);
-          }
-          ct.fill();
-          //ct.stroke();
-        }
-        if (sd.isText) {
-          var x=width /2+(sp.x+posx)*dpr*scx,
-              y=height/2+(sp.y+posy)*dpr*scy;
-          ct.font='bold '+(sp.fs*dpr*scx)+'px sans-serif';
-          ct.textAlign='center';
-          ct.textBaseline='middle';
-          ct.fillText(sp.text,x,y);
-        }
-      }
-    }
-    ct.textAlign='start';
-    ct.textBaseline='alphabetic';
-    
-    //...
   }
   
   function serialObj(o,forAdd) {
@@ -1279,6 +1203,7 @@ var CanvNotes=function(gps) {
     //...
   }
   function serialize() {
+    handlerRun('serialize');
     var s='';
     view.eventsOnDown=mdown.checked?1:0;
     objs[0].view=view;
@@ -1323,38 +1248,36 @@ var CanvNotes=function(gps) {
   init();  //---for molded (and other external apps): invoke init after 
              //   constructor, e.g. to have initMenu access to fields (e.g. sels)
   
-  this.objs=objs;
-  this.view=view;
-  this.sels=sels;
-  this.round=round;
-  this.load=load;//this.init=init;
-  this.initObj=initObj;
-  this.tween=tween;
+  this.objs=objs;this.view=view;this.sels=sels;
+  this.round=round;this.load=load;//this.init=init;
+  this.initObj=initObj;this.tween=tween;this.tweens=tweens;
   this.scripts=scripts;this.delObj=delObj;
   this.handlerAdd=handlerAdd;this.handlerDel=handlerDel;
+  this.mtime=mtime;
   //...
 }
 //console.log('CanvNotes v. 1.0 ');
 //console.log(CanvNotes);
 //...
 //fr o,1
-//fr o,1,22
-//fr o,1,24
+//fr o,1,15
+//fr o,1,23
 //fr o,1,25
-//fr o,1,42
-//fr o,1,42,9
-//fr o,1,44
-//fr o,1,44,42
-//fr o,1,44,52
-//fr o,1,44,56
-//fr o,1,44,61
-//fr o,1,44,65
-//fr o,1,44,65,2
-//fr o,1,44,70
-//fr o,1,44,82
-//fr o,1,44,93
-//fr o,1,44,94
-//fr o,1,52
-//fr o,1,54
-//fr o,1,56
-//fr p,2,109
+//fr o,1,26
+//fr o,1,27
+//fr o,1,43
+//fr o,1,43,9
+//fr o,1,45
+//fr o,1,45,42
+//fr o,1,45,52
+//fr o,1,45,56
+//fr o,1,45,65
+//fr o,1,45,65,2
+//fr o,1,45,70
+//fr o,1,45,73
+//fr o,1,45,76
+//fr o,1,45,82
+//fr o,1,45,93
+//fr o,1,45,94
+//fr o,1,46
+//fr p,17,866

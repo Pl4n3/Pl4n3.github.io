@@ -26,6 +26,7 @@ body {
 (function() {
   //...
   
+  //todo: integrate old util/staticHub.htm
   let bgt='rgba(230,230,230,0.85)';//rgba(200,200,200,0.85)
   
   let cells=[
@@ -67,6 +68,25 @@ body {
   +'<br>2025-05-03</span>',
   img:'/blog/hub/sculptLandscapeEmbed.gif'}
   
+  ,{text:
+  '<span style="font-size:1.1em;background-color:'+bgt+';">2D game test using three.js. Goal: similar playability for phone, desktop and VR.<br>'
+  +'</span><span style="font-size:1.5em;background-color:'+bgt+';"><br><a href="/three/anim.htm?sn=anim/zweide.js&sn0=anim/zweide/test0.js">► Start&nbsp;</a></span>'
+  +'<span style="font-size:1em;background-color:rgba(200,200,200,0.85);"><br>2018</span>'
+  ,img:'/blog/img/zweide0.png'}
+  
+  ,{text:
+  '<span style="font-size:1.1em;background-color:'+bgt+';"><b>Strawman</b> 2D game test using canvas and simple physics. Characters are rigged from plain pictures.<br>'
+  +'</span><span style="font-size:1.5em;background-color:'+bgt+';"><br><a href="/canvas/bod2/jnr.htm">► Start&nbsp;</a></span>'
+  +'<span style="font-size:1em;background-color:rgba(200,200,200,0.85);"><br>2017</span>'
+  ,img:'/blog/img/strawman.png'}
+  
+  ,{text:
+  '<span style="font-size:1.1em;background-color:'+bgt+';"><b>Web Paint</b> Paint app for phone & desktop. Featuring transparency, scripting, multi-page images, gif export.<br>'
+  +'</span><span style="font-size:1.5em;background-color:'+bgt+';"><br><a href="/canvas/paint.htm">► Start&nbsp;</a></span>'
+  +'<span style="font-size:1em;background-color:rgba(200,200,200,0.85);"><br>2015</span>'
+  ,img:'/blog/img/paint1.png'}
+  
+  
   ];
   
   
@@ -107,6 +127,7 @@ body {
   ],
   cont:document.body};
   
+  
   //for (let i=0;i<2;i++)
   for (let c of cells) {
     h.files.push({
@@ -127,6 +148,7 @@ body {
     });
   }
   
+  
   Conet.grid(h);
   //---
 }
@@ -138,6 +160,6 @@ body {
 </html>
 <script>
 //fr o,25
-//fr o,25,70
-//fr o,25,80
-//fr p,44,83
+//fr o,25,90
+//fr o,25,101
+//fr p,0,142

@@ -3,6 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="shortcut icon" sizes="192x192" href="/blog/img/180611.png">
+<link rel="apple-touch-icon" href="/blog/img/180611.png">
 <style>
 
 body {
@@ -14,7 +16,7 @@ body {
 }
 
 </style>
-<title>thumbs 2</title>
+<title>Pl4n3 projects</title>
 <script src="/conet.js"></script>
 </head>
 
@@ -23,100 +25,109 @@ body {
 <script>
 (function() {
   //...
-  if (0) Conet.grid({dir:'/blog',cont:document.body});
-  else
-  Conet.grid({
+  
+  let bgt='rgba(230,230,230,0.85)';//rgba(200,200,200,0.85)
+  
+  let cells=[
+  
+  {text://'<span style="'
+  //+'backdrop-filter: blur(10px);'
+  //+'background-color:rgba(200,200,200,0.85);'
+  //+'">'
+  '<span style="font-size:1.1em;background-color:'+bgt+';">Smol app for the phone to <b>rate playlist</b> songs.<br><br>'
+  +'</span><span style="font-size:1.5em;background-color:'+bgt+';"><br><a href="/forms/rate/table0.htm">► Start&nbsp;</a></span>'
+  +'<span style="font-size:1em;background-color:'+bgt+';"><br>'
+  +'<a href="https://mastodon.social/@Pl4n3/115392094384475370">Mastodon</a>'
+  +', <a href="https://bsky.app/profile/pl4n3.bsky.social/post/3m3ggy7fvg22n">Bluesky</a>'
+  +', <a href="https://x.com/Pl4n3/status/1979327902576709981">Twitter</a>'
+  +'<br>2025-10-18</span>'
+  //+'</span>'
+  ,img:'/blog/hub/playlist.gif'}
+  
+  ,{text:
+  '<span style="font-size:1.1em;background-color:'+bgt+';">Trying to <b>visualize history</b> again. Timeframe is 1143-1160: wendish crusade and danish civil war.'
+  +'<br></span><span style="font-size:1.5em;background-color:'+bgt+';">'
+  +'<br><a href="/anim/arrows/canv.htm?fn=/anim/arrows/canvNotes/shapesNiklot.json">► Start&nbsp;</a></span>'
+  +'<span style="font-size:1em;background-color:'+bgt+';"><br>'
+  +'<a href="https://mastodon.social/@Pl4n3/115321436155932504">Mastodon</a>'
+  +', <a href="https://bsky.app/profile/pl4n3.bsky.social/post/3m2h2efcpds2m">Bluesky</a>'
+  +', <a href="https://www.threads.com/@pl4n3d/post/DPbUbqUjIFh">Threads</a>'
+  +', <a href="https://x.com/Pl4n3/status/1974805480967917911">Twitter</a>'
+  +'<br>2025-10-05</span>',
+  img:'/blog/hub/shapesNiklot.gif'}
+  
+  ,{text:
+  '<span style="font-size:1.1em;background-color:'+bgt+';">Drew a landscape diorama with <b>threejs</b> Marching Cubes and <b>Quest3</b>.<br>'
+  +'</span><span style="font-size:1.5em;background-color:'+bgt+';"><br><a href="/test/webvr/edit.htm?file=file:sculptScapeEmbed">► Start&nbsp;</a></span>'
+  +'<span style="font-size:1em;background-color:rgba(200,200,200,0.85);"><br>'
+  +'<a href="https://mastodon.social/@Pl4n3/114443800486188427">Mastodon</a>'
+  +', <a href="https://bsky.app/profile/pl4n3.bsky.social/post/3lobceuww4c27">Bluesky</a>'
+  +', <a href="https://www.threads.com/@pl4n3d/post/DJMN_uSNzO9">Threads</a>, '
+  +'<a href="https://x.com/Pl4n3/status/1918636869031506112">Twitter</a>'
+  +'<br>2025-05-03</span>',
+  img:'/blog/hub/sculptLandscapeEmbed.gif'}
+  
+  ];
+  
+  
+  let h={
   //startText:'Pl4n3<br>Projects',
   min:'300px',
   skipStart:1,
   files:[
-  {text:'Pl4n3<br>Projects'
-  ,draw:function(el) {
-    //---
-    let st=el.style;
-    st.fontSize='4em';
-    st.background='#aaa';
-    //...
-  }
-  },
-  {text:'<span style="'
-  //+'backdrop-filter: blur(10px);'
-  +'background-color:rgba(200,200,200,0.85);'
-  +'">'
-  +'<b>Playlist</b> Smol app for the phone to rate playlist songs.<br>'
-  +'<br>Link: asdf'
-  +'<span style="font-size:0.7em"><br>Mastodon: asd<br>Twitter: asdf'
-  +'<br>2025-10-18</span>'
-  +'</span>'
-  //,background:'no-repeat url("/test/html/grid/playlist.gif")'
-  ,draw:function(el) {
-    //---
-    let st=el.style;
-    //st.filter='grayscale(1)';
-    st.fontSize='2em';
-    st.wordBreak='normal';
-    st.background='no-repeat url("/blog/hub/playlist.gif")';
-    st.backgroundSize='450px';
-    //st.lineHeight='1.1';
-    //st.backdropFilter='blur(10px)';
-    //st.gridColumn='span 2';
-    //...
-  }
-  },
   
-  {text:'<span style="'
-  //+'backdrop-filter: blur(10px);'
-  +'background-color:rgba(200,200,200,0.85);'
-  +'">'
-  +'<b>Playlist</b> Smol app for the phone to rate playlist songs.<br>'
-  +'<br>Link: asdf'
-  +'<span style="font-size:0.7em"><br>Mastodon: asd<br>Twitter: asdf'
-  +'<br>2025-10-18</span>'
-  +'</span>'
-  //,background:'no-repeat url("/test/html/grid/playlist.gif")'
-  ,draw:function(el) {
-    //---
-    let st=el.style;
-    //st.filter='grayscale(1)';
-    st.fontSize='2em';
-    st.wordBreak='normal';
-    st.background='no-repeat url("/blog/hub/shapesNiklot.gif")';
-    st.backgroundSize='450px';
-    //st.lineHeight='1.1';
-    //st.backdropFilter='blur(10px)';
-    //st.gridColumn='span 2';
-    //...
-  }
-  },
+  {text:'<span style="font-size:2em;">'
+  
+    //+'Pl4n3 projects '
+    //+'<img src="/canvas/paint/avatar.png" width=40 style="vertical-align:middle;"/>'
+  
+    +'<img src="/blog/img/180611.png" width=45 style="vertical-align:text-top;"/>'
+    //+'<img src="/blog/img/180611.png" width=50 style="vertical-align:text-top;float:right;"/>'//45
+    +' Pl4n3 projects'
+    //+'<img src="/blog/img/180611.png" width=45 style="vertical-align:text-top;"/>'
   
   
-  {text:'<span style="'
-  //+'backdrop-filter: blur(10px);'
-  +'background-color:rgba(200,200,200,0.85);'
-  +'">'
-  +'<b>Playlist</b> Smol app for the phone to rate playlist songs.<br>'
-  +'<br>Link: asdf'
-  +'<span style="font-size:0.7em"><br>Mastodon: asd<br>Twitter: asdf'
-  +'<br>2025-10-18</span>'
-  +'</span>'
-  //,background:'no-repeat url("/test/html/grid/playlist.gif")'
+    +'<br></span>'
+    +'<span style="font-size:1em;"><br>'
+    //+'<img src="/canvas/paint/avatar.png" width=20 style="vertical-align:middle;"/>'
+    +'Comments appreciated:<br><a href="https://mastodon.social/@Pl4n3">Mastodon</a>'
+    +', <a href="https://bsky.app/profile/pl4n3.bsky.social">Bluesky</a>'
+    +', <a href="https://www.threads.com/@pl4n3d">Threads</a>'
+    +', <a href="https://twitter.com/Pl4n3">Twitter</a></span>'
   ,draw:function(el) {
     //---
     let st=el.style;
-    //st.filter='grayscale(1)';
-    st.fontSize='2em';
-    st.wordBreak='normal';
-    st.background='no-repeat url("/blog/hub/sculptLandscapeEmbed.gif")';
-    st.backgroundSize='450px';
-    //st.lineHeight='1.1';
-    //st.backdropFilter='blur(10px)';
-    //st.gridColumn='span 2';
+    //st.fontSize='4em';
+    st.fontSize='1.5em';
+    st.background='#dd8';//'#aaa';//'rgb(221, 221, 68)';
     //...
   }
   }
   
   ],
-  cont:document.body});
+  cont:document.body};
+  
+  //for (let i=0;i<2;i++)
+  for (let c of cells) {
+    h.files.push({
+      text:c.text,
+  draw:function(el) {
+    //---
+    let st=el.style;
+    //st.filter='grayscale(1)';
+    st.fontSize='1.5em';
+    st.wordBreak='normal';
+    st.background='no-repeat url("'+c.img+'")';
+    st.backgroundSize='450px';
+    //st.lineHeight='1.1';
+    //st.backdropFilter='blur(10px)';
+    //st.gridColumn='span 2';
+    //...
+  }
+    });
+  }
+  
+  Conet.grid(h);
   //---
 }
 )();
@@ -126,9 +137,7 @@ body {
 </body>
 </html>
 <script>
-//fr o,23
-//fr o,23,9
-//fr o,23,21
-//fr o,23,34
-//fr o,23,48
-//fr p,39,57
+//fr o,25
+//fr o,25,70
+//fr o,25,80
+//fr p,44,83

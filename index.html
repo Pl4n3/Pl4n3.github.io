@@ -31,6 +31,13 @@ body {
   
   let cells=[
   
+  {
+  descr:'A <b>cannonjs</b> xr test, now using <b>threejs</b> 180 instead of 160 to have <i>scene.backgroundRotation</i> for xr.',
+  link:'/test/webvr/edit.htm?file=file:cannCastle&amp;editMode=0&amp;scaleCfg=1&amp;hudPos=Away',
+  date:'2025-10-26'
+  },
+  
+  
   {text://'<span style="'
   //+'backdrop-filter: blur(10px);'
   //+'background-color:rgba(200,200,200,0.85);'
@@ -110,7 +117,7 @@ body {
     +'<br></span>'
     +'<span style="font-size:1em;"><br>'
     //+'<img src="/canvas/paint/avatar.png" width=20 style="vertical-align:middle;"/>'
-    +'v.1.2 '//FOLDORUPDATEVERSION
+    +'v.1.17 '//FOLDORUPDATEVERSION
     +'Comments appreciated:<br><a href="https://mastodon.social/@Pl4n3">Mastodon</a>'
     +', <a href="https://bsky.app/profile/pl4n3.bsky.social">Bluesky</a>'
     +', <a href="https://www.threads.com/@pl4n3d">Threads</a>'
@@ -131,15 +138,19 @@ body {
   
   //for (let i=0;i<2;i++)
   for (let c of cells) {
+    let text=c.text||'';
+    if (c.descr) text+='<span style="font-size:1.1em;background-color:'+bgt+';">'+c.descr+'<br></span>';
+    if (c.link) text+='<span style="font-size:1.5em;background-color:'+bgt+';"><a href="'+c.link+'">► Start&nbsp;</a></span>';
+    if (c.date) text+='<span style="font-size:1em;background-color:'+bgt+';"><br>'+c.date+'</span>';
     h.files.push({
-      text:c.text,
+      text:text,
   draw:function(el) {
     //---
     let st=el.style;
     //st.filter='grayscale(1)';
     st.fontSize='1.1em';
     st.wordBreak='normal';
-    st.background='no-repeat url("'+c.img+'")';
+    st.background='#bbb no-repeat url("'+c.img+'")';
     st.backgroundSize='450px';
     st.minHeight='150px';
     //st.lineHeight='1.1';
@@ -162,6 +173,6 @@ body {
 </html>
 <script>
 //fr o,25
-//fr o,25,91
-//fr o,25,102
-//fr p,83,113
+//fr o,25,98
+//fr o,25,113
+//fr p,87,143

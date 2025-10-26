@@ -21,8 +21,8 @@
 <script type="importmap">
 {
 "imports": {
-"three": "/three/r160/build/three.module.js",
-"three/addons/": "/three/r160/examples/jsm/"
+"three": "/three/r180/build/three.module.js",
+"three/addons/": "/three/r180/examples/jsm/"
 }
 }
 </script>
@@ -66,7 +66,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     document.body.appendChild(container);
     
     scene=new THREE.Scene();
-    scene.background=new THREE.Color(0x333333);//0x222222
+    //scene.background=new THREE.Color(0x333333);//0x222222
     
     camera=new THREE.PerspectiveCamera(50,window.innerWidth/window.innerHeight,0.01,50);
     camera.position.set(0,1.6,2);
@@ -75,7 +75,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     room=new THREE.Group();scene.add(room);self.room=room;
     
     
-    controls=new OrbitControls(camera,container);
+    controls=new OrbitControls(camera,container);self.controls=controls;
     controls.target.set(0,1.6,0);
     
     
@@ -358,8 +358,9 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     self.vrPos=new THREE.Vector3(0,0,0);
     xrUtil.init({scene:scene,renderer:renderer,camera:camera,room:room,sculpt:1//,vrPos:vrPos
-      ,lskey:'editxr',vrPos:self.vrPos});
+      ,lskey:'editxr',vrPos:self.vrPos,controls:controls});
     xrUtil.initHud();
+    let m2m;//base for hud menus that also are in 2d menu
     
     /* hud buttons 0 */ {
       
@@ -476,7 +477,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       }
        }
        
-       ,{s:'\u25bc',x:0.35,y:0.4,w:0.1,h:0.1,sub:[
+       ,m2m={s:'\u25bc',x:0.35,y:0.4,w:0.1,h:0.1,sub:[
        
          {s:'Point \u25b2',x:0.05,y:0.4,w:0.4,h:0.1},
          
@@ -587,6 +588,8 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
         //...
       }
       }
+      
+      /*
       ,{s:'Props',ms:'of point',x:0.37,y:0.55,w:0.2,h:0.1,ondown:function() {
         //---
         if (sels.length==0) {
@@ -618,6 +621,8 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
         //...
       }
       }
+      */
+      
       ,mPindex={s:'',ms:'PIndex',dx:0.02,w:0.1,ondown:function() {
         //---
         if (this.s=='') return;
@@ -633,6 +638,32 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       }
       }
       ];
+      
+      let minfo;
+      xrUtil.hud.buttons.push(
+      minfo={s:'Info',x:0.37,y:0.55,w:0.2,h:0.1,ondown:function() {
+        //---
+        let p=xrUtil.gps.vrPos,s;
+        xrUtil.log(s=('vrPos '+Conet.f4(p.x)+' '+Conet.f4(p.y)+' '+Conet.f4(p.z)));
+        console.log(s);
+        
+        p=xrUtil.gps.room.position;
+        xrUtil.log(s=('roomPos '+Conet.f4(p.x)+' '+Conet.f4(p.y)+' '+Conet.f4(p.z)));
+        console.log(s);
+        
+        p=camera.position;
+        xrUtil.log(s=('camPos {"x":'+Conet.f4(p.x)+',"y":'+Conet.f4(p.y)+',"z":'+Conet.f4(p.z)+'}'));
+        console.log(s);
+        
+        p=controls.target;
+        xrUtil.log(s=('conTar {"x":'+Conet.f4(p.x)+',"y":'+Conet.f4(p.y)+',"z":'+Conet.f4(p.z)+'}'));
+        console.log(s);
+        //...
+      }
+      }
+      );
+      
+      window.minfo=minfo;console.info('%cminfo.ondown() to get vrPos,roomPos','background: #9f9; font-size: large');
       
     }
     
@@ -671,7 +702,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     //\u25b2 \u25bc
     
-    const version='v.0.1756 ';//FOLDORUPDATEVERSION
+    const version='v.0.1971 ';//FOLDORUPDATEVERSION
     xrUtil.log('Edit '+version);
     
     //
@@ -783,19 +814,25 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       //...
     }
     
-    dadd=new THREE.Vector3();
+    dadd=new THREE.Vector3();let noDrag=false;
     
     function point(x,y,mode,e) {
       //---
+      
+      if (!self.mEditMode.checked) return;
+      
       let p2=new THREE.Vector2(2*x/window.innerWidth-1,-2*y/window.innerHeight+1);
       raycaster.setFromCamera(p2,camera);
       
       //onsole.log('point mode='+mode);
       
-      if ((mode==2)&&(sels.length>0)&&pointPlane?.visible) {//---drag
+      
+      
+      
+      if (1&&(mode==2)&&(sels.length>0)&&pointPlane?.visible) {//---drag
         let a=raycaster.intersectObject(pointPlane);
         //console.log(a.length);
-        if (a.length==1) {
+        if ((a.length==1)&&!noDrag) {
           let p=a[0].point;
           //pdif2.position.copy(p);
           
@@ -818,6 +855,8 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
         return;
       }
       
+      
+      
       //let a=raycaster.intersectObjects(scene.children,(mode==2)?false:true);
       //checkRayObjs();
       let a=raycaster.intersectObjects(xrUtil.rayObjs,(mode==2)||1?false:true);
@@ -834,14 +873,14 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
           break;
         }
         //onsole.log(o+' '+points.indexOf(o));
-        if (points.indexOf(o)!=-1) {
-          np=o;//setNearestPoint(o);
-          break;
+        if ((o.material!=matPointInv)&&(points.indexOf(o)!=-1)) {
+          if (!np) np=o;//setNearestPoint(o);
+          //break;
         }
         if ((!paintco)&&o.userData.rayCol) paintco=co;//250130 moved this here, now texdraw work again
-        if (o.userData.editPoint) { //--- used in paths.js
-          //onsole.log('userData.editPoint');
-          np=o.userData.editPoint;
+        if (o.userData.editPoint&&o.visible) { //--- used in paths.js
+          //onsole.log('userData.editPoint '+o.visible);
+          if (!np) np=o.userData.editPoint;
           //let p0=co.point,p1=np.position;
           //if (mode==1) {
           //  pdif0.position.copy(p0);
@@ -849,12 +888,16 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
           //}
           //pdif.set(p1.x-p0.x,p1.y-p0.y,p1.z-p0.z);
           //console.log(p0);
-          break;
+          //break;
         }
         //if ((!paintco)&&o.userData.rayCol) paintco=co;
         if (o.userData.xrRay) o.userData.xrRay(co,mode==1);
         //if (mode==1) console.log(o);//co.object);
       }
+      if (hudo) { np=undefined;paintco=undefined; }
+      
+      
+      //onsole.log('np='+np);
       
       //onsole.log('point a.len='+a.length+' '+paintco);
       
@@ -864,8 +907,11 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
         if (pdif0) pdif0.position.copy(p0);
         //  pdif1.position.copy(p1);
         //}
+        if (p0&&p1)
         pdif.set(p1.x-p0.x,p1.y-p0.y,p1.z-p0.z);
       }
+      
+      
       
       controls.enabled=!hudo&&!paint;
       //onsole.log('before hudIntersects');
@@ -889,7 +935,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       if (mode==1) {
         let doAdd=(e.buttons==2)||e.ctrlKey;
         if (doAdd&&(sels.length>0)) select(undefined);
-        select(np);
+        noDrag=select(np);
         if (np) { //---show mouseplane
           let pp=pointPlane;
           if (!pp) {
@@ -931,7 +977,8 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     canv.addEventListener('pointerdown',function(e) {
       //---
-      //onsole.log('pointerdown');
+      console.log('pointerdown');
+      //console.log(e);
       pointDown=true;
       point(e.clientX,e.clientY,1,e);
       //onsole.log(e);
@@ -953,7 +1000,8 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     //---menu
     
     xrUtil.menuXr.ms+=' '+version;
-    Menu.init([{s:'&#9776;',noTri:true,fs:1.4,pw:0.05,sub:[
+    let mmain;
+    Menu.init([mmain={s:'&#9776;',noTri:true,fs:1.4,pw:0.05,sub:[
     
     
       Menu.mFullscreen
@@ -1064,7 +1112,18 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       //...
     }
     }
-      
+    
+    ,self.mEditMode={ms:'Editmode',checkbox:1,checked:1,r:1
+    ,actionf:function() {
+      //---
+      //onsole.log(23);
+      //let cp=camera.position;
+      //console.log('camPos {"x":'+Conet.f4(cp.x)+',"y":'+Conet.f4(cp.y)+',"z":'+Conet.f4(cp.z)+'}');
+      //let ct=controls.target;
+      //console.log('conTar {"x":'+Conet.f4(ct.x)+',"y":'+Conet.f4(ct.y)+',"z":'+Conet.f4(ct.z)+'}');
+      //...
+    }
+    }  
       
       ]} 
       
@@ -1228,6 +1287,195 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     });
     
     
+    //----group
+    
+    let currentGroup=undefined,mgroup0,mgroup1;
+    
+    function groupAddSels() {
+      //---
+      if (sels.length==0) { log('Nothing selected.');return; }
+      
+      //onsole.log(sels[0]);
+      let gr=currentGroup,//this._group,
+          cadd=0,calready=0;
+          
+      if (gr===undefined) {
+        //onsole.log('create new group name nao.');
+        let h={},c=0;
+        for (let p of points) {
+          let op=p.userData.op;
+          if (!op.groups) continue;
+          for (let g of op.groups) if (!h[g]) { h[g]=1;c++; }
+        }
+        while (h[c]) c++;
+        console.log(h);
+        gr=c;
+        currentGroup=c;
+        mgroup0.s=''+currentGroup;
+        mgroup1.s=''+currentGroup;
+        log('Created new group "'+c+'".');
+      }    
+          
+      for (let m of sels) {
+        let op=m.userData.op;
+        if (!op.groups) op.groups=[];
+        if (op.groups.indexOf(gr)==-1) {
+          op.groups.push(gr);
+          cadd++;
+        } else calready++;
+      }
+      log('Added '+cadd+' to group'// "'+gr+'"'
+        +((calready>0)?' ('+calready+' already in group)':'')
+        +'.'
+        //+' (now ..).'
+      );
+      //onsole.log(this._group);
+      //...
+    }
+    
+    function groupDelSels() {
+      //---
+      if (sels.length==0) { log('Points have to be selected.');return; }
+      let gr=currentGroup;
+      if (gr===undefined) { log('A current group has to be set.');return; }
+      
+      let c=0;
+      for (let m of sels) {
+        let op=m.userData.op;
+        if (!op.groups) continue;
+        let i=op.groups.indexOf(gr);
+        if (i!=-1) {
+          if (op.groups.length==1) delete(op.groups);
+          else op.groups.splice(i,1);
+          c++;
+        } 
+      }
+      
+      log('Deleted '+c+' points from group.');
+      //...
+    }
+    
+    function groupSelect() {
+      //---
+      let gr=currentGroup,//this._group,
+          c=0;
+      for (let p of points) {
+        let op=p.userData.op;
+        if (!op.groups) continue;
+        if (op.groups.indexOf(gr)==-1) continue;
+        if (select(p,{nolog:1})) c++;
+      }
+      log('Selected '+c+' point from group.');// "'+gr+'".');
+      //...
+    }
+    
+    function groupSetCurrent() {
+      //---
+      if (sels.length==0) { log('Nothing selected.');return; }
+      
+      let groups=sels[0].userData.op.groups;
+      if (!groups) currentGroup=undefined;
+      else {
+        if (!currentGroup) currentGroup=groups[0];
+        else {
+          let i=groups.indexOf(currentGroup);
+          if (i==groups.length-1) currentGroup=undefined;
+          else currentGroup=groups[i+1];
+        }
+      }
+      log('CurrentGroup is "'+currentGroup+'".');
+      mgroup0.s=''+currentGroup+' \u25bc';
+      mgroup1.s=''+currentGroup+' \u25b2';
+      //onsole.log(groups);
+      //...
+    }
+    
+    function groupCopy(gr,dx,dy,dz) {
+      //---
+      let c=0;
+      for (let p of points) {
+        let op=p.userData.op;
+        if (!op.groups) continue;
+        if (op.groups.indexOf(gr)==-1) continue;
+        //if (select(p,{nolog:1})) c++;
+        let op0=Conet.hcopy(op,{x:op.x+dx,y:op.y+dy,z:op.z+dz},undefined,{groups:1},1);
+        //onsole.log(op0);
+        let m=pointAdd(op0);
+        
+        //rayObjsReset();
+        //select(undefined);
+        //select(m);
+        Conet.handlerRun('pointPropsChanged',undefined,m);
+        
+        c++;
+      }
+      rayObjsReset();
+      log('Point copied: '+c);
+      //...
+    }
+    
+    self.groupCopy=groupCopy;
+    //definition for both hub & menu
+    let f,a=[
+    mgroup0={s:'undefined \u25bc',ms:'current group',x:0.5,y:0.4,w:0.4,h:0.1,stay:1,autoSub0:0,sub:[
+      mgroup1={s:'undefined \u25b2',ms:'current group',x:0.5,y:0.4,w:0.4,h:0.1},
+      {s:'Set current',dy:0.01,vertCenter:1,stay:1,ondown:f=groupSetCurrent,actionf:f},
+      {s:'Add selected',dy:0.01,vertCenter:1,stay:1,ondown:f=groupAddSels,actionf:f},
+      {s:'Del selected',dy:0.01,vertCenter:1,stay:1,ondown:f=groupDelSels,actionf:f},
+      {s:'Select'  ,dy:0.01,vertCenter:1,stay:1,ondown:f=groupSelect,actionf:f}
+    ]}
+    
+    /*,
+    {s:'Group 1',ms:'count:0',dy:0.01,stay:1,autoSub0:1,sub:[
+      {s:'Add Sels',dy:0.01,vertCenter:1,stay:1,_group:1,ondown:f=groupAddSels,actionf:f},
+      {s:'Select'  ,dy:0.01,vertCenter:1,stay:1,_group:1,ondown:f=groupSelect,actionf:f}
+    ]},
+    {s:'Group 2',ms:'count:0',dy:0.01,stay:1,autoSub0:1,sub:[
+      //{s:'Group 2',x:0.5,y:0.4,w:0.4,h:0.1},
+      {s:'Add Sels',dy:0.01,vertCenter:1,stay:1,_group:2,ondown:f=groupAddSels,actionf:f},
+      {s:'Select'  ,dy:0.01,vertCenter:1,stay:1,_group:2,ondown:f=groupSelect,actionf:f}
+    ]},
+    {s:'Group 3',ms:'count:0',dy:0.01,stay:1,autoSub0:1,sub:[
+      {s:'Add Sels',dy:0.01,vertCenter:1,stay:1,_group:3,ondown:f=groupAddSels,actionf:f},
+      {s:'Select'  ,dy:0.01,vertCenter:1,stay:1,_group:3,ondown:f=groupSelect,actionf:f}
+    ]},
+    {s:'Group 4',ms:'count:0',dy:0.01,stay:1,autoSub0:1,sub:[
+      {s:'Add Sels',dy:0.01,vertCenter:1,stay:1,_group:4,ondown:f=groupAddSels,actionf:f},
+      {s:'Select'  ,dy:0.01,vertCenter:1,stay:1,_group:4,ondown:f=groupSelect,actionf:f}
+    ]}
+    */
+    
+    ];//);
+    m2m.sub=m2m.sub.concat(a);
+    mmain.sub=mmain.sub.concat(a);
+    
+    //threeInitSkybox();
+    //scene.add(threeEnv.skyMesh);
+    ////threeEnv.skyMesh.visible=false;
+    //console.log(threeEnv.skyMesh);
+    //console.log(scene);
+    initSkybox();
+    //...
+  }
+  
+  function initSkybox() {
+    //---
+    
+    const loader = new THREE.CubeTextureLoader();
+    loader.setPath( '/shooter/objs/skybox/' );
+    
+    //textureCube = loader.load( [ 'posx.jpg', 'negx.jpg', 'posy.jpg', 'negy.jpg', 'posz.jpg', 'negz.jpg' ] );
+    let textureCube = loader.load( [ 'right.jpg', 'left.jpg', 'up.jpg', 'down.jpg', 'front.jpg', 'back.jpg' ] );
+    
+    const textureLoader = new THREE.TextureLoader();
+    
+    //textureEquirec = textureLoader.load( 'textures/2294472375_24a3b8ef46_o.jpg' );
+    //textureEquirec.mapping = THREE.EquirectangularReflectionMapping;
+    //textureEquirec.colorSpace = THREE.SRGBColorSpace;
+    
+    //scene.background=textureCube;
+    threeEnv.bgCube=textureCube;
+    //onsole.log(scene);
     
     //...
   }
@@ -1349,6 +1597,10 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     //onsole.log(initf);
     let script=document.currentScript;
     let a=Object.values(scripts);
+    let ret={
+      editxr:self,
+      xrUtil:xrUtil,
+    };//alternative systematically better sharing to script than on each pointScript(..)
     for (let sc of a) {
       if (sc.script===script) {
         //onsole.log('script found.');
@@ -1359,11 +1611,12 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
         sc.initf=h.initf;
         sc.renderf=h.renderf;
         scriptInit(sc);
-        return;
+        return ret;
       }
     }
     //onsole.log(fn);
     //onsole.error('Script not found.');
+    return ret;
     //...
   }
   function scriptInit(sc) {
@@ -1492,7 +1745,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     lines.length=0;
     for (let c of camera.children) if (c!==xrUtil.hudMesh) camera.remove(c);
     scripts={};scripta.length=0;
-    scene.background=new THREE.Color(0x333333);
+    //scene.background=new THREE.Color(0x333333);
     for (let l of defaultLights) room.remove(l);
     
     //---load
@@ -1566,12 +1819,21 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       }
     }
     
+    let editMode=Conet.parseUrl().editMode;
+    if (editMode===undefined) editMode=sceneh.editMode;
+    if (editMode!==undefined) Menu.setChecked(self.mEditMode,(editMode==1));
+    
     updateMesh();
     rayObjsReset();
     //sceneh=Conet.hcopy(h,undefined,undefined,{points:1,faces:1,lines:1});;
     controls.update();
     } catch (e) { console.error(e); }
     //onsole.log(v);
+    //...
+  }
+  function log(s) {
+    //---
+    xrUtil.log(s);
     //...
   }
   
@@ -1613,7 +1875,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     //...
   }
   
-  let wasSelecting=undefined;
+  let wasSelecting=undefined,noDrag=false;
   function render() {
     //---
     const dt=clock.getDelta()*1000;
@@ -1662,14 +1924,14 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
         if (wasSelecting!==np) {
           wasSelecting=np;
           if (gp1bu1&&sels.length>0) select(undefined);
-          select(np);
+          noDrag=select(np);
           if (gp1bu1) {
             mPoint.ondown();
             np=sels[0];wasSelecting=np;
           }
           //rUtil.log('gp1.bu1='+(gp1bu1?1:0));
         }
-        if (np.userData.selected) {
+        if (np.userData.selected&&!noDrag) {
           ph.x+=pdif.x;ph.y+=pdif.y;ph.z+=pdif.z; 
           gridSnap(ph);
           //np.position.copy(ph);
@@ -1756,9 +2018,9 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     renderer.render(scene,camera);
     //...
   }
-  function select(p) {
+  function select(p,ps) {
     //---
-    let l=sels.length;
+    let l=sels.length,ret=undefined;
     
     if (p===undefined) {
       for (let p of sels) {
@@ -1775,7 +2037,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       } else {
         let mc=Menu.mcontrol;if (mc&&(mc.s!='Props')) mc=undefined;
         if ((sels.length>0)&&mc) select(undefined);
-        sels.push(p);
+        sels.push(p);ret=1;
         p.material=matPointSel;
         p.userData.selected=1;
         let l=p.userData.light;
@@ -1795,9 +2057,18 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     mPindex.s=sels.length==0?'':points.indexOf(sels[sels.length-1]);
     
     if (l!=sels.length)
-      xrUtil.log('Selected:'+sels.length
+      if (!ps?.nolog) {
+        let suffix='';
+        if (sels.length>0) {
+          let groups=sels[0].userData.op.groups;
+          if (groups) 
+            suffix+=' groups:'+JSON.stringify(groups);
+        }
+        xrUtil.log('Selected:'+sels.length+suffix
         //+(sels.length>0?' #'+points.indexOf(sels[sels.length-1]):'')
         );
+      }
+    return ret;
     //...
   }
   function serialize() {
@@ -1892,6 +2163,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
   self.lines=lines;
   self.updateMesh=updateMesh;
   self.points=points;
+  window.editxr=self;
   //...
 }
 );//();
@@ -1911,22 +2183,27 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,37,20,73,23
 //fr o,37,20,73,27
 //fr o,37,20,73,74
-//fr o,37,20,86
-//fr o,37,20,86,57
-//fr o,37,20,86,70
-//fr o,37,20,86,89
-//fr o,37,20,86,95
-//fr o,37,20,88,1
-//fr o,37,20,165
-//fr o,37,20,168
-//fr o,37,20,171
-//fr o,37,20,198
-//fr o,37,20,204
-//fr o,37,20,205
+//fr o,37,20,87,57
+//fr o,37,20,87,70
+//fr o,37,20,87,89
+//fr o,37,20,87,95
+//fr o,37,20,132
+//fr o,37,20,161
+//fr o,37,20,166
+//fr o,37,20,169
+//fr o,37,20,172
+//fr o,37,20,199
+//fr o,37,20,200
 //fr o,37,20,206
-//fr o,37,20,250
-//fr o,37,31,10
-//fr o,37,31,11
-//fr o,37,40
-//fr o,37,51
-//fr p,82,66
+//fr o,37,20,207
+//fr o,37,20,208
+//fr o,37,20,216
+//fr o,37,20,255
+//fr o,37,20,264
+//fr o,37,20,276
+//fr o,37,20,280
+//fr o,37,29,3
+//fr o,37,33,10
+//fr o,37,33,11
+//fr o,37,42
+//fr p,13,318

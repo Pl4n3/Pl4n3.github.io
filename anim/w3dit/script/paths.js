@@ -4,7 +4,8 @@
   let m0=new THREE.MeshPhongMaterial({color:0x666666,flatShading:true}),
       m1=new THREE.MeshPhongMaterial({color:0x77dd77,flatShading:true,
         transparent:true,opacity:0.5}),//9.7
-      count=0,tps=[],tweens=[];
+      count=0,tps=[],tweens=[],otgt=new THREE.Vector3(),//otgt=oldTarget
+      ttgt=0,targetVis=false,targetVisChanged=false;
   
   function box(x,y,z,w,h,b,m,t) {
     
@@ -164,9 +165,10 @@
     //...
   }
   
-  
+  //onsole.log('running path.js');
   //onsole.log('dungeonGeometry.js');
   //onsole.log(document.currentScript);
+  let gps=
   window.w3ditScriptInit({initf:function (ps) {
     //---
     //let m=new THREE.Mesh(
@@ -176,7 +178,7 @@
     
     //onsole.log('paths.w3ditScriptInit');
     
-    if (count==0) ps.xrUtil.log('Paths v.0.122 (cmds: pathsScale)');//FOLDORUPDATEVERSION
+    if (count==0) ps.xrUtil.log('Paths v.0.178 (cmds: pathsScale)');//FOLDORUPDATEVERSION
     //count++;
     
     let w=0.1;
@@ -226,20 +228,54 @@
   }
   ,renderf:function(dt) {
     //---
-    //console.log(dt);
+    ttgt+=dt;
+    if (((ttgt>1000)&&targetVis)||targetVisChanged) {
+      ttgt=0;
+      let editxr=gps.editxr,tgt=editxr.controls.target;
+      if ((tgt.x!=otgt.x)||(tgt.y!=otgt.y)||(tgt.z!=otgt.z)||targetVisChanged) {
+        otgt.copy(tgt);
+        console.log('target changed: '+tgt.x+' '+tgt.y+' '+tgt.z);
+        let c=0,min=Number.MAX_VALUE,max=Number.MIN_VALUE;
+        for (let p of editxr.points) if (p.userData.op.box) {
+          c++;
+          let d=p.position.distanceToSquared(tgt);
+          min=Math.min(min,d);
+          max=Math.max(max,d);
+          //if (p.children.length!=1) console.log(p.children.length);
+          p.children[0].visible=targetVis?(d<0.1):true;
+          //onsole.log(d);
+        }
+        //onsole.log('c='+c+' min='+min+' max='+max);
+        targetVisChanged=false;
+      }
+    }
     Conet.calcTweens(tweens,dt);
     //...
   }
   });
+  gps.xrUtil.hud.buttons.push(
+  {s:targetVis?'Target':'All',ms:'visibility',x:0.7,y:0.3,w:0.25,h:0.08
+  ,ondown:function() {
+    //---
+    targetVis=!targetVis;//otgt.x+=1;
+    this.s=targetVis?'Target':'All';
+    targetVisChanged=true;
+    //onsole.log('dsfsdfsd');
+    //...
+  }
+  }
+  );
+  //onsole.log(gps.editxr.controls);
   //...
 }
 )();
 //----
 //fr o,1
-//fr o,1,6
-//fr o,1,8
-//fr o,1,10
-//fr o,1,15
-//fr o,1,15,38
-//fr o,1,16
-//fr p,37,102
+//fr o,1,7
+//fr o,1,9
+//fr o,1,11
+//fr o,1,17
+//fr o,1,17,38
+//fr o,1,18
+//fr o,1,22
+//fr p,44,244

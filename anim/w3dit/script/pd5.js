@@ -63,6 +63,14 @@
           room.matrix.multiply(m0.makeTranslation(-mpos.x-ppos.x,-mpos.y-ppos.y,-mpos.z-ppos.z));
           //250619 no effect here: 
           room.matrixWorldNeedsUpdate=true;
+          
+          //if (threeEnv.skyMesh) {
+          //  threeEnv.skyMesh.rotation.y=-o5.ay;
+          //  threeEnv.skyMesh.matrixAutoUpdate=true;
+          //}
+          let sc=threeEnv.scene;
+          if (sc.backgroundRotation)
+            sc.backgroundRotation.y=-o5.ay;
         } else { 
           room.matrixAutoUpdate=true;
         }
@@ -780,12 +788,19 @@
     
     
     //threeEnv.path='/shooter/';
+    let m2,m3;
+    {
     let mesh;
     threeSetMeshMaterial(mesh={
-      //diff:'objs/mapGen/d10.jpg',spec:'objs/mapGen/s1.jpg',norm:'objs/mapGen/n1.jpg'
+      //diff:'/shooter/objs/mapGen/d10.jpg',spec:'/shooter/objs/mapGen/s1.jpg',norm:'/shooter/objs/mapGen/n1.jpg'
       diff:'/shooter/objs/mapGen/leavesd.jpg',spec:'/shooter/objs/mapGen/leavess.jpg',norm:'/shooter/objs/mapGen/leavesn.jpg'
     },{});
-    let m2=mesh.material;//m2.castShadow=true;m2.receiveShadow=true;
+    m2=mesh.material;//m2.castShadow=true;m2.receiveShadow=true;
+    threeSetMeshMaterial(mesh={
+      diff:'/shooter/objs/mapGen/d10.jpg',spec:'/shooter/objs/mapGen/s1.jpg',norm:'/shooter/objs/mapGen/n1.jpg'
+    },{});
+    m3=mesh.material;
+    }
     //onsole.log(m2);
     
     //cannonsc=ps.ps.ps.sc/0.005;
@@ -824,7 +839,7 @@
       if (box.point.userData.op.hidden) continue;//---testbox 
       let h=box,sc=cannonsc; 
       let mesh=new THREE.Mesh(new THREE.BoxGeometry(1,1,1//sc*h.dim.x*2,sc*h.dim.z*2,sc*h.dim.y*2
-        ),m2);
+        ),box.point.userData.op.diff?m3:m2);
       box.mesh=mesh;
       //mesh.position.set(sc*(h.pos.x),sc*(h.pos.y+2),sc*(h.pos.z-3));
       //mesh.scale.set(sc*h.dim.x*2,sc*h.dim.z*2,sc*h.dim.y*2);
@@ -932,7 +947,7 @@
     initps=ps;
     room=editxr.room;
     
-    console.log('initf ps0.fn='+ps0.fn+' ps0.cannonTest='+ps0.cannonTest);
+    //onsole.log('initf ps0.fn='+ps0.fn+' ps0.cannonTest='+ps0.cannonTest);
     //onsole.log(this);
     //console.log('ps.points.len='+ps.points.length);
     //for (let p of ps.points) if (p.userData.op.box) console.log(p.userData.op);
@@ -1233,35 +1248,45 @@
         let bgMesh=editxr.sceneh.bgMesh;
         //onsole.log('bgMesh');
         //nsole.log(bgMesh);
-        if (1) xrUtil.hud.buttons.push(
-        {s:'Scale',ms:'Pd5',x:0.55,y:0.7,w:0.16,h:0.1
+        //console.log(Menu.roots);
+        if (1) {
+          let m;
+          xrUtil.hud.buttons.push(
+        m={s:'Scale',ms:'Pd5',x:0.55,y:0.7,w:0.16,h:0.1
         ,ondown:xrUtil.scaleSwitch({
-          scaleCfg:[
+          scaleCfg:sceneh.scaleCfg||[
             ////{sc:0.0015,lint:0.000003*lint,bgop:0,flightSpeed:0.001,camPos:{x:0,y:0.24,z:1}   ,roomPos:{x:-0.48,y:0.99,z:-0.65}},
             //{sc:0.5,lint:0.9,bgop:0,flightSpeed:0.001,rotateRoom:0,_camPos:{x:0,y:0.24,z:1}   ,_roomPos:{x:-0.48,y:0.99,z:-0.65},vrPos:{x:-0.121,y:1.5728,z:-0.4666}},
-            {sc:0.25,lint:0.8,bgop:0,flightSpeed:0.001,rotateRoom:0,_camPos:{x:0,y:0.24,z:1}   ,_roomPos:{x:-0.48,y:0.99,z:-0.65},vrPos:{x:-0.121,y:1.5728,z:-0.4666}},
-            {sc:15  ,lint:50 ,bgop:1,flightSpeed:0.001,rotateRoom:1,_camPos:{x:0,y:2.2 ,z:14.7},_roomPos:{x:2.43,y:3.38,z:-3.79} ,vrPos:{x:0.058,y:-0.1197,z:0.0373}},
+            //{sc:1,lint:0.8,bgop:0,flightSpeed:0.001,rotateRoom:1,camPos:{x:-0.0702,y:0.2576,z:0.0778} ,notXr:1},
+            //{sc:1,lint:0.8,bgop:0,flightSpeed:0.001,rotateRoom:0,camPos:sceneh.camPos1,notXr:1},
+            {sc:0.25,lint:0.8,bgop:0,flightSpeed:0.001,rotateRoom:0,_camPos:{x:0,y:0.24,z:1}   ,_roomPos:{x:-0.48,y:0.99,z:-0.65},vrPos:{x:-0.121,y:1.5728,z:-0.4666},_onlyXr:1},
+            {sc:15  ,lint:50 ,bgop:1,flightSpeed:0.001,rotateRoom:1,_camPos:{x:0,y:2.2 ,z:14.7},_roomPos:{x:2.43,y:3.38,z:-3.79} ,vrPos:{x:0.058,y:-0.1197,z:0.0373},_onlyXr:1},
           ]
           //,pl0:pl0,pl1:pl1
           ,bgMeshScale:bgMesh?bgMesh.scale:0.2
           ,bgMeshPosition:bgMesh?new THREE.Vector3(bgMesh.pos.x,bgMesh.pos.y,bgMesh.pos.z):new THREE.Vector3(0,0,0)
-          ,noStartScfg:1,lights:lights})
+          //,noStartScfg:1//251022 commented out
+          ,lights:lights})
         }   
-        );
+          );
+          //onsole.log('m='+m);
       xrUtil.onScaleSwitch=function(ps) {
         rotateRoom=ps.scfg.rotateRoom;
-        console.log('rotateRoom='+rotateRoom);
+        //onsole.log('xrUtil rotateRoom='+rotateRoom);
         //...
       }
-        }  
-        
+          Menu.roots[0].sub.push({s:'Scale',ms:'Pd5',actionf:m.ondown,r:1});
+          if (Conet.parseUrl().scaleCfg) m.ondown();
+          window.mscale=m;console.info('%cmscale.ondown() to toggle scale','background: #9f9; font-size: large');
+        }
+      }  
       }
       //...
     }
     
     if (first) {
       first=false;
-      xrUtil.log('Pd5 v.0.1477 ');//FOLDORUPDATEVERSION
+      xrUtil.log('Pd5 v.0.1531 ');//FOLDORUPDATEVERSION
       
       
       if (0) xrUtil.hud.buttons.push(
@@ -1336,7 +1361,11 @@
 //fr o,1,21
 //fr o,1,27,90
 //fr o,1,27,177
-//fr o,1,27,264
-//fr o,1,32,36,106
+//fr o,1,27,271
+//fr o,1,32
+//fr o,1,32,32
+//fr o,1,32,34
+//fr o,1,32,36
+//fr o,1,32,36,113
 //fr o,1,32,64
-//fr p,44,108
+//fr p,27,70

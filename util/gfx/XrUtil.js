@@ -5,7 +5,7 @@ import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFa
 let XrUtil={};
 (function(pself) {
   //---
-  let version='v.1.658 ',//FOLDORUPDATEVERSION
+  let version='v.1.721 ',//FOLDORUPDATEVERSION
       self=pself,ctrl0,ctrl1,gp0,gp1,camera,scene,room,vrPos,huds=[],hudMesh,
       hud={lines:['XrUtil '+version],cursor:{x:0.5,y:0.5,vis:false},buttons:[]},
       raycaster,INTERSECTED,hudCount=0,needDrawUi=false,input,uisc=2,gps,
@@ -85,9 +85,10 @@ let XrUtil={};
         room.position.y+=vt.y;
         room.position.z+=vt.z;
         if (vrPos) vrPos.add(vt);
+        //self.log(vrPos?'vrPos':'noVrPos');
         room.updateMatrix();
         room.updateWorldMatrix(false,true);
-        //onsole.log(room.position);
+        ////onsole.log(room.position);
         let p=room.position;
         if (gps.lskey) localStorage[gps.lskey]=JSON.stringify({
           x:p.x,y:p.y,z:p.z});
@@ -215,10 +216,10 @@ let XrUtil={};
         camera.remove(o); 
         ctrl0.add(o);o.position.set(-0.2,0,0);o.rotation.x=-1;o.rotation.y=1;
       }
-      if (1&&gps.lskey) {
+      if (0&&gps.lskey) {
         try {
         let h=JSON.parse(localStorage[gps.lskey]||'{}');
-        console.log('h from ls');
+        console.log('room.pos from localStorage');
         console.log(h);
         if (h.x!==undefined) {
           room.position.set(h.x,h.y,h.z);
@@ -273,13 +274,14 @@ let XrUtil={};
     self.menuHudPosition={s:'Hud',r:1,ms:'Position',autoval:1,setfunc:function(v) {
       //---
       if (v=='Desktop') hudMesh.position.set(-0.15,0.1,-0.4);
-      if (v=='Phone') hudMesh.position.set(-0.15,0,-0.25);
+      if (v=='Phone') hudMesh.position.set(-0.1,0,-0.17);
       if (v=='Away') hudMesh.position.set(-0.35,0.1,-0.4);
       if (v=='Faraway') hudMesh.position.set(-1,0.1,-0.4);
       //o.rotation.y=0.3; //-0.15,0.1,-0.4
       //...
     }
     ,sub:[{s:'Phone'},{s:'Desktop'},{s:'Away'},{s:'Faraway'}]};
+    
     
     if (0) /* inp, keyboard not showing up in xr */ {
       //---
@@ -386,7 +388,14 @@ let XrUtil={};
             } else if (b.sub) {
               if (!hud.menu0) hud.menu0=hud.buttons;//alternatively maintain hud.menuStack[]
               hud.menuSub=b;
-              newMenu=b.sub;sthdone=true;
+              //onsole.log('...drawHud autoSub0='+b.autoSub0);
+              if (b.autoSub0) {
+                //newMenu=[Conet.hcopy(b,{s:b.s+' \u25b2'},undefined,{sub:1,autoSub0:1},1)].concat(b.sub);
+                newMenu=[{s:b.s+' \u25b2',x:0.5,y:0.4,w:0.4,h:0.1}].concat(b.sub);//---pos probably later parametrized
+                //onsole.log(newMenu);
+              } else
+                newMenu=b.sub;
+              sthdone=true;
               newMenu[0].subUp=true;
             } //else 
             if (b.ondown) { 
@@ -439,12 +448,14 @@ let XrUtil={};
       }
       if (b.s!==undefined) {
         ct.fillStyle='#ddd';
+        let s=b.s;
+        if (b.autoSub0) s+=' \u25bc';
         if (b.align=='left') {
           ct.textAlign='start';
-          ct.fillText(b.s,bx+3*uisc,by+bh/2);
+          ct.fillText(s,bx+3*uisc,by+bh/2);
           ct.textAlign='center';
         } else 
-          ct.fillText(b.s,bx+bw/2,by+bh/2);
+          ct.fillText(s,bx+bw/2,by+bh/2);
       }
       lb=b;
     }
@@ -542,7 +553,12 @@ let XrUtil={};
     //o.rotation.y=0.3;
     hudMesh=o;
     
+    
     camera.add(o);o.position.set(-0.15,0.1,-0.4);//o.rotation.y=0.3; //-0.15,0.1,-0.4
+    
+    let s=Conet.parseUrl().hudPos;
+    if (s) self.menuHudPosition.setfunc(s);
+    
     //scene.add(o);
     
     //ctrl0.add(o);o.position.set(-0.2,0,0);o.rotation.x=-1;o.rotation.y=1;
@@ -679,7 +695,9 @@ let XrUtil={};
         scfg=ps.noStartScfg?undefined:scaleCfg[0],
         sc=scfg?scfg.sc:0,bgMat;
     
-    {
+    console.log('xrUtil.scaleSwitch init sc='+sc+' '+(threeEnv.skyMesh?'skyMesh':'no skyMesh'));
+    
+    if (!threeEnv.skyMesh) {
     let m;
     room.add(m=new THREE.Mesh(new THREE.BoxGeometry(10,10,10),
       bgMat=new THREE.MeshBasicMaterial({color:0x555566,transparent:false,opacity:1,side:THREE.BackSide,visible:false})));
@@ -691,18 +709,39 @@ let XrUtil={};
     
     return function() {
       //---
-      //onsole.log('scale nao');
+      //onsole.log('xrUtil.scaleSwitch start');
       let oscfg=scfg;
       let oroomsc=room.scale.x;
-      if (sc==scaleCfg[0].sc) {
-        scfg=scaleCfg[1];//oscfg=scaleCfg[0];
+      
+      if (scfg) {
+        let i=scaleCfg.indexOf(scfg);
+        while (1) {
+          i=(i+1)%scaleCfg.length;
+          scfg=scaleCfg[i];
+          if (self.isSession) {
+            if (scfg.notXr) continue;
+          } else {
+            if (scfg.onlyXr) continue;
+          }
+          let s='xrUtil.scaleSwitch i='+i;
+          self.log(s);
+          console.log(s);
+          break;
+        }
+        //scfg=scaleCfg[(i+1)%scaleCfg.length];
       } else {
-        scfg=scaleCfg[0];//oscfg=scaleCfg[1];
-      }
+        if (sc==scaleCfg[0].sc) {
+          scfg=scaleCfg[1];//oscfg=scaleCfg[0];
+        } else {
+          scfg=scaleCfg[0];//oscfg=scaleCfg[1];
+        }
+      } 
+      
       self.scfg=scfg;
       if (gps.room0&&!scfg.room0Rot) gps.room0.rotation.y=0;
       sc=scfg.sc;
       
+      //onsole.log(scfg);
       //onsole.log(scfg);
       
       if (ps.pl0) {
@@ -714,7 +753,7 @@ let XrUtil={};
       }
       if (ps.pl1) ps.pl1.intensity=scfg.lint/3;
       
-      console.log('xrUtil.scaleSwitch ps.lights.length='+ps.lights.length);
+      //onsole.log('xrUtil.scaleSwitch ps.lights.length='+ps.lights.length);
       if (ps.lights) for (let l of ps.lights) {
         if (l.light instanceof THREE.PointLight) {
           if (l.intensity===undefined) l.intensity=l.light.intensity;
@@ -746,9 +785,15 @@ let XrUtil={};
       }
       
       self.flightSpeed=scfg.flightSpeed;
+      //onsole.log('scaleSwitch roomscale set '+room.scale.x+' -> '+sc);
       room.scale.set(sc,sc,sc);
       //bgMat.opacity=scfg.bgop;
-      bgMat.visible=scfg.bgop==1?true:false;
+      if (threeEnv.bgCube)
+        threeEnv.scene.background=(scfg.bgop==1)?threeEnv.bgCube:undefined;
+      else if (threeEnv.skyMesh)
+        threeEnv.skyMesh.visible=scfg.bgop==1?true:false;
+      else
+        bgMat.visible=scfg.bgop==1?true:false;
       
       
       if (self.isSession) {
@@ -768,14 +813,18 @@ let XrUtil={};
         }
       } else {
         let cp=camera.position;
-        //elf.log('camPos '+Conet.f4(cp.x)+' '+Conet.f4(cp.y)+' '+Conet.f4(cp.z));
-        if (oscfg) oscfg.camPos={x:cp.x,y:cp.y,z:cp.z}
+        //self.log('camPos '+Conet.f4(cp.x)+' '+Conet.f4(cp.y)+' '+Conet.f4(cp.z));
+        //onsole.log('camPos '+Conet.f4(cp.x)+' '+Conet.f4(cp.y)+' '+Conet.f4(cp.z));
+        if (oscfg) oscfg.camPos={x:cp.x,y:cp.y,z:cp.z};
         if (scfg.camPos) {
           cp.x=scfg.camPos.x;cp.y=scfg.camPos.y;cp.z=scfg.camPos.z;
           //blockWalk.tweens.push({o:cp,key:'x',t:t,value:scfg.camPos.x});
           //blockWalk.tweens.push({o:cp,key:'y',t:t,value:scfg.camPos.y});
           //blockWalk.tweens.push({o:cp,key:'z',t:t,value:scfg.camPos.z});
         }
+        let p=gps.controls.target;
+        if (oscfg) oscfg.conTar={x:p.x,y:p.y,z:p.z};
+        if (scfg.conTar) { p.x=scfg.conTar.x;p.y=scfg.conTar.y;p.z=scfg.conTar.z; }
       }
       
       if (self.onScaleSwitch) self.onScaleSwitch({oroomsc:oroomsc,scfg:scfg});
@@ -1116,8 +1165,6 @@ let XrUtil={};
 )(XrUtil);
 export { XrUtil };
 //fr o,5
-//fr o,5,9
-//fr o,5,11
 //fr o,5,14
 //fr o,5,15
 //fr o,5,15,9
@@ -1128,26 +1175,20 @@ export { XrUtil };
 //fr o,5,15,83
 //fr o,5,15,85
 //fr o,5,15,98
-//fr o,5,15,101
-//fr o,5,15,101,6
-//fr o,5,18
+//fr o,5,15,102
+//fr o,5,15,102,6
 //fr o,5,18,3
 //fr o,5,18,5
-//fr o,5,20
-//fr o,5,21
-//fr o,5,23
-//fr o,5,24,36
-//fr o,5,24,38
-//fr o,5,24,40
+//fr o,5,24
+//fr o,5,24,37
+//fr o,5,24,41
+//fr o,5,24,43
+//fr o,5,24,45
 //fr o,5,26
-//fr o,5,27
-//fr o,5,28
-//fr o,5,28,15
-//fr o,5,30
+//fr o,5,28,17
 //fr o,5,30,1
-//fr o,5,32
 //fr o,5,32,12
 //fr o,5,32,19
 //fr o,5,32,23
 //fr o,5,32,25
-//fr p,4,609
+//fr p,6,42

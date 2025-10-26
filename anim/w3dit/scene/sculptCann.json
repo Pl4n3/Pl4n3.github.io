@@ -4,6 +4,12 @@
 "bgMesh":{"pos":{"x":-0.9,"y":-0.3,"z":0},"scale":0.2},
 "defaultLights":"none",
 "gridSnap":0.02,
+"scaleCfg":[
+  {"sc":1,"lint":0.8,"bgop":1,"flightSpeed":0.001,"rotateRoom":1,"camPos":{"x":-0.0702,"y":0.2576,"z":0.0778} ,"conTar":{"x":-0.0583,"y":0.1162,"z":-0.206},"notXr":1},
+  {"sc":1,"lint":0.8,"bgop":1,"flightSpeed":0.001,"rotateRoom":0,"camPos":{"x":-0.7757,"y":0.957,"z":3.5044},"conTar":{"x":-0.8179,"y":-0.2618,"z":0.0713},"notXr":1},
+  {"sc":0.25,"lint":0.8,"bgop":0,"flightSpeed":0.001,"rotateRoom":0,"vrPos":{"x":-0.2828,"y":2.3706,"z":-0.7292},"roomPos":{"x":-0.1618,"y":0.7978,"z":-0.2626},"onlyXr":1},
+  {"sc":15  ,"lint":50 ,"bgop":1,"flightSpeed":0.001,"rotateRoom":1,"vrPos":{"x":0.055,"y":-0.1184,"z":0.0407},"roomPos":{"x":-0.1618,"y":0.7978,"z":-0.2626},"onlyXr":1}
+],
 "points":[
  {"x":-0.3,"y":-0.04,"z":-0.04,"inv":1}
 ,{"x":-0.3,"y":0.22,"z":-0.04,"inv":1}

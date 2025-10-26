@@ -32,9 +32,15 @@ body {
   let cells=[
   
   {
-  descr:'A <b>cannonjs</b> xr test, now using <b>threejs</b> 180 instead of 160 to have <i>scene.backgroundRotation</i> for xr.',
+  descr://'<video autoplay muted loop style="position:absolute;width:300px;overflow:hidden;z-index:0;"><source src="/blog/hub/cannCastle.mp4"></video>'
+  'A <b>cannonjs</b> xr test, now using <b>threejs</b> 180 instead of 160 to have <i>scene.backgroundRotation</i> for xr.',
   link:'/test/webvr/edit.htm?file=file:cannCastle&amp;editMode=0&amp;scaleCfg=1&amp;hudPos=Away',
-  date:'2025-10-26'
+  date:'2025-10-26',
+  img:'/blog/hub/cannCastle.webp',
+  twitter:'https://x.com/Pl4n3/status/1982456021835489439',
+  mastodon:'https://mastodon.social/@Pl4n3/115440987090419339',
+  bluesky:'https://bsky.app/profile/pl4n3.bsky.social/post/3m445m6bbzs2w',
+  threads:'https://www.threads.com/@pl4n3d/post/DQRtT6wDdFc'
   },
   
   
@@ -50,7 +56,8 @@ body {
   +', <a href="https://x.com/Pl4n3/status/1979327902576709981">Twitter</a>'
   +'<br>2025-10-18</span>'
   //+'</span>'
-  ,img:'/blog/hub/playlist.gif'}
+  ,img:'/blog/hub/playlist.gif'
+  }
   
   ,{text:
   '<span style="font-size:1.1em;background-color:'+bgt+';">Trying to <b>visualize history</b> again. Timeframe is 1143-1160: wendish crusade and danish civil war.'
@@ -117,7 +124,7 @@ body {
     +'<br></span>'
     +'<span style="font-size:1em;"><br>'
     //+'<img src="/canvas/paint/avatar.png" width=20 style="vertical-align:middle;"/>'
-    +'v.1.17 '//FOLDORUPDATEVERSION
+    +'v.1.37 '//FOLDORUPDATEVERSION
     +'Comments appreciated:<br><a href="https://mastodon.social/@Pl4n3">Mastodon</a>'
     +', <a href="https://bsky.app/profile/pl4n3.bsky.social">Bluesky</a>'
     +', <a href="https://www.threads.com/@pl4n3d">Threads</a>'
@@ -141,7 +148,13 @@ body {
     let text=c.text||'';
     if (c.descr) text+='<span style="font-size:1.1em;background-color:'+bgt+';">'+c.descr+'<br></span>';
     if (c.link) text+='<span style="font-size:1.5em;background-color:'+bgt+';"><a href="'+c.link+'">► Start&nbsp;</a></span>';
-    if (c.date) text+='<span style="font-size:1em;background-color:'+bgt+';"><br>'+c.date+'</span>';
+    let s='';
+    if (c.mastodon) s+=(s.length==0?'<br>':', ')+'<a href="'+c.mastodon+'">Mastodon</a>';
+    if (c.bluesky) s+=(s.length==0?'<br>':', ')+'<a href="'+c.bluesky+'">Bluesky</a>';
+    if (c.threads) s+=(s.length==0?'<br>':', ')+'<a href="'+c.threads+'">Threads</a>';
+    if (c.twitter) s+=(s.length==0?'<br>':', ')+'<a href="'+c.twitter+'">Twitter</a>';
+    if (c.date) s+='<br>'+c.date;
+    if (s.length>0) text+='<span style="font-size:1em;background-color:'+bgt+';">'+s+'</span>';
     h.files.push({
       text:text,
   draw:function(el) {
@@ -173,6 +186,6 @@ body {
 </html>
 <script>
 //fr o,25
-//fr o,25,98
-//fr o,25,113
-//fr p,87,143
+//fr o,25,105
+//fr o,25,126
+//fr p,5,155

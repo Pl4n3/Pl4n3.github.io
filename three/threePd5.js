@@ -48,8 +48,11 @@ function threeTexture(ts,o5,tlOnload,ps) {
     else 
       image.src=ts;  
     //text.needsUpdate=true;
-  } else { 
-    text=threeTexH[ts];
+  } else {
+    let key=ts;
+    if (ps&&ps.filter) key+='_filter'+ps.filter.toString().length;
+    //onsole.log('key='+key);
+    text=threeTexH[key];
     if (text) return text;
     //onsole.log('threeTexture load '+(threeEnv.path+ts)+' threeTL='+threeTL);
     //onsole.log(threeEnv);
@@ -58,15 +61,18 @@ function threeTexture(ts,o5,tlOnload,ps) {
     if (fn.endsWith('.json')) {
       var img=document.createElement('img');
       text=new THREE.Texture(img);
+      threeTexH[key]=text;//--250607 buffer json too
   Conet.download({fn:fn,f:function(v) {
     var o=JSON.parse(v);
     img.text=text;
     img.o5=o5;
     img.onload=threeImgOnload;
     
-    if (ps&&ps.filter) 
+    if (ps&&ps.filter) {
+      //onsole.log('typeof(ps.filter)='+typeof(ps.filter));
+      //onsole.log(ps.filter);
       ps.filter({img:img,data:o.data});
-    else 
+    } else 
       img.src=o.data;
       
       
@@ -75,12 +81,12 @@ function threeTexture(ts,o5,tlOnload,ps) {
     } else {
       text=(threeTL&&!threeEnv.noThreeTL)?threeTL.load(fn,tlOnload||threeEnv.texLoaded):
         THREE.ImageUtils.loadTexture(fn,undefined,threeEnv.texLoaded);
-      threeTexH[ts]=text;
+      threeTexH[key]=text;
     }
   }
   if (text) {
-  text.wrapS=THREE.RepeatWrapping;
-  text.wrapT=THREE.RepeatWrapping; 
+    text.wrapS=THREE.RepeatWrapping;
+    text.wrapT=THREE.RepeatWrapping; 
   }
   //onsole.log('...threeTexture text='+text+' ts='+ts+' threeEnv.path='+threeEnv.path);
   //onsole.log(text);
@@ -90,7 +96,9 @@ function threeCreateMesh(lo,first,px,py,pz,scale,mat) {
   for (var mi=lo.meshes.length-1;mi>=0;mi--) {
   let m=lo.meshes[mi];
   //onsole.log(THREE.REVISION);
-  let useBuff=THREE.REVISION>130,ge=useBuff?new THREE.BufferGeometry():new THREE.Geometry();
+  let useBuff=THREE.REVISION>130,
+      ge=useBuff?new THREE.BufferGeometry():new THREE.Geometry();
+  //onsole.log('...threeCreateMesh useBuff='+useBuff);
   let ve=lo.verts,ve2=[];
   //for (var h=0;h<ve.length;h++) {
   //  var p=ve[h].p1;
@@ -101,7 +109,7 @@ function threeCreateMesh(lo,first,px,py,pz,scale,mat) {
   first=false;
   
   let fa=m.fa,verts,indices,uvs;
-  if (useBuff) { verts=[];indices=[];uvs=[]; }
+  if (useBuff) { verts=[];norms=[];indices=[];uvs=[]; }
   for (var h=0;h<fa.length;h++) {
     var t=fa[h];
     
@@ -111,9 +119,9 @@ function threeCreateMesh(lo,first,px,py,pz,scale,mat) {
     var v1=t.v1;if ((v1.nv!==undefined)&&!useBuff) v1=v1.nv;
     var v2=t.v2;if ((v2.nv!==undefined)&&!useBuff) v2=v2.nv;
   
-    if (v0.ive2===undefined) { var p=v0.p1;if (useBuff) { verts.push(p.x,-p.y,p.z);uvs.push(v0.u,1-v0.v); } else ge.vertices.push(new THREE.Vector3(p.x,-p.y,p.z));v0.ive2=ve2.length;ve2.push(v0); }
-    if (v1.ive2===undefined) { var p=v1.p1;if (useBuff) { verts.push(p.x,-p.y,p.z);uvs.push(v1.u,1-v1.v); } else ge.vertices.push(new THREE.Vector3(p.x,-p.y,p.z));v1.ive2=ve2.length;ve2.push(v1); }
-    if (v2.ive2===undefined) { var p=v2.p1;if (useBuff) { verts.push(p.x,-p.y,p.z);uvs.push(v2.u,1-v2.v); } else ge.vertices.push(new THREE.Vector3(p.x,-p.y,p.z));v2.ive2=ve2.length;ve2.push(v2); }
+    if (v0.ive2===undefined) { var p=v0.p1;if (useBuff) { verts.push(p.x,-p.y,p.z);uvs.push(v0.u,1-v0.v);norms.push(1,0,0); } else ge.vertices.push(new THREE.Vector3(p.x,-p.y,p.z));v0.ive2=ve2.length;ve2.push(v0); }
+    if (v1.ive2===undefined) { var p=v1.p1;if (useBuff) { verts.push(p.x,-p.y,p.z);uvs.push(v1.u,1-v1.v);norms.push(1,0,0); } else ge.vertices.push(new THREE.Vector3(p.x,-p.y,p.z));v1.ive2=ve2.length;ve2.push(v1); }
+    if (v2.ive2===undefined) { var p=v2.p1;if (useBuff) { verts.push(p.x,-p.y,p.z);uvs.push(v2.u,1-v2.v);norms.push(1,0,0); } else ge.vertices.push(new THREE.Vector3(p.x,-p.y,p.z));v2.ive2=ve2.length;ve2.push(v2); }
   
     if (useBuff) {
       indices.push(v0.ive2,v1.ive2,v2.ive2);
@@ -135,7 +143,7 @@ function threeCreateMesh(lo,first,px,py,pz,scale,mat) {
     ge.setIndex(indices);let ba;
     ge.setAttribute('position',ba=new THREE.BufferAttribute(new Float32Array(verts),3));
     m.baVerts=ba;
-    ge.setAttribute('normal',ba=new THREE.BufferAttribute(new Float32Array(verts),3));
+    ge.setAttribute('normal',ba=new THREE.BufferAttribute(new Float32Array(norms),3));
     m.baNorms=ba;
     ge.setAttribute('uv',new THREE.BufferAttribute(new Float32Array(uvs),2));
   }
@@ -179,7 +187,7 @@ function threeCreateMesh(lo,first,px,py,pz,scale,mat) {
   }
 }
 function threeSetMeshMaterial(m,lo) {
-  //onsole.log('threeSetMeshMaterial 0 '+lo.transparent);
+  //onsole.log('threeSetMeshMaterial 0 m.diffFilter='+(m.diffFilter?1:0)+' lo.phong='+lo.phong);//+lo.transparent);
   if (!lo.phong) {
   //onsole.log('threeSetMeshMaterial 1');
   var ambient = 0xffffff, diffuse = 0xffffff, specular = 0xffffff, shininess = 35;
@@ -230,13 +238,14 @@ function threeSetMeshMaterial(m,lo) {
     m.material=new THREE.MeshPhongMaterial(ph);
     return;
   }
-  				var uniforms=THREE.UniformsUtils.clone( shader.uniforms );
   
-  				uniforms["enableAO"].value = false;
-  				uniforms["enableDiffuse"].value = true;
-  				uniforms["enableSpecular"].value = true;
-  				uniforms["enableReflection"].value = true;
-  				uniforms["enableDisplacement"].value = false;
+  var uniforms=THREE.UniformsUtils.clone( shader.uniforms );
+  
+  uniforms["enableAO"].value = false;
+  uniforms["enableDiffuse"].value = true;
+  uniforms["enableSpecular"].value = true;
+  uniforms["enableReflection"].value = true;
+  uniforms["enableDisplacement"].value = false;
   
   var t;
   
@@ -247,19 +256,19 @@ function threeSetMeshMaterial(m,lo) {
   //onsole.log('threeSetMeshMaterial: setting m.tdiff');
   //onsole.log(m);
   
-  				uniforms["uDisplacementBias"].value = - 0.428408;
-  				uniforms["uDisplacementScale"].value = 2.436143;
+  uniforms["uDisplacementBias"].value = - 0.428408;
+  uniforms["uDisplacementScale"].value = 2.436143;
   
-  				uniforms["uDiffuseColor"].value.setHex( diffuse );
-  				uniforms["uSpecularColor"].value.setHex( specular );
-  				uniforms["uAmbientColor"].value.setHex( ambient );
+  uniforms["uDiffuseColor"].value.setHex( diffuse );
+  uniforms["uSpecularColor"].value.setHex( specular );
+  uniforms["uAmbientColor"].value.setHex( ambient );
   
-  				uniforms["uShininess"].value = shininess;
+  uniforms["uShininess"].value = shininess;
   
-  				//uniforms["tCube"].value = threeEnv.reflectionCube;
-  				//uniforms["uReflectivity"].value = 0.3;//0.1
+  //uniforms["tCube"].value = threeEnv.reflectionCube;
+  //uniforms["uReflectivity"].value = 0.3;//0.1
   
-  				var parameters={fragmentShader:shader.fragmentShader,vertexShader:shader.vertexShader,uniforms:uniforms,lights:true,fog:true};
+  var parameters={fragmentShader:shader.fragmentShader,vertexShader:shader.vertexShader,uniforms:uniforms,lights:true,fog:true};
   var ps=parameters;
   if (lo.transparent) {
     console.log('transparent!!!1'); 
@@ -321,6 +330,45 @@ function threeRemoveObj(o) {
   threeEnv.os.splice(threeEnv.os.indexOf(o),1);
   //...
 }
+
+function threeInitSkybox() {
+  //---
+  //				var path = "textures/cube/SwedishRoyalCastle/";
+  var p2=threeEnv.skyPath||'/shooter/objs/skybox/';
+  //p2+='_';
+  var format = '.jpg';
+  var urls = [
+  //						path + 'px' + format, path + 'nx' + format,
+  //						path + 'py' + format, path + 'ny' + format,
+  //						path + 'pz' + format, path + 'nz' + format
+  p2+'right.jpg',p2+'left.jpg',p2+'up.jpg',p2+'down.jpg',p2+'front.jpg',p2+'back.jpg',
+  					];
+  
+  var reflectionCube=THREE.CubeTextureLoader?
+    new THREE.CubeTextureLoader().load(urls):THREE.ImageUtils.loadTextureCube( urls );
+  threeEnv.reflectionCube=reflectionCube;
+  
+  //----skybox
+  
+  var shader = THREE.ShaderLib[ "cube" ];
+  				shader.uniforms["tCube"].value=reflectionCube;
+  //onsole.log(shader.uniforms);
+  				var material = new THREE.ShaderMaterial( {
+  					fragmentShader: shader.fragmentShader,
+  					vertexShader: shader.vertexShader,
+  					uniforms: shader.uniforms,
+  					side: THREE.BackSide
+  				});
+  console.log('THREE.REVISION='+THREE.REVISION);
+  
+  let mesh=(THREE.REVISION<=61)
+  ?new THREE.Mesh(new THREE.CubeGeometry(11000,11000,11000),material)
+  :new THREE.Mesh(new THREE.BoxGeometry(11000,11000,11000),material);
+  //if (threeSky) 				scene.add(mesh);
+  threeEnv.skyMesh=mesh;
+  //...
+}
+
 function threeInit(ps) {
   if (!ps.scf) ps.scf=1;
   //console.log('threeInit '+ps.scf);
@@ -373,33 +421,7 @@ function threeInit(ps) {
   threeEnv.lightMesh=lightMesh;				
   //scene.add( lightMesh );
   
-  //				var path = "textures/cube/SwedishRoyalCastle/";
-  var p2=threeEnv.skyPath||'/shooter/objs/skybox/';
-  				var format = '.jpg';
-  				var urls = [
-  //						path + 'px' + format, path + 'nx' + format,
-  //						path + 'py' + format, path + 'ny' + format,
-  //						path + 'pz' + format, path + 'nz' + format
-  p2+'right.jpg',p2+'left.jpg',p2+'up.jpg',p2+'down.jpg',p2+'front.jpg',p2+'back.jpg',
-  					];
-  
-  var reflectionCube=THREE.CubeTextureLoader?
-    new THREE.CubeTextureLoader().load(urls):THREE.ImageUtils.loadTextureCube( urls );
-  threeEnv.reflectionCube=reflectionCube;
-  
-  //----skybox
-  
-  var shader = THREE.ShaderLib[ "cube" ],mesh;
-  				shader.uniforms["tCube"].value=reflectionCube;
-  				var material = new THREE.ShaderMaterial( {
-  					fragmentShader: shader.fragmentShader,
-  					vertexShader: shader.vertexShader,
-  					uniforms: shader.uniforms,
-  					side: THREE.BackSide
-  				}),
-  				mesh=new THREE.Mesh(new THREE.CubeGeometry(11000,11000,11000),material);
-  //if (threeSky) 				scene.add(mesh);
-  threeEnv.skyMesh=mesh;
+  threeInitSkybox();
   
   //--------------
   /*				
@@ -617,10 +639,10 @@ function threeRender(dt) {
     }
   
     //console.log('calc obi');
-    var calcnorms=true;
+    var calcnorms=true;//lo.calcVertNorms=true;
     if (!threeEnv.nocalc) calcnorms=Pd5.calc(lo,dt,0,lo.ay||0,lo.scale||1,{x:lo.x||0,y:lo.y||0,z:lo.z||0},0,0,true);
     if (calcnorms||lo.calcVertNorms) Pd5.calcNormals(lo,!lo.calcVertNorms); //else console.log('calcNormals skipped');
-    //console.log(calcnorms);
+    //onsole.log('calcNorms='+calcnorms+' lo.calcVertNorms='+lo.calcVertNorms);
   
     for (var mi=lo.meshes.length-1;mi>=0;mi--) {
       var m=lo.meshes[mi];
@@ -630,6 +652,7 @@ function threeRender(dt) {
       //mesh1.rotation.x=rx;
       let g=mesh1.geometry;
       let useBuff=g instanceof THREE.BufferGeometry;
+      //onsole.log('useBuff='+useBuff);
       if (useBuff) {
         let ve2=m.ve2,a=m.baVerts.array,na=m.baNorms.array,i=0;//lo.verts;
         for (let h=0;h<ve2.length;h++) {
@@ -647,7 +670,7 @@ function threeRender(dt) {
         }
         //g.setAttribute('position',m.baVerts);//new THREE.BufferAttribute(m.baVerts.array,3));
         m.baVerts.needsUpdate=true;
-        if (lo.calcVertNorms) m.baNorms.needUpdate=true;
+        if (lo.calcVertNorms) m.baNorms.needsUpdate=true;
         //continue;
       } else {
         var mgv=mesh1.geometry.vertices;
@@ -1092,6 +1115,13 @@ threeEnv.addQuad=function(ps) {
   threeEnv.addTri({ge:ps.ge,v0:v1,v1:v3,v2:v2,c0:c1,c1:c3,c2:c2});
   //---
 }
+threeEnv.finishBufGem=function(ps) {
+  let ge=ps.ge;
+  ge.setIndex(ge.indices);
+  ge.setAttribute('position',new THREE.Float32BufferAttribute(ge.vertices,3));
+  ge.setAttribute('color',   new THREE.Float32BufferAttribute(ge.colors,3));
+  //...
+}
 //--- three util funcs
 threeEnv.pointLight=function(ps) {
   //---
@@ -1253,11 +1283,15 @@ threeEnv.dungeonGeometry=function (ps,view) {
   //...
 }
 //---
-//fr o,8
 //fr o,9
-//fr o,9,39
+//fr o,9,43
+//fr o,10
 //fr o,11
-//fr o,12
-//fr o,25,56
-//fr o,25,57
-//fr p,21,38
+//fr o,16
+//fr o,18
+//fr o,19
+//fr o,28,56
+//fr o,28,57
+//fr o,38
+//fr o,41
+//fr p,2,306

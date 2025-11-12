@@ -102,7 +102,7 @@
       
       
       let shape=new CANNON.Trimesh(a1,bg.index.array);//[0,0,0, 9,0,0, 0,0,9],[0,1,2,0,2,1]);
-      let shapeBody = new CANNON.Body({ mass:0 });
+      let shapeBody = new CANNON.Body({ mass:0,material:groundMaterial });
       shapeBody.addShape(shape);
       //var pos = new CANNON.Vec3(0,0,size);
       shapeBody.position.set(0,0,0);
@@ -937,7 +937,8 @@
     
     xrUtil=ps.xrUtil;
         //canv,ct,tex,
-    let o,mesh,ps0=ps.ps,sceneh=ps.sceneh,lights=[],editxr=ps.editxr,
+    let o,mesh,ps0=ps.ps,sceneh=ps.sceneh,//lights=[],
+        editxr=ps.editxr,lights=editxr.lights,
         scriptHandlers=ps.scriptHandlers,mode='diff',
         modes={
           diff:{tex:'map'},
@@ -1265,7 +1266,7 @@
           //,pl0:pl0,pl1:pl1
           ,bgMeshScale:bgMesh?bgMesh.scale:0.2
           ,bgMeshPosition:bgMesh?new THREE.Vector3(bgMesh.pos.x,bgMesh.pos.y,bgMesh.pos.z):new THREE.Vector3(0,0,0)
-          //,noStartScfg:1//251022 commented out
+          //,noStartScfg:1//251111 reactivated so that scaleCfg isnt overwritten //251022 commented out
           ,lights:lights})
         }   
           );
@@ -1286,7 +1287,7 @@
     
     if (first) {
       first=false;
-      xrUtil.log('Pd5 v.0.1531 ');//FOLDORUPDATEVERSION
+      xrUtil.log('Pd5 v.0.1536 ');//FOLDORUPDATEVERSION
       
       
       if (0) xrUtil.hud.buttons.push(
@@ -1359,13 +1360,16 @@
 //fr o,1,13
 //fr o,1,14
 //fr o,1,21
+//fr o,1,25
+//fr o,1,27
 //fr o,1,27,90
 //fr o,1,27,177
 //fr o,1,27,271
 //fr o,1,32
-//fr o,1,32,32
-//fr o,1,32,34
-//fr o,1,32,36
-//fr o,1,32,36,113
-//fr o,1,32,64
-//fr p,27,70
+//fr o,1,32,33
+//fr o,1,32,35
+//fr o,1,32,37
+//fr o,1,32,37,60
+//fr o,1,32,37,113
+//fr o,1,32,65
+//fr p,40,892

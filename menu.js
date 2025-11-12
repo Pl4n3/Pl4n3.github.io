@@ -21,7 +21,7 @@ var Menu={};
   Menu.soff='[ ]';//'\u2610';
   Menu.son='[x]';//'\u2611';
   Menu.pressed=pressed;
-  Menu.version='1.496 ';//FOLDORUPDATEVERSION
+  Menu.version='1.502 ';//FOLDORUPDATEVERSION
   Menu.keys=keys;
   function mCloseAll(a) {
     for (var i=0;i<a.length;i++) {
@@ -220,7 +220,7 @@ var Menu={};
           menus=[mcancel];mcancel.s='Close';
         } else menus=[mok,mcancel];
         menus.push(
-          {s:m.doctrl,px:m.mcpx?m.mcpx:(ps.diw?0.01:0.32),py:Menu.cpy,//0.02,
+          {s:m.doctrl,px:m.mcpx?m.mcpx:(ps.diw?0.01:0.32),py:m.mcpy||Menu.cpy,//0.02,
           pw:m.mcpw?m.mcpw:(ps.diw?0.51:(1-0.49)),
           ph:m.mcph?m.mcph:(m.ta?(ps.diw?0.3:0.44):0.14),tf:1,
           fs:(m.mcfs?m.mcfs:(m.ta?Menu.tafs:0.75)),mctrl:m,yvh:m.mcyvh});
@@ -570,7 +570,7 @@ var Menu={};
           c.innerHTML=m.s+'<br><textarea id="'+tfid+'" '+(mco.wrap?'':'wrap="off" ')+'style="'+(mco.wrap?'':
             //-> in firefox this made \n not do wrap, therfore commented out: 'white-space:nowrap;'+
             'overflow:auto;')
-            +'width:min(400px,'+(ccw*0.8)+'px);'
+            +((mco.tacols===undefined)?'width:min(400px,'+(ccw*0.8)+'px);':'')//251111 added tacols check
             +'font-size:'+c.style.fontSize+'" '+
           'cols='+(mco.tacols?mco.tacols:36)+' rows='+(mco.tarows?mco.tarows:15)+'>'+value+'</textarea>';
           //tacols:36,tarows:15 frueher 20,8
@@ -1174,7 +1174,10 @@ var Menu={};
 //fr o,2,23
 //fr o,2,24
 //fr o,2,26
+//fr o,2,27
 //fr o,2,28
+//fr o,2,33
+//fr o,2,40
 //fr o,2,43
 //fr o,2,44
 //fr o,2,45
@@ -1183,4 +1186,4 @@ var Menu={};
 //fr o,2,48
 //fr o,2,53
 //fr o,2,65
-//fr p,15,24
+//fr p,101,474

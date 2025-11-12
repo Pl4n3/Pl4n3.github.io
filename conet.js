@@ -1,7 +1,7 @@
 var Conet={};
 (function(Conet) {
   Conet.offline=false;
-  Conet.version='1.700 ';//FOLDORUPDATEVERSION
+  Conet.version='1.705 ';//FOLDORUPDATEVERSION
   Conet.files={};
   var uploads={},fns,logc,logs=[],//fn=>data,first
       logSameLineCount=0,ac,downloads={},PI=Math.PI;
@@ -786,10 +786,13 @@ var Conet={};
       s+='[';let first=true;
       for (const e of o) {
         let npath=path+'A';//250627
-        if (ps&&ps.newLine) {
-          if (ps.newLine[npath]) s+='\n';
-        }
-        s+=(first?'':',')+jsonStringify(e,replacer,space,ps,npath);
+    
+        s+=(first?'':',');
+    
+        if (ps&&ps.newLine&&ps.newLine[npath]) s+='\n';
+        if (ps&&ps.newLinePath&&ps.newLinePath[path]) s+='\n';
+        //s+=(first?'':',');
+        s+=jsonStringify(e,replacer,space,ps,npath);
         first=false; 
       }
       s+=']';
@@ -799,12 +802,13 @@ var Conet={};
       if (path!==undefined) path+='.'; else path='';
       for (const k of a) {
         const npath=path+k;
-        if (ps&&ps.newLine) {
-          //onsole.log('nl '+ps.newLine[k]);
-          //onsole.log('npath='+npath);
-          if (ps.newLine[npath]) s+='\n';
-        }
-        s+=(first?'':',')+'"'+k+'":'+jsonStringify(o[k],replacer,space,ps,path+k);
+    
+        s+=(first?'':',');
+    
+        if (ps&&ps.newLine&&ps.newLine[npath]) s+='\n';
+        if (ps&&ps.newLinePath&&ps.newLinePath[path]) s+='\n';
+        //s+=(first?'':',');
+        s+='"'+k+'":'+jsonStringify(o[k],replacer,space,ps,path+k);
         first=false;
       }
       s+='}';
@@ -1447,9 +1451,7 @@ console.log('Conet '+Conet.version);
 //fr o,1,64,2
 //fr o,1,116,2
 //fr o,1,116,11
-//fr o,1,120
 //fr o,1,120,3
 //fr o,1,120,4
-//fr o,1,120,8
 //fr o,1,120,8,24
-//fr p,0,203
+//fr p,6,93

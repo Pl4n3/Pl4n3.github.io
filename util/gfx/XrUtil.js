@@ -5,7 +5,7 @@ import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFa
 let XrUtil={};
 (function(pself) {
   //---
-  let version='v.1.721 ',//FOLDORUPDATEVERSION
+  let version='v.1.731 ',//FOLDORUPDATEVERSION
       self=pself,ctrl0,ctrl1,gp0,gp1,camera,scene,room,vrPos,huds=[],hudMesh,
       hud={lines:['XrUtil '+version],cursor:{x:0.5,y:0.5,vis:false},buttons:[]},
       raycaster,INTERSECTED,hudCount=0,needDrawUi=false,input,uisc=2,gps,
@@ -726,6 +726,7 @@ let XrUtil={};
           let s='xrUtil.scaleSwitch i='+i;
           self.log(s);
           console.log(s);
+          //onsole.log(scfg);
           break;
         }
         //scfg=scaleCfg[(i+1)%scaleCfg.length];
@@ -818,13 +819,20 @@ let XrUtil={};
         if (oscfg) oscfg.camPos={x:cp.x,y:cp.y,z:cp.z};
         if (scfg.camPos) {
           cp.x=scfg.camPos.x;cp.y=scfg.camPos.y;cp.z=scfg.camPos.z;
+          //console.log('setting camPos '+cp.x+' '+cp.y+' '+cp.z);
           //blockWalk.tweens.push({o:cp,key:'x',t:t,value:scfg.camPos.x});
           //blockWalk.tweens.push({o:cp,key:'y',t:t,value:scfg.camPos.y});
           //blockWalk.tweens.push({o:cp,key:'z',t:t,value:scfg.camPos.z});
         }
         let p=gps.controls.target;
         if (oscfg) oscfg.conTar={x:p.x,y:p.y,z:p.z};
-        if (scfg.conTar) { p.x=scfg.conTar.x;p.y=scfg.conTar.y;p.z=scfg.conTar.z; }
+        if (scfg.conTar) { p.x=scfg.conTar.x;p.y=scfg.conTar.y;p.z=scfg.conTar.z;
+          //console.log('setting conTar '+p.x+' '+p.y+' '+p.z); 
+        }
+        if (scfg.fov) {
+          camera.fov=scfg.fov;
+          camera.updateProjectionMatrix();
+        }
       }
       
       if (self.onScaleSwitch) self.onScaleSwitch({oroomsc:oroomsc,scfg:scfg});
@@ -1165,8 +1173,6 @@ let XrUtil={};
 )(XrUtil);
 export { XrUtil };
 //fr o,5
-//fr o,5,14
-//fr o,5,15
 //fr o,5,15,9
 //fr o,5,15,11
 //fr o,5,15,42
@@ -1179,16 +1185,15 @@ export { XrUtil };
 //fr o,5,15,102,6
 //fr o,5,18,3
 //fr o,5,18,5
-//fr o,5,24
 //fr o,5,24,37
 //fr o,5,24,41
 //fr o,5,24,43
 //fr o,5,24,45
-//fr o,5,26
+//fr o,5,28
 //fr o,5,28,17
 //fr o,5,30,1
 //fr o,5,32,12
 //fr o,5,32,19
 //fr o,5,32,23
 //fr o,5,32,25
-//fr p,6,42
+//fr p,27,176

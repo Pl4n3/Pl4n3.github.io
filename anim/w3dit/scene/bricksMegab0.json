@@ -1,0 +1,33 @@
+{
+"pt":{"x":-0.0901,"y":1.6582,"z":-0.1712},
+"pc":{"x":-0.0906,"y":1.6954,"z":-0.0279},
+"gridSnap":0.01,
+"scaleCfg":[
+{"sc":1,"lint":1,"bgop":1,"flightSpeed":0.001,"rotateRoom":1,"camPos":{"x":-0.0892,"y":1.716,"z":0.0338},"conTar":{"x":-0.0805,"y":1.5734,"z":-0.29},"notXr":1,"fov":100},
+{"sc":1,"lint":1,"bgop":1,"flightSpeed":0.001,"rotateRoom":0,"camPos":{"x":2.0862,"y":1.8304,"z":-4.5937},"conTar":{"x":-0.0041,"y":-0.0233,"z":-0.1878},"notXr":1,"fov":50},
+{"sc":0.1,"lint":0.1,"bgop":0,"flightSpeed":0.001,"rotateRoom":0,"vrPos":{"x":-0.2828,"y":2.3706,"z":-0.7292},"roomPos":{"x":-0.1618,"y":0.7978,"z":-0.2626},"onlyXr":1},
+{"sc":15,"lint":15,"bgop":1,"flightSpeed":0.001,"rotateRoom":1,"vrPos":{"x":0.0939,"y":-1.6136,"z":0.019},"roomPos":{"x":-0.1229,"y":-0.6974,"z":-0.2843},"onlyXr":1}],
+"defaultLights":"none",
+"paint":{"color":[175,175,175,1],"radius":10,"specColor":[175,175,175,0.1],"normColor":[128,128,255,0.1],"normMode":"up"},
+"points":[
+ {"x":0.03,"y":1.58,"z":-0.25}
+,{"x":0.06,"y":1.58,"z":0.05}
+,{"x":-0.25,"y":1.58,"z":-0.02}
+,{"x":0.49,"y":-1.89,"z":0.18,"script":"/anim/w3dit/script/paths.js","pointLight":1,"intensity":8,"color":"aaaaff","inv":1}
+,{"x":0.5412,"y":-0.0454,"z":0.5337,"script":"/anim/w3dit/script/paths.js","ambientLight":1,"intensity":0.5,"inv":1}
+,{"x":-1.57,"y":2.23,"z":1.68,"script":"/anim/w3dit/script/paths.js","directionalLight":1,"castShadow":{"far":6,"near":1},"intensity":8,"yd":0,"xd":0,"zd":0,"inv":1}
+,{"x":0.45,"y":-0.59,"z":-0.49,"script":"/anim/w3dit/script/paths.js","pointLight":1,"distance":0.8,"intensity":4,"color":"ffffff","_castShadow":{"far":0.2,"near":0.001}}
+,{"x":-0.09,"y":1.6,"z":-0.08,"box":1,"scx":0.3,"scz":0.3,"scy":0.6,"color":"afafaf","mass":1,"player":1,"script":"/anim/w3dit/script/pd5.js","fn":"/shooter/objs/templar/o5.txt","anim":"stand2","sc":0.1,"speed":30,"inv":1}
+,{"x":-0.03,"y":0.02,"z":-1.53,"script":"/anim/w3dit/script/paths.js","pointLight":1,"distance":1.6,"intensity":4,"color":"ffffff","_castShadow":{"far":0.4,"near":0.001}}
+,{"x":1.18,"y":0.02,"z":-0.06,"script":"/anim/w3dit/script/paths.js","pointLight":1,"distance":1.6,"intensity":4,"color":"ffffff","_castShadow":{"far":0.4,"near":0.001}}
+,{"x":0.1,"y":0.05,"z":1.53,"script":"/anim/w3dit/script/paths.js","pointLight":1,"distance":1.6,"intensity":4,"color":"ffffff","_castShadow":{"far":0.4,"near":0.001}}
+,{"x":-1.39,"y":0.12,"z":-0.2,"script":"/anim/w3dit/script/paths.js","pointLight":1,"distance":1.6,"intensity":4,"color":"ffffff","_castShadow":{"far":0.4,"near":0.001}}
+,{"x":-0.01,"y":0.26,"z":-0.06,"script":"/anim/w3dit/script/paths.js","pointLight":1,"distance":0.8,"intensity":4,"color":"ffffff","_castShadow":{"far":0.2,"near":0.001}}
+,{"x":0,"y":0,"z":0,"script":"/anim/w3dit/script/pd5.js","fn":"/anim/w3dit/objs/car/chassis.json","sc":0.00006,"cannonTest":{"noGround":1,"noCar":1,"gravityZ":-50}}
+],
+"faces":[
+ {"v0":1,"v1":2,"v2":0}
+],
+"lines":[
+]
+}

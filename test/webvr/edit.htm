@@ -70,7 +70,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     camera=new THREE.PerspectiveCamera(50,window.innerWidth/window.innerHeight,0.01,50);
     camera.position.set(0,1.6,2);
-    scene.add(camera);
+    scene.add(camera);self.camera=camera;
     
     room=new THREE.Group();scene.add(room);self.room=room;
     
@@ -85,6 +85,8 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     gridh=new THREE.GridHelper(4,4,0x555555,0x111111);
     room.add(gridh);
     }
+    
+    self.lights=[];
     
     if (1) {
     let l;
@@ -641,7 +643,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       
       let minfo;
       xrUtil.hud.buttons.push(
-      minfo={s:'Info',x:0.37,y:0.55,w:0.2,h:0.1,ondown:function() {
+      minfo={s:'Info',ms:'cam pos, etc.',x:0.37,y:0.55,w:0.2,h:0.1,ondown:function() {
         //---
         let p=xrUtil.gps.vrPos,s;
         xrUtil.log(s=('vrPos '+Conet.f4(p.x)+' '+Conet.f4(p.y)+' '+Conet.f4(p.z)));
@@ -702,7 +704,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     //\u25b2 \u25bc
     
-    const version='v.0.1971 ';//FOLDORUPDATEVERSION
+    const version='v.0.1992 ';//FOLDORUPDATEVERSION
     xrUtil.log('Edit '+version);
     
     //
@@ -2080,11 +2082,16 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       sceneh.pc={x:Conet.f4(pc.x),y:Conet.f4(pc.y),z:Conet.f4(pc.z)};
     }
     
-    let s='{\n';
+    //let s='{\n';
+    //for (let k of Object.keys(sceneh)) {
+    //  s+='"'+k+'":'+JSON.stringify(sceneh[k])+',\n';
+    //  //console.log('"'+k+'":'+Conet.jsonStringify(sceneh[k],undefined,undefined,{mewLine:{}}));
+    //}
+    let s=Conet.jsonStringify(sceneh,undefined,undefined,{newLinePath:{'':1,'scaleCfg':1}});
+    //onsole.log(s);
+    //onsole.log(JSON.parse(s));
+    s=s.substr(0,s.length-1)+',\n';
     
-    for (let k of Object.keys(sceneh)) {
-      s+='"'+k+'":'+JSON.stringify(sceneh[k])+',\n';
-    }
     
     s+='"points":[\n';
     let first=true;
@@ -2173,37 +2180,38 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 <script>
 //fr o,37
 //fr o,37,20
-//fr o,37,20,73,7
-//fr o,37,20,73,9
-//fr o,37,20,73,11
-//fr o,37,20,73,13
-//fr o,37,20,73,17
-//fr o,37,20,73,19
-//fr o,37,20,73,21
-//fr o,37,20,73,23
-//fr o,37,20,73,27
-//fr o,37,20,73,74
-//fr o,37,20,87,57
-//fr o,37,20,87,70
-//fr o,37,20,87,89
-//fr o,37,20,87,95
-//fr o,37,20,132
-//fr o,37,20,161
-//fr o,37,20,166
-//fr o,37,20,169
-//fr o,37,20,172
-//fr o,37,20,199
-//fr o,37,20,200
-//fr o,37,20,206
-//fr o,37,20,207
+//fr o,37,20,75,7
+//fr o,37,20,75,9
+//fr o,37,20,75,11
+//fr o,37,20,75,13
+//fr o,37,20,75,17
+//fr o,37,20,75,19
+//fr o,37,20,75,21
+//fr o,37,20,75,23
+//fr o,37,20,75,27
+//fr o,37,20,75,74
+//fr o,37,20,89,57
+//fr o,37,20,89,70
+//fr o,37,20,89,89
+//fr o,37,20,89,95
+//fr o,37,20,89,138
+//fr o,37,20,134
+//fr o,37,20,163
+//fr o,37,20,168
+//fr o,37,20,171
+//fr o,37,20,174
+//fr o,37,20,201
+//fr o,37,20,202
 //fr o,37,20,208
-//fr o,37,20,216
-//fr o,37,20,255
-//fr o,37,20,264
-//fr o,37,20,276
-//fr o,37,20,280
+//fr o,37,20,209
+//fr o,37,20,210
+//fr o,37,20,218
+//fr o,37,20,257
+//fr o,37,20,266
+//fr o,37,20,278
+//fr o,37,20,282
 //fr o,37,29,3
 //fr o,37,33,10
 //fr o,37,33,11
-//fr o,37,42
-//fr p,13,318
+//fr o,37,53
+//fr p,15,84

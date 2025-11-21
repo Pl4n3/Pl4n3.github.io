@@ -268,7 +268,8 @@
         if (o5&&(o5.ay===undefined)) o5.ay=0;
         if (box.ay===undefined) box.ay=0;
         let turna=undefined;
-        let fore=undefined;//,up=undefined;
+        let fore=0;//,up=undefined;
+        let strafe=0;
         if (box===player) {
           let x0=(c.left?-1:0)+(c.right?1:0);
           let y0=(c.fore?1:0)+(c.back?-1:0);
@@ -284,11 +285,12 @@
             //let o5=box.point.userData.o5;
             //if (o5) {
             if (rotateRoom) {
-              turna=-x0*0.05+o5.ay;
-              fore=y0>0;
+              turna=(0?-x0*0.05:0)+o5.ay;
+              fore=y0<0?y0*0.5:y0;//y0>0;
+              strafe=x0*0.75;
             } else {
               turna=Math.atan2(y0,x0)+xrAy+Math.PI/2;
-              fore=true;
+              fore=1;//true;
             } 
     
     //            let da=Conet.dAng(an,box.ay),ada=Math.abs(da);
@@ -372,20 +374,21 @@
             //body.force.x=x1*20;body.force.y=y1*20;
     //        }
         }
-        if (fore) {
+        if (fore||strafe) {
           //let a=xrAy;
           //console.log(a);
-          let a=box.ay-Math.PI;x0=0;y0=1;
+          let a=box.ay-Math.PI;x0=strafe;y0=fore;
           let x1=x0*Math.cos(a)-y0*Math.sin(a);
           let y1=y0*Math.cos(a)+x0*Math.sin(a);
-          let speed=op.speed||6;
-          body.velocity.x=x1*speed;body.velocity.y=y1*speed;
+          let speed=(op.speed||6);//*fore;
+          body.velocity.x=x1*speed;
+          body.velocity.y=y1*speed;
           //body.force.x=x1*20;body.force.y=y1*20;
         }
         if (c.up) body.velocity.z=(op.speed||6);// /2
         if (o5) {
           //try { 
-          Pd5.animStart(o5,turna||fore?(op.animRun||'run'):(op.animIdle||'stand2'));
+          Pd5.animStart(o5,turna||fore||strafe?(op.animRun||'run'):(op.animIdle||'stand2'));
           //} catch (e) {}
         }
         body.quaternion.setFromAxisAngle(new CANNON.Vec3(0,0,1),box.ay-Math.PI);//o5?o5.ay-Math.PI:xrAy);
@@ -1273,11 +1276,58 @@
           //onsole.log('m='+m);
       xrUtil.onScaleSwitch=function(ps) {
         rotateRoom=ps.scfg.rotateRoom;
-        //onsole.log('xrUtil rotateRoom='+rotateRoom);
+        ////editxr.controlsDisabled=rotateRoom;
+        editxr.controls.enabled=!rotateRoom;
+        ////onsole.log(editxr.controls);
+        //console.log('xrUtil rotateRoom='+rotateRoom);
+        //let fog=new THREE.Fog(0x000000,0.1,0.5);
+        //editxr.room.parent.fog=fog;
         //...
       }
-          Menu.roots[0].sub.push({s:'Scale',ms:'Pd5',actionf:m.ondown,r:1});
-          if (Conet.parseUrl().scaleCfg) m.ondown();
+      
+      let pointx,pointy,pointay,polarAngle;
+      
+      Conet.handlerAdd('pointerdown',function(e) {
+        //---
+        pointx=e.x;pointy=e.y;
+        pointay=o.ay;
+        polarAngle=editxr.controls.getPolarAngle();
+        //...
+      }
+      );
+      Conet.handlerAdd('pointermove',function(e) {
+        //---
+        if (!rotateRoom) return;
+        //console.log('pd5.pointerMove e.buttons='+e.buttons);
+        //onsole.log(e.buttons);
+        let controls=editxr.controls;
+        if (e.buttons==1) {
+          //console.log(Conet.f4((e.x-pointx)/window.innerWidth));
+          o.ay=pointay-10*((e.x-pointx)/window.innerWidth);
+          player.ay=o.ay;
+          //console.log(controls);
+          let dy=(e.y-pointy)/window.innerHeight;
+          let ady=Math.abs(dy);//,ma=0.1;
+          //if (ady>ma) {
+          //  dy+=dy<0?ma:-ma;
+            let pa=polarAngle-10*dy;
+            //onsole.log(pa);
+            if (1) {
+            controls.minPolarAngle=pa;
+            controls.maxPolarAngle=pa;
+            controls.update();
+            controls.minPolarAngle=0;
+            controls.maxPolarAngle=Math.PI;
+            }
+          //}
+          //onsole.log(player);
+        }
+        //...
+      }
+      );
+          Menu.roots[0].sub.push({s:'Scale',ms:'Pd5',actionf:m.ondown,r:1});let v;
+          if   (Conet.parseUrl().scaleCfg) m.ondown();
+          if (v=Conet.parseUrl().scaleCfgI) m.ondown(v);
           window.mscale=m;console.info('%cmscale.ondown() to toggle scale','background: #9f9; font-size: large');
         }
       }  
@@ -1287,7 +1337,7 @@
     
     if (first) {
       first=false;
-      xrUtil.log('Pd5 v.0.1536 ');//FOLDORUPDATEVERSION
+      xrUtil.log('Pd5 v.0.1611 ');//FOLDORUPDATEVERSION
       
       
       if (0) xrUtil.hud.buttons.push(
@@ -1357,7 +1407,6 @@
 )();
 //----
 //fr o,1
-//fr o,1,13
 //fr o,1,14
 //fr o,1,21
 //fr o,1,25
@@ -1371,5 +1420,7 @@
 //fr o,1,32,37
 //fr o,1,32,37,60
 //fr o,1,32,37,113
+//fr o,1,32,37,117
+//fr o,1,32,37,119
 //fr o,1,32,65
-//fr p,40,892
+//fr p,2,1118

@@ -285,9 +285,10 @@
             //let o5=box.point.userData.o5;
             //if (o5) {
             if (rotateRoom) {
-              turna=(0?-x0*0.05:0)+o5.ay;
+              let doStrafe=!xrUtil.isSession;
+              turna=(doStrafe?0:-x0*0.05)+o5.ay;
               fore=y0<0?y0*0.5:y0;//y0>0;
-              strafe=x0*0.75;
+              strafe=doStrafe?x0*0.75:0;
             } else {
               turna=Math.atan2(y0,x0)+xrAy+Math.PI/2;
               fore=1;//true;
@@ -1337,7 +1338,7 @@
     
     if (first) {
       first=false;
-      xrUtil.log('Pd5 v.0.1611 ');//FOLDORUPDATEVERSION
+      xrUtil.log('Pd5 v.0.1613 ');//FOLDORUPDATEVERSION
       
       
       if (0) xrUtil.hud.buttons.push(
@@ -1423,4 +1424,4 @@
 //fr o,1,32,37,117
 //fr o,1,32,37,119
 //fr o,1,32,65
-//fr p,2,1118
+//fr p,24,214

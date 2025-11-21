@@ -5,7 +5,7 @@ import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFa
 let XrUtil={};
 (function(pself) {
   //---
-  let version='v.1.731 ',//FOLDORUPDATEVERSION
+  let version='v.1.751 ',//FOLDORUPDATEVERSION
       self=pself,ctrl0,ctrl1,gp0,gp1,camera,scene,room,vrPos,huds=[],hudMesh,
       hud={lines:['XrUtil '+version],cursor:{x:0.5,y:0.5,vis:false},buttons:[]},
       raycaster,INTERSECTED,hudCount=0,needDrawUi=false,input,uisc=2,gps,
@@ -707,12 +707,18 @@ let XrUtil={};
     else m.position.y=2;
     }
     
-    return function() {
+    return function(scI) {
       //---
       //onsole.log('xrUtil.scaleSwitch start');
       let oscfg=scfg;
       let oroomsc=room.scale.x;
       
+      //console.log('scI='+scI);
+      //console.log(scI);
+      
+      if (scI!==undefined)
+        scfg=scaleCfg[scI];
+      else 
       if (scfg) {
         let i=scaleCfg.indexOf(scfg);
         while (1) {
@@ -746,20 +752,21 @@ let XrUtil={};
       //onsole.log(scfg);
       
       if (ps.pl0) {
-        ps.pl0.intensity=scfg.lint;
+        ps.pl0.intensity=1*scfg.lint;
         //onsole.log('setting p0 '+scfg.lint);
         //ps.pl0.shadow.camera.near=100*sc;
         //ps.pl0.shadow.camera.far=1000*sc;
         //ps.pl0.shadow.camera.updateProjectionMatrix(); 
       }
-      if (ps.pl1) ps.pl1.intensity=scfg.lint/3;
+      if (ps.pl1) ps.pl1.intensity=1*scfg.lint/3;
       
       //onsole.log('xrUtil.scaleSwitch ps.lights.length='+ps.lights.length);
       if (ps.lights) for (let l of ps.lights) {
         if (l.light instanceof THREE.PointLight) {
           if (l.intensity===undefined) l.intensity=l.light.intensity;
-          l.light.intensity=scfg.lint*l.intensity;
-        }
+          l.light.intensity=scfg.lint*l.intensity*1;
+          //onsole.log(l.light.intensity);
+        } //else console.log(l.light);
       
         if (l.distance===undefined) l.distance=l.light.distance;
         if (l.distance) l.light.distance=l.distance*sc;
@@ -1196,4 +1203,4 @@ export { XrUtil };
 //fr o,5,32,19
 //fr o,5,32,23
 //fr o,5,32,25
-//fr p,27,176
+//fr p,6,111

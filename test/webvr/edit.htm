@@ -704,7 +704,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     //\u25b2 \u25bc
     
-    const version='v.0.1992 ';//FOLDORUPDATEVERSION
+    const version='v.0.2001 ';//FOLDORUPDATEVERSION
     xrUtil.log('Edit '+version);
     
     //
@@ -915,7 +915,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       
       
       
-      controls.enabled=!hudo&&!paint;
+      controls.enabled=!hudo&&!paint;//&&!self.controlsDisabled;
       //onsole.log('before hudIntersects');
       xrUtil.hudIntersects(hudo,mode==1);
       if (hudo) return;
@@ -971,7 +971,9 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     canv.parentElement.addEventListener('pointermove',function(e) {
       //---
-      //onsole.log('mousemove');
+      Conet.handlerRun('pointermove',e);
+      
+      //onsole.log('pointermove');
       point(e.clientX,e.clientY,2,e);
       //...
     }
@@ -979,7 +981,9 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     canv.addEventListener('pointerdown',function(e) {
       //---
-      console.log('pointerdown');
+      Conet.handlerRun('pointerdown',e);
+      
+      //onsole.log('pointerdown');
       //console.log(e);
       pointDown=true;
       point(e.clientX,e.clientY,1,e);
@@ -2190,6 +2194,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,37,20,75,23
 //fr o,37,20,75,27
 //fr o,37,20,75,74
+//fr o,37,20,89
 //fr o,37,20,89,57
 //fr o,37,20,89,70
 //fr o,37,20,89,89
@@ -2205,6 +2210,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,37,20,208
 //fr o,37,20,209
 //fr o,37,20,210
+//fr o,37,20,214
 //fr o,37,20,218
 //fr o,37,20,257
 //fr o,37,20,266
@@ -2213,5 +2219,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,37,29,3
 //fr o,37,33,10
 //fr o,37,33,11
+//fr o,37,40
+//fr o,37,51
 //fr o,37,53
-//fr p,15,84
+//fr p,2,626

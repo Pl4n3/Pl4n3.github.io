@@ -394,13 +394,34 @@ var Voxed;
     data+=']';
     
     if (!blocks) {
+    
+    if (0) {
     data+=',"voxels":[\n';first=true;
+    let l0=data.length;
     for (var k in vh) if (vh.hasOwnProperty(k)) {
       var v=vh[k];
       data+=(first?'':',')+JSON.stringify(v)+'\n';
       first=false;
     }
+    console.log('voxels.length='+(data.length-l0));
     data+=']';
+    }
+    
+    let s='',linel=0;
+    //s+='"dpoints":[\n';
+    let diff=Conet.createDiff({});
+    for (let k in vh) if (vh.hasOwnProperty(k)) {
+      let v=vh[k],sh=((s.length>0)?',':'')+JSON.stringify(diff.convert(v));
+      if (((linel+sh.length)>80)&&(linel>0)) {
+        s+='\n';
+        linel=0;
+      }
+      s+=sh;linel+=sh.length;
+    }
+    //s+=']';
+    console.log('dvoxels.length='+s.length);
+    //console.log(s);
+    data+=',"dvoxels":[\n'+s+']\n';
     }
     
     if (window.planim) data+=',"backgroundColor":"'+colIToS(planim.views[0].bgcol)+'"\n';
@@ -477,8 +498,15 @@ var Voxed;
         for (var z=0;z<b.zl;z++) for (var y=0;y<b.yl;y++) for (var x=0;x<b.xl;x++) 
           etV(b.x+x,b.y+y,b.z+z,{c:bi%colors.length});
       }
-    } else
-    if (d.voxels) for (var v of d.voxels) {
+    } else if (d.dvoxels) {
+      let diff=Conet.createDiff({undiff:1});
+      for (let v of d.dvoxels) {
+        v=diff.convert(v);
+        var rc=colRedir[v.c];if (rc!==undefined) v.c=rc;
+        if (v.c>=colors.length) v.c=0;
+        etV(v.x,v.y,v.z,v);
+      }
+    } else if (d.voxels) for (var v of d.voxels) {
       var rc=colRedir[v.c];if (rc!==undefined) v.c=rc;
       if (v.c>=colors.length) v.c=0;
       etV(v.x,v.y,v.z,v);
@@ -1044,7 +1072,7 @@ var Voxed;
     //...
   }
   
-  console.log('Voxed 0.2151 ');//FOLDORUPDATEVERSION
+  console.log('Voxed 0.2167 ');//FOLDORUPDATEVERSION
   
   if ((!window.planim)||(window.planim.noVoxed)) {
     //window.Voxed=this;
@@ -3099,7 +3127,7 @@ var Voxed;
       
       
       var startEditing=app;//for mib4
-      Menu.init([{s:'Voxed',ms:planim.version+'- 0.3108 ',sub:msub}//FOLDORUPDATEVERSION
+      Menu.init([{s:'Voxed',ms:planim.version+'- 0.3124 ',sub:msub}//FOLDORUPDATEVERSION
       
       ,medit={s:'Edit',checked:startEditing,checkbox:1,ms:'Edit',actionf:function(v) {
         planim.views[0].controls.enabled=!this.checked;
@@ -3187,8 +3215,8 @@ var Voxed;
 //fr o,2,13,3
 //fr o,2,13,7
 //fr o,2,13,11
-//fr o,2,17
-//fr o,2,22
+//fr o,2,35
+//fr o,2,36
 //fr o,2,40,7
 //fr o,2,40,9
 //fr o,2,40,11
@@ -3212,4 +3240,4 @@ var Voxed;
 //fr o,2,115,38,4,1
 //fr o,2,115,38,5
 //fr o,2,115,38,59
-//fr p,31,53
+//fr p,1,65

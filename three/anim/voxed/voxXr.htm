@@ -57,14 +57,14 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
       mGreen,mRed,roomMatrix,drawColor=0,unit0,//hudCount=0,
       fn='/three/anim/voxed/xr1.json',composer,ssaoPass,bokehPass,mmode,mbrush,//,room0;
       mpress,blob,mmodes={},selBox,segmentGroup,q0=new THREE.Quaternion(),segments,
-      cfmenu,m2modes={};//m2pick,m2add;
+      cfmenu,m2modes={},isConet;//m2pick,m2add;
       //,hudMesh,unit0,huds,hud;
       //fn='/three/anim/voxed/xr0.json';
   const tempMatrix=new THREE.Matrix4(),vt=new THREE.Vector3(),
       voxMeshPos=new THREE.Vector3(0,2,-2),
       
       //huds=[],hud={lines:[
-      //'VoxXr 0.1686 '//FOLDORUPDATEVERSION
+      //'VoxXr 0.1708 '//FOLDORUPDATEVERSION
       //],cursor:{x:0.5,y:0.5,vis:false},buttons:[]},
       
       lsKey='voxXr0',blockWalk=new BlockWalk(),
@@ -309,9 +309,20 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
   }
   function loadFn(fn) {
     //---
+    if (!isConet) {
+      let v=Conet.lsDownload({fn:fn});
+      if (v) {
+        //onsole.log(JSON.parse(v));
+        load(v);
+        xrUtil.log('Lsloaded '+fn+'.');
+        return;
+      }
+    }
+    
     if (this&&this.fn) fn=this.fn;
     Conet.download({fn:fn,f:function(v) {
       //---
+      //onsole.log(JSON.parse(v));
       load(v);
       xrUtil.log('Loaded '+fn+'.');
       //...
@@ -615,7 +626,7 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
     xrUtil.cursor=cursor;
     xrUtil.rayAll=false;
     xrUtil.initHud();
-    xrUtil.log('VoxXr 1.1185 ');//FOLDORUPDATEVERSION
+    xrUtil.log('VoxXr 1.1207 ');//FOLDORUPDATEVERSION
     //huds=xrUtil.huds;
     //hudMesh=xrUtil.hudMesh;
     //hud=xrUtil.hud;
@@ -681,7 +692,311 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
     }
     });
     
-    let isConet=Conet.checkOnline();//document.URL.indexOf(':7000')!=-1;
+    
+    selBox=new function() {
+      //---
+      
+      let box=new THREE.LineSegments(
+        new BoxLineGeometry(1,1,1,2,2,2),
+        new THREE.LineBasicMaterial({color:0x808080,
+        depthTest:false
+        })
+      );
+      //box.scale.set(0.3,0.3,0.3);
+      //box.position.set(0,1.5,-2);
+      box.renderOrder=1;box.visible=false;
+      room.add(box);
+      let pos={x:1,y:3,z:-2},dim={x:3,y:1,z:1},cb,lskey='voxXrSelbox',//cb=clipboard
+          colorIntegrated,self=this,boxSegs=[],mcopy,mname;
+          
+      self.boxes=[];
+      
+      let s=localStorage[lskey];
+      if (s) {
+        let h=JSON.parse(s);
+        pos=h.pos;dim=h.dim;
+        cb=h.cb;
+      }
+      
+      function paste(x,y,z) {
+        //---
+        if (!cb) { log('First copy sth.');return; }
+        let ps={dx:x-cb.x,dy:y-cb.y,dz:z-cb.z,vs:cb.vs,nomesh:1};
+        
+        let ci=colorIntegrated;
+        if (ci) {
+          if ((Date.now()-ci.t)<3000) {
+            ps.vd=ci.vd;ci.t=Date.now();
+          }
+        }
+        
+        Voxed.putVoxels(ps);
+        if (ps.changedVd) colorIntegrated={t:Date.now(),vd:ps.changedVd};
+        voxMeshNew();
+        //...
+      }
+      function getBoxAtCursor() {
+        //---
+        for (let i=self.boxes.length-1;i>=0;i--) {
+          let b=self.boxes[i];
+          if ((pos.x==b[0])&&(pos.y==b[1])&&(pos.z==b[2])&&
+              (dim.x==b[3])&&(dim.y==b[4])&&(dim.z==b[5])) return i;
+        }
+        return -1;
+        //...
+      }
+      function posDimBox() {
+        //---
+        let f=0.03,p=voxMeshPos;
+        box.position.set((pos.x-0.5+dim.x/2)*f+p.x,(pos.y-12.8+dim.y/2)*f+p.y,(pos.z-0.5+dim.z/2)*f+p.z);
+        box.scale.set(dim.x*f,dim.y*f,dim.z*f);
+        localStorage[lskey]=JSON.stringify({pos:pos,dim:dim,cb:cb});
+        
+        mname.s='No box';
+        let bi=getBoxAtCursor();
+        if (bi!=-1) {
+          mname.s='No name';
+          let b=self.boxes[bi];
+          if (b.length>6) mname.s=b[6].name;
+        }
+        //...
+      }
+      
+      
+      
+      
+      let m={s:'',x:0.15,y:0.9,w:0.595,h:0.06
+      
+      ,oninput:function(v) {
+        //---
+        try {
+        let a=JSON.parse('['+v+']');
+        if (a.length!=6) return;
+        pos.x=a[0];pos.y=a[1];pos.z=a[2];dim.x=a[3];dim.y=a[4];dim.z=a[5];
+        posDimBox();
+        //onsole.log(a);
+        } catch (e) {}
+        //...
+      }
+      };
+      
+      function setMs() {
+        //---
+        m.s=//'"box",'+
+          pos.x+','+pos.y+','+pos.z+','+dim.x+','+dim.y+','+dim.z;
+        //...
+      }
+      setMs();
+      
+      
+      
+      //console.log(m);
+      //m.oninput(m.s);
+      //---posDimBox();
+      let ma=[];let mvis;
+      ma.push(
+       m,
+      mcopy={s:'C',w:0.05,dx:0.02,ondown:function() {
+        //---
+        cb={
+          x:pos.x,y:pos.y,z:pos.z,
+          vs:Voxed.getVoxels({x:pos.x,y:pos.y,z:pos.z,dx:dim.x,dy:dim.y,dz:dim.z,colors:1})
+        };
+        //onsole.log(cb.vs);
+        colorIntegrated=undefined;
+        posDimBox();//---to write localstorage
+        log('Copied '+cb.vs.length+'b.');
+        //...
+      }
+       },
+      {s:'P',dx:0.02,ondown:function() {
+        //---
+        paste(pos.x,pos.y,pos.z);
+        //...
+      }
+       },
+      {s:'D',dx:0.02,ondown:function() {
+        //---
+        log('Selbox delete.');
+        Voxed.putVoxels({x:pos.x,y:pos.y,z:pos.z,dx:dim.x,dy:dim.y,dz:dim.z,'null':1,nomesh:1});
+        voxMeshNew();
+        //...
+      }
+       }
+      );
+      
+      function incDec() {
+        //---
+        let d=(this.s=='+')?1:-1,m=this.mode;
+        
+        switch (m) {
+        case 0:pos.x+=d;break;
+        case 1:pos.y+=d;break;
+        case 2:pos.z+=d;break;
+        case 3:dim.x+=d;break;
+        case 4:dim.y+=d;break;
+        case 5:dim.z+=d;break;
+        }
+        
+        posDimBox();
+        setMs();
+        //xrUtil.setNeedDrawUi();
+        //+this.mode);
+        //...
+      }
+      
+      for (let x=0;x<6;x++) 
+      ma.push(
+        {s:'+',x:0.27+x*0.06+(x>2?0.1:0),y:0.862,w:0.04,h:0.038,mode:x,ondown:incDec},
+        {s:'-',x:0.27+x*0.06+(x>2?0.1:0),y:0.962,w:0.04,h:0.038,mode:x,ondown:incDec}
+      );
+      
+      ma.push(
+      mvis={s:'',x:0.05,y:0.9,w:0.08,h:0.06,ondown:function() {
+        //---
+        box.visible=!box.visible;
+        for (let b of boxSegs) b.visible=box.visible;
+        this.color=box.visible?'green':undefined;
+        //...
+      }
+      }
+      );
+      
+      //for (let mh of ma) xrUtil.hud.buttons.push(mh);
+      
+      ma.splice(0,0,{s:'SelBox \u25b2',x:0.05,y:0.5,w:0.3,h:0.1},
+      
+      {s:'P MirrorX',dy:0.02,ondown:function() {
+        //---
+        if (!cb) { log('First copy sth.');return; }
+        Voxed.putVoxels({dx:pos.x+cb.x+dim.x-1
+          ,dy:pos.y-cb.y,dz:pos.z-cb.z,vs:cb.vs,nomesh:1,mirrorx:1});
+        voxMeshNew();
+        //...
+      }
+      }
+      ,{s:'P SwapXZ',dy:0.02,ondown:function() {
+        //---
+        if (!cb) { log('First copy sth.');return; }
+        Voxed.putVoxels({dx:pos.x-cb.z//+cb.x+dim.x-1
+          ,dy:pos.y-cb.y,dz:pos.z-cb.x,vs:cb.vs,nomesh:1,swapxz:1});
+        voxMeshNew();
+        //...
+      }
+      }
+      ,{s:'Toggle box',x:0.37,y:0.5,w:0.35,h:0.1,ondown:function() {
+        //---
+        if (!box.visible) mvis.ondown();
+        
+        //let done=false;
+        //for (let i=self.boxes.length-1;i>=0;i--) {
+        //  let b=self.boxes[i];
+        //  if ((pos.x==b[0])&&(pos.y==b[1])&&(pos.z==b[2])&&
+        //      (dim.x==b[3])&&(dim.y==b[4])&&(dim.z==b[5])) {
+        let i=getBoxAtCursor();
+        if (i!=-1) {
+          self.boxes.splice(i,1);
+          log('Box removed (#'+self.boxes.length+').');
+          //done=true;
+          //break;
+          //}
+        } else {
+        //if (!done) {
+          self.boxes.push([pos.x,pos.y,pos.z,dim.x,dim.y,dim.z]);
+          log('Box added (#'+self.boxes.length+')');
+        }
+        self.updateBoxMeshes();
+        //...
+      }
+      }
+      
+      );
+      
+      ma.push(mname={s:'Name',x:0.37,y:0.62,w:0.35,h:0.1,
+      oninput:function(v) {
+        //---
+        //onsole.log(v);
+        let bi=getBoxAtCursor();
+        if (bi==-1) return;
+        let b=self.boxes[bi];
+        if (b.length==6) b.push({});
+        b[6].name=v;
+        //...
+      }
+      });
+      
+      xrUtil.hud.buttons.push(
+      {s:'SelBox',x:0.05,y:0.88,w:0.3,h:0.1,stay:1,sub:ma}
+      );
+      posDimBox();
+      
+      //console.log('this='+this);
+      //console.log(this);
+      this.paste=paste;
+      
+      this.setPos=function(x,y,z) {
+        //---
+        //onsole.log('setPos');
+        
+        //check if x,y,z is in boxes
+        let done=false;
+        for (let b of self.boxes) {
+          if ((x>=b[0])&&(y>=b[1])&&(z>=b[2])&&(x<(b[0]+b[3]))&&(y<(b[1]+b[4]))&&(z<(b[2]+b[5]))) {
+            pos.x=b[0];pos.y=b[1];pos.z=b[2];dim.x=b[3];dim.y=b[4];dim.z=b[5];
+            done=true;
+            mcopy.ondown();
+          }
+        }
+        if (!done) { pos.x=x;pos.y=y;pos.z=z; }
+        posDimBox();
+        setMs();//m.s='"box",'+pos.x+','+pos.y+','+pos.z+','+dim.x+','+dim.y+','+dim.z;
+        xrUtil.setNeedDrawUi();
+        //...
+      }
+      ;
+      
+      this.updateBoxMeshes=function() {
+        //---
+        for (let bs of boxSegs) room.remove(bs);
+        boxSegs.length=0;
+        
+        for (let b of self.boxes) {
+          //---
+          let bo=new THREE.LineSegments(
+            new BoxLineGeometry(1,1,1,3,3,3),
+            new THREE.LineBasicMaterial({color:0x008000,
+            depthTest:false
+            })
+          );
+          bo.renderOrder=1;//box.visible=false;
+          room.add(bo);
+          boxSegs.push(bo);
+          let f=0.03,p=voxMeshPos,x=b[0],y=b[1],z=b[2],xl=b[3],yl=b[4],zl=b[5];
+          bo.position.set((x-0.5+xl/2)*f+p.x,(y-12.8+yl/2)*f+p.y,(z-0.5+zl/2)*f+p.z);
+          bo.scale.set(xl*f,yl*f,zl*f);
+          bo.visible=box.visible;
+        }
+        //...
+      }
+      //...
+    }
+    
+    
+    
+    isConet=Conet.checkOnline();//document.URL.indexOf(':7000')!=-1;
+    
+    let mio=
+    {s:'Json',ms:'import/export',doctrl:'Json data',mcfs:0.07,ta:true,jsonCheck:1,wrap:0,tacols:30,tarows:20,setfunc:function(v,initLoad) {
+      //---
+      load(v);
+      xrUtil.log('Imported '+v.length+' b.');
+      //...
+    }
+    ,valuef:function() {
+      return serialize();
+    }
+    };
+    
     
     Menu.init([{s:'&#9776;',noTri:true,fs:1.4,pw:0.05,sub:[
     
@@ -696,9 +1011,10 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
     
         
     cfmenu=Conet.fileMenu({fn:'/three/anim/voxed/files'+(isConet?'':'NoConet')+'.txt',url:'fn',_loadList:1,
-    grid:1,iconUpdate:{canvas:renderer.domElement},
+    grid:isConet,iconUpdate:{canvas:renderer.domElement},
     loadf:function(fn) {
       //onsole.log('loadf '+fn);
+      //onsole.trace();
       loadFn(fn);
       if (0)
       Conet.download({fn:fn,f:function(v) {
@@ -714,11 +1030,14 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
       }
       });
     }
-    ,savef:!isConet?undefined:function(fn) {
+    ,savef:function(fn) {
       //Conet.upload({fn:fn,data:serialize(),log:Conet.log,logChunk:1});
       drawMerge();
       const data=serialize();
-      Conet.upload({fn:fn,data:data});//,log:Conet.log,logChunk:1});
+      if (isConet) 
+        Conet.upload({fn:fn,data:data});//,log:Conet.log,logChunk:1});
+      else
+        Conet.lsUpload({fn:fn,data:data});//,log:Conet.log,logChunk:1});
       xrUtil.log('Saved to "'+fn+'" '+data.length+' bytes.');
       //...
     }
@@ -727,19 +1046,9 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
     
     ,{s:'Edit',sub:[
     
+    //mio
     
-    {s:'Json',ms:'import/export',doctrl:'Json data',mcfs:0.07,ta:true,jsonCheck:1,wrap:0,tacols:30,tarows:20,setfunc:function(v,initLoad) {
-      //---
-      load(v);
-      xrUtil.log('Imported '+v.length+' b.');
-      //...
-    }
-    ,valuef:function() {
-      return serialize();
-    }
-    }
-    
-    ,{s:'Caves..',ms:'  ',doctrl:'Caves/Landscape config',value:'{\n  "count":20,\n  "seed":0,\n  "do2d":1\n}',lskey:'voxedCavesConfig',ta:1,jsonCheck:1,cstay:1,stay:1,okS:'Generate',cancelS:'Close',setfunc:function(v,onInit) {
+    {s:'Caves..',ms:'  ',doctrl:'Caves/Landscape config',value:'{\n  "count":20,\n  "seed":0,\n  "do2d":1\n}',lskey:'voxedCavesConfig',ta:1,jsonCheck:1,cstay:1,stay:1,okS:'Generate',cancelS:'Close',setfunc:function(v,onInit) {
       //onsole.log('setfunc v='+v);
       this.ms=v.length+' bytes';
       this.value=v;
@@ -803,6 +1112,7 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
       ]
       ,{listen:1});
     
+    cfmenu.sub.push(mio);
     //const tsd=0?undefined:Menu.touchSticksInit({autoKeys:1,skip1:1});
     
     
@@ -1056,6 +1366,7 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
     ];
     
     
+    if (0)
     selBox=new function() {
       //---
       
@@ -1953,11 +2264,12 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 </body>
 </html><script>
 //fr o,43
-//fr o,43,47
-//fr o,43,48,2
+//fr o,43,48
+//fr o,43,48,12
+//fr o,43,50
 //fr o,43,55
 //fr o,43,55,84
 //fr o,43,59
 //fr o,43,60
 //fr o,43,66
-//fr p,27,122
+//fr p,21,385

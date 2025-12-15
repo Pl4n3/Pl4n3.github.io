@@ -1,7 +1,7 @@
 var Conet={};
 (function(Conet) {
   Conet.offline=false;
-  Conet.version='1.705 ';//FOLDORUPDATEVERSION
+  Conet.version='1.724 ';//FOLDORUPDATEVERSION
   Conet.files={};
   var uploads={},fns,logc,logs=[],//fn=>data,first
       logSameLineCount=0,ac,downloads={},PI=Math.PI;
@@ -35,6 +35,11 @@ var Conet={};
     //...
   }
   Conet.lsUpload=lsUpload;
+  Conet.lsDownload=function(p) {
+    //---
+    return localStorage['conet2d'+p.fn];
+    //...
+  }
   function upload(p) {
     //onsole.log('Conet.upload 0');
     //onsole.trace();
@@ -221,6 +226,10 @@ var Conet={};
       if (p.loadList||!p.savef) checkListFile(fn);//| if there is no save, filelist be updated on load
       else setCurFn(fn);//checkListFile(fn);
       p.loadf(fn);
+      
+      console.log('mload1');
+      checkIconUpdate();
+      //...
     }
     function mloadUpdate() {
       mload.sub.splice(1,mload.sub.length-1);
@@ -305,6 +314,43 @@ var Conet={};
       mload.ms='';mload.msid=msid;
     }
     
+    function checkIconUpdate() {
+      //---
+      let iu=p.iconUpdate;
+      if (!iu) return;
+      setTimeout(function() {
+        //---
+        console.log('icon nao');
+        let m0=Conet.lastLoadMenu;
+        //if (!m) { console.log('menuIconUpdate: no loadMenu -> skip');return; }
+        
+        let c=document.createElement('canvas');
+        c.width=32;c.height=32;
+        let ct=c.getContext('2d');
+        ct.imageSmoothingQuality='high';
+        ct.imageSmoothingEnabled=true;
+        ct.drawImage(iu.canvas,0,0,c.width,c.height);
+        
+        let isrc=c.toDataURL('image/png');//d.data;
+        //onsole.log(isrc);
+        
+        if (m0.cfmo.isrc!=isrc) {
+          m0.c2=new Image();
+          m0.c2.src=isrc;
+          //onsole.log('paint.menuIconUpdate png.len='+isrc.length+' pixlen='+(c.width*c.height*3));
+          m0.cfmo.isrc=isrc;
+          m.uploadFilenames();
+        } else console.log('menuIconUpdate: same src, no upload');
+        //onsole.log(renderer);
+        //c.style='position:absolute;';
+        //document.body.appendChild(c);
+        //...
+      }
+      ,500);
+      //...
+    }
+    
+    
     if (p.grid) {
     m.sub.push({s:'Loadgrid..',actionf:function() {
       //---
@@ -315,6 +361,9 @@ var Conet={};
         //---
         Conet.lastLoadMenu={cfmo:fh};
         p.loadf(fh.fn);
+        
+        //onsole.log('grid.onclick');
+        checkIconUpdate();
         //...
       }
       }); 
@@ -327,7 +376,7 @@ var Conet={};
     if (p.savef) {
     m.sub.push(
     {s:'Save',a:'conetSave',keys:['83_c'],ms:'<span style="color:#00f">ctrl+s</span>',actionf:function() {
-      if (m.curFn!==undefined) checkListFile(m.curFn);
+      if ((m.curFn!==undefined)&&m.files) checkListFile(m.curFn);
       p.savef(m.curFn);
     }
     });
@@ -370,6 +419,7 @@ var Conet={};
         s=params[p.url];
         if (s) {
           console.log('Conet.fileMenu loading via url: '+s+' (history ignored)');
+          setCurFn(s);//251215
           p.loadf(s);
           return m;// {s:'-'};
         }
@@ -439,7 +489,8 @@ var Conet={};
       
       checkListFile(s);
       p.loadf(s);
-      
+      console.log('cfmLoad');
+      //...
     }
     m.checkListFile=checkListFile;
     m.uploadFilenames=uploadFilenames;
@@ -1428,30 +1479,36 @@ var Conet={};
 console.log('Conet '+Conet.version);
 //fr o,1
 //fr o,1,5,4
-//fr o,1,8,33
-//fr o,1,9,29
-//fr o,1,9,31
-//fr o,1,12,3
-//fr o,1,12,4
-//fr o,1,12,5
-//fr o,1,12,6
-//fr o,1,12,7
-//fr o,1,12,19
-//fr o,1,12,20
-//fr o,1,12,29
-//fr o,1,12,29,4
-//fr o,1,12,35
-//fr o,1,12,38
-//fr o,1,12,39
-//fr o,1,13,1
-//fr o,1,20,4
-//fr o,1,49,13
-//fr o,1,60
-//fr o,1,63,3
-//fr o,1,64,2
-//fr o,1,116,2
-//fr o,1,116,11
-//fr o,1,120,3
-//fr o,1,120,4
-//fr o,1,120,8,24
-//fr p,6,93
+//fr o,1,6
+//fr o,1,8
+//fr o,1,9,33
+//fr o,1,10,29
+//fr o,1,10,31
+//fr o,1,13
+//fr o,1,13,3
+//fr o,1,13,4
+//fr o,1,13,5
+//fr o,1,13,6
+//fr o,1,13,7
+//fr o,1,13,19
+//fr o,1,13,20
+//fr o,1,13,28
+//fr o,1,13,28,3
+//fr o,1,13,32
+//fr o,1,13,32,4
+//fr o,1,13,38
+//fr o,1,13,41
+//fr o,1,13,42
+//fr o,1,13,70
+//fr o,1,14,1
+//fr o,1,21,4
+//fr o,1,50,13
+//fr o,1,64,3
+//fr o,1,65,2
+//fr o,1,109
+//fr o,1,117,2
+//fr o,1,117,11
+//fr o,1,121,3
+//fr o,1,121,4
+//fr o,1,121,8,24
+//fr p,35,24

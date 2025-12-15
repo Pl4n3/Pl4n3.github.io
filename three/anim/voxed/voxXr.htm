@@ -4,6 +4,8 @@
 <title>voxXr</title>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<link rel="shortcut icon" sizes="128x128" href="/canvas/paint/hand.png">
+<link rel="apple-touch-icon" href="/canvas/paint/hand.png">
 <style>body { color:#000;background-color:#aaa;margin:0px;overflow:hidden;font-family:Sans-serif; }</style>
 <script src="/conet.js"></script>
 <script src="/menu.js"></script>
@@ -13,63 +15,225 @@
 <script src="/three/threePd5.js"></script>
 <script src="/three/anim/voxed.js"></script>
 <script src="/three/deep/blockWalk.js"></script>
+<script src="/util/mdiv.js"></script>
 </head>
 <body>
 <script type="importmap">
 {
 "imports": {
-"three": "/three/r124/build/three.module.js",
-"three/addons/": "/three/r124/examples/jsm/"
+
+"three": "/three/r160/build/three.module.js",
+"three/addons/": "/three/r160/examples/jsm/"
+
 }
 }
 </script>
 <script type="module">
-import * as THREE from '/three/r124/build/three.module.js';
-import { BoxLineGeometry } from '/three/r124/examples/jsm/geometries/BoxLineGeometry.js';
-import { OrbitControls } from '/three/r124/examples/jsm/controls/OrbitControls.js';
+import * as THREE from 'three';
+import { BoxLineGeometry } from 'three/addons/geometries/BoxLineGeometry.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { MarchingCubes } from 'three/addons/objects/MarchingCubes.js';
 import { XrUtil } from '/util/gfx/XrUtil.js';
+
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { SSAOPass } from 'three/addons/postprocessing/SSAOPass.js';
+import { BokehPass } from 'three/addons/postprocessing/BokehPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
 (function() {
   //---
+  //"three": "/three/r160/build/three.module.js",
+  //"three/addons/": "/three/r160/examples/jsm/"
+  
+  //"three": "https://cdn.jsdelivr.net/npm/three@v0.164.1/build/three.module.js",
+  //"three/addons/": "https://cdn.jsdelivr.net/npm/three@v0.164.1/examples/jsm/"
+  
+  
   const clock = new THREE.Clock();
   let container,camera,scene,raycaster,renderer,
       room,INTERSECTED,cursor,voxScale=1,tVoxAdd=0,
       cubes=[],controls,voxMesh,voxMeshAdd,voxVa,voxVh,
       mGreen,mRed,roomMatrix,drawColor=0,unit0,//hudCount=0,
-      fn='/three/anim/voxed/xr1.json';
+      fn='/three/anim/voxed/xr1.json',composer,ssaoPass,bokehPass,mmode,mbrush,//,room0;
+      mpress,blob,mmodes={},selBox,segmentGroup,q0=new THREE.Quaternion(),segments,
+      cfmenu,m2modes={};//m2pick,m2add;
       //,hudMesh,unit0,huds,hud;
       //fn='/three/anim/voxed/xr0.json';
   const tempMatrix=new THREE.Matrix4(),vt=new THREE.Vector3(),
       voxMeshPos=new THREE.Vector3(0,2,-2),
       
       //huds=[],hud={lines:[
-      //'VoxXr 0.229 '//FOLDORUPDATEVERSION
+      //'VoxXr 0.1686 '//FOLDORUPDATEVERSION
       //],cursor:{x:0.5,y:0.5,vis:false},buttons:[]},
       
       lsKey='voxXr0',blockWalk=new BlockWalk(),
       //---vrPos independent from room pos to follow unit
-      vrPos=new THREE.Vector3(0,0,0),xrUtil=XrUtil;
+      vrPos=new THREE.Vector3(0,0,0),xrUtil=XrUtil,
+      scaleCfg=[
+        {sc:0.5,lint:20   ,bgop:0},
+        {sc:20 ,lint:12500,bgop:1}];
+      //minSc=0.5,maxSc=20,minInt=15,//sc=1->int=50
+      //maxInt=12500;
   
   init();
   animate();
   
-  function lo_g(s) {
+  function log(s) {
     //---
-    hud.lines.push(s);
-    while (hud.lines.length>4) hud.lines.splice(0,1);
-    drawHud();
+    //hud.lines.push(s);
+    //while (hud.lines.length>4) hud.lines.splice(0,1);
+    //drawHud();
+    xrUtil.log(s);
     //...
   }
   function f4(v) {
     return Math.floor(0.5+v*10000)/10000;//...
   }
-  function load(v) {
+  
+  function updateSegmentMeshes() {
     //---
-    var h=JSON.parse(v);
-    delete(h.vw);
-    var r=Voxed.load(h);
-    drawColor=0;
-    //var blocks=r.blocks;//Voxed.toBlocks();
-    //Voxed.etV(0,45.66,0,{c:0});
+    if (segmentGroup) room.remove(segmentGroup);
+    let ud=Voxed.etUserData();
+    //onsole.log(ud.boxes);
+    segmentGroup=undefined;
+    segments=undefined;
+    
+    if (!ud?.segments) return;
+    segments=JSON.parse(JSON.stringify(ud.segments));
+    let boxh={};
+    for (let b of ud.boxes) {
+      if (b.length==6) continue;
+      let name=b[6].name;
+      if (name) boxh[name]=b;
+    }
+    //onsole.log(boxh);
+    segmentGroup=new THREE.Group();
+    segmentGroup.position.copy(voxMeshPos);
+    room.add(segmentGroup);
+    console.log('segments found !1');
+    let si=0;
+    let sc=voxScale;//,f0=20.0;
+    let segh={};
+    for (let seg of segments) {
+        //onsole.log(seg);
+        //if (seg.point) {
+      let bp=seg.point;
+      if (bp&&!Array.isArray(bp)) {
+        bp=boxh[bp];
+        bp=[
+          (-bp[0]+-10)/20
+         ,(-bp[1]+3.5)/20
+         ,(-bp[2]+3.5)/20
+        ];
+        console.log('bp: ['+bp[0]+','+bp[1]+','+bp[2]+']');
+      }
+      seg.bp=bp;
+         //onsole.log('point');
+          //onsole.log(bp);
+        //}
+        
+      let upp=seg.upPoint;
+      if (upp&&!Array.isArray(upp)) {
+        //onsole.log(upp);
+        upp=boxh[upp];
+        //onsole.log('upPoint');
+        //onsole.log(upp);
+        let f0=40;
+        upp=[(upp[0]-5)/f0,
+             (upp[1]-19)/f0,
+             (upp[2]+2)/f0];
+      }
+      seg.upp=upp;
+        
+      let m;
+      if (seg.sc===undefined) seg.sc=1;
+      if (seg.box) {
+        let b=boxh[seg.box];
+        //onsole.log('box');
+        //onsole.log(b);
+        m=Voxed.generateMesh({box:b});
+        if (!m) m=new THREE.Group();
+        //seg.sc=0.5;  
+      } else if (seg.tbox) {
+        let tb=seg.tbox;
+        m=new THREE.Mesh(
+            new THREE.BoxGeometry(tb[0],tb[1],tb[2]),// 3 4 5
+            new THREE.MeshPhongMaterial({color:0x777777,flatShading:true})//,transparent:true,opacity:0.7})
+          );  
+        m.castShadow=true;
+        m.receiveShadow=true;
+        //bp=[tb[0],tb[1],tb[2]];
+      } else m=new THREE.Group();
+          
+      m.matrixAutoUpdate=false;
+          
+          //m.scale.set(sc/2,sc/2,sc/2);
+      seg.obj3d=m;
+      if (seg.name) segh[seg.name]=seg;
+      if (seg.upSeg) 
+        segh[seg.upSeg].obj3d.add(m);
+      else 
+        segmentGroup.add(m);
+    
+      si++;
+    }
+    
+    //...
+  }
+  let segmentt=0;
+  function renderSegments(dt) {
+    //---
+    //let ud=Voxed.etUserData();
+    //onsole.log(ud.boxes);
+    //if (!ud||!ud.segments) return;
+    if (!segments) return;
+    
+    segmentt+=dt;
+    let t=segmentt;//sin=Math.sin(segmentt*0.01);
+    
+    for (let seg of segments) {
+      let m=seg.obj3d;
+    
+      let m0=tempMatrix;
+      m.matrix.identity();
+        
+        //m.matrix.multiply(m0.makeTranslation(-0.7,-0.8,0.4));
+      //let f0=40;
+      if (seg.upp) m.matrix.multiply(m0.makeTranslation(seg.upp[0],seg.upp[1],seg.upp[2]));
+      //(upp[0]-5)/f0 //-5
+      //,(upp[1]-19)/f0  //-18
+      //,(upp[2]+2)/f0  //+2
+      //));
+        //console.log('sc='+sc);
+      m.matrix.multiply(m0.makeScale(seg.sc,seg.sc,seg.sc));
+          //m.matrix.multiply(m0.makeTranslation(0,-1.2,0));
+    
+      let q=seg.quat,qs=seg.quatSin;
+      if (q) {
+        q0.set(
+          q[0]+(qs?qs[0]*Math.sin(t*qs[3]):0),
+          q[1]+(qs?qs[1]*Math.sin(t*qs[(qs.length==6)?4:3]):0),
+          q[2]+(qs?qs[2]*Math.sin(t*qs[(qs.length==6)?5:3]):0),
+          q[3]);
+        q0.normalize();
+        m.matrix.multiply(m0.makeRotationFromQuaternion(q0));
+        //m.matrix.multiply(m0.makeRotationX(0.3));
+        //m.matrix.multiply(m0.makeRotationY(0.3));
+      }
+    
+        //m.matrix.multiply(m0.makeTranslation(0.85,0.6,-0.3));//pLeaf0 -27 -9 9
+        //m.matrix.multiply(m0.makeTranslation(0.75,0.9,-0.3));//pLeaf -25 -16 9
+      if (seg.bp) m.matrix.multiply(m0.makeTranslation(seg.bp[0],seg.bp[1],seg.bp[2]));
+    }
+    
+    
+    //...
+  }
+  
+  
+  function voxMeshNew() {
+    //---
     if (voxMesh) room.remove(voxMesh);
     var m=Voxed.generateMesh();
     var sc=voxScale;
@@ -77,6 +241,70 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     //voxMeshPos.set(0,2,-2);
     m.position.copy(voxMeshPos);//set(0,2,-2);
     room.add(m);voxMesh=m;
+    
+    updateSegmentMeshes();
+    
+    //...
+  }
+  
+  function load(v) {
+    //---
+    var h=JSON.parse(v);
+    //onsole.log('userData=');
+    //nsole.log(h.userData);
+    delete(h.vw);
+    var r=Voxed.load(h);
+    drawColor=0;
+    
+    let ud=h.userData;
+    if (ud) {
+      let cp=ud.camPos;
+      if (cp) {
+        //onsole.log('setting camera position');
+        //onsole.log(cp);
+        camera.position.set(cp.x,cp.y,cp.z);
+      }
+      let tp=ud.targetPos;
+      if (tp) {
+        //onsole.log('setting target position');
+        //onsole.log(tp);
+        controls.target.set(tp.x,tp.y,tp.z);
+      }
+      selBox.boxes=ud.boxes||[];
+      selBox.updateBoxMeshes();
+      //if (ud.xrHudPos) xrUtil.menuHudPosition.setfunc(ud.xrHudPos);
+    }
+    xrUtil.menuHudPosition.setfunc(ud&&ud.xrHudPos?ud.xrHudPos:'Desktop');
+    
+    Menu.touchSticksRemove();
+    delete(blockWalk.tsd0);
+    if (!(ud&&(ud.tsd=='skip'))) {
+      let tsd=0?undefined:Menu.touchSticksInit({autoKeys:1,skip1:1,skipMenuDraw:1});
+      if (tsd) blockWalk.tsd0=tsd[0];
+    }
+    
+    if (h.script) {
+      //onsole.log('start script nao.');
+      let s=h.script.join('');
+      //onsole.log(s);
+      try { 
+        eval(s);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    
+    ////var blocks=r.blocks;//Voxed.toBlocks();
+    ////Voxed.etV(0,45.66,0,{c:0});
+    //if (voxMesh) room.remove(voxMesh);
+    //var m=Voxed.generateMesh();
+    //var sc=voxScale;
+    //m.scale.set(sc,sc,sc);
+    ////voxMeshPos.set(0,2,-2);
+    //m.position.copy(voxMeshPos);//set(0,2,-2);
+    //room.add(m);voxMesh=m;
+    voxMeshNew();
+    
     //...
   }
   function loadFn(fn) {
@@ -91,10 +319,33 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     });
     //...
   }
+  
+  function serialize() {
+    let cp=camera.position;
+    let tp=controls.target;
+    let ud=Voxed.etUserData();
+    //onsole.log(xrUtil.menuHudPosition);
+    Conet.hcopy({
+      camPos   :{x:cp.x,y:cp.y,z:cp.z},
+      targetPos:{x:tp.x,y:tp.y,z:tp.z},
+      boxes:selBox.boxes,
+      //xrHudPos:xrUtil.menuHudPosition.value,
+    },ud);
+    let v=xrUtil.menuHudPosition.value;
+    if (v!==undefined) ud.xrHudPos=v;
+    //Voxed.etUserData({
+    //  camPos   :{x:cp.x,y:cp.y,z:cp.z},
+    //  targetPos:{x:tp.x,y:tp.y,z:tp.z},
+    //  boxes:selBox.boxes,
+    //});
+    return Voxed.serialize();
+    //...
+  }
+  
   function save() {
     //---
     drawMerge();
-    const data=Voxed.serialize();
+    const data=serialize();
     //Conet.upload({fn:fn,data:data});//,log:Conet.log,logChunk:1});
     localStorage[lsKey]=data;
     
@@ -155,29 +406,60 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     scene = new THREE.Scene();
     scene.background = new THREE.Color( 0x505050 );
     
-    camera=new THREE.PerspectiveCamera(50,window.innerWidth/window.innerHeight,0.1,100);
+    camera=new THREE.PerspectiveCamera(50,window.innerWidth/window.innerHeight,0.01,100);//251213 0.1 -> 0.01
     camera.position.set(0,1.6,3);
     scene.add(camera);
-    //console.log(camera);
+    //onsole.log(camera);
     
-    room=new THREE.LineSegments(
+    let scfg=scaleCfg[0];
+    room=new THREE.Group();room.scale.set(scfg.sc,scfg.sc,scfg.sc);
+    let boxGrid=new THREE.LineSegments(
       new BoxLineGeometry(6,6,6,10,10,10).translate(0,3,0),
       new THREE.LineBasicMaterial( { color: 0x808080 } )
     );
+    //room.add(boxGrid);
+    
+    let bgMat,bgMesh;
+    {
+    let m;
+    room.add(m=new THREE.Mesh(new THREE.BoxGeometry(1,1,1),
+      bgMat=new THREE.MeshBasicMaterial({color:0x555566,transparent:true,opacity:scfg.bgop,side:THREE.BackSide})));
+    let sc=6.1;bgMesh=m;
+    m.scale.set(sc,sc,sc);
+    m.position.y=3;
+    m.visible=false;//if visible it affects bokeh effect
+    }
+    
     room.matrixAutoUpdate=false;
+    
+    //room0=new THREE.Group();room0.add(room);scene.add(room0);
     scene.add(room);
     
+    let pl0,pl1;
     {
-    let c=room,l=new THREE.AmbientLight(0x555555),f=3;c.add(l);
+    let c=room,l=new THREE.AmbientLight(
+        0xbbbbbb
+        ),//--- was 555555,but thats too dark
+        f=1;
+    c.add(l);
     //l=new THREE.PointLight(0xffffff,1,0);l.position.set(-1*f,2*f,1*f);scene.add(l);
-    l=new THREE.PointLight(0xffffff,1,0);l.position.set(-0.5*f,3*f,1*f);
+    if (1) {
+    l=new THREE.PointLight(0xffffff,scfg.lint,0);pl0=l;//1,0
+    //l=new THREE.DirectionalLight(0xffffff,5);
+    l.position.set(-0.5*f,3*f,1*f);
     l.castShadow=true;
     l.shadow.camera.near=0.1;
     l.shadow.camera.far=100;
-    l.shadow.mapSize.width=1024;//2048;
-    l.shadow.mapSize.height=1024;
+    l.shadow.mapSize.width=1024*2;
+    l.shadow.mapSize.height=1024*2;// up to WebGLRenderer.capabilities.maxTextureSize (16384)
     c.add(l);
-    l=new THREE.PointLight(0xaaffff,0.3);l.position.set(1*f,-2*f,-1*f);c.add(l);
+    }
+    if (1) {
+    f=1;
+    l=new THREE.DirectionalLight(0xaaffff,1);
+    //l=new THREE.PointLight(0xaaffff,scfg.lint*0.3*f);pl1=l;
+    l.position.set(2*f,-0.5*f,-1*f);c.add(l);//1 -2 -1
+    }
     }
     
     //if (0) {
@@ -198,13 +480,28 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     //m1=new THREE.MeshPhongMaterial({color:0x77dd77,flatShading:true,
     //  transparent:true,opacity:0.7});
-    {
-    const geometry=new THREE.BoxBufferGeometry(voxScale/30,voxScale/30,voxScale/30);
-    const o=new THREE.Mesh(geometry,mGreen=new THREE.MeshPhongMaterial({color:0x77dd77,flatShading:true,
-      transparent:true,opacity:0.7}));
-    o.position.set(0,3,0);
-    room.add(o);cursor=o;
-    mRed=new THREE.MeshPhongMaterial({color:0xdd7777,flatShading:true,transparent:true,opacity:0.7});
+    /* cursor init */ {
+      let o;
+      mGreen=new THREE.MeshPhongMaterial({color:0x77dd77,flatShading:true,transparent:true,opacity:0.7});
+      if (1) {
+        let d=voxScale/30,dd=d/5,d2=d/2-dd/2;
+        let ge=new THREE.BoxGeometry(dd,dd,dd);
+        o=new THREE.Group();let m;
+        m=new THREE.Mesh(ge,mGreen);m.position.set(d2,d2,d2);o.add(m);
+        m=new THREE.Mesh(ge,mGreen);m.position.set(-d2,d2,d2);o.add(m);
+        m=new THREE.Mesh(ge,mGreen);m.position.set(d2,-d2,d2);o.add(m);
+        m=new THREE.Mesh(ge,mGreen);m.position.set(-d2,-d2,d2);o.add(m);
+        m=new THREE.Mesh(ge,mGreen);m.position.set(d2,d2,-d2);o.add(m);
+        m=new THREE.Mesh(ge,mGreen);m.position.set(-d2,d2,-d2);o.add(m);
+        m=new THREE.Mesh(ge,mGreen);m.position.set(d2,-d2,-d2);o.add(m);
+        m=new THREE.Mesh(ge,mGreen);m.position.set(-d2,-d2,-d2);o.add(m);
+      } else {
+        let ge=new THREE.BoxGeometry(voxScale/30,voxScale/30,voxScale/30);
+        o=new THREE.Mesh(ge,mGreen);
+      }
+      o.position.set(0,3,0);
+      room.add(o);cursor=o;
+      mRed=new THREE.MeshPhongMaterial({color:0xdd7777,flatShading:true,transparent:true,opacity:0.7});
     }
     
     
@@ -237,23 +534,88 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     raycaster = new THREE.Raycaster();
     
-    renderer = new THREE.WebGLRenderer( { antialias: true } );
+    renderer=new THREE.WebGLRenderer({antialias:true
+      ,preserveDrawingBuffer:true//needed for icons
+    });
     renderer.setPixelRatio( window.devicePixelRatio );
     renderer.setSize( window.innerWidth, window.innerHeight );
     //renderer.outputEncoding=THREE.sRGBEncoding;
     renderer.shadowMap.enabled=true;
-    renderer.shadowMap.type=THREE.BasicShadowMap;
+    //renderer.shadowMap.type=THREE.BasicShadowMap;
     renderer.xr.enabled = true;
-    container.appendChild( renderer.domElement );
+    container.appendChild(renderer.domElement);
+    //console.log(renderer);
     
     controls=new OrbitControls(camera,renderer.domElement);
     //
     
-    xrUtil.init({scene:scene,renderer:renderer,camera:camera,room:room,vrPos:vrPos
+    let pointDown=false;// similar to xrUtil.pointDown but here: pointDown on voxMesh
+    xrUtil.init({scene:scene,renderer:renderer,camera:camera,room:room,vrPos:vrPos,//depthTest:true,
+      controls:controls,pointers:{
+    rayed:function(a,mode) {
+      //---
+      //if (mode!=1) return;
+      
+      //onsole.log('mode='+mode+' pointDown='+pointDown);
+      
+      if (mode==0) pointDown=false;
+      controls.enabled=!pointDown;
+      
+      let rv;
+      let modeAddOld=mmodes.Add.selected&&(mmodes.Add.ms=='Multi Old');
+      for (let r of a) {
+        if ((r.object===voxMesh)||(!modeAddOld&&(r.object===voxMeshAdd))) { rv=r;break; }
+      }
+      if (!rv) return;
+      
+      let pc=rv.point,n=rv.normal;
+      vt.set(0,0,0);//-0.4*room.scale.x);
+      //vt.applyQuaternion(ctrl1.quaternion);
+      //console.log(pc);
+      //cursor.position.set(pc.x-pr.x+vt.x,pc.y-pr.y+vt.y,pc.z-pr.z+vt.z);
+      let nf=(mmodes.Add.selected)?0.008:-0.007;
+      vt.x+=pc.x+n.x*nf;vt.y+=pc.y+n.y*nf;vt.z+=pc.z+n.z*nf;
+      //vt.set(pc.x,pc.y,pc.z);
+      tempMatrix.copy(room.matrix);
+      tempMatrix.invert();
+      vt.applyMatrix4(tempMatrix);
+      cursor.position.set(vt.x,vt.y,vt.z);//pc.x-pr.x,pc.y-pr.y,pc.z-pr.z);
+      
+      if (mode!=1) {
+        if (mmodes.Add.selected&&(mmodes.Add.ms=='Single'))
+          return;// erstmal nur bei click, nicht bei move, ggf via checkbox
+      }
+      
+      if (mmodes['-'].selected) return;
+      
+      if (mode==1) {
+        pointDown=true;
+        controls.enabled=false;
+      }
+      if (pointDown) {
+        if (mmodes.Add.selected) drawVoxel({}); 
+        else if (mmodes.Paint.selected) drawPaint();
+        else if (mmodes.Del.selected) drawVoxel({del:1}); 
+        else if (mmodes.Pick.selected) pickColor();
+        else if (mmodes.Pal.selected) drawPalette(); 
+      }
+      
+        //console.log('rayed '+a.length);
+      //  if ((o0===voxMesh)||(o0===voxMeshAdd)) {
+      //    //onsole.log(r0);
+      //    console.log('setting cursor');
+      //    cursor.position.copy(r0.point);
+      //  }
+      
+      //...
+    }
+      },sculpt:1,
       //,XRControllerModelFactory:XRControllerModelFactory
       });  
     xrUtil.cursor=cursor;
+    xrUtil.rayAll=false;
     xrUtil.initHud();
+    xrUtil.log('VoxXr 1.1185 ');//FOLDORUPDATEVERSION
     //huds=xrUtil.huds;
     //hudMesh=xrUtil.hudMesh;
     //hud=xrUtil.hud;
@@ -277,20 +639,36 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     Conet.download({fn:'/shooter/objs/templar/o5.txt',f:function(v) {
       //---
       var o=Pd5.load(v);
-      o.scale=1;
+      o.scale=1;o.ay=Math.PI;
       Pd5.animStart(o,'stand2');
-      threeAddObj(o,0,0,0,0.1);
+      threeAddObj(o,0,0,0,0.3);
       //o.meshes[0].tmesh.position.set(-0.3,1.1,-1.8);
       
-      let vx=-10,vy=-18,vz=8,f=33.33/voxScale;
+      if (0) { //250614 bb dont work with room rotated
+      let tb=threeEnv.base,m=o.meshes[0].tmesh;
+      threeEnv.base=m;
+      o.ap=2;o.hp=5;o.ohp=10;
+      //o.bbdraw=bbdraw;
+      threeBillboardAdd({x:0,y:0.9,z:0,ar:0.2,s:0.015,transparent:true,gw:20,cw:128,o:o});
+      threeEnv.base=tb;
+      }
+      
+      
+      let vx=25,//-10,
+          vy=-18,
+          vz=0,//8,
+          f=33.33/voxScale;
       let x=vx/f+voxMeshPos.x;
       let y=(vy-12)/f+voxMeshPos.y;
       let z=vz/f+voxMeshPos.z;
       let m=o.meshes[0].tmesh;
       m.position.set(x,y,z);
-      unit0={speed:0,a:0,o:o,m:m};//0.0001
+      unit0={isPlayer:1,speed:0,a:0,o:o,m:m,animIdle:'stand2',animRun:'run',animAttack:'attack2',animHit:'hit',animDead:'lost'};//0.0001
       m.rotation.y=unit0.a;
-      blockWalk.unit0=unit0;
+      unit0.speedTurn=0.01;
+      //blockWalk.unit0=unit0;
+      blockWalk.units.push(unit0);
+      
       ////blockWalk.gw=1/f;
       ////blockWalk.blockMeshPos={x:voxMeshPos.x,y:voxMeshPos.y-13/f,z:voxMeshPos.z};
       //console.log(blockWalk.checkWalk(unit0,0,0));
@@ -303,10 +681,53 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     }
     });
     
+    let isConet=Conet.checkOnline();//document.URL.indexOf(':7000')!=-1;
+    
     Menu.init([{s:'&#9776;',noTri:true,fs:1.4,pw:0.05,sub:[
-      Menu.mFullscreen,
+    
+    {s:'Modes',r:1,sub:[
+      m2modes['-']={s:'-',stay:1,actionf:setMode}
+      ,m2modes.Add={s:'Add',ms:'Multi Old',stay:1,actionf:setMode}
+      ,m2modes.Pick={s:'Pick',stay:1,actionf:setMode}
+      ,m2modes.Paint={s:'Paint',stay:1,actionf:setMode}
+      ,m2modes.Del={s:'Del',stay:1,actionf:setMode}
+      ,m2modes.Pal={s:'Pal',stay:1,actionf:setMode}
+    ]},
+    
         
-      
+    cfmenu=Conet.fileMenu({fn:'/three/anim/voxed/files'+(isConet?'':'NoConet')+'.txt',url:'fn',_loadList:1,
+    grid:1,iconUpdate:{canvas:renderer.domElement},
+    loadf:function(fn) {
+      //onsole.log('loadf '+fn);
+      loadFn(fn);
+      if (0)
+      Conet.download({fn:fn,f:function(v) {
+        load(JSON.parse(v));
+        
+        //onsole.log(fn);
+        if (fn.indexOf('/tile')!=-1) {
+          //calcTiles();
+          isTiles=true;
+        } else isTiles=false;
+        
+        voxMesh();
+      }
+      });
+    }
+    ,savef:!isConet?undefined:function(fn) {
+      //Conet.upload({fn:fn,data:serialize(),log:Conet.log,logChunk:1});
+      drawMerge();
+      const data=serialize();
+      Conet.upload({fn:fn,data:data});//,log:Conet.log,logChunk:1});
+      xrUtil.log('Saved to "'+fn+'" '+data.length+' bytes.');
+      //...
+    }
+    })
+    
+    
+    ,{s:'Edit',sub:[
+    
+    
     {s:'Json',ms:'import/export',doctrl:'Json data',mcfs:0.07,ta:true,jsonCheck:1,wrap:0,tacols:30,tarows:20,setfunc:function(v,initLoad) {
       //---
       load(v);
@@ -314,11 +735,30 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       //...
     }
     ,valuef:function() {
-      return Voxed.serialize();
+      return serialize();
     }
     }
+    
+    ,{s:'Caves..',ms:'  ',doctrl:'Caves/Landscape config',value:'{\n  "count":20,\n  "seed":0,\n  "do2d":1\n}',lskey:'voxedCavesConfig',ta:1,jsonCheck:1,cstay:1,stay:1,okS:'Generate',cancelS:'Close',setfunc:function(v,onInit) {
+      //onsole.log('setfunc v='+v);
+      this.ms=v.length+' bytes';
+      this.value=v;
+      
+      if (onInit) return;
+      
+      Voxed.generateLandscape(JSON.parse(v));
+      //blocks=toBlocks();
       
       
+      voxMeshNew();
+      xrUtil.log('Generate done.');
+      //----
+    }
+    }
+    
+    
+    ]}
+    
       
       /*
     {s:'TestButton'
@@ -335,41 +775,610 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     }
     }
     */
+    
+    ,{s:'View',sub:[
+    
+    Menu.mFullscreen
+    
+    ,{ms:'AutoRotate',checkbox:1,
+    actionf:function() {
+      //---
+      //console.log(this.checked);
+      controls.autoRotate=this.checked;
+      //...
+    }
+    }
+    
+    ,xrUtil.menuHudPosition
+    
+    ,xrUtil.menuXr  
+    
+    
+    ]}
+    
+    
+    
       ]} 
-     ,xrUtil.menuXr  
+     //,xrUtil.menuXr  
       ]
       ,{listen:1});
     
-    const tsd=Menu.touchSticksInit({autoKeys:1,skip1:1});
+    //const tsd=0?undefined:Menu.touchSticksInit({autoKeys:1,skip1:1});
     
     
     blockWalk.gw=voxScale/33.33;
     blockWalk.blockMeshPos={x:voxMeshPos.x,y:voxMeshPos.y-13*blockWalk.gw,z:voxMeshPos.z};
-    blockWalk.blockAt=Voxed.etV;
-    blockWalk.tsd0=tsd[0];
+    //blockWalk.blockAt=Voxed.etV; --- bricks needs blockAt with u, thus cant use etV directly here
+    blockWalk.blockAt=function(x,y,z,u) {
+      //---
+      return Voxed.etV(x,y,z);
+      //...
+    }
+    //if (tsd) blockWalk.tsd0=tsd[0];
     blockWalk.xrUtil=xrUtil;
     blockWalk.camera=camera;
+    //blockWalk.room=room;
     
     
-    //Bricks.initLoader({scene:room,scale:0.01,pos:{x:5,y:2,z:0}});
-    //Conet.download({fn:'/three/lego/moreColors.txt',f:Bricks.parseLoad});
+    ////Bricks.initLoader({scene:room,scale:0.01,pos:{x:5,y:2,z:0}});
+    ////Conet.download({fn:'/three/lego/moreColors.txt',f:Bricks.parseLoad});
+    ////let fn='/three/anim/voxed/nienhagen1monster.json';
+    ////let fn='/three/anim/voxed/3x3.json';
+    ////let fn='/three/anim/voxed/treeBroad0.json';
     
-    //let fn='/three/anim/voxed/nienhagen1monster.json';
-    //let fn='/three/anim/voxed/3x3.json';
-    //let fn='/three/anim/voxed/treeBroad0.json';
-    const data=localStorage[lsKey];
-    if (data) {
-      load(data); 
-      xrUtil.log('Loaded ls '+data.length+' b.');
-    } else loadFn(fn);
+    //const data=localStorage[lsKey];
+    //if (data) {
+    //  load(data); 
+    //  xrUtil.log('Loaded ls '+data.length+' b.');
+    //} else loadFn(fn);
     
+    function setModeS(s) {
+      //---
+      //mmo de.s=this.s;
+      if (cursor.material!==mGreen) cursor.material=mGreen;
+      //
+      {
+      let m=mmodes[s];
+      if (m===mmodes.Add) {
+        if (m.selected) {
+          let a=['Single','Multi Old','Multi All','Paste'],i=a.indexOf(m.ms);
+          m.ms=a[(i+1)%a.length];
+          Menu.ms(m2modes.Add,m.ms);
+          //og('Mode selected: Add '+m.ms);
+        }
+      }
+      }
+      
+      for (let m of Object.values(mmodes)) {
+        //delete(m.color);
+        delete(m.selected);
+      }
+      let m=mmodes[s];
+      if (m) { 
+        //m.color='#240';
+        m.selected=true; 
+        let s;
+        log(s='Mode selected: '+m.s+(m.ms?' '+m.ms:''));
+        //Conet.log(s);
+      }
+      
+      for (let m of Object.values(m2modes)) //if (m.c) {
+        //m.c.style.boxSizing='content-box';
+        delete(m.bgcol);
+        //m.c.style.borderWidth='1px';
+      //}
+      m=m2modes[s];
+      if (m)//&&m.c) {
+        m.bgcol=Menu.colPress;
+      //...
+    }
+    
+    function setMode() {
+      //---
+      //onsole.log(this);
+      setModeS(this.s);
+      //...
+    }
+    
+    let dbg;
     xrUtil.hud.buttons=[
-    {s:'Save',x:0.5,y:0.7,w:0.45,h:0.25,ondown:save},
-    {s:'Load xr1',x:0.05,y:0.4,w:0.4,h:0.1,ondown:loadFn,fn:'/three/anim/voxed/xr1.json'},
-    {s:'Load 3x3',x:0.05,y:0.55,w:0.4,h:0.1,ondown:loadFn,fn:'/three/anim/voxed/3x3.json'},
-    {s:'Load tree',x:0.05,y:0.7,w:0.4,h:0.1,ondown:loadFn,fn:'/three/anim/voxed/treeBroad0.json'},
-    {s:'Load coast',x:0.05,y:0.85,w:0.4,h:0.1,ondown:loadFn,fn:'/three/anim/voxed/nienhagen1monster.json'}
+    //{s:'Save',x:0.5,y:0.7,w:0.45,h:0.25,ondown:save},
+    //{s:'Load xr1',x:0.05,y:0.4,w:0.4,h:0.1,ondown:loadFn,fn:'/three/anim/voxed/xr1.json'},
+    //{s:'Load 3x3',x:0.05,y:0.55,w:0.4,h:0.1,ondown:loadFn,fn:'/three/anim/voxed/3x3.json'},
+    //{s:'Load tree',x:0.05,y:0.7,w:0.4,h:0.1,ondown:loadFn,fn:'/three/anim/voxed/treeBroad0.json'},
+    //{s:'Load coast',x:0.05,y:0.85,w:0.4,h:0.1,ondown:loadFn,fn:'/three/anim/voxed/nienhagen1monster.json'},
+    
+    /*
+    {s:'Bokeh',x:0.3,y:0.4,w:0.18,h:0.1,ondown:function() {
+      //--
+      bokehPass.enabled=!bokehPass.enabled;
+      //...
+    }
+    },
+    */
+    {s:'Bokeh',x:0.3,y:0.4,w:0.18,h:0.1,stay:1,sub:[
+    {s:'Bokeh \u25b2',x:0.05,y:0.4,w:0.4,h:0.1},
+    {s:'On',dx:0.02,w:0.2,ondown:function() {
+      //---
+      bokehPass.enabled=!bokehPass.enabled;
+      this.s=bokehPass.enabled?'Off':'On';
+      //...
+    }
+    },
+    {s:'Aperture',x:0.05,y:0.52,w:0.4,h:0.1,noinp:1},{s:'0.025',dx:0.02,oninput:function(v) {
+      //---
+      let f=parseFloat(v);
+      bokehPass.uniforms.aperture.value=f;
+      //...
+    }
+      }
+    ]},
+    
+    
+    {s:'SSAO',x:0.5,y:0.4,w:0.18,h:0.1,ondown:function() {
+      //--
+      ssaoPass.enabled=!ssaoPass.enabled;
+      //...
+    }
+    },
+    
+    {s:'BoxGrid',x:0.7,y:0.4,w:0.25,h:0.1,ondown:function() {
+      //---
+      let i=room.children.indexOf(boxGrid);
+      if (i==-1) room.add(boxGrid); else room.remove(boxGrid);
+      //...
+    }
+    },
+    {s:'Scale',x:0.7,y:0.52,w:0.25,h:0.1,ondown:dbg=function() {
+      let sc=room.scale.x;
+      bgMesh.visible=true;//was invisible for bokeh
+      if (1) {
+      let t=1000,scfg,oscfg;
+      if (sc==scaleCfg[0].sc) {
+      scfg=scaleCfg[1];oscfg=scaleCfg[0];
+      //blockWalk.tweens.push({o:room.scale,key:'x',t:t,value:maxSc});
+      //blockWalk.tweens.push({o:room.scale,key:'y',t:t,value:maxSc});
+      //blockWalk.tweens.push({o:room.scale,key:'z',t:t,value:maxSc});
+      //blockWalk.tweens.push({o:pl0,key:'intensity',t:t,value:maxInt});
+      //blockWalk.tweens.push({o:pl1,key:'intensity',t:t,value:maxInt*0.3});
+      //blockWalk.tweens.push({o:bgMat,key:'opacity',t:t,value:1});
+      blockWalk.room=room;
+      camera.near=0.1*1;camera.far=100*20;camera.updateProjectionMatrix();
+      unit0.speedTurn=0.003;
+      } else {
+      scfg=scaleCfg[0];oscfg=scaleCfg[1];
+      //blockWalk.tweens.push({o:room.scale,key:'x',t:t,value:minSc});
+      //blockWalk.tweens.push({o:room.scale,key:'y',t:t,value:minSc});
+      //blockWalk.tweens.push({o:room.scale,key:'z',t:t,value:minSc});
+      //blockWalk.tweens.push({o:pl0,key:'intensity',t:t,value:minInt});
+      //blockWalk.tweens.push({o:pl1,key:'intensity',t:t,value:minInt*0.3});
+      //blockWalk.tweens.push({o:bgMat,key:'opacity',t:t,value:0});
+      blockWalk.room=undefined;
+      camera.near=0.1;camera.far=100;camera.updateProjectionMatrix();
+      unit0.speedTurn=0.01;
+      }
+      blockWalk.tweens.push({o:room.scale,key:'x',t:t,value:scfg.sc});
+      blockWalk.tweens.push({o:room.scale,key:'y',t:t,value:scfg.sc});
+      blockWalk.tweens.push({o:room.scale,key:'z',t:t,value:scfg.sc});
+      blockWalk.tweens.push({o:pl0,key:'intensity',t:t,value:scfg.lint});
+      if (pl1) 
+      blockWalk.tweens.push({o:pl1,key:'intensity',t:t,value:scfg.lint*0.3});
+      blockWalk.tweens.push({o:bgMat,key:'opacity',t:t,value:scfg.bgop});
+      
+      if (xrUtil.isSession) {
+        //rUtil.log('vrPos '+Conet.f4(vrPos.x)+' '+Conet.f4(vrPos.y)+' '+Conet.f4(vrPos.z));
+        oscfg.vrPos={x:vrPos.x,y:vrPos.y,z:vrPos.z}
+        if (scfg.vrPos) {
+          blockWalk.tweens.push({o:vrPos,key:'x',t:t,value:scfg.vrPos.x});
+          blockWalk.tweens.push({o:vrPos,key:'y',t:t,value:scfg.vrPos.y});
+          blockWalk.tweens.push({o:vrPos,key:'z',t:t,value:scfg.vrPos.z});
+        }
+      } else {
+        let cp=camera.position;
+        //rUtil.log('camPos '+Conet.f4(cp.x)+' '+Conet.f4(cp.y)+' '+Conet.f4(cp.z));
+        oscfg.camPos={x:cp.x,y:cp.y,z:cp.z}
+        if (scfg.camPos) {
+          blockWalk.tweens.push({o:cp,key:'x',t:t,value:scfg.camPos.x});
+          blockWalk.tweens.push({o:cp,key:'y',t:t,value:scfg.camPos.y});
+          blockWalk.tweens.push({o:cp,key:'z',t:t,value:scfg.camPos.z});
+        }
+      }
+      
+      return;
+      }
+      if (sc==1) {
+        sc=20;
+        if (pl0) {
+          pl0.intensity=12500;
+          //pl0.shadow.camera.far=sc*5;
+          //pl0.shadow.camera.near=sc*1;
+          //console.log(pl0.shadow.camera);
+        }
+        if (pl1) pl1.intensity=12500*0.3;
+        blockWalk.room=room;
+      } else {
+        sc=1; 
+        if (pl0) {
+          pl0.intensity=50;
+          //pl0.shadow.camera.far=sc*2;
+          //pl0.shadow.camera.near=sc*0.1;
+        }
+        if (pl1) pl1.intensity=50*0.3;
+        blockWalk.room=undefined;
+      }
+      room.scale.set(sc,sc,sc);//...
+    }
+    }
+    
+    ,{s:'MarCub',dy:0.02,ondown:function() {
+      //---
+      //marCub({x:0.2,y:0.7,z:-1.1,d:0.03,x0:0.9,y0:0.7,z0:0.5,strength:0.04,subtract:15}); //small scene xr0
+      marCub({x:1.15,y:0.85,z:-1.1,d:0.01,x0:0.5,y0:0.4,z0:0.5,strength:0.003,subtract:4});//big scene trunkGrass0
+      //...
+    }
+    }
+    
+    //,mmode={s:'Add',x:0.05,y:0.4,w:0.25,h:0.1,sub:[
+    //  {s:'Add',x:0.05,y:0.4,w:0.25,h:0.1,ondown:setMode}
+    // ,{s:'Pick',dy:0.02,ondown:setMode}
+    // ,{s:'Paint',dy:0.02,ondown:setMode}
+    // ,{s:'Del',dy:0.02,ondown:setMode}
+    //]}
+    
+    //,mmode=xrUtil.subMenu({md:{s:'-',x:0.05,y:0.4,w:0.25,h:0.1},a:['-','Add','Pick','Paint','Del','Pal'],ondown:setMode})
+    
+    ,{s:'Brush',x:0.05,y:0.52,w:0.25,h:0.1,noinp:1,align:'left'}//dy:0.02
+    ,mbrush={s:'1x1x1',dx:0.02,
+    _oninput:function(v) {
+      //---
+      //console.log(v);
+      //...
+    }
+    }
+    
+    //,{s:'v',dx:0.01,w:0.05}
+    ,xrUtil.subMenu({mval:mbrush,a:['1x1x1','2x2x2','3x3x3','3x1x3','1x3x1']})
+    
+    ,{s:'Pressure',x:0.05,y:0.64,w:0.25,h:0.1,noinp:1,align:'left'}
+    ,mpress={s:'1',dx:0.02}
+    ,xrUtil.subMenu({mval:mpress,a:['0.1','0.5','1']})
+    
+    ,mmodes['-']={s:'-',x:0.05,y:0.76,w:0.134,h:0.1,ondown:setMode,selected:true}//,color:'#240'
+    ,mmodes.Add={s:'Add',ms:'Multi Old',dx:0.02,ondown:setMode,_selected:true}
+    ,mmodes.Pick={s:'Pick',dx:0.02,ondown:setMode}
+    ,mmodes.Paint={s:'Paint',dx:0.02,ondown:setMode}
+    ,mmodes.Del={s:'Del',dx:0.02,ondown:setMode}
+    ,mmodes.Pal={s:'Pal',dx:0.02,ondown:setMode}
+    
+    
+    //selection box(es)
+    
     ];
+    
+    
+    selBox=new function() {
+      //---
+      
+      let box=new THREE.LineSegments(
+        new BoxLineGeometry(1,1,1,2,2,2),
+        new THREE.LineBasicMaterial({color:0x808080,
+        depthTest:false
+        })
+      );
+      //box.scale.set(0.3,0.3,0.3);
+      //box.position.set(0,1.5,-2);
+      box.renderOrder=1;box.visible=false;
+      room.add(box);
+      let pos={x:1,y:3,z:-2},dim={x:3,y:1,z:1},cb,lskey='voxXrSelbox',//cb=clipboard
+          colorIntegrated,self=this,boxSegs=[],mcopy,mname;
+          
+      self.boxes=[];
+      
+      let s=localStorage[lskey];
+      if (s) {
+        let h=JSON.parse(s);
+        pos=h.pos;dim=h.dim;
+        cb=h.cb;
+      }
+      
+      function paste(x,y,z) {
+        //---
+        if (!cb) { log('First copy sth.');return; }
+        let ps={dx:x-cb.x,dy:y-cb.y,dz:z-cb.z,vs:cb.vs,nomesh:1};
+        
+        let ci=colorIntegrated;
+        if (ci) {
+          if ((Date.now()-ci.t)<3000) {
+            ps.vd=ci.vd;ci.t=Date.now();
+          }
+        }
+        
+        Voxed.putVoxels(ps);
+        if (ps.changedVd) colorIntegrated={t:Date.now(),vd:ps.changedVd};
+        voxMeshNew();
+        //...
+      }
+      function getBoxAtCursor() {
+        //---
+        for (let i=self.boxes.length-1;i>=0;i--) {
+          let b=self.boxes[i];
+          if ((pos.x==b[0])&&(pos.y==b[1])&&(pos.z==b[2])&&
+              (dim.x==b[3])&&(dim.y==b[4])&&(dim.z==b[5])) return i;
+        }
+        return -1;
+        //...
+      }
+      function posDimBox() {
+        //---
+        let f=0.03,p=voxMeshPos;
+        box.position.set((pos.x-0.5+dim.x/2)*f+p.x,(pos.y-12.8+dim.y/2)*f+p.y,(pos.z-0.5+dim.z/2)*f+p.z);
+        box.scale.set(dim.x*f,dim.y*f,dim.z*f);
+        localStorage[lskey]=JSON.stringify({pos:pos,dim:dim,cb:cb});
+        
+        mname.s='No box';
+        let bi=getBoxAtCursor();
+        if (bi!=-1) {
+          mname.s='No name';
+          let b=self.boxes[bi];
+          if (b.length>6) mname.s=b[6].name;
+        }
+        //...
+      }
+      
+      
+      
+      
+      let m={s:'',x:0.15,y:0.9,w:0.595,h:0.06
+      
+      ,oninput:function(v) {
+        //---
+        try {
+        let a=JSON.parse('['+v+']');
+        if (a.length!=6) return;
+        pos.x=a[0];pos.y=a[1];pos.z=a[2];dim.x=a[3];dim.y=a[4];dim.z=a[5];
+        posDimBox();
+        //onsole.log(a);
+        } catch (e) {}
+        //...
+      }
+      };
+      
+      function setMs() {
+        //---
+        m.s=//'"box",'+
+          pos.x+','+pos.y+','+pos.z+','+dim.x+','+dim.y+','+dim.z;
+        //...
+      }
+      setMs();
+      
+      
+      
+      //console.log(m);
+      //m.oninput(m.s);
+      //---posDimBox();
+      let ma=[];let mvis;
+      ma.push(
+       m,
+      mcopy={s:'C',w:0.05,dx:0.02,ondown:function() {
+        //---
+        cb={
+          x:pos.x,y:pos.y,z:pos.z,
+          vs:Voxed.getVoxels({x:pos.x,y:pos.y,z:pos.z,dx:dim.x,dy:dim.y,dz:dim.z,colors:1})
+        };
+        //onsole.log(cb.vs);
+        colorIntegrated=undefined;
+        posDimBox();//---to write localstorage
+        log('Copied '+cb.vs.length+'b.');
+        //...
+      }
+       },
+      {s:'P',dx:0.02,ondown:function() {
+        //---
+        paste(pos.x,pos.y,pos.z);
+        //...
+      }
+       },
+      {s:'D',dx:0.02,ondown:function() {
+        //---
+        log('Selbox delete.');
+        Voxed.putVoxels({x:pos.x,y:pos.y,z:pos.z,dx:dim.x,dy:dim.y,dz:dim.z,'null':1,nomesh:1});
+        voxMeshNew();
+        //...
+      }
+       }
+      );
+      
+      function incDec() {
+        //---
+        let d=(this.s=='+')?1:-1,m=this.mode;
+        
+        switch (m) {
+        case 0:pos.x+=d;break;
+        case 1:pos.y+=d;break;
+        case 2:pos.z+=d;break;
+        case 3:dim.x+=d;break;
+        case 4:dim.y+=d;break;
+        case 5:dim.z+=d;break;
+        }
+        
+        posDimBox();
+        setMs();
+        //xrUtil.setNeedDrawUi();
+        //+this.mode);
+        //...
+      }
+      
+      for (let x=0;x<6;x++) 
+      ma.push(
+        {s:'+',x:0.27+x*0.06+(x>2?0.1:0),y:0.862,w:0.04,h:0.038,mode:x,ondown:incDec},
+        {s:'-',x:0.27+x*0.06+(x>2?0.1:0),y:0.962,w:0.04,h:0.038,mode:x,ondown:incDec}
+      );
+      
+      ma.push(
+      mvis={s:'',x:0.05,y:0.9,w:0.08,h:0.06,ondown:function() {
+        //---
+        box.visible=!box.visible;
+        for (let b of boxSegs) b.visible=box.visible;
+        this.color=box.visible?'green':undefined;
+        //...
+      }
+      }
+      );
+      
+      //for (let mh of ma) xrUtil.hud.buttons.push(mh);
+      
+      ma.splice(0,0,{s:'SelBox \u25b2',x:0.05,y:0.5,w:0.3,h:0.1},
+      
+      {s:'P MirrorX',dy:0.02,ondown:function() {
+        //---
+        if (!cb) { log('First copy sth.');return; }
+        Voxed.putVoxels({dx:pos.x+cb.x+dim.x-1
+          ,dy:pos.y-cb.y,dz:pos.z-cb.z,vs:cb.vs,nomesh:1,mirrorx:1});
+        voxMeshNew();
+        //...
+      }
+      }
+      ,{s:'P SwapXZ',dy:0.02,ondown:function() {
+        //---
+        if (!cb) { log('First copy sth.');return; }
+        Voxed.putVoxels({dx:pos.x-cb.z//+cb.x+dim.x-1
+          ,dy:pos.y-cb.y,dz:pos.z-cb.x,vs:cb.vs,nomesh:1,swapxz:1});
+        voxMeshNew();
+        //...
+      }
+      }
+      ,{s:'Toggle box',x:0.37,y:0.5,w:0.35,h:0.1,ondown:function() {
+        //---
+        if (!box.visible) mvis.ondown();
+        
+        //let done=false;
+        //for (let i=self.boxes.length-1;i>=0;i--) {
+        //  let b=self.boxes[i];
+        //  if ((pos.x==b[0])&&(pos.y==b[1])&&(pos.z==b[2])&&
+        //      (dim.x==b[3])&&(dim.y==b[4])&&(dim.z==b[5])) {
+        let i=getBoxAtCursor();
+        if (i!=-1) {
+          self.boxes.splice(i,1);
+          log('Box removed (#'+self.boxes.length+').');
+          //done=true;
+          //break;
+          //}
+        } else {
+        //if (!done) {
+          self.boxes.push([pos.x,pos.y,pos.z,dim.x,dim.y,dim.z]);
+          log('Box added (#'+self.boxes.length+')');
+        }
+        self.updateBoxMeshes();
+        //...
+      }
+      }
+      
+      );
+      
+      ma.push(mname={s:'Name',x:0.37,y:0.62,w:0.35,h:0.1,
+      oninput:function(v) {
+        //---
+        //onsole.log(v);
+        let bi=getBoxAtCursor();
+        if (bi==-1) return;
+        let b=self.boxes[bi];
+        if (b.length==6) b.push({});
+        b[6].name=v;
+        //...
+      }
+      });
+      
+      xrUtil.hud.buttons.push(
+      {s:'SelBox',x:0.05,y:0.88,w:0.3,h:0.1,stay:1,sub:ma}
+      );
+      posDimBox();
+      
+      //console.log('this='+this);
+      //console.log(this);
+      this.paste=paste;
+      
+      this.setPos=function(x,y,z) {
+        //---
+        //onsole.log('setPos');
+        
+        //check if x,y,z is in boxes
+        let done=false;
+        for (let b of self.boxes) {
+          if ((x>=b[0])&&(y>=b[1])&&(z>=b[2])&&(x<(b[0]+b[3]))&&(y<(b[1]+b[4]))&&(z<(b[2]+b[5]))) {
+            pos.x=b[0];pos.y=b[1];pos.z=b[2];dim.x=b[3];dim.y=b[4];dim.z=b[5];
+            done=true;
+            mcopy.ondown();
+          }
+        }
+        if (!done) { pos.x=x;pos.y=y;pos.z=z; }
+        posDimBox();
+        setMs();//m.s='"box",'+pos.x+','+pos.y+','+pos.z+','+dim.x+','+dim.y+','+dim.z;
+        xrUtil.setNeedDrawUi();
+        //...
+      }
+      ;
+      
+      this.updateBoxMeshes=function() {
+        //---
+        for (let bs of boxSegs) room.remove(bs);
+        boxSegs.length=0;
+        
+        for (let b of self.boxes) {
+          //---
+          let bo=new THREE.LineSegments(
+            new BoxLineGeometry(1,1,1,3,3,3),
+            new THREE.LineBasicMaterial({color:0x008000,
+            depthTest:false
+            })
+          );
+          bo.renderOrder=1;//box.visible=false;
+          room.add(bo);
+          boxSegs.push(bo);
+          let f=0.03,p=voxMeshPos,x=b[0],y=b[1],z=b[2],xl=b[3],yl=b[4],zl=b[5];
+          bo.position.set((x-0.5+xl/2)*f+p.x,(y-12.8+yl/2)*f+p.y,(z-0.5+zl/2)*f+p.z);
+          bo.scale.set(xl*f,yl*f,zl*f);
+          bo.visible=box.visible;
+        }
+        //...
+      }
+      //...
+    }
+    
+    
+    
+    //console.log(selBox);
+    
+    
+    if (1) {
+      composer = new EffectComposer( renderer );
+    
+      const renderPass = new RenderPass( scene, camera );
+      composer.addPass( renderPass );
+    
+      ssaoPass=new SSAOPass(scene,camera,window.innerWidth,window.innerHeight);
+      let p=ssaoPass;
+      p.kernelRadius=0.1;
+      p.minDistance=0.0001;
+      p.maxDistance=10;
+      
+      //onsole.log(ssaoPass);
+      composer.addPass( ssaoPass );
+      
+      if (1) {
+      bokehPass=new BokehPass(scene,camera,{
+        focus:1,
+        aperture:0.025,
+        maxblur:0.01
+      });
+      //onsole.log(bokehPass);
+      composer.addPass(bokehPass);
+      bokehPass.enabled=false;
+      }
+    
+      const outputPass=new OutputPass();
+      composer.addPass(outputPass);
+    }
+    //console.log(dbg);
     //---
   }
   function onWindowResize() {
@@ -377,6 +1386,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize( window.innerWidth, window.innerHeight );
+    if (composer) composer.setSize(window.innerWidth, window.innerHeight);
     //---
   }
   function cursorPos() {
@@ -386,9 +1396,118 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     const y=Math.floor(p.y*f-voxMeshPos.y*f+0.5+12);
     const z=Math.floor(p.z*f-voxMeshPos.z*f+0.5),ud=cursor.userData;
     ud.vx=x;ud.vy=y;ud.vz=z;
-    console.log(x+' '+y+' '+z);
+    //onsole.log(x+' '+y+' '+z);
     //...
   }
+  
+  function drawPaint() {
+    let p1=parseFloat(mpress.s);
+    if (p1==1) {
+      drawVoxel({noMeshAdd:1});
+      return;
+    }
+    let c=pickColor(1);
+    //onsole.log('c='+c+' drawColor='+drawColor);
+    if (c===undefined) return;
+    let ca=Voxed.etColors(),c0=ca[c],c1=ca[drawColor],p0=1-p1,
+      r=c0.r*p0+c1.r*p1,
+      g=c0.g*p0+c1.g*p1,
+      b=c0.b*p0+c1.b*p1,gr=16,cn;
+    
+    console.log('c0='+c0.r+' '+c0.g+' '+c0.b);
+    console.log('c1='+c1.r+' '+c1.g+' '+c1.b);
+    
+    //onsole.log('blended draw color 0: '+r+' '+g+' '+b);
+    
+    r=Math.floor(r*gr+0.5)/gr;
+    g=Math.floor(g*gr+0.5)/gr;
+    b=Math.floor(b*gr+0.5)/gr;
+    
+    //onsole.log('blended draw color 1: '+r+' '+g+' '+b);
+    
+    for (let i=ca.length-1;i>=0;i--) {
+      let ch=ca[i],d=Math.abs(ch.r-r)+Math.abs(ch.g-g)+Math.abs(ch.b-b);
+      if (d<0.001) { cn=i;//onsole.log('color found i='+i);
+        break; }
+    }
+    
+    if (cn===undefined) {
+      ca.push(new THREE.Color(r,g,b));
+      log('added blend color '+r+' '+g+' '+b+', now ca.len='+ca.length);
+      cn=ca.length-1;
+      Voxed.etColors(ca);
+    }
+    drawVoxel({c:cn,noMeshAdd:1});
+    //...
+  }
+  function drawPalette() {
+    //---
+    const ca=Voxed.etColors();
+    
+    let a0=[
+      [0xff,0,0],[0xff,0x99,0x33],[0xff,0xff,0],[0xff,0x33,0xff],
+      [0x99,0,0x99],[0,0,0xff],[0,0xcc,0xff],[0x33,0xff,0],[0,0x99,0],
+      [0x99,0x66,0],
+      [255,255,255]//,[175,175,175]
+      ,[100,100,100],[50,50,50],[25,25,25],[0,0,0]];
+    
+    //--- new approach: check which colors of a0 exist in ca, if not extend ca
+    //--- draw palette first from a0, then from ca, which not are in a0
+    if (1) {
+    
+    let drawIx=[],ixh={};
+    
+    if (1) { //merge above and existing palette
+    let addc=0;
+    for (let a of a0) {
+      let found=false;
+      for (let i=0;i<ca.length;i++) {
+        let c=ca[i];
+        let d=Math.abs(c.r-a[0]/0xff)+Math.abs(c.g-a[1]/0xff)+Math.abs(c.b-a[2]/0xff);
+        if (d<=0.0001) {
+          drawIx.push(i);ixh[i]=1;found=true;break;
+        }
+      }
+      if (found) continue;
+      ca.push(new THREE.Color(a[0]/0xff,a[1]/0xff,a[2]/0xff));addc++;
+      let i=ca.length-1;
+      drawIx.push(i);ixh[i]=1;
+    }
+    if (addc>0) {
+      Voxed.etColors(ca);
+      xrUtil.log('Added '+addc+' colors, now '+ca.length+'.');
+    }
+    }
+    
+    for (let i=0;i<ca.length;i++) if (ixh[i]===undefined) drawIx.push(i);
+    let cal=drawIx.length,sq=Math.floor(Math.sqrt(cal)+0.5);
+    for (let i=0;i<cal;i++) drawVoxel({brush:'1x1x1',c:drawIx[i],x:i%sq,y:Math.floor(i/sq)});
+    
+    } else 
+    /* old */ {
+      
+      let doadd=ca.length<a0.length;
+      if (!doadd) {
+        for (let i=0;i<a0.length;i++) {
+          let c=ca[ca.length-a0.length+i],a=a0[i];
+          let d=Math.abs(c.r-a[0]/0xff)+Math.abs(c.g-a[1]/0xff)+Math.abs(c.b-a[2]/0xff);
+          if (d>0.0001) { doadd=true;break; }
+        }
+      }
+      
+      if (doadd) {
+        for (let a of a0) ca.push(new THREE.Color(a[0]/0xff,a[1]/0xff,a[2]/0xff));
+        Voxed.etColors(ca);
+        xrUtil.log('Added colors, now '+ca.length+'.');
+      }
+      
+      //onsole.log(ca);
+      let cal=ca.length,sq=Math.floor(Math.sqrt(cal)+0.5);
+      for (let i=0;i<cal;i++) drawVoxel({brush:'1x1x1',c:i,x:i%sq,y:Math.floor(i/sq)});
+    }
+    //...
+  }
+  
   function drawVoxel(ps) {
     //---
     //const p=cursor.position,f=11.11*3/voxScale;//15.22;
@@ -401,35 +1520,80 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     if (ps.del) {
       let v=Voxed.etV(x,y,z);
       if (!v) return;
-      room.remove(voxMesh);
-      Voxed.etV(x,y,z,null);
-      var m=Voxed.generateMesh();
-      var sc=voxScale;
-      m.scale.set(sc,sc,sc);
-      m.position.copy(voxMeshPos);
-      room.add(m);voxMesh=m;
+      //room.remove(voxMesh);
+      
+      let a=mbrush.s.split('x'),xl=a[0]||1,yl=a[1]||1,zl=a[2]||1;
+      for (let xh=0;xh<xl;xh++)
+      for (let yh=0;yh<yl;yh++)
+      for (let zh=0;zh<zl;zh++)
+        Voxed.etV(x+xh-Math.floor(xl/2),y+yh-Math.floor(yl/2),z+zh-Math.floor(zl/2),null);  
+      
+      //Voxed.etV(x,y,z,null);
+      //var m=Voxed.generateMesh();
+      //var sc=voxScale;
+      //m.scale.set(sc,sc,sc);
+      //m.position.copy(voxMeshPos);
+      //room.add(m);voxMesh=m;
+      voxMeshNew();
       return;
     }
     
+    if (mmodes.Add.ms=='Paste') {
+    //if (1) {
+      log('Paste nao '+x+','+y+','+z);
+      selBox.paste(x,y,z);
+      return;
+    }
+    
+    
     //onsole.log(p.y+' '+y);
-    if (!voxMeshAdd) {
+    let vma=!ps.noMeshAdd;
+    if (vma&&!voxMeshAdd) {
       voxVa=Voxed.etVa();
       voxVh=Voxed.etVh();
       Voxed.etVa([]);
       Voxed.etVh({});
     }
     
-    let v=Voxed.etV(x,y,z);
+    let isPaint=(mmodes.Paint.selected);
+    
+    let v=(vma&&isPaint)?voxVh[x+'_'+y+'_'+z]:Voxed.etV(x,y,z);
     let col=(ps.c===undefined)?drawColor:ps.c;
-    if (v&&(v.c==col)) return;
-    if (voxMeshAdd) room.remove(voxMeshAdd);//room.remove(voxMesh);
-    Voxed.etV(x,y,z,{c:col});
+    
+    if (v&&(v.c==col)) { 
+      //onsole.log('v with same col, skip');
+      return; }
+    
+    if (isPaint) {
+      if (!v) { 
+        //onsole.log('no v, skip paint');
+        //console.log(voxVh);
+        return; }
+      //onsole.log('paint');
+    }
+    
+    if (vma&&voxMeshAdd) { 
+      room.remove(voxMeshAdd);voxMeshAdd=undefined; 
+    }//room.remove(voxMesh);
+    
+    let brush=ps.brush||mbrush.s;
+    let a=brush.split('x'),xl=a[0]||1,yl=a[1]||1,zl=a[2]||1;
+    for (let xh=0;xh<xl;xh++)
+    for (let yh=0;yh<yl;yh++)
+    for (let zh=0;zh<zl;zh++)
+      Voxed.etV(x+xh-Math.floor(xl/2),y+yh-Math.floor(yl/2),z+zh-Math.floor(zl/2),{c:col});
     var m=Voxed.generateMesh();
     var sc=voxScale;
     m.scale.set(sc,sc,sc);
     m.position.copy(voxMeshPos);
-    room.add(m);voxMeshAdd=m;
-    tVoxAdd=1000;
+    room.add(m);
+    if (vma) { 
+      voxMeshAdd=m;tVoxAdd=1000; 
+    } else {
+      room.remove(voxMesh);
+      voxMesh=m;
+      updateSegmentMeshes();
+    }
     //...
   }
   function drawMerge() {
@@ -447,6 +1611,9 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     room.remove(voxMeshAdd);
     room.remove(voxMesh);
     room.add(m);voxMesh=m;voxMeshAdd=undefined;
+    xrUtil.log('Merged vox meshes.');
+    
+    updateSegmentMeshes();
     //...
   }
   function animate() {
@@ -454,6 +1621,36 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     renderer.setAnimationLoop( render );
     
   }
+  
+  function pickColor(onlyRet) {
+    //---
+    //if (!onlyRet) 
+    drawMerge();
+    cursorPos();
+    const ud=cursor.userData,x=ud.vx,y=ud.vy,z=ud.vz;
+    if (!onlyRet) log('pickColor '+x+','+y+','+z);
+    if (selBox) selBox.setPos(x,y,z);
+    const v=Voxed.etV(x,y,z);
+    
+    if (onlyRet) return v?v.c:undefined;
+    
+    let c=drawColor;
+    if (v) c=v.c;
+    if ((drawColor!=c)||(cursor.material===mGreen)) {
+      drawColor=c;
+      const ca=Voxed.getColors(),ch=ca[drawColor];
+      let col='rgb('+Math.floor(ch.r*255)+','+Math.floor(ch.g*255)+','+Math.floor(ch.b*255)+')'
+      mmodes.Pick.color=col;
+      //onsole.log(mmodes.Pick.color);
+      xrUtil.setNeedDrawUi();
+      cursor.material=new THREE.MeshPhongMaterial({color:new THREE.Color(ch.r,ch.g,ch.b),flatShading:true});
+      if (m2modes.Pick.c) m2modes.Pick.c.style.backgroundColor=col;
+      console.log(m2modes.Pick.c);
+      //onsole.log(m2pick);
+    }
+    //...
+  }
+  
   function render() {
     
     const delta=clock.getDelta()*60,dt=delta*10;
@@ -559,7 +1756,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     if (ctrl1&&XrUtil.isSession&&cursor.visible) {
       let pc=ctrl1.position,pr=room.position,hudMesh=xrUtil.hudMesh;
-      vt.set(0,0,-0.4);
+      vt.set(0,0,-0.4*room.scale.x);
       vt.applyQuaternion(ctrl1.quaternion);
       //console.log(pc);
       //cursor.position.set(pc.x-pr.x+vt.x,pc.y-pr.y+vt.y,pc.z-pr.z+vt.z);
@@ -585,16 +1782,17 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
           ////  Pd5.animStart(u.o,'stand2');
           ////}
         //}
-        if (gp1.buttons[0].pressed) {
-          drawVoxel({});
+        if (gp1.buttons[0]?.pressed) {
+          if (mmodes.Paint.selected) drawPaint();
+          else drawVoxel({});
           hudMesh.visible=false;
-        } else if (gp1.buttons[1].pressed) {
+        } else if (gp1.buttons[1]?.pressed||(mmodes.Del.selected)) {
           drawMerge();
           //onsole.log('gp11');
           cursor.material=mRed;
           drawVoxel({del:1});
           hudMesh.visible=false;
-        } else if (gp1.buttons[4].pressed) {
+        } else if (gp1.buttons[4]?.pressed) {
           //if (cursor.material===mGreen) {
           //  const ca=Voxed.getColors();  
           //  //onsole.log(ca);
@@ -603,22 +1801,24 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
           //  cursor.material=new THREE.MeshPhongMaterial({color:new THREE.Color(ch.r,ch.g,ch.b),flatShading:true});
           //  console.log(drawColor);
           //}
-          const ca=Voxed.getColors(),cal=ca.length,sq=Math.floor(Math.sqrt(cal)+0.5);
-          for (let i=0;i<cal;i++) drawVoxel({c:i,x:i%sq,y:Math.floor(i/sq)});
+          //const ca=Voxed.getColors(),cal=ca.length,sq=Math.floor(Math.sqrt(cal)+0.5);
+          //for (let i=0;i<cal;i++) drawVoxel({c:i,x:i%sq,y:Math.floor(i/sq)});
+          drawPalette();
           hudMesh.visible=false;
-        } else if (gp1.buttons[5].pressed) {
+        } else if (gp1.buttons[5]?.pressed) {
           //---
-          drawMerge();
-          cursorPos();
-          const ud=cursor.userData,x=ud.vx,y=ud.vy,z=ud.vz;
-          const v=Voxed.etV(x,y,z);
-          let c=drawColor;
-          if (v) c=v.c;
-          if ((drawColor!=c)||(cursor.material===mGreen)) {
-            drawColor=c;
-            const ca=Voxed.getColors(),ch=ca[drawColor];
-            cursor.material=new THREE.MeshPhongMaterial({color:new THREE.Color(ch.r,ch.g,ch.b),flatShading:true});
-          }
+          pickColor();
+          //drawMerge();
+          //cursorPos();
+          //const ud=cursor.userData,x=ud.vx,y=ud.vy,z=ud.vz;
+          //const v=Voxed.etV(x,y,z);
+          //let c=drawColor;
+          //if (v) c=v.c;
+          //if ((drawColor!=c)||(cursor.material===mGreen)) {
+          //  drawColor=c;
+          //  const ca=Voxed.getColors(),ch=ca[drawColor];
+          //  cursor.material=new THREE.MeshPhongMaterial({color:new THREE.Color(ch.r,ch.g,ch.b),flatShading:true});
+          //}
           hudMesh.visible=false;
         } else {
           if (cursor.material!==mGreen) cursor.material=mGreen;
@@ -653,18 +1853,98 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     blockWalk.calc(dt);
     
     if (1&&unit0&&!roomMatrix) {
-      const p=unit0.m.position;
-      room.position.set(-p.x+vrPos.x,-p.y-0.05+vrPos.y,-p.z+vrPos.z);
+      const p=unit0.m.position,sc=room.scale.x,move0=false;
+      let x=-p.x*sc,
+          y=-p.y*sc,//-0.05*sc,
+          z=-p.z*sc,
+          a=Math.PI-unit0.o.ay;
+      let f=(room.scale.x-scaleCfg[0].sc)/(scaleCfg[1].sc-scaleCfg[0].sc),f1=1-f;
+      //if (blockWalk.room) {
+        let a0=-a,
+            x0=x*Math.cos(a0)-z*Math.sin(a0),
+            z0=x*Math.sin(a0)+z*Math.cos(a0);
+        x=x0*f +(move0?x*f1:0);
+        y=y*f  +(move0?y*f1:0);
+        z=z0*f +(move0?z*f1:0);
+        room.rotation.y=f*a;
+      //} else 
+      //  room.rotation.y=0;
+      room.position.set(
+        x              +vrPos.x,
+        y-0.05*sc      +vrPos.y,
+        //-p.y*sc-0.05*sc+vrPos.y,
+        z              +vrPos.z);
+      //room.rotation.y=a;
+      
+      //room.quaternion.setFromEuler(room.rotation,false);
+      //room.matrix.compose(room.quaternion,room.position,room.scale);
+      //room.matrix.compose(room.position,room.quaternion,room.scale);
+      //room.matrixWorldNeedsUpdate=true;
+      
       room.updateMatrix();
     }
     
     
     threeRender(dt);
+    
+    renderSegments(dt);
+    
     if (controls) controls.update();
     
-    renderer.render( scene, camera );
+    if (composer&&!xrUtil.isSession) composer.render();
+    else renderer.render( scene, camera );
     //...
   }
+  function marCub(ps) {
+    //---
+    let material=
+    //1?
+    new THREE.MeshPhongMaterial({vertexColors:true})
+    //:new THREE.MeshStandardMaterial( {
+    //  color: 0xffffff,
+    //  // envMap: reflectionCube,
+    //  roughness: 0.9,
+    //  metalness: 0.0,
+    //  transparent:true,
+    //  vertexColors:true,
+    //})
+    ;
+    
+    //let ps={x:0.2,y:0.7,z:-1.1,d:0.03,x0:0.9,y0:0.7,z0:0.5,strength:0.04,subtract:20};
+    //let ps={x:1.15,y:0.85,z:-1.1,d:0.01,x0:0.5,y0:0.4,z0:0.5,strength:0.003,subtract:5};
+    
+    if (blob) scene.remove(blob);
+    blob=new MarchingCubes(64,material,false,true,500000);let sc=0.25*0.03/ps.d;
+    blob.position.set(ps.x,ps.y,ps.z);//0.2,0.7,-1.1);//y=1;
+    blob.scale.set(sc,sc,sc);
+    blob.receiveShadow=true;
+    blob.castShadow=true;
+    scene.add( blob );
+    
+    let points=[],vh=Voxed.etVh(),d=ps.d,ca=Voxed.etColors();
+    //onsole.log(va);
+    //for (let v of va)
+    for (var k in vh) if (vh.hasOwnProperty(k)) {
+      let v=vh[k];
+      points.push({position:new THREE.Vector3(ps.x0+v.x*d,ps.y0+v.y*d,ps.z0+v.z*d),strength:ps.strength,subtract:ps.subtract,color:ca[v.c]
+      //new THREE.Color(0.1,0.9,0.1)
+       }); }
+    //onsole.log(points);
+    //for (let i=0;i<10;i++) 
+    //  points.push({position:new THREE.Vector3(0.5+i*0.01,0.5,0.5),strength:0.02,subtract:10,color:new THREE.Color(0.1,0.9,0.1)});
+    
+    
+    blob.reset();
+    for (let i=0;i<points.length;i++) {
+      const point=points[i];
+      const position=point.position;
+      blob.addBall(position.x,position.y,position.z,point.strength,point.subtract,point.color);
+    }
+    blob.update();
+    //...
+  }
+  
+  window.marCub=marCub;
   //...
 }
 )();
@@ -672,18 +1952,12 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 </script>
 </body>
 </html><script>
-//fr o,30
-//fr o,30,23
-//fr o,30,25
-//fr o,30,26
-//fr o,30,26,2
-//fr o,30,27
-//fr o,30,30
-//fr o,30,30,104
-//fr o,30,30,111
-//fr o,30,30,112
-//fr o,30,32
-//fr o,30,33
-//fr o,30,34
-//fr o,30,36
-//fr p,29,21
+//fr o,43
+//fr o,43,47
+//fr o,43,48,2
+//fr o,43,55
+//fr o,43,55,84
+//fr o,43,59
+//fr o,43,60
+//fr o,43,66
+//fr p,27,122

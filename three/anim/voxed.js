@@ -114,9 +114,11 @@ var Voxed;
     //...
   }
   
-  function generateMesh() {
+  function generateMesh(ps) {
     
-    var ge=new THREE.Geometry();
+    if (!ps) ps={};
+    let buf=true;
+    var ge=buf?new THREE.BufferGeometry():new THREE.Geometry();
     //threeEnv.addTri({ge:ge,a0:[0,0,0],a1:[-10,0,0],a2:[0,10,0],dim:1});
     
     var //c=new THREE.Color(0.5,0.5,0.5),
@@ -129,6 +131,12 @@ var Voxed;
           x0=x*w+w/2,y0=y*w-0.4+w/2,z0=z*w+w/2,
           c=colors[v.c||0];
       if (isplaney&&(y>planeY)) continue;
+      let b=ps.box;
+      if (b) {
+        if ((x<b[0])||(x>b[0]+b[3]-1)||
+            (y<b[1])||(y>b[1]+b[4]-1)||
+            (z<b[2])||(z>b[2]+b[5]-1)) continue;
+      }
       //onsole.log(v);
       if (!etV(x,y,z-1)) threeEnv.addQuad({ge:ge,a0:[x0,y0,z0-w],a1:[-w,0,0],a2:[0,w,0],a3:[-w,w,0],dim:1,c:c,f:f});
       if (!etV(x,y,z+1)) threeEnv.addQuad({ge:ge,a0:[x0-w,y0,z0],a1:[w,0,0],a2:[0,w,0],a3:[w,w,0],dim:1,c:c,f:f});
@@ -138,6 +146,8 @@ var Voxed;
       if (!etV(x,y-1,z)) threeEnv.addQuad({ge:ge,a0:[x0,y0,z0],a1:[-w,0,0],a2:[0,0,-w],a3:[-w,0,-w],dim:1,c:c,f:f});
       count++;
     }
+    
+    if (count==0) return undefined;
     //onsole.log('voxed.voxMesh count='+count);
     
     if (isplaney) {
@@ -175,10 +185,18 @@ var Voxed;
     }
     }
     
+    if (buf) { //---24.05.12 maybe move this into threeEnv.finishGeometry()
+      threeEnv.finishBufGem({ge:ge});
+      //ge.setIndex(ge.indices);
+      //ge.setAttribute('position',new THREE.Float32BufferAttribute(ge.vertices,3));
+      ////this.setAttribute('normal',  new THREE.Float32BufferAttribute(normals,3));
+      ////this.setAttribute('uv',      new THREE.Float32BufferAttribute(uvs,2));
+      //ge.setAttribute('color',   new THREE.Float32BufferAttribute(ge.colors,3)); 
+    }
     
     ge.computeVertexNormals();
-    var bge=new THREE.BufferGeometry().fromGeometry(ge);
-    var mh={vertexColors:THREE.FaceColors};
+    var bge=buf?ge:new THREE.BufferGeometry().fromGeometry(ge);
+    var mh={vertexColors:true};//THREE.FaceColors};
     if (isplaney) { mh.transparent=true;mh.opacity=0.75; }
     
     var m=new THREE.Mesh(bge,new THREE.MeshPhongMaterial(
@@ -360,11 +378,13 @@ var Voxed;
   }
   
   
-  function serialize() {
+  function serialize(ps) {
     //---
     if (isTiles) calcTiles({onlyClear:1});
     //--
-    var first,data='{"vw":'+vw;
+    var first,data='{';
+    
+    data+='"vw":'+vw;
     
     data+=',"colors":[\n';
     for (var ci=0;ci<colors.length;ci++) {
@@ -387,7 +407,18 @@ var Voxed;
     if (mgroundbox) data+=',"groundbox":'+(mgroundbox.checked?1:0)+'\n';
     
     if (blocks) data+=',"blocks":'+JSON.stringify(blocks)+'\n';
-    if (userData) data+=',"userData":'+JSON.stringify(userData)+'\n';
+    if (userData) {
+      ////data+=',"userData":'+JSON.stringify(userData)+'\n';
+      //data+=',"userData":{\n';let first=true;
+      //for (let k of Object.keys(userData)) {
+      //  data+=(first?' ':',')+'"'+k+'":'+JSON.stringify(userData[k])+'\n';first=false;
+      //}
+      //data+='}\n';
+      
+      //console.log(
+      data+=',"userData":'+Conet.jsonStringify(userData,undefined,undefined,{newLine:{camPos:1,targetPos:1,boxes:1,segments:1,segmentsA:1}});
+      
+    }
     
     data+='}';
     
@@ -400,7 +431,7 @@ var Voxed;
   }
   function load(d) {
     //--
-    
+    //onsole.log('load d='+d);
     if (Voxed.onBeforeLoad) Voxed.onBeforeLoad();
     
     //var d=JSON.parse(v);
@@ -411,7 +442,8 @@ var Voxed;
     //if (!d.colors) d.colors=[new THREE.Color(0x666666),new THREE.Color(0xffffff),new THREE.Color(0xff0000),new THREE.Color(0xbb9900),
     //    new THREE.Color(0x118811)];
     
-    if (d.colors&&d.colors.length>0) {
+    if (d.colors&&(d.colors.length>0)) {
+      //onsole.log('colors:'+d.colors.length);
       colors=[];
       var dci=0;
       for (var v of d.colors) {
@@ -616,7 +648,7 @@ var Voxed;
       if (!etV(x,y,z)) {
         let h;
         //p.c=undefined;
-        etV(x,y,z,h={
+        etV(x+(ps.ox||0),y+(ps.oy||0),z+(ps.oz||0),h={
           c:(((p.c!==undefined)&&!ps.color3dy?Math.floor(p.c+0.5):
             (((p.c===undefined)?0:Math.floor(p.c+0.5))+y+Math.floor(colors.length/2)))+colors.length*1000)%colors.length});
         //onsole.log(y);
@@ -905,7 +937,114 @@ var Voxed;
     return blocks;
   }
   
-  console.log('Voxed 0.2060 ');//FOLDORUPDATEVERSION
+  function getVoxels(ps) {
+    //---
+    if (ps.x!==undefined) {
+      var va=[];
+      for (var z=ps.z;z<ps.z+ps.dz;z++)
+      for (var y=ps.y;y<ps.y+ps.dy;y++)
+      for (var x=ps.x;x<ps.x+ps.dx;x++)
+        if ((v=etV(x,y,z))!==undefined) va.push(v);
+      //var ret=JSON.stringify({voxels:va});
+      if (ps.mirX||ps.mirZ||ps.swXZ) {
+        //va=JSON.parse(ret).voxels;
+        var vh;
+        for (var v of va) {
+          if (ps.swXZ) { vh=v.x;v.x=ps.x+v.z-ps.z;v.z=ps.z+vh-ps.x; }
+          if (ps.mirX) v.x=ps.x+(ps.dx-1-(v.x-ps.x));
+          if (ps.mirZ) v.z=ps.z+(ps.dz-1-(v.z-ps.z));
+        }
+        //ret=JSON.stringify({voxels:va});
+      }
+      let rh={voxels:va};
+      if (ps.colors) {
+        let a=[];
+        for (let c of colors) { a.push([f4(c.r),f4(c.g),f4(c.b)]); }
+        rh.colors=a;
+      }
+      var ret=JSON.stringify(rh);
+      return ret;
+    }
+    
+    
+    var ret=serialize();
+    vh={};
+    return ret;
+    //---
+  }
+  function putVoxels(ps) {
+    if (ps.vs||ps.vd) {//---voxel string, voxel data
+    var d=ps.vd||JSON.parse(ps.vs),sw;
+    
+    if (d.colors) {
+      console.log('integrate colors now');//+d.colors.length);
+      let usedcolors={};
+      for (let v of d.voxels) usedcolors[v.c]=1;
+      //onsole.log(Object.keys(usedcolors));
+      for (let c of Object.keys(usedcolors)) {
+        let ca=d.colors[parseInt(c)],ccol={r:ca[0],g:ca[1],b:ca[2]};
+        checkIndexColor(ccol);
+        usedcolors[c]={redir:ccol.ci};
+      }
+      for (let v of d.voxels) v.c=usedcolors[v.c].redir;
+      delete(d.colors);
+      ps.changedVd=d;
+      //onsole.log(usedcolors);
+    }
+    
+    for (var v of d.voxels) {
+      if (ps.colRedir) {
+        var vc=ps.colRedir[v.c];
+        if (vc!==undefined) v.c=vc;
+      }
+      if (v.c>=colors.length) v.c=0;
+      
+      //---following block is duplicated, so that v isnt changed. this is needed
+      //---for using pd.vd instead of ps.vs.
+      //---maybe the current color integrate buffer tech isnt worth the effort,
+      //---instead dont used ps.vd, but only bufferusedcolor.redir, 
+      //---apply it with colRedir..
+    
+      if (ps.vd||ps.changedVd) { //--- dont change v's
+        let x=v.x,y=v.y,z=v.z;
+        if (ps.mirrorx) x=-x;
+        if (ps.mirrorz) z=-z;
+        if (ps.swapxz) { sw=x;x=z;z=sw; }
+        x+=ps.dx||0;y+=ps.dy||0;z+=ps.dz||0;
+        etV(x,y,z,{x:x,y:y,z:z,c:v.c}); 
+      } else {                  //---- change v's
+        if (ps.mirrorx) v.x=-v.x;
+        if (ps.mirrorz) v.z=-v.z;
+        if (ps.swapxz) { sw=v.x;v.x=v.z;v.z=sw; }
+        v.x+=ps.dx||0;v.y+=ps.dy||0;v.z+=ps.dz||0;
+        etV(v.x,v.y,v.z,v); 
+      }
+    }
+    }
+    
+    else if (ps.x!==undefined) {
+      var c=ps.c||0;
+      if (ps.col) {
+        checkIndexColor(ps.col);
+        c=ps.col.ci;
+      }
+      for (var z=ps.z;z<ps.z+ps.dz;z++)
+      for (var y=ps.y;y<ps.y+ps.dy;y++)
+      for (var x=ps.x;x<ps.x+ps.dx;x++) {
+        if (ps.f) { 
+          var r=ps.f(2*(x-ps.x)/(ps.dx-1)-1,2*(y-ps.y)/(ps.dy-1)-1,2*(z-ps.z)/(ps.dz-1)-1);
+          if (!r) continue;
+          if (r.col) { checkIndexColor(r.col);c=r.col.ci; }
+        }
+        etV(x,y,z,ps.null?null:{c:c});
+      }
+    }
+    
+    if (!ps.nomesh) voxMesh();
+    //...
+  }
+  
+  console.log('Voxed 0.2151 ');//FOLDORUPDATEVERSION
   
   if ((!window.planim)||(window.planim.noVoxed)) {
     //window.Voxed=this;
@@ -915,6 +1054,8 @@ var Voxed;
     Voxed.toBlocks=toBlocks;
     Voxed.load=load;
     Voxed.serialize=serialize;
+    Voxed.getVoxels=getVoxels;
+    Voxed.putVoxels=putVoxels;
     
   Voxed.etVh=function(h) {
     if (h===undefined) return vh;
@@ -929,8 +1070,19 @@ var Voxed;
   Voxed.getVa=function() {
     return va;
   }
+  Voxed.etColors=function(a) {
+    if (a!==undefined) colors=a;
+    return colors;
+    //...
+  }
   Voxed.getColors=function() {
     return colors;
+  }
+  
+  Voxed.etUserData=function(h) {
+    if (h) userData=h;
+    return userData;
+    //...
   }
     return;
   }
@@ -961,74 +1113,10 @@ var Voxed;
   
   
   //---script funcs
-  planim.getVoxels=function(ps) {
-    //---
-    if (ps.x!==undefined) {
-      var va=[];
-      for (var z=ps.z;z<ps.z+ps.dz;z++)
-      for (var y=ps.y;y<ps.y+ps.dy;y++)
-      for (var x=ps.x;x<ps.x+ps.dx;x++)
-        if ((v=etV(x,y,z))!==undefined) va.push(v);
-      var ret=JSON.stringify({voxels:va});
-      if (ps.mirX||ps.mirZ||ps.swXZ) {
-        va=JSON.parse(ret).voxels;
-        var vh;
-        for (var v of va) {
-          if (ps.swXZ) { vh=v.x;v.x=ps.x+v.z-ps.z;v.z=ps.z+vh-ps.x; }
-          if (ps.mirX) v.x=ps.x+(ps.dx-1-(v.x-ps.x));
-          if (ps.mirZ) v.z=ps.z+(ps.dz-1-(v.z-ps.z));
-        }
-        ret=JSON.stringify({voxels:va});
-      }
-      return ret;
-    }
-    
-    
-    var ret=serialize();
-    vh={};
-    return ret;
-    //---
-  }
-  ;
-  planim.putVoxels=function(ps) {
-    if (ps.vs) {
-    var d=JSON.parse(ps.vs),sw;
-    for (var v of d.voxels) {
-      if (ps.colRedir) {
-        var vc=ps.colRedir[v.c];
-        if (vc!==undefined) v.c=vc;
-      }
-      if (v.c>=colors.length) v.c=0;
-      if (ps.mirrorx) v.x=-v.x;
-      if (ps.mirrorz) v.z=-v.z;
-      if (ps.swapxz) { sw=v.x;v.x=v.z;v.z=sw; }
-      v.x+=ps.dx||0;v.y+=ps.dy||0;v.z+=ps.dz||0;
-      etV(v.x,v.y,v.z,v);
-    }
-    }
-    
-    else if (ps.x!==undefined) {
-      var c=ps.c||0;
-      if (ps.col) {
-        checkIndexColor(ps.col);
-        c=ps.col.ci;
-      }
-      for (var z=ps.z;z<ps.z+ps.dz;z++)
-      for (var y=ps.y;y<ps.y+ps.dy;y++)
-      for (var x=ps.x;x<ps.x+ps.dx;x++) {
-        if (ps.f) { 
-          var r=ps.f(2*(x-ps.x)/(ps.dx-1)-1,2*(y-ps.y)/(ps.dy-1)-1,2*(z-ps.z)/(ps.dz-1)-1);
-          if (!r) continue;
-          if (r.col) { checkIndexColor(r.col);c=r.col.ci; }
-        }
-        etV(x,y,z,ps.null?null:{c:c});
-      }
-    }
-    
-    if (!ps.nomesh) voxMesh();
-    //...
-  }
-  ;
+  planim.getVoxels=getVoxels;
+  planim.putVoxels=putVoxels;
+  
+  
   planim.inpDown=function(inp) {
     //console.log('voxed.inpDown');
     //console.log(inp);
@@ -2839,6 +2927,7 @@ var Voxed;
           if (fn.indexOf('/tile')!=-1) {
             //calcTiles();
             isTiles=true;
+            Conet.log('Do conet.calcTiles() in console to calc tiles.');
           } else isTiles=false;
           
           voxMesh();
@@ -2958,7 +3047,10 @@ var Voxed;
       cfm.sub.push(
       
       {s:'Json',ms:'import/export',doctrl:'Json data',mcfs:0.07,ta:true,jsonCheck:1,wrap:0,tacols:30,tarows:20,setfunc:function(v,initLoad) {
-        load(v);
+        //---
+        console.log('Json.setfunc before load v.length='+v.length);
+        load(JSON.parse(v));
+        voxMesh();
         //...
       }
       ,valuef:function() {
@@ -3007,7 +3099,7 @@ var Voxed;
       
       
       var startEditing=app;//for mib4
-      Menu.init([{s:'Voxed',ms:planim.version+'- 0.3017 ',sub:msub}//FOLDORUPDATEVERSION
+      Menu.init([{s:'Voxed',ms:planim.version+'- 0.3108 ',sub:msub}//FOLDORUPDATEVERSION
       
       ,medit={s:'Edit',checked:startEditing,checkbox:1,ms:'Edit',actionf:function(v) {
         planim.views[0].controls.enabled=!this.checked;
@@ -3095,23 +3187,29 @@ var Voxed;
 //fr o,2,13,3
 //fr o,2,13,7
 //fr o,2,13,11
-//fr o,2,15
-//fr o,2,35
+//fr o,2,17
+//fr o,2,22
+//fr o,2,40,7
 //fr o,2,40,9
 //fr o,2,40,11
 //fr o,2,40,14
-//fr o,2,54
-//fr o,2,56
-//fr o,2,94,16,7
-//fr o,2,94,64,1
-//fr o,2,95,3,10
-//fr o,2,96,2
-//fr o,2,96,4
-//fr o,2,96,32,74
-//fr o,2,96,32,74,15
-//fr o,2,96,32,83
-//fr o,2,107
-//fr o,2,107,36,31
-//fr o,2,107,38
-//fr o,2,107,38,5
-//fr p,16,78
+//fr o,2,40,17
+//fr o,2,59
+//fr o,2,60
+//fr o,2,62
+//fr o,2,65
+//fr o,2,102,16,7
+//fr o,2,102,64,1
+//fr o,2,103,3,10
+//fr o,2,104,2
+//fr o,2,104,4
+//fr o,2,104,32,74
+//fr o,2,104,32,74,15
+//fr o,2,104,32,83
+//fr o,2,115,36,31
+//fr o,2,115,38
+//fr o,2,115,38,4
+//fr o,2,115,38,4,1
+//fr o,2,115,38,5
+//fr o,2,115,38,59
+//fr p,31,53

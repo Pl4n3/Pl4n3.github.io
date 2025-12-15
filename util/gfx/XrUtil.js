@@ -5,7 +5,7 @@ import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFa
 let XrUtil={};
 (function(pself) {
   //---
-  let version='v.1.751 ',//FOLDORUPDATEVERSION
+  let version='v.1.757 ',//FOLDORUPDATEVERSION
       self=pself,ctrl0,ctrl1,gp0,gp1,camera,scene,room,vrPos,huds=[],hudMesh,
       hud={lines:['XrUtil '+version],cursor:{x:0.5,y:0.5,vis:false},buttons:[]},
       raycaster,INTERSECTED,hudCount=0,needDrawUi=false,input,uisc=2,gps,
@@ -277,6 +277,7 @@ let XrUtil={};
       if (v=='Phone') hudMesh.position.set(-0.1,0,-0.17);
       if (v=='Away') hudMesh.position.set(-0.35,0.1,-0.4);
       if (v=='Faraway') hudMesh.position.set(-1,0.1,-0.4);
+      this.value=v;
       //o.rotation.y=0.3; //-0.15,0.1,-0.4
       //...
     }
@@ -518,6 +519,13 @@ let XrUtil={};
   self.hudIntersects=hudIntersects;
   self.log=function(s) {
     //---
+    
+    if (!self.isSession) {
+      let v=self.menuHudPosition.value;
+      //onsole.log('v='+v);
+      if ((v=='Away')||(v=='Faraway')) Conet.log(s);
+    }
+    
     let lines=hud.lines,doAdd=true;
     if (lines.length>0) {
       if (lines[lines.length-1]==s) { lastLogCount++;doAdd=false; }
@@ -1180,6 +1188,7 @@ let XrUtil={};
 )(XrUtil);
 export { XrUtil };
 //fr o,5
+//fr o,5,15
 //fr o,5,15,9
 //fr o,5,15,11
 //fr o,5,15,42
@@ -1192,15 +1201,14 @@ export { XrUtil };
 //fr o,5,15,102,6
 //fr o,5,18,3
 //fr o,5,18,5
+//fr o,5,23
 //fr o,5,24,37
 //fr o,5,24,41
 //fr o,5,24,43
 //fr o,5,24,45
-//fr o,5,28
-//fr o,5,28,17
 //fr o,5,30,1
 //fr o,5,32,12
 //fr o,5,32,19
 //fr o,5,32,23
 //fr o,5,32,25
-//fr p,6,111
+//fr p,46,230

@@ -145,7 +145,8 @@ function threeCreateMesh(lo,first,px,py,pz,scale,mat) {
     m.baVerts=ba;
     ge.setAttribute('normal',ba=new THREE.BufferAttribute(new Float32Array(norms),3));
     m.baNorms=ba;
-    ge.setAttribute('uv',new THREE.BufferAttribute(new Float32Array(uvs),2));
+    ge.setAttribute('uv',ba=new THREE.BufferAttribute(new Float32Array(uvs),2));
+    m.baUvs=ba;
   }
   m.ve2=ve2;
   //console.log(ge.faces[0].vertexTangents[0]);
@@ -216,7 +217,10 @@ function threeSetMeshMaterial(m,lo) {
   if (!shader) {
     //onsole.log('threeSetMeshMaterial: no shaderlib normalmap');
     //console.log(JSON.stringify(lo,undefined,' '));
-    var ph={
+    let bm=m.basicMaterial;
+    var ph=bm?{
+      map:diff
+    }:{
       //color:0x777777
       color:ambient,//ambient,
       //color:0x000000,
@@ -235,7 +239,11 @@ function threeSetMeshMaterial(m,lo) {
       //if (lo.ps.transparent) ph.transparent=true;
     }
     //onsole.log('threeSetMeshMaterial '+(lo.ps?'ps':'-'));
-    m.material=new THREE.MeshPhongMaterial(ph);
+    if (bm) 
+      m.material=new THREE.MeshBasicMaterial(ph);
+    else 
+      m.material=new THREE.MeshPhongMaterial(ph);
+    //onsole.log(m.material);
     return;
   }
   
@@ -282,6 +290,7 @@ function threeSetMeshMaterial(m,lo) {
   }
   //m.depthTest=false;
   m.material=new THREE.ShaderMaterial(parameters);
+  //onsole.log(m.material);
   } else { 
   m.material=new THREE.MeshBasicMaterial({wireframe:true});//m.material.depthTest=false;
   //m.material=new THREE.MeshPhongMaterial({ color: 0x156289, emissive: 0x072534 });
@@ -1290,8 +1299,9 @@ threeEnv.dungeonGeometry=function (ps,view) {
 //fr o,16
 //fr o,18
 //fr o,19
+//fr o,22
 //fr o,28,56
 //fr o,28,57
 //fr o,38
 //fr o,41
-//fr p,2,306
+//fr p,8,230

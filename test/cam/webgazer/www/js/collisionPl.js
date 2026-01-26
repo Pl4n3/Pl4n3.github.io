@@ -170,6 +170,8 @@ window.onload = async function() {
             a[i*2+1]=1-(p[1]/512);
           }
           uvs.needsUpdate=true;
+          let ww=webgazerCanvas.width,
+              wh=webgazerCanvas.height;
           for (let ak of o5.anim) {
           if (1) { 
             let p0=pts[10],p1=pts[152],dy=p0[1]-p1[1],dz=p0[2]-p1[2],ang=Math.atan2(-dz,-dy);
@@ -189,8 +191,8 @@ window.onload = async function() {
           if (1) {
             let p0=pts[93],p1=pts[323],mx=(p0[0]+p1[0])/2,my=(p0[1]+p1[1])/2,mz=(p0[2]+p1[2])/2;
             //console.log(Conet.f4(mx)+' '+Conet.f4(my)+' '+Conet.f4(mz));
-            ak.bs[2].t.x=(mx-320);
-            ak.bs[2].t.y=85-(my-240);
+            ak.bs[2].t.x=(mx-ww/2);//320
+            ak.bs[2].t.y=85-(my-wh/2);//240
             //onsole.log(o5.anim[0].bs[2].t.y);
           }
           
@@ -316,6 +318,7 @@ var collisionEyeListener = async function(data, clock) {
     webgazerCanvas=webgazer.getVideoElementCanvas();
     //webgazerCanvas.style.display='';
   }
+  //console.log(webgazerCanvas.width);
   //webgazerCanvas.style.display='';
   
   fmPositions=await webgazer.getTracker().getPositions();
@@ -350,4 +353,4 @@ var collisionEyeListener = async function(data, clock) {
 //fr o,12,26,5,52
 //fr o,12,26,5,95
 //fr o,21
-//fr p,2,101
+//fr p,28,185

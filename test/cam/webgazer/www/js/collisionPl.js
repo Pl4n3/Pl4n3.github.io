@@ -96,7 +96,7 @@ window.onload = async function() {
       
       scene = new THREE.Scene();
       renderer = new THREE.WebGLRenderer({antialias:true});
-      renderer.setClearColor( 0x888888 );
+      renderer.setClearColor(0x888888);
       renderer.shadowMap.enabled=true;
       renderer.shadowMap.type=THREE.BasicShadowMap;
       //renderer.outputEncoding=THREE.sRGBEncoding;
@@ -215,8 +215,9 @@ window.onload = async function() {
         //render();
       }
       
-      
-      box(0,-150,0,1600,bw,1600,m0).castShadow=false;
+      //if (0)
+      let ground=box(0,-150,0,1600,bw,1600,m0);
+      ground.castShadow=false;
       
       var l=new THREE.AmbientLight(0x555555),f=3;scene.add(l);
       l=new THREE.PointLight(0xffffff,1,0);l.position.set(-100*f,200*f,100*f);scene.add(l);
@@ -255,6 +256,24 @@ window.onload = async function() {
         cont.appendChild(c);
       }
       
+      /* bluescreen checkbox */ {
+        //---
+        cont.appendChild(document.createTextNode('Blue screen'));
+        let c=document.createElement('input'),lsk='webgazeBlueScreen';
+        c.type='checkbox';
+        c.oninput=function() {
+          //---
+          //console.log(this.checked);
+          let o=this.checked;
+          renderer.setClearColor(o?0x0000ff:0x888888);
+          ground.visible=!o;
+          localStorage[lsk]=o?1:undefined;
+          //...
+        }
+        cont.appendChild(c);
+        if (localStorage[lsk]==1) { c.checked=true;c.oninput(); }
+        //...
+      }
       
       Conet.download({fn:'/anim/w3dit/objs/webgazer/v1.o5.json',f:function(v) {
         //---
@@ -351,6 +370,6 @@ var collisionEyeListener = async function(data, clock) {
 //fr o,12,26
 //fr o,12,26,5
 //fr o,12,26,5,52
-//fr o,12,26,5,95
+//fr o,12,26,5,97
 //fr o,21
-//fr p,28,185
+//fr p,32,89

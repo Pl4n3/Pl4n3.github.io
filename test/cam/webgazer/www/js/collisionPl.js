@@ -51,6 +51,12 @@ window.onload = async function() {
           var localstorageSettingsLabel = 'webgazerGlobalSettings';
           localforage.setItem(localstorageSettingsLabel, null);
       }
+  
+  let urls=Conet.parseUrl();
+  let useCam=(urls.useCam===undefined)?1:((urls.useCam==0)?0:urls.useCam);   
+  if (useCam=='debug') debug=true;
+  if (useCam) { 
+      
       const webgazerInstance = await webgazer.setRegression('ridge') /* currently must set regression and tracker */
         .setTracker('TFFacemesh')
         .begin();  
@@ -61,14 +67,14 @@ window.onload = async function() {
     pointDisplay=createPointDisplay();
   }
       
-      webgazerInstance.showVideoPreview(debug) /* shows all video previews */
+      webgazerInstance.showVideoPreview(false) //debug /* shows all video previews */
         .showPredictionPoints(false) /* shows a square every 100 milliseconds where current prediction is */
         .applyKalmanFilter(true); // Kalman Filter defaults to on.
         // Add the SVG component on the top of everything.
       //setupCollisionSystem();
       webgazer.setGazeListener( collisionEyeListener );
       //webgazer.getVideoElementCanvas().style.display='';
-   
+   }
   
   (function() {
     //---
@@ -137,6 +143,12 @@ window.onload = async function() {
       
       var bw=20,ot=Date.now();//,sw=15,sw2=(sw-1)/2,bh=bw/2;//20,15
       
+      function dist2(p0,p1) {
+        //---
+        let dx=p0[0]-p1[0],dy=p0[1]-p1[1],dz=p0[2]-p1[2],d2=dx*dx+dy*dy+dz*dz;
+        return d2;
+        //...
+      }
       
       function animate() {
         requestAnimationFrame(animate);
@@ -147,8 +159,9 @@ window.onload = async function() {
         Conet.calcTweens(tweens,dt);
         //console.log(dt);
         
-        let pts=fmPositions;
-        if (o5&&pts) {
+        let pts=fmPositions,ww,wh;
+        if (o5) {//&&pts) {
+          if (pts) {
           let c=o5.texCanv;
           let ct=c.getContext('2d');
           ct.fillStyle=(Math.random()<0.5)?'#f00':'#0f0';
@@ -159,9 +172,12 @@ window.onload = async function() {
           
           ////let pa=[224,130,24,22,190,222];
           //let pa=[224,24,22,222,190,130];
-          let pa=[27,24,22,222,190,130,  
+          let pa=o5.ext?.webgazer.uvs||[27,24,22,222,190,130,  
                   442,463,252,254,259,359,
-                  57,181,39,405,269,287];
+                  57,181,39,405,269,287
+                  //57,181,178,81,39, 13,0,17,14,269,311,402,405,287
+                  //57,181,179,41,39, 12,0,17,15,269,271,403,405,287
+                  ];
           ////let pa=[27,130,24,22,190,56];
           let uvs=o5.meshes[1].baUvs,a=uvs.array;
           for (let i=0;i<pa.length;i++) {
@@ -170,9 +186,21 @@ window.onload = async function() {
             a[i*2+1]=1-(p[1]/512);
           }
           uvs.needsUpdate=true;
-          let ww=webgazerCanvas.width,
-              wh=webgazerCanvas.height;
+          ww=webgazerCanvas.width;
+          wh=webgazerCanvas.height;
+          }   
+          
+          if (!useCam) {
+            let m=o5.meshes[1],uvs=m.baUvs,a=uvs.array,i0=25,i1=i0+1;
+            for (let i=i0;i<i1;i++) {
+              a[i*2]+=0.001;//=Math.random();
+              a[i*2+1]+=0.001;//=Math.random();
+            }
+            uvs.needsUpdate=true;
+          } 
+              
           for (let ak of o5.anim) {
+          if (pts) {
           if (1) { 
             let p0=pts[10],p1=pts[152],dy=p0[1]-p1[1],dz=p0[2]-p1[2],ang=Math.atan2(-dz,-dy);
             //console.log(ang);
@@ -195,7 +223,17 @@ window.onload = async function() {
             ak.bs[2].t.y=85-(my-wh/2);//240
             //onsole.log(o5.anim[0].bs[2].t.y);
           }
-          
+          //mouth
+          if (o5.ext?.webgazer.mouthTransform) {
+            //let p0=pts[0],p1=pts[17],dx=p0[0]-p1[0],dy=p0[1]-p1[1],dz=p0[2]-p1[2],d2=dx*dx+dy*dy+dz*dz;
+            let d0=dist2(pts[0],pts[17]),d1=dist2(pts[10],pts[152]);
+            //console.log(Conet.f4(d0/d1));
+            ak.bs[6].q.x=-d0/d1*4;
+            ak.bs[6].t.y=45-d0/d1*200;
+            ak.bs[6].t.z=0+d0/d1*100;
+          }
+          }
+          if (slider) {
           let f=slider.value/100,
             x0=12.5,x1=25,x=(x1-x0)*f+x0,
             y0=62.5,y1=80,y=(y1-y0)*f+y0,
@@ -206,6 +244,7 @@ window.onload = async function() {
           ak.bs[5].t.y=y;
           ak.bs[3].t.z=z;
           ak.bs[5].t.z=z;
+          }
           }
         }
         
@@ -238,44 +277,7 @@ window.onload = async function() {
       stats.domElement.style.zIndex = 100;
       cont.appendChild(stats.domElement);
       
-      {
-      let c=document.createElement('input');slider=c;
-      c.type='range';c.step='any';c.value=100;
-      c.style.width='636px';
-      if (debug) {
-        c.style.position='absolute';
-        c.style.top='700px';
-      }
-      cont.appendChild(c);
-      }
-      
-      if (!debug) {
-        let c=document.createElement('div');
-        c.innerHTML='Morph face with slider.';
-        //c.style.fontSize='1.5em';
-        cont.appendChild(c);
-      }
-      
-      /* bluescreen checkbox */ {
-        //---
-        cont.appendChild(document.createTextNode('Blue screen'));
-        let c=document.createElement('input'),lsk='webgazeBlueScreen';
-        c.type='checkbox';
-        c.oninput=function() {
-          //---
-          //console.log(this.checked);
-          let o=this.checked;
-          renderer.setClearColor(o?0x0000ff:0x888888);
-          ground.visible=!o;
-          localStorage[lsk]=o?1:undefined;
-          //...
-        }
-        cont.appendChild(c);
-        if (localStorage[lsk]==1) { c.checked=true;c.oninput(); }
-        //...
-      }
-      
-      Conet.download({fn:'/anim/w3dit/objs/webgazer/v1.o5.json',f:function(v) {
+      Conet.download({fn:(urls.fn||'/anim/w3dit/objs/webgazer/v2mouth.o5.json'),f:function(v) {
         //---
         let o=Pd5.load(v);o5=o;
         o.scale=1;
@@ -283,7 +285,7 @@ window.onload = async function() {
         threeEnv.base=scene;//ps1.base;
         //if (ps0.transparent) o.transparent=true;
         
-        o.meshes[1].diff='canv:';
+        if (useCam) o.meshes[1].diff='canv:';
         //console.log(o.meshes);
         //o.meshes[1].basicMaterial=1;
         
@@ -291,6 +293,46 @@ window.onload = async function() {
         //if (ps.ay) o.ay=ps.ay;
         //if (ps0.ay) o.ay=ps0.ay;//250615 added and tested, is ps.ay check still needed?
         o.calcVertNorms=1;
+        
+        if (o.ext?.webgazer.slider) {
+        {
+        let c=document.createElement('input');slider=c;
+        c.type='range';c.step='any';c.value=100;
+        c.style.width='636px';
+        if (debug) {
+          c.style.position='absolute';
+          c.style.top='700px';
+        }
+        cont.appendChild(c);
+        }
+        
+        if (!debug) {
+          let c=document.createElement('div');
+          c.innerHTML='Morph face with slider.';
+          //c.style.fontSize='1.5em';
+          cont.appendChild(c);
+        }
+        }
+        
+        /* bluescreen checkbox */ {
+          //---
+          cont.appendChild(document.createTextNode('Blue screen'));
+          let c=document.createElement('input'),lsk='webgazeBlueScreen';
+          c.type='checkbox';
+          c.oninput=function() {
+            //---
+            //console.log(this.checked);
+            let o=this.checked;
+            renderer.setClearColor(o?0x0000ff:0x888888);
+            ground.visible=!o;
+            localStorage[lsk]=o?1:undefined;
+            //...
+          }
+          cont.appendChild(c);
+          if (localStorage[lsk]==1) { c.checked=true;c.oninput(); }
+          //...
+        }
+        
         
         //console.log(o);
         //...
@@ -367,9 +409,10 @@ var collisionEyeListener = async function(data, clock) {
 //fr o,10
 //fr o,10,10
 //fr o,12
-//fr o,12,26
-//fr o,12,26,5
-//fr o,12,26,5,52
-//fr o,12,26,5,97
-//fr o,21
-//fr p,32,89
+//fr o,12,32
+//fr o,12,32,5
+//fr o,12,32,5,51
+//fr o,12,32,5,53
+//fr o,12,32,5,78
+//fr o,12,32,5,78,36
+//fr p,63,270

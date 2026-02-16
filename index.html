@@ -109,6 +109,7 @@ body {
   link:'/sound/mid/TestMidi.htm',
   date:'2024',
   img:'/blog/hub/testmidi.png',
+  imgPos:'top center',
   }
   
   ,{descr:'Started to write a (visualizing) interpreter for the graph programming project. This is a loop from 1 to 9.',
@@ -160,7 +161,7 @@ body {
     +'<br></span>'
     +'<span style="font-size:1em;"><br>'
     //+'<img src="/canvas/paint/avatar.png" width=20 style="vertical-align:middle;"/>'
-    +'v.1.66 '//FOLDORUPDATEVERSION
+    +'v.1.68 '//FOLDORUPDATEVERSION
     +'Comments appreciated:<br><a href="https://mastodon.social/@Pl4n3">Mastodon</a>'
     +', <a href="https://bsky.app/profile/pl4n3.bsky.social">Bluesky</a>'
     +', <a href="https://www.threads.com/@pl4n3d">Threads</a>'
@@ -202,7 +203,7 @@ body {
     st.wordBreak='normal';
     st.background='#bbb no-repeat url("'+c.img+'")';
     st.backgroundSize='450px';
-    st.backgroundPosition='center center';
+    st.backgroundPosition=c.imgPos||'center center';
     st.minHeight='150px';
     //st.lineHeight='1.1';
     //st.backdropFilter='blur(10px)';
@@ -224,6 +225,6 @@ body {
 </html>
 <script>
 //fr o,25
-//fr o,25,142
-//fr o,25,163
-//fr p,23,110
+//fr o,25,143
+//fr o,25,164
+//fr p,20,111

@@ -245,8 +245,11 @@
   //onsole.log('running path.js');
   //onsole.log('dungeonGeometry.js');
   //onsole.log(document.currentScript);
+  let what='Paths v.0.693 ';//FOLDORUPDATEVERSION
+  
+  
   let gps=
-  window.w3ditScriptInit({initf:function (ps) {
+  window.w3ditScriptInit({what:what,initf:function (ps) {
     //---
     //let m=new THREE.Mesh(
     //   new THREE.BoxGeometry(0.1,0.1,0.1),
@@ -255,7 +258,11 @@
     
     //onsole.log('paths.w3ditScriptInit');
     
-    if (count==0) ps.xrUtil.log('Paths v.0.639 (cmds: pathsScale)');//FOLDORUPDATEVERSION
+    //if (count==0) {
+    //  let sh;
+    //  ps.xrUtil.log(sh=what);
+    //  console.log(sh);
+    //}
     //count++;
     
     let w=0.1,gps=ps;
@@ -304,7 +311,7 @@
     window.pathsMegabonk=function(ps) {
       //---
       if (!ps) ps={};
-      let testSmall=0,max=testSmall?1:(ps.width||7),testSingle=0;
+      let testSmall=0,max=testSmall?1:(ps.width||7),testSingle=ps.testSingle;
       
       function mp(x,y,z,t,dontQueue) {
         //---
@@ -429,7 +436,38 @@
       }
       } else {
         max=7;
-        mp(0,0,0,'r3');
+        if (ps.map) {
+          let pp;
+          if (pp=ps.playerPos) {
+            //let op=gps.points[6].userData.op;
+            for (let p of gps.points) {
+              let op=p.userData.op;
+              if (!op.player) continue;
+              op.x=pp[0];op.y=pp[1];op.z=pp[2];
+            }
+          }
+          ////console.log(gps.points[6].userData.op.y-=1);
+          ////console.log(JSON.stringify(gps.points[gps.points.length-1]));
+          //setTimeout(function() {
+          //gps.editxr.pointAdd({"x":0,"y":0.2,"z":-0.1,"box":1,"scx":0.6,"scz":0.6,"scy":0.6,"color":"afafaf","mass":100,"script":"/anim/w3dit/script/pd5.js","fn":"/shooter/objs/tripod/o5.txt","anim":"idle","animIdle":"idle","animRun":"runRot","sc":0.1,"aiApproach":30,"turnSpeed":0.001,"speed":20});
+          //},1000);
+          
+          //first tried to implement next block, where url scaleCfgI is handled (w3dit.pd5.js), but here its easyer (e.g. no extra json parse)
+          let cp;
+          if (cp=ps.camPos) {
+            let p=gps.sceneh.scaleCfg[cp[0]].camPos;
+            p.x=cp[1];p.y=cp[2];p.z=cp[3];
+            //onsole.log(cp);
+          }
+          if (cp=ps.conTar) {
+            let p=gps.sceneh.scaleCfg[cp[0]].conTar;
+            p.x=cp[1];p.y=cp[2];p.z=cp[3];
+            //onsole.log(cp);
+          }
+          
+          for (let m of ps.map) mp(m[0],m[1],m[2],m[3]);//console.log(ps.map);
+        }
+        else mp(0,0,0,'r3');
         //mp(0,0,1,'r3');
       }
       
@@ -607,8 +645,16 @@
     }
     
     count++;
-    let v;
-    if (v=decodeURIComponent(Conet.parseUrl().pathsMegabonk)) window.pathsMegabonk(JSON.parse(v));
+    //let v;
+    //if ((v=decodeURIComponent(Conet.parseUrl().pathsMegabonk))&&(v!='undefined')) window.pathsMegabonk(JSON.parse(v));
+    
+    let v=Conet.parseUrl().pathsMegabonk;
+    if (v) v=decodeURIComponent(v);
+    if (v) v=JSON.parse(v);
+    if (!v) v=gps.ps.megaBonk;
+    if (v) window.pathsMegabonk(v);
+    
+    //onsole.log(gps.ps.megaBonk);
     //console.log('url.pathsMegabonk');
     //console.log(v);
     //console.log(JSON.parse(v));
@@ -675,13 +721,11 @@
 )();
 //----
 //fr o,1
-//fr o,1,16
-//fr o,1,22
-//fr o,1,22,41
-//fr o,1,22,41,4
-//fr o,1,22,41,19
-//fr o,1,22,41,21
-//fr o,1,22,41,107
-//fr o,1,22,41,110
-//fr o,1,35
-//fr p,44,342
+//fr o,1,25
+//fr o,1,25,45
+//fr o,1,25,45,19
+//fr o,1,25,45,21
+//fr o,1,25,45,138
+//fr o,1,25,45,141
+//fr o,1,38
+//fr p,6,188

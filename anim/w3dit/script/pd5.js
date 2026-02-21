@@ -12,7 +12,7 @@
   
   //----cannonstuff
   let cannonsc=0,player,cannonTriMesh=undefined,triMeshBody,sculptBody,sculptVersion=-1,
-      groundMaterial;
+      groundMaterial,actionPs={};
   function cannonBoxMeshUpdate(box) {
     //---
     let sc=cannonsc,pos=box.pos;
@@ -331,14 +331,29 @@
           //v=(c.fore?1:0)+(c.back?-1:0);if (v!=0) body.velocity.x=v*6;
           //v=(c.left?1:0)+(c.right?-1:0);if (v!=0) body.velocity.y=v*6;
         } else { //ai
-          let dx=player.pos.x-box.pos.x,
-              dy=player.pos.y-box.pos.y,
-              dz=player.pos.z-box.pos.z;
-          turna=Math.atan2(dy,dx)+Math.PI/2;
-          if (op.aiApproach) { 
+          let action=initps.editxr.action;
+          if (action) {
+            //console.log('pd5: action found, use it. '+action);
+            let h=actionPs;
+            h.p0=player.pos;
+            h.p1=box.pos;
+            h.op=op;
+            h.fore=fore;h.turna=turna;
+            action.calc(h);
+            fore=h.fore;turna=h.turna;
+          } else {
+            let dx=player.pos.x-box.pos.x,
+                dy=player.pos.y-box.pos.y,
+                dz=player.pos.z-box.pos.z;
             let d2=dx*dx+dy*dy+dz*dz;
-            //console.log('aiApproach d2='+d2); 
-            if (d2>op.aiApproach) fore=true;
+            //if (!(op.aiReact&&(d2>op.aiReact))) {
+              turna=Math.atan2(dy,dx)+Math.PI/2;
+              if (op.aiApproach) { 
+                //let d2=dx*dx+dy*dy+dz*dz;
+                //console.log('aiApproach d2='+d2); 
+                if (d2>op.aiApproach) fore=true;
+              }
+            //}
           }
           if (op.animRun=='run') {
             //console.log('scale.x='+o5.meshes[0].tmesh.scale.x);
@@ -420,7 +435,7 @@
     //console.log(cannon.bodies[0]);
     let sc=cannon.sc;//0.5;
     for (let i=cannon.bodies.length-1;i>=0;i--) {
-      let body=cannon.bodies[i],bp=bp.position,o=cannon.meshes[i].position;
+      let body=cannon.bodies[i],bp=body.position,o=cannon.meshes[i].position;//260112 bp.position -> body.position
       o.y=bp.z*sc;
       o.x=bp.x*sc;
       o.z=-bp.y*sc;
@@ -581,7 +596,7 @@
   
   function initCannonRaycastVehicle(ps) {
     //---
-    console.log('init cannon raycast');
+    console.log('w3dit.pd5.initCannonRaycastVehicle');
     //onsole.trace();
     var world=new CANNON.World(),size=2.0;
     
@@ -892,7 +907,8 @@
     };
     
     //xrUtil.log('');
-    xrUtil.log(player?
+    if (!(player&&player.point.userData.op.noStartText))
+      xrUtil.log(player?
       '--> Move knight with WASD, Jump-Scare B or xr-ctrl.':
       '--> Move car with wasd+b or xr-controller.');
     
@@ -931,8 +947,48 @@
     //...
   }
   
+  let what='w3dit.Pd5 v.0.1693 ';//FOLDORUPDATEVERSION
   
-  window.w3ditScriptInit({initf:function (ps) {
+  function vertsMenu() {
+    //---
+    let pd5Verts;
+    let ret={s:'Verts',x:0.6,y:0.52,w:0.1,h:0.1,
+    ondown:function() {
+      //---
+      //onsole.log('Verts.ondown');
+      let ps={selected:selected};//selected userData
+      
+      if (pd5Verts) {
+        pd5Verts.toggle(ps);
+        return;
+      }
+      
+      import('/anim/w3dit/script/pd5Verts.js').then(
+      function (m) {
+        //---
+        //console.log('m.second='+m.second);
+        //m.second=1;
+        pd5Verts=m.pd5Verts;
+        //console.log(pd5Verts.what); 
+        pd5Verts.init({editxr:initps.editxr});
+        //m.test0('from_editxr');
+        pd5Verts.toggle(ps);
+        //---
+      }
+      );
+      //...
+    }
+    };
+    
+    //---for tests do autotoggle
+    setTimeout(ret.ondown,500);
+    //ret.ondown();
+    
+    return ret;
+    //...
+  }
+  
+  window.w3ditScriptInit({what:what,initf:function (ps) {
     //---
     //let m=new THREE.Mesh(
     //   new THREE.BoxGeometry(0.1,0.1,0.1),
@@ -1123,7 +1179,7 @@
     function initObj(ps1) {
       //---
       console.log('initObj '+ps0.fn);
-      
+      //onsole.trace();
       
       o.scale=1;
       if (ps0.anim) Pd5.animStart(o,ps0.anim);
@@ -1278,7 +1334,9 @@
       xrUtil.onScaleSwitch=function(ps) {
         rotateRoom=ps.scfg.rotateRoom;
         ////editxr.controlsDisabled=rotateRoom;
+        //onsole.log('pd5..onScaleSwitch 0 '+editxr.controls.enabled);
         editxr.controls.enabled=!rotateRoom;
+        //onsole.log('pd5..onScaleSwitch 1 '+editxr.controls.enabled);
         ////onsole.log(editxr.controls);
         //console.log('xrUtil rotateRoom='+rotateRoom);
         //let fog=new THREE.Fog(0x000000,0.1,0.5);
@@ -1298,6 +1356,7 @@
       );
       Conet.handlerAdd('pointermove',function(e) {
         //---
+        //if (1) return;
         if (!rotateRoom) return;
         //console.log('pd5.pointerMove e.buttons='+e.buttons);
         //onsole.log(e.buttons);
@@ -1327,9 +1386,18 @@
       }
       );
           Menu.roots[0].sub.push({s:'Scale',ms:'Pd5',actionf:m.ondown,r:1});let v;
-          if   (Conet.parseUrl().scaleCfg) m.ondown();
-          if (v=Conet.parseUrl().scaleCfgI) m.ondown(v);
-          window.mscale=m;console.info('%cmscale.ondown() to toggle scale','background: #9f9; font-size: large');
+          let urls=Conet.parseUrl();
+          if   (urls.scaleCfg) m.ondown();
+          if (v=urls.scaleCfgI) m.ondown(v);
+          window.mscale=m;console.info('%cmscale.ondown() to toggle scale!!1','background: #9f9; font-size: large');
+          //console.log(urls.camPos);
+          //if (urls.camPos) {
+          //  if (xrUtil.scfg) {
+          //    let cp=xrUtil.scfg.camPos;
+          //    cp.x/=5;cp.y/=5;cp.z/=5;
+          //  } else
+          //    throw('url camPos but no xrUtil.scfg');
+          //}
         }
       }  
       }
@@ -1338,7 +1406,8 @@
     
     if (first) {
       first=false;
-      xrUtil.log('Pd5 v.0.1613 ');//FOLDORUPDATEVERSION
+      //xrUtil.log(what);  
+      xrUtil.hud.buttons.push(vertsMenu());
       
       
       if (0) xrUtil.hud.buttons.push(
@@ -1408,20 +1477,15 @@
 )();
 //----
 //fr o,1
-//fr o,1,14
 //fr o,1,21
-//fr o,1,25
-//fr o,1,27
 //fr o,1,27,90
 //fr o,1,27,177
 //fr o,1,27,271
-//fr o,1,32
-//fr o,1,32,33
-//fr o,1,32,35
-//fr o,1,32,37
-//fr o,1,32,37,60
-//fr o,1,32,37,113
-//fr o,1,32,37,117
-//fr o,1,32,37,119
-//fr o,1,32,65
-//fr p,24,214
+//fr o,1,33
+//fr o,1,33,3
+//fr o,1,33,3,10
+//fr o,1,35
+//fr o,1,35,37
+//fr o,1,35,47
+//fr o,1,35,66
+//fr p,0,198

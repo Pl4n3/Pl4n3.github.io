@@ -2,7 +2,7 @@
 let pd5Verts=(function () {
   //onsole.log('pd5Verts loaded !!1');
   //let self={};
-  let self={what:'pd5Verts 0.59 '},//FOLDORUPDATEVERSION
+  let self={what:'pd5Verts 0.60 '},//FOLDORUPDATEVERSION
       editxr,pts=[],uds=[],//uds=userData array, needed with onchange
       o5,p0,f,editPoint;
   console.log(self.what);
@@ -39,7 +39,7 @@ let pd5Verts=(function () {
       return;
     }
     //onsole.log('pd5Verts.toggle');
-    console.log(ps);
+    //onsole.log(ps);
     o5=ps.selected.o5;//---ps.selected is pointMesh.userData
     editPoint=o5.meshes[0].tmesh.userData.editPoint;
     delete(o5.meshes[0].tmesh.userData.editPoint);
@@ -80,4 +80,4 @@ export { pd5Verts,test0 };
 //fr o,1,9
 //fr o,1,11
 //fr o,4
-//fr p,28,34
+//fr p,2,40

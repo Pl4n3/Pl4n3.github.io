@@ -352,6 +352,37 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       //...
     }
     
+    function vertsMenu() {
+      //---
+      let pd5Verts;
+      return {s:'Verts',x:0.6,y:0.52,w:0.1,h:0.1,
+      ondown:function() {
+        //---
+        //onsole.log('Verts.ondown');
+        if (pd5Verts) {
+          pd5Verts.onclick('42');
+          return;
+        }
+        
+        import('/anim/w3dit/script/pd5Verts.js').then(
+        function (m) {
+          //---
+          //console.log('m.second='+m.second);
+          //m.second=1;
+          pd5Verts=m.pd5Verts;
+          console.log(pd5Verts.what); 
+          pd5Verts.init('from editxr');
+          //m.test0('from_editxr');
+          pd5Verts.onclick('23');
+          //---
+        }
+        );
+        //...
+      }
+      };
+      //...
+    }
+    
     //if (window.Stats) {
       stats=new Stats();let el=stats.domElement,st=el.style;
       st.position='absolute';st.top='0px';st.left='0px';st.zIndex=100;
@@ -426,6 +457,9 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       
       
       paintMenu(),
+      
+      //vertsMenu(),
+      
       
       {s:'Inv',ms:'Toggle',x:0.8,y:0.4,w:0.15,h:0.1,ondown:function() {
         //---
@@ -704,7 +738,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     //\u25b2 \u25bc
     
-    const version='v.0.2001 ';//FOLDORUPDATEVERSION
+    const version='v.0.2034 ';//FOLDORUPDATEVERSION
     xrUtil.log('Edit '+version);
     
     //
@@ -1607,12 +1641,13 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       editxr:self,
       xrUtil:xrUtil,
     };//alternative systematically better sharing to script than on each pointScript(..)
+    //onsole.log('w3ditScriptInit a.len='+a.length);
     for (let sc of a) {
       if (sc.script===script) {
         //onsole.log('script found.');
         if (h.what) {
           xrUtil.log(h.what);
-          console.log(h.what);
+          console.log('w3ditScriptInit '+h.what);
         }
         sc.initf=h.initf;
         sc.renderf=h.renderf;
@@ -1710,7 +1745,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     if (index!==undefined) points.splice(index,0,mesh); else points.push(mesh);
     mesh.userData.op=p;
     
-    if (p.bb) {
+    if (p.bb&&!p.bb.onlyPd5) {
       let tb=threeEnv.base;//,m=o.meshes[0].tmesh;
       threeEnv.base=mesh;
       //o.ap=2;o.hp=5;o.ohp=10;
@@ -2170,10 +2205,12 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
   //onsole.log('editxr');
   //onsole.log(self);
   self.pointAdd=pointAdd;
+  self.pointRemove=pointRemove;
   self.rayObjsReset=rayObjsReset;
   self.lines=lines;
   self.updateMesh=updateMesh;
   self.points=points;
+  self.select=select;
   window.editxr=self;
   //...
 }
@@ -2183,6 +2220,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 </html>
 <script>
 //fr o,37
+//fr o,37,17
 //fr o,37,20
 //fr o,37,20,75,7
 //fr o,37,20,75,9
@@ -2194,32 +2232,33 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,37,20,75,23
 //fr o,37,20,75,27
 //fr o,37,20,75,74
-//fr o,37,20,89
-//fr o,37,20,89,57
-//fr o,37,20,89,70
-//fr o,37,20,89,89
-//fr o,37,20,89,95
-//fr o,37,20,89,138
-//fr o,37,20,134
-//fr o,37,20,163
-//fr o,37,20,168
-//fr o,37,20,171
-//fr o,37,20,174
-//fr o,37,20,201
-//fr o,37,20,202
-//fr o,37,20,208
-//fr o,37,20,209
+//fr o,37,20,77,3,8
+//fr o,37,20,91
+//fr o,37,20,91,60
+//fr o,37,20,91,73
+//fr o,37,20,91,92
+//fr o,37,20,91,98
+//fr o,37,20,91,141
+//fr o,37,20,136
+//fr o,37,20,165
+//fr o,37,20,170
+//fr o,37,20,173
+//fr o,37,20,176
+//fr o,37,20,203
+//fr o,37,20,204
 //fr o,37,20,210
-//fr o,37,20,214
-//fr o,37,20,218
-//fr o,37,20,257
-//fr o,37,20,266
-//fr o,37,20,278
-//fr o,37,20,282
+//fr o,37,20,211
+//fr o,37,20,212
+//fr o,37,20,216
+//fr o,37,20,220
+//fr o,37,20,259
+//fr o,37,20,268
+//fr o,37,20,280
+//fr o,37,20,284
 //fr o,37,29,3
 //fr o,37,33,10
 //fr o,37,33,11
-//fr o,37,40
-//fr o,37,51
-//fr o,37,53
-//fr p,2,626
+//fr o,37,48
+//fr o,37,52
+//fr o,37,54
+//fr p,19,1071

@@ -26,124 +26,168 @@ body {
 (function() {
   //...
   
+  let url=Conet.parseUrl(),path=url.path;
+  
   //todo: integrate old util/staticHub.htm
   let bgt='rgba(230,230,230,0.85)';//rgba(200,200,200,0.85)
+  //let bgt='rgba(187,187,187,0.85)';//rgba(200,200,200,0.85)
   
-  let cells=[
-  
-  {descr:'Webgazer.js cam tracking and animation. Test Hearthstone stream with the avatar: <a href="https://www.youtube.com/watch?v=HFLdFzOJY5A">Link</a>.',
-  link:'/test/cam/webgazer/www/collisionPl.html',
-  date:'2026-01-27',
-  img:'/blog/hub/webgazer.png',
-  mastodon:'https://mastodon.social/@Pl4n3/116036446676577608',
-  twitter:'https://x.com/Pl4n3/status/2020567412358217772',
-  },
-  
-  
-  {descr:'Voxeleditor XR',
-  link:'/three/anim/voxed/voxXr.htm?fn=/blog/2024/hsRumble.voxed.json',
-  date:'2025-12-15',
-  img:'/blog/hub/voxxr0.png',
-  },
-  
-  {descr:'Generate a maze randomly, parametrized by width and seed. Walk through it via flatscreen or XR.',
-  link:'/test/webvr/edit.htm?file=file:bricksMegab0&amp;editMode=0&amp;scaleCfg=1&amp;hudPos=Away&pathsMegabonk=1',
-  date:'2025-11-12',
-  img:'/blog/hub/megabonkMaze.gif',
-  },
-  
-  
-  {
-  descr://'<video autoplay muted loop style="position:absolute;width:300px;overflow:hidden;z-index:0;"><source src="/blog/hub/cannCastle.mp4"></video>'
-  'A <b>cannonjs</b> xr test, now using <b>threejs</b> 180 instead of 160 to have <i>scene.backgroundRotation</i> for xr.',
-  link:'/test/webvr/edit.htm?file=file:cannCastle&amp;editMode=0&amp;scaleCfg=1&amp;hudPos=Away',
-  date:'2025-10-26',
-  img:'/blog/hub/cannCastle.webp',
-  twitter:'https://x.com/Pl4n3/status/1982456021835489439',
-  mastodon:'https://mastodon.social/@Pl4n3/115440987090419339',
-  bluesky:'https://bsky.app/profile/pl4n3.bsky.social/post/3m445m6bbzs2w',
-  threads:'https://www.threads.com/@pl4n3d/post/DQRtT6wDdFc'
-  },
-  
-  
-  {text://'<span style="'
-  //+'backdrop-filter: blur(10px);'
-  //+'background-color:rgba(200,200,200,0.85);'
-  //+'">'
-  '<span style="font-size:1.1em;background-color:'+bgt+';">Smol app for the phone to <b>rate playlist</b> songs.<br>'//'<br><br>'
-  +'</span><span style="font-size:1.5em;background-color:'+bgt+';"><a href="/forms/rate/table0.htm">► Start&nbsp;</a></span>'
-  +'<span style="font-size:1em;background-color:'+bgt+';"><br>'
-  +'<a href="https://mastodon.social/@Pl4n3/115392094384475370">Mastodon</a>'
-  +', <a href="https://bsky.app/profile/pl4n3.bsky.social/post/3m3ggy7fvg22n">Bluesky</a>'
-  +', <a href="https://x.com/Pl4n3/status/1979327902576709981">Twitter</a>'
-  +'<br>2025-10-18</span>'
-  //+'</span>'
-  ,img:'/blog/hub/playlist.gif'
+  let cells;
+  if (path=='editxr') /* */ {
+    
+    cells=[
+    
+    {descr:'O5tris.<br>'
+    +'<a href="/test/webvr/edit.htm?file=file:action/o5tris&editMode=0&scaleCfgI=1&hudPos=Away">Away</a> '
+    +'<a href="/test/webvr/edit.htm?file=file:action/o5tris&editMode=0&scaleCfgI=0&hudPos=Away">Near</a>'
+    ,minHeight:''
+    },
+    
+    
+    {descr:'Action0.<br>'
+    +'<a href="/test/webvr/edit.htm?file=file:action0&editMode=0&scaleCfgI=1&hudPos=Away">Away</a> '
+    +'<a href="/test/webvr/edit.htm?file=file:action0&editMode=0&scaleCfgI=0&hudPos=Away">Near</a>'
+    ,minHeight:''
+    },
+    
+    {descr:'Megabonk inspired vertical maze.<br>'
+    +'<a href="/test/webvr/edit.htm?file=file:bricksMegab0&editMode=0&scaleCfg=1&hudPos=Away&pathsMegabonk=1">Away</a> '
+    +'<a href="/test/webvr/edit.htm?file=file:bricksMegab0&editMode=0&scaleCfgI=0&hudPos=Away&pathsMegabonk=1">Near</a>'
+    
+    ,
+    //link:'/test/webvr/edit.htm?file=file:bricksMegab0&editMode=0&scaleCfg=1&hudPos=Away&pathsMegabonk=1',
+    minHeight:'',
+    },
+    
+    {descr:'Sculpted landscape with caves.<br>'
+    +'<a href="/test/webvr/edit.htm?file=file:sculptCann&editMode=0&scaleCfg=1&hudPos=Away">Away</a> '
+    +'<a href="/test/webvr/edit.htm?file=file:sculptCann&editMode=0&scaleCfgI=0&hudPos=Away">Near</a>'
+    ,
+    //link:'/test/webvr/edit.htm?file=file:sculptCann&editMode=0&scaleCfg=1&hudPos=Away',
+    minHeight:'',
+    },
+    
+    ];
+    
   }
-  
-  ,{text:
-  '<span style="font-size:1.1em;background-color:'+bgt+';">Trying to <b>visualize history</b> again. Timeframe is 1143-1160: wendish crusade and danish civil war.'
-  +'<br></span><span style="font-size:1.5em;background-color:'+bgt+';">'
-  +'<a href="/anim/arrows/canv.htm?fn=/anim/arrows/canvNotes/shapesNiklot.json">► Start&nbsp;</a></span>'
-  +'<span style="font-size:1em;background-color:'+bgt+';"><br>'
-  +'<a href="https://mastodon.social/@Pl4n3/115321436155932504">Mastodon</a>'
-  +', <a href="https://bsky.app/profile/pl4n3.bsky.social/post/3m2h2efcpds2m">Bluesky</a>'
-  +', <a href="https://www.threads.com/@pl4n3d/post/DPbUbqUjIFh">Threads</a>'
-  +', <a href="https://x.com/Pl4n3/status/1974805480967917911">Twitter</a>'
-  +'<br>2025-10-05</span>',
-  img:'/blog/hub/shapesNiklot.gif'}
-  
-  ,{text:
-  '<span style="font-size:1.1em;background-color:'+bgt+';">Drew a landscape diorama with <b>threejs</b> Marching Cubes and <b>Quest3</b>.<br>'
-  +'</span><span style="font-size:1.5em;background-color:'+bgt+';"><a href="/test/webvr/edit.htm?file=file:sculptScapeEmbed">► Start&nbsp;</a></span>'
-  +'<span style="font-size:1em;background-color:rgba(200,200,200,0.85);"><br>'
-  +'<a href="https://mastodon.social/@Pl4n3/114443800486188427">Mastodon</a>'
-  +', <a href="https://bsky.app/profile/pl4n3.bsky.social/post/3lobceuww4c27">Bluesky</a>'
-  +', <a href="https://www.threads.com/@pl4n3d/post/DJMN_uSNzO9">Threads</a>, '
-  +'<a href="https://x.com/Pl4n3/status/1918636869031506112">Twitter</a>'
-  +'<br>2025-05-03</span>',
-  img:'/blog/hub/sculptLandscapeEmbed.gif'}
-  
-  ,{descr:'XR 3d edit, texture paint',
-  link:'/test/webvr/edit.htm?file=file:mushroom',
-  date:'2025-02-02',
-  img:'/blog/hub/mushroom.jpg',
+  else /* */ {
+    
+    cells=[
+    
+    {descr:'Webgazer.js cam tracking and animation. Test Hearthstone stream with the avatar: <a href="https://www.youtube.com/watch?v=HFLdFzOJY5A">Link</a>.',
+    link:'/test/cam/webgazer/www/collisionPl.html',
+    date:'2026-01-27',
+    img:'/blog/hub/webgazer.png',
+    mastodon:'https://mastodon.social/@Pl4n3/116036446676577608',
+    twitter:'https://x.com/Pl4n3/status/2020567412358217772',
+    },
+    
+    
+    {descr:'Voxeleditor XR',
+    link:'/three/anim/voxed/voxXr.htm?fn=/blog/2024/hsRumble.voxed.json',
+    date:'2025-12-15',
+    img:'/blog/hub/voxxr0.png',
+    },
+    
+    {descr:'Generate a maze randomly, parametrized by width and seed. Walk through it via flatscreen or XR. (<a href="/index.html?path=editxr">editxr</a>)',
+    link:'/test/webvr/edit.htm?file=file:bricksMegab0&amp;editMode=0&amp;scaleCfg=1&amp;hudPos=Away&pathsMegabonk=1',
+    date:'2025-11-12',
+    img:'/blog/hub/megabonkMaze.gif',
+    },
+    
+    
+    {
+    descr://'<video autoplay muted loop style="position:absolute;width:300px;overflow:hidden;z-index:0;"><source src="/blog/hub/cannCastle.mp4"></video>'
+    'A <b>cannonjs</b> xr test, now using <b>threejs</b> 180 instead of 160 to have <i>scene.backgroundRotation</i> for xr.',
+    link:'/test/webvr/edit.htm?file=file:cannCastle&amp;editMode=0&amp;scaleCfg=1&amp;hudPos=Away',
+    date:'2025-10-26',
+    img:'/blog/hub/cannCastle.webp',
+    twitter:'https://x.com/Pl4n3/status/1982456021835489439',
+    mastodon:'https://mastodon.social/@Pl4n3/115440987090419339',
+    bluesky:'https://bsky.app/profile/pl4n3.bsky.social/post/3m445m6bbzs2w',
+    threads:'https://www.threads.com/@pl4n3d/post/DQRtT6wDdFc'
+    },
+    
+    
+    {text://'<span style="'
+    //+'backdrop-filter: blur(10px);'
+    //+'background-color:rgba(200,200,200,0.85);'
+    //+'">'
+    '<span style="font-size:1.1em;background-color:'+bgt+';">Smol app for the phone to <b>rate playlist</b> songs.<br>'//'<br><br>'
+    +'</span><span style="font-size:1.5em;background-color:'+bgt+';"><a href="/forms/rate/table0.htm">► Start&nbsp;</a></span>'
+    +'<span style="font-size:1em;background-color:'+bgt+';"><br>'
+    +'<a href="https://mastodon.social/@Pl4n3/115392094384475370">Mastodon</a>'
+    +', <a href="https://bsky.app/profile/pl4n3.bsky.social/post/3m3ggy7fvg22n">Bluesky</a>'
+    +', <a href="https://x.com/Pl4n3/status/1979327902576709981">Twitter</a>'
+    +'<br>2025-10-18</span>'
+    //+'</span>'
+    ,img:'/blog/hub/playlist.gif'
+    }
+    
+    ,{text:
+    '<span style="font-size:1.1em;background-color:'+bgt+';">Trying to <b>visualize history</b> again. Timeframe is 1143-1160: wendish crusade and danish civil war.'
+    +'<br></span><span style="font-size:1.5em;background-color:'+bgt+';">'
+    +'<a href="/anim/arrows/canv.htm?fn=/anim/arrows/canvNotes/shapesNiklot.json">► Start&nbsp;</a></span>'
+    +'<span style="font-size:1em;background-color:'+bgt+';"><br>'
+    +'<a href="https://mastodon.social/@Pl4n3/115321436155932504">Mastodon</a>'
+    +', <a href="https://bsky.app/profile/pl4n3.bsky.social/post/3m2h2efcpds2m">Bluesky</a>'
+    +', <a href="https://www.threads.com/@pl4n3d/post/DPbUbqUjIFh">Threads</a>'
+    +', <a href="https://x.com/Pl4n3/status/1974805480967917911">Twitter</a>'
+    +'<br>2025-10-05</span>',
+    img:'/blog/hub/shapesNiklot.gif'}
+    
+    ,{text:
+    '<span style="font-size:1.1em;background-color:'+bgt+';">Drew a landscape diorama with <b>threejs</b> Marching Cubes and <b>Quest3</b>.<br>'
+    +'</span><span style="font-size:1.5em;background-color:'+bgt+';"><a href="/test/webvr/edit.htm?file=file:sculptScapeEmbed">► Start&nbsp;</a></span>'
+    +'<span style="font-size:1em;background-color:rgba(200,200,200,0.85);"><br>'
+    +'<a href="https://mastodon.social/@Pl4n3/114443800486188427">Mastodon</a>'
+    +', <a href="https://bsky.app/profile/pl4n3.bsky.social/post/3lobceuww4c27">Bluesky</a>'
+    +', <a href="https://www.threads.com/@pl4n3d/post/DJMN_uSNzO9">Threads</a>, '
+    +'<a href="https://x.com/Pl4n3/status/1918636869031506112">Twitter</a>'
+    +'<br>2025-05-03</span>',
+    img:'/blog/hub/sculptLandscapeEmbed.gif'}
+    
+    ,{descr:'XR 3d edit, texture paint',
+    link:'/test/webvr/edit.htm?file=file:mushroom',
+    date:'2025-02-02',
+    img:'/blog/hub/mushroom.jpg',
+    }
+    
+    ,{descr:'Midi Recorder',
+    link:'/sound/mid/TestMidi.htm',
+    date:'2024',
+    img:'/blog/hub/testmidi.png',
+    imgPos:'top center',
+    }
+    
+    ,{descr:'Started to write a (visualizing) interpreter for the graph programming project. This is a loop from 1 to 9.',
+    link:'/three/anim.htm?sn=anim/gree0.js',
+    date:'2020',
+    img:'/blog/hub/gree.webp',
+    twitter:'https://x.com/Pl4n3/status/1242239727560019972'
+    }
+    
+    ,{text:
+    '<span style="font-size:1.1em;background-color:'+bgt+';">2D game test using three.js. Goal: similar playability for phone, desktop and VR.<br>'
+    +'</span><span style="font-size:1.5em;background-color:'+bgt+';"><a href="/three/anim.htm?sn=anim/zweide.js&sn0=anim/zweide/test0.js">► Start&nbsp;</a></span>'
+    +'<span style="font-size:1em;background-color:rgba(200,200,200,0.85);"><br>2018</span>'
+    ,img:'/blog/img/zweide0.png'}
+    
+    ,{text:
+    '<span style="font-size:1.1em;background-color:'+bgt+';"><b>Strawman</b> 2D game test using canvas and simple physics. Characters are rigged from plain pictures.<br>'
+    +'</span><span style="font-size:1.5em;background-color:'+bgt+';"><a href="/canvas/bod2/jnr.htm">► Start&nbsp;</a></span>'
+    +'<span style="font-size:1em;background-color:rgba(200,200,200,0.85);"><br>2017</span>'
+    ,img:'/blog/img/strawman.png'}
+    
+    ,{text:
+    '<span style="font-size:1.1em;background-color:'+bgt+';"><b>Web Paint</b> Paint app for phone & desktop. Featuring transparency, scripting, multi-page images, gif export.<br>'
+    +'</span><span style="font-size:1.5em;background-color:'+bgt+';"><a href="/canvas/paint.htm">► Start&nbsp;</a></span>'
+    +'<span style="font-size:1em;background-color:rgba(200,200,200,0.85);"><br>2015</span>'
+    ,img:'/blog/img/paint1.png'}
+    
+    
+    ];
   }
-  
-  ,{descr:'Midi Recorder',
-  link:'/sound/mid/TestMidi.htm',
-  date:'2024',
-  img:'/blog/hub/testmidi.png',
-  imgPos:'top center',
-  }
-  
-  ,{descr:'Started to write a (visualizing) interpreter for the graph programming project. This is a loop from 1 to 9.',
-  link:'/three/anim.htm?sn=anim/gree0.js',
-  date:'2020',
-  img:'/blog/hub/gree.webp',
-  twitter:'https://x.com/Pl4n3/status/1242239727560019972'
-  }
-  
-  ,{text:
-  '<span style="font-size:1.1em;background-color:'+bgt+';">2D game test using three.js. Goal: similar playability for phone, desktop and VR.<br>'
-  +'</span><span style="font-size:1.5em;background-color:'+bgt+';"><a href="/three/anim.htm?sn=anim/zweide.js&sn0=anim/zweide/test0.js">► Start&nbsp;</a></span>'
-  +'<span style="font-size:1em;background-color:rgba(200,200,200,0.85);"><br>2018</span>'
-  ,img:'/blog/img/zweide0.png'}
-  
-  ,{text:
-  '<span style="font-size:1.1em;background-color:'+bgt+';"><b>Strawman</b> 2D game test using canvas and simple physics. Characters are rigged from plain pictures.<br>'
-  +'</span><span style="font-size:1.5em;background-color:'+bgt+';"><a href="/canvas/bod2/jnr.htm">► Start&nbsp;</a></span>'
-  +'<span style="font-size:1em;background-color:rgba(200,200,200,0.85);"><br>2017</span>'
-  ,img:'/blog/img/strawman.png'}
-  
-  ,{text:
-  '<span style="font-size:1.1em;background-color:'+bgt+';"><b>Web Paint</b> Paint app for phone & desktop. Featuring transparency, scripting, multi-page images, gif export.<br>'
-  +'</span><span style="font-size:1.5em;background-color:'+bgt+';"><a href="/canvas/paint.htm">► Start&nbsp;</a></span>'
-  +'<span style="font-size:1em;background-color:rgba(200,200,200,0.85);"><br>2015</span>'
-  ,img:'/blog/img/paint1.png'}
-  
-  
-  ];
   
   
   let h={
@@ -152,7 +196,16 @@ body {
   skipStart:1,
   files:[
   
-  {text:'<span style="font-size:2.3em;">'
+  {text:
+    path?
+    
+  '<span style="font-size:2.3em;">'
+  +'<img src="/blog/img/180611.png" width=45 style="vertical-align:text-top;"/>'
+  +' Pl4n3 <a href="/index.html">..</a>/'+path
+  +'<br></span>'
+    
+    :
+    '<span style="font-size:2.3em;">'
   
     //+'Pl4n3 projects '
     //+'<img src="/canvas/paint/avatar.png" width=40 style="vertical-align:middle;"/>'
@@ -166,12 +219,14 @@ body {
     +'<br></span>'
     +'<span style="font-size:1em;"><br>'
     //+'<img src="/canvas/paint/avatar.png" width=20 style="vertical-align:middle;"/>'
-    +'v.1.70 '//FOLDORUPDATEVERSION
+    +'Subsite: <a href="/index.html?path=editxr">EditXr</a><br>'
+    +'v.1.121 '//FOLDORUPDATEVERSION
     +'Comments appreciated:<br><a href="https://mastodon.social/@Pl4n3">Mastodon</a>'
     +', <a href="https://bsky.app/profile/pl4n3.bsky.social">Bluesky</a>'
     +', <a href="https://www.threads.com/@pl4n3d">Threads</a>'
     +', <a href="https://twitter.com/Pl4n3">Twitter</a></span>'
     +'<br>Import/Export <a href="/util/io/lsUploads.htm">localStorage files</a>'
+    ,minHeight:''
   ,draw:function(el) {
     //---
     let st=el.style;
@@ -206,10 +261,15 @@ body {
     //st.filter='grayscale(1)';
     st.fontSize='1.1em';
     st.wordBreak='normal';
-    st.background='#bbb no-repeat url("'+c.img+'")';
+    
+    //st.background='#bbb no-repeat url("'+c.img+'")';
+    //---260317 now using same color as text backgroundcolor to dont
+    //---  have unnessesary textbeckground if there is no bgimg
+    st.background='rgb(230,230,230) no-repeat url("'+c.img+'")';
+    
     st.backgroundSize='450px';
     st.backgroundPosition=c.imgPos||'center center';
-    st.minHeight='150px';
+    st.minHeight=(c.minHeight!==undefined)?c.minHeight:'150px';
     //st.lineHeight='1.1';
     //st.backdropFilter='blur(10px)';
     //st.gridColumn='span 2';
@@ -230,6 +290,6 @@ body {
 </html>
 <script>
 //fr o,25
-//fr o,25,148
-//fr o,25,169
-//fr p,12,106
+//fr o,25,9
+//fr o,25,71
+//fr p,6,142

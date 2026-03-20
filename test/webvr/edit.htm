@@ -148,8 +148,10 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
         paint=p;
         xrUtil.log(paint?'Paintmode on.':'Paintmode off.');
         //this.s=paint?'NP':'Paint';
+        //onsole.log(paint);
         controls.enabled=!paint;
         if (paint) {
+          
           scene.add(paintmesh); 
           if (!sceneh.paint) sceneh.paint={
             color:[0,255,0,1],
@@ -168,6 +170,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
           mcolNorm.color='rgb('+c[0]+','+c[1]+','+c[2]+')';
           if (sceneh.paint.normMode===undefined) sceneh.paint.normMode='up';
           for (let m of maradius) m.selected=(sceneh.paint.radius==parseFloat(m.s));
+          
         } else 
           scene.remove(paintmesh);
         //...
@@ -717,6 +720,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
           p.x=Math.floor((p.x+f*(d.x||0))/f+0.5)*f;
           p.y=Math.floor((p.y+f*(d.y||0))/f+0.5)*f;
           p.z=Math.floor((p.z+f*(d.z||0))/f+0.5)*f;
+          if (m.userData.onchange) m.userData.onchange(p);
         }
         let p=sels[0].position;
         mPoint.ms=Conet.f4(p.x)+' '+Conet.f4(p.y)+' '+Conet.f4(p.z);
@@ -738,7 +742,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     //\u25b2 \u25bc
     
-    const version='v.0.2034 ';//FOLDORUPDATEVERSION
+    const version='v.0.2080 ';//FOLDORUPDATEVERSION
     xrUtil.log('Edit '+version);
     
     //
@@ -854,6 +858,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     function point(x,y,mode,e) {
       //---
+      //onsole.log('point mode='+mode);
       
       if (!self.mEditMode.checked) return;
       
@@ -1003,39 +1008,91 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     window.addEventListener('resize',onWindowResize);
     const canv=renderer.domElement;
     
-    canv.parentElement.addEventListener('pointermove',function(e) {
-      //---
-      Conet.handlerRun('pointermove',e);
+    /* pointer or touchmouse */ {
       
-      //onsole.log('pointermove');
-      point(e.clientX,e.clientY,2,e);
-      //...
-    }
-    );
-    
-    canv.addEventListener('pointerdown',function(e) {
-      //---
-      Conet.handlerRun('pointerdown',e);
+      let usePointer=false;
       
-      //onsole.log('pointerdown');
-      //console.log(e);
-      pointDown=true;
-      point(e.clientX,e.clientY,1,e);
-      //onsole.log(e);
-      //...
+      if (!usePointer) {
+      let tident;
+      
+      canv.addEventListener('touchmove',function(e) {
+        //---
+        //onsole.log('touchmove');
+        let t;
+        for (let t0 of e.touches) if (t0.identifier==tident) { t=t0;break; }
+        if (!t) return;
+        
+        Conet.handlerRun('pointermove',{x:t.clientX,y:t.clientY,buttons:1});
+        point(t.clientX,t.clientY,2,e);
+        //...
+      }
+      ,{passive:false});
+      
+      canv.addEventListener('touchstart',function(e) {
+        //---
+        let t=e.touches[e.touches.length-1];
+        tident=t.identifier;
+        //onsole.log('touchstart 1 x='+t.clientX+' y='+t.clientY+' touches='+e.touches.length+' tident='+tident);
+        
+        Conet.handlerRun('pointerdown',{x:t.clientX,y:t.clientY});
+        pointDown=true;
+        point(t.clientX,t.clientY,1,e);
+        //...
+      }
+      ,{passive:false});
+      
+      canv.addEventListener('touchend',function(e) {
+        //---
+        //onsole.log('touchend');
+        let t;
+        for (let t0 of e.touches) if (t0.identifier==tident) { t=t0;break; }
+        if (!t) return;
+        
+        pointDown=false;
+        point(t.clientX,t.clientY,0,e);
+        //...
+      }
+      ,{passive:false});
+      
+      }
+      
+      //if (1)
+      canv.parentElement.addEventListener(usePointer?'pointermove':'mousemove',function(e) {
+        //---
+        Conet.handlerRun('pointermove',e);
+        
+        //onsole.log('pointermove');
+        point(e.clientX,e.clientY,2,e);
+        //...
+      }
+      );
+      
+      canv.addEventListener(usePointer?'pointerdown':'mousedown',function(e) {
+        //---
+        //onsole.log('pointerdown 1');
+        
+        Conet.handlerRun('pointerdown',e);
+        
+        //onsole.log('pointerdown');
+        //console.log(e);
+        pointDown=true;
+        point(e.clientX,e.clientY,1,e);
+        //onsole.log(e);
+        //...
+      }
+      );
+      
+      canv.parentElement.addEventListener(usePointer?'pointerup':'mouseup',function(e) {
+        //---
+        //onsole.log('mouseup');
+        pointDown=false;
+        point(e.clientX,e.clientY,0,e);
+        //xrUtil.inp.focus();
+        //...
+      }
+      );
+      
     }
-    );
-    
-    canv.parentElement.addEventListener('pointerup',function(e) {
-      //---
-      //onsole.log('mouseup');
-      pointDown=false;
-      point(e.clientX,e.clientY,0,e);
-      //xrUtil.inp.focus();
-      //...
-    }
-    );
-    
     
     //---menu
     
@@ -2239,26 +2296,15 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 //fr o,37,20,91,92
 //fr o,37,20,91,98
 //fr o,37,20,91,141
+//fr o,37,20,93
+//fr o,37,20,93,1
 //fr o,37,20,136
 //fr o,37,20,165
 //fr o,37,20,170
-//fr o,37,20,173
-//fr o,37,20,176
-//fr o,37,20,203
-//fr o,37,20,204
-//fr o,37,20,210
-//fr o,37,20,211
-//fr o,37,20,212
-//fr o,37,20,216
-//fr o,37,20,220
-//fr o,37,20,259
-//fr o,37,20,268
-//fr o,37,20,280
-//fr o,37,20,284
 //fr o,37,29,3
 //fr o,37,33,10
 //fr o,37,33,11
 //fr o,37,48
 //fr o,37,52
 //fr o,37,54
-//fr p,19,1071
+//fr p,2,504

@@ -12,7 +12,14 @@
   
   //----cannonstuff
   let cannonsc=0,player,cannonTriMesh=undefined,triMeshBody,sculptBody,sculptVersion=-1,
-      groundMaterial,actionPs={};
+      groundMaterial,actionPs={},p000=new THREE.Vector3(0,0,0);
+      
+  function round(f) {
+    //---
+    return Math.floor(f+0.5);
+    //...
+  }
+      
   function cannonBoxMeshUpdate(box) {
     //---
     let sc=cannonsc,pos=box.pos;
@@ -48,6 +55,7 @@
       if (player===box) {
         //onsole.log('set room');
         let vp=initps.editxr.vrPos;
+        //onsole.log(ppos);
         ////console.log(vp.x+' '+vp.y+' '+vp.z);
         //room.position.set(-mpos.x+vp.x,-mpos.y+vp.y,-mpos.z+vp.z);
         ////onsole.log(o5.ay);
@@ -58,11 +66,18 @@
           
           room.matrix.multiply(m0.makeScale(room.scale.x,room.scale.y,room.scale.z));
           
-          room.matrix.multiply(m0.makeTranslation(vp.x+ppos.x,vp.y+ppos.y,vp.z+ppos.z));
+          let ph=ppos;//p000;//ppos;
+          //onsole.log(controls);
+          room.matrix.multiply(m0.makeTranslation(vp.x+ph.x,vp.y+ph.y,vp.z+ph.z));
           room.matrix.multiply(m0.makeRotationY(-o5.ay+roomAngleD));//---add a offset here
-          room.matrix.multiply(m0.makeTranslation(-mpos.x-ppos.x,-mpos.y-ppos.y,-mpos.z-ppos.z));
+          room.matrix.multiply(m0.makeTranslation(-mpos.x-ph.x,-mpos.y-ph.y,-mpos.z-ph.z));
           //250619 no effect here: 
           room.matrixWorldNeedsUpdate=true;
+          
+          if (!threeEnv.baseRot) threeEnv.baseRot={x:0,y:0,z:0};
+          threeEnv.baseRot.y=-o5.ay+roomAngleD;
+          threeEnv.baseRot.x=2-1.4*editxr.controls.getPolarAngle();
+          //console.log(threeEnv.baseRot.x);
           
           //if (threeEnv.skyMesh) {
           //  threeEnv.skyMesh.rotation.y=-o5.ay;
@@ -73,6 +88,7 @@
             sc.backgroundRotation.y=-o5.ay;
         } else { 
           room.matrixAutoUpdate=true;
+          threeEnv.baseRot=undefined;
         }
       }
     }
@@ -81,24 +97,31 @@
   function cannonRender(dt) {
     //---
     if (cannonTriMesh!=initps.editxr.mesh) {
-      cannonTriMesh=initps.editxr.mesh;
+      let m=cannonTriMesh=initps.editxr.mesh;
       let bg=cannonTriMesh.geometry;
       //let pos=bg.getAttribute('position');
       
       //onsole.log(cannonTriMesh);
       console.log('cannon trimesh update.');
-      //onsole.log(pos.array.length);
-      //onsole.log(bg.index.array.length);
+      //console.log(pos.array.length);
+      //console.log(bg.index.array.length);
       Sound.vol=0.1;
       
       if (triMeshBody) cannon.world.remove(triMeshBody);
       let a0=bg.getAttribute('position').array,a1=[];
-      let i=0,sc=cannonsc;
+      let i=0,sc=cannonsc/m.scale.x;
+      let p0=m.parent.position;
       while (i<a0.length) {
         let x=a0[i],y=a0[i+1],z=a0[i+2];
-        a1.push(x/sc,-z/sc,y/sc);
+        a1.push(
+          (x/sc+p0.x/cannonsc),
+          (-z/sc-p0.z/cannonsc),
+          (y/sc+p0.y/cannonsc));
         i+=3;
       }
+      //onsole.log(a1);
+      //onsole.log(bg.index.array);
+      //onsole.log(cannonTriMesh);
       
       
       let shape=new CANNON.Trimesh(a1,bg.index.array);//[0,0,0, 9,0,0, 0,0,9],[0,1,2,0,2,1]);
@@ -947,16 +970,16 @@
     //...
   }
   
-  let what='w3dit.Pd5 v.0.1693 ';//FOLDORUPDATEVERSION
+  let what='w3dit.Pd5 v.0.1794 ';//FOLDORUPDATEVERSION
   
   function vertsMenu() {
     //---
     let pd5Verts;
-    let ret={s:'Verts',x:0.6,y:0.52,w:0.1,h:0.1,
+    let ret={s:'Verts',x:0.6,y:0.52,w:0.1,h:0.1,stay:1,
     ondown:function() {
       //---
       //onsole.log('Verts.ondown');
-      let ps={selected:selected};//selected userData
+      let ps={selected:selected,pointMesh:initps.mesh};//selected userData
       
       if (pd5Verts) {
         pd5Verts.toggle(ps);
@@ -970,7 +993,7 @@
         //m.second=1;
         pd5Verts=m.pd5Verts;
         //console.log(pd5Verts.what); 
-        pd5Verts.init({editxr:initps.editxr});
+        pd5Verts.init({editxr:initps.editxr,xrUtil:xrUtil,button:ret});
         //m.test0('from_editxr');
         pd5Verts.toggle(ps);
         //---
@@ -978,10 +1001,17 @@
       );
       //...
     }
+    
     };
     
+    //-- not following, clear ui selectively so that 6 translate buttons stay
+    //ret.sub=[
+    //{s:'Verts \u25b2',x:0.01,y:0.4,w:0.2,h:0.1,ondown:ret.ondown},
+    //{s:'Test',x:0.89,y:0.89,w:0.1,h:0.1}
+    //];
+    
     //---for tests do autotoggle
-    setTimeout(ret.ondown,500);
+    //setTimeout(ret.ondown,500);
     //ret.ondown();
     
     return ret;
@@ -1233,6 +1263,10 @@
         physWalks.push(o);
         //onsole.log(o);
       }
+      if (1&&ps0.cannonTris) {
+        //Pd5.calc(o,0,0.0,0.0,1,{x:0,y:0,z:0},0,0,true);
+        editxr.mesh=o.meshes[0].tmesh;
+      }
       if (ps0.cannonTest) {
         //onsole.log('loading cannon.min.js');
         var script=document.createElement('script');
@@ -1284,6 +1318,7 @@
         //script.onload();
       }
       
+      //onsole.log('ps0.player='+ps0.player);
       if (ps0.player) {
         //onsole.log('@@@@@@@@@@@@ add light');
         let l=new THREE.PointLight(0xffffff,0.05,0.1);
@@ -1312,6 +1347,7 @@
         //console.log(Menu.roots);
         if (1) {
           let m;
+          //onsole.log('adding scale hud nao.');
           xrUtil.hud.buttons.push(
         m={s:'Scale',ms:'Pd5',x:0.55,y:0.7,w:0.16,h:0.1
         ,ondown:xrUtil.scaleSwitch({
@@ -1330,6 +1366,8 @@
           ,lights:lights})
         }   
           );
+          xrUtil.setNeedDrawUi();
+          //m=undefined;
           //onsole.log('m='+m);
       xrUtil.onScaleSwitch=function(ps) {
         rotateRoom=ps.scfg.rotateRoom;
@@ -1361,6 +1399,7 @@
         //console.log('pd5.pointerMove e.buttons='+e.buttons);
         //onsole.log(e.buttons);
         let controls=editxr.controls;
+        //onsole.log('pointerMove e.buttons='+e.buttons);
         if (e.buttons==1) {
           //console.log(Conet.f4((e.x-pointx)/window.innerWidth));
           o.ay=pointay-10*((e.x-pointx)/window.innerWidth);
@@ -1373,6 +1412,7 @@
             let pa=polarAngle-10*dy;
             //onsole.log(pa);
             if (1) {
+            //onsole.log(controls);
             controls.minPolarAngle=pa;
             controls.maxPolarAngle=pa;
             controls.update();
@@ -1385,7 +1425,8 @@
         //...
       }
       );
-          Menu.roots[0].sub.push({s:'Scale',ms:'Pd5',actionf:m.ondown,r:1});let v;
+          Menu.roots[0].sub.push({s:'Scale',ms:'Pd5',actionf:m.ondown,r:1});
+          let v;
           let urls=Conet.parseUrl();
           if   (urls.scaleCfg) m.ondown();
           if (v=urls.scaleCfgI) m.ondown(v);
@@ -1477,15 +1518,22 @@
 )();
 //----
 //fr o,1
-//fr o,1,21
-//fr o,1,27,90
-//fr o,1,27,177
-//fr o,1,27,271
-//fr o,1,33
-//fr o,1,33,3
-//fr o,1,33,3,10
-//fr o,1,35
-//fr o,1,35,37
-//fr o,1,35,47
-//fr o,1,35,66
-//fr p,0,198
+//fr o,1,14
+//fr o,1,16
+//fr o,1,17
+//fr o,1,22
+//fr o,1,24
+//fr o,1,30,90
+//fr o,1,30,177
+//fr o,1,30,271
+//fr o,1,36
+//fr o,1,36,3
+//fr o,1,36,3,10
+//fr o,1,38
+//fr o,1,38,37
+//fr o,1,38,37,121
+//fr o,1,38,37,125
+//fr o,1,38,37,127
+//fr o,1,38,47
+//fr o,1,38,66
+//fr p,6,809

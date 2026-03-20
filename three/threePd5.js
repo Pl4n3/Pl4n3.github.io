@@ -701,6 +701,7 @@ function threeRender(dt) {
       }
       //var g=mesh1.geometry;
       //if (!useBuff) 
+      //onsole.log('lo.calcVertNorms='+lo.calcVertNorms);
       if (!lo.calcVertNorms) g.computeVertexNormals();
       
       //onsole.log(g);
@@ -725,7 +726,8 @@ function threeRender(dt) {
     }
   }
   
-  var br=threeEnv.useBaseRot?planim.baseRot:undefined;
+  let br=threeEnv.useBaseRot?planim.baseRot:undefined;
+  if (!br) br=threeEnv.baseRot;
   //onsole.log(br?'br':'no br');
   
   //var q=threeEnv.camera.quaternion;
@@ -1304,4 +1306,4 @@ threeEnv.dungeonGeometry=function (ps,view) {
 //fr o,28,57
 //fr o,38
 //fr o,41
-//fr p,8,230
+//fr p,29,641

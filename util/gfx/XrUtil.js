@@ -5,7 +5,7 @@ import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFa
 let XrUtil={};
 (function(pself) {
   //---
-  let version='v.1.757 ',//FOLDORUPDATEVERSION
+  let version='v.1.777 ',//FOLDORUPDATEVERSION
       self=pself,ctrl0,ctrl1,gp0,gp1,camera,scene,room,vrPos,huds=[],hudMesh,
       hud={lines:['XrUtil '+version],cursor:{x:0.5,y:0.5,vis:false},buttons:[]},
       raycaster,INTERSECTED,hudCount=0,needDrawUi=false,input,uisc=2,gps,
@@ -758,6 +758,10 @@ let XrUtil={};
       
       //onsole.log(scfg);
       //onsole.log(scfg);
+      //onsole.log('rotateRoom='+scfg.rotateRoom);
+      //threeEnv.baseRot=scfg.rotateRoom?room.rotation:undefined;
+      //onsole.log(room);
+      //onsole.log(gps.room0);
       
       if (ps.pl0) {
         ps.pl0.intensity=1*scfg.lint;
@@ -826,6 +830,11 @@ let XrUtil={};
         //  //blockWalk.tweens.push({o:vrPos,key:'x',t:t,value:scfg.vrPos.x});
         //  //blockWalk.tweens.push({o:vrPos,key:'y',t:t,value:scfg.vrPos.y});
         //  //blockWalk.tweens.push({o:vrPos,key:'z',t:t,value:scfg.vrPos.z});
+        }
+        if (scfg.far) {
+          camera.far=scfg.far;
+          camera.updateProjectionMatrix();
+          //onsole.log('far='+camera.far);
         }
       } else {
         let cp=camera.position;
@@ -1182,6 +1191,27 @@ let XrUtil={};
     //...
   }
   
+  self.hudRemove=function(ps) {
+    //---
+    let ba=hud.buttons,a=[];
+    for (let i=ba.length-1;i>=0;i--) {
+      //onsole.log(i);
+      let b=ba[i];
+      let aleft=b.x ,aright=b.x+b.w  ,atop=b.y ,abottom=b.y+b.h,
+          bleft=ps.x,bright=ps.x+ps.w,btop=ps.y,bbottom=ps.y+ps.h;
+      //if (RectA.Left < RectB.Right && RectA.Right > RectB.Left &&
+      //   RectA.Top > RectB.Bottom && RectA.Bottom < RectB.Top ) 
+      //if ((b.x<=(ps.x+ps.w))&&((b.x+b.w)>=ps.x)&&(b.y<=(ps.y+ps.h))&&((b.y+b.h)>=ps.y)) {
+      if ((aleft<=bright)&&(aright>=bleft)&&(atop<=bbottom)&&(abottom>=btop)) {
+        a.push(b);
+        ba.splice(i,1);
+      }
+    }
+    return a;
+    //...
+  }
+  
+  
   console.log('XrUtil '+version);
   //...
 }
@@ -1201,14 +1231,17 @@ export { XrUtil };
 //fr o,5,15,102,6
 //fr o,5,18,3
 //fr o,5,18,5
-//fr o,5,23
 //fr o,5,24,37
 //fr o,5,24,41
 //fr o,5,24,43
 //fr o,5,24,45
+//fr o,5,26
+//fr o,5,28
+//fr o,5,28,17
 //fr o,5,30,1
 //fr o,5,32,12
 //fr o,5,32,19
 //fr o,5,32,23
 //fr o,5,32,25
-//fr p,46,230
+//fr o,5,34
+//fr p,3,417

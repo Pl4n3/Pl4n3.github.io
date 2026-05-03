@@ -1,7 +1,7 @@
 var Conet={};
 (function(Conet) {
   Conet.offline=false;
-  Conet.version='1.724 ';//FOLDORUPDATEVERSION
+  Conet.version='1.800 ';//FOLDORUPDATEVERSION
   Conet.files={};
   var uploads={},fns,logc,logs=[],//fn=>data,first
       logSameLineCount=0,ac,downloads={},PI=Math.PI;
@@ -184,7 +184,27 @@ var Conet={};
     return n<10?'0'+n:n;
   }
   function dir(p) {
-    //--
+    //---
+    let url=document.URL;
+    //url='https://samlue15.github.io/sound/mid/';
+    //onsole.log('conet.dir url='+url+' p.fn='+p.fn);
+    
+    let i=url.indexOf('.github.io');
+    if (i!=-1) {
+      let sh=url.substr(8,i-8);
+      sh='https://api.github.com/repos/'+sh+'/'+sh+'.github.io/contents'+p.fn;
+      console.log('Getting dir from: '+sh);
+      Conet.xhr({url:sh,
+    f:function(v) {
+      //---
+      let a0=JSON.parse(v),a1=[];
+      for (let h of a0) a1.push(h.name);
+      p.f(a1);
+      //...
+    }
+      });
+    } else
+    
     download({fn:p.fn,f:function (v) {
       var a=v.split('\n'),ra=[];
       for (var i=0;i<a.length;i++) {
@@ -212,10 +232,12 @@ var Conet={};
   Conet.fileMenu=function(p) {
     //---m.a are set only for compatibility (e.g. in paint Load,Save else trigger localStorage io)
     //onsole.trace();//('fileMenu 0');
+    let msave;
     //---
     function setCurFn(v) {
       m.curFn=v;
       Menu.ms(p.loadMs?mload:m,m.curFn);
+      if (msave) Menu.setInp(msave,v!==undefined);
       //...
     }
     function mload1() {
@@ -295,7 +317,15 @@ var Conet={};
     
     if (p.m) for (var k in p.m) if (p.m.hasOwnProperty(k)) m[k]=p.m[k];
     
-    if (p.newf) m.sub.push({s:'New',actionf:p.newf});
+    //if (p.newf) m.sub.push({s:'New',actionf:p.newf});
+    if (p.newf) m.sub.push({s:'New',actionf:function() {
+      //---
+      p.newf();
+      setCurFn(undefined);
+      //if (msave) Menu.setInp(msave,false);
+      //...
+    }
+    });
     
     m.sub.push(mload={s:'Load',noa:1,a:'conetLoad',sub:[{s:'...',tfHistLskey:p.tfHistLskey,tfDir:p.tfDir,doctrl:'Load'
     
@@ -373,8 +403,10 @@ var Conet={};
       });
     }
     
-    if (p.savef) {
-    m.sub.push(
+    if (p.savef
+      &&Conet.checkOnline()//29-04-20
+      ) {
+    m.sub.push(msave=
     {s:'Save',a:'conetSave',keys:['83_c'],ms:'<span style="color:#00f">ctrl+s</span>',actionf:function() {
       if ((m.curFn!==undefined)&&m.files) checkListFile(m.curFn);
       p.savef(m.curFn);
@@ -829,6 +861,8 @@ var Conet={};
   
   function jsonStringify(o,replacer,space,ps,path) {
     //--- same as JSON.strinigfy but replacers returnvalue isnt escaped
+    //--- note260103 if <path> is array, then newLinePath[<path>]=1 has same 
+    //---   effect as newLine[<path>+'A']=1, newline after each arrayvalue
     //onsole.log(path);
     let s='';
     if (o===undefined) 
@@ -837,6 +871,7 @@ var Conet={};
       s+='[';let first=true;
       for (const e of o) {
         let npath=path+'A';//250627
+        //onsole.log(npath);
     
         s+=(first?'':',');
     
@@ -1338,16 +1373,20 @@ var Conet={};
     function start(title) {
       //---
       cont.innerHTML='';let s=cont.style;
-      cont.style.display='grid';
-      //cont.style.gridTemplateColumns='repeat(auto-fill, minmax(210px, 1fr))';
-      cont.style.gridTemplateColumns='repeat(auto-fill, minmax('+(gps.min||'210px')+', 1fr))';
-      cont.style.background='#777';
-      cont.style.padding='4px';
-      s.fontSize='12px';
+      s.display='grid';
+      //s.gridTemplateColumns='repeat(auto-fill, minmax(210px, 1fr))';
+      s.gridTemplateColumns='repeat(auto-fill, minmax('+(gps.min||'210px')+', 1fr))';
+      if (gps.minHeight) s.gridAutoRows='minmax('+gps.minHeight+',auto)';
+      //grid-auto-rows: minmax(100px, auto);
+      
+      s.background='#777';
+      s.padding='4px';
+      //s.fontSize='12px';//260419 removed so that /sound/mid/index.html has bigger font
       s.color='#000';
       if (gps.skipStart) return;
       let e=document.createElement('div');s=e.style;
       e.innerHTML=title;//dir;
+      //s.fontSize='1.5em';//'18px';
       s.fontSize='18px';
       s.background='#aaa';s.borderColor='#444';
       //s.gridColumn='1 / -1';
@@ -1355,6 +1394,7 @@ var Conet={};
       s.border='1px solid';
       s.padding='2px';
       s.margin='2px';
+      if (gps.formatStart) gps.formatStart(e);
       if (gps.closeButton) {
         let c=document.createElement('button');
         c.innerHTML='X';
@@ -1374,6 +1414,7 @@ var Conet={};
         //---
         start(dir);
         
+        if (!gps.noFolders)
         for (let fn of a) {
           if (fn.indexOf('.')>0) continue;
           addFolder({fn0:fn});
@@ -1381,6 +1422,7 @@ var Conet={};
         for (let fn0 of a) {
           if (fn0.indexOf('.')<=0) continue;
           let fn=dir+'/'+fn0,fnl=fn.toLowerCase();
+          if (gps.skipFile) if (gps.skipFile(fn)) continue;
           let el=document.createElement('div'),s=el.style;
           s.background='#888';s.borderColor='#444';
           s.borderRadius='0px 0.5em 0.5em';
@@ -1389,11 +1431,14 @@ var Conet={};
           s.margin='2px';
           s.wordBreak='break-all';
           el.innerHTML=fn0;
+          if (gps.formatCell) gps.formatCell(el);
           if (syncAdd) cont.appendChild(el);
-          if (fnl.endsWith('.json')) {
+          if (fnl.endsWith('.midi.json')) {}
+          else if (fnl.endsWith('.json')) {
           
         Conet.download({fn:fn,_el:el,f:function(v) {
           //---
+          //onsole.log('...json downloaded');
           let d;
           try {
             d=JSON.parse(v);
@@ -1440,9 +1485,10 @@ var Conet={};
         s.border='1px solid';
         s.padding='2px';
         s.margin='2px';
-        s.wordBreak='break-all';
+        s.wordBreak=gps.wordBreak||'break-all';
         //s.filter='grayscale(1)';
         el.innerHTML=f.text||f.fn;el._fh=f;
+        if (gps.formatCell) gps.formatCell(el);
         cont.appendChild(el);
         if (f.isrc) addImage({src:f.isrc,el:el,height:50});
         if (gps.onclick) {    
@@ -1473,42 +1519,87 @@ var Conet={};
     
     //...
   }
+  Conet.mdiv=function(ps) {
+    //---
+    function showDiv() {
+      //---
+      let md=new Mdiv.Cont(ps.x||50,ps.y||70,ps.w||400,ps.h||150);
+      let c=md.c,st=c.style;
+      st.backgroundColor='#bba';
+      st.fontSize='1em';
+      st.padding='4px';
+      if (ps.text) md.c.innerHTML=ps.text;
+      let b=document.createElement('button');
+      b.innerHTML='X';st=b.style;
+      st.position='absolute';
+      st.top='4px';
+      st.right='4px';
+      md.c.appendChild(b);
+      ps.md=md;
+      //b.onclick=md.c.remove;
+      if (1)
+      b.onclick=function() {
+        //---
+        md.c.remove();
+        delete(ps.md);
+        //...
+      }
+      //...
+    }
+    
+    
+    console.log('Conet.mdiv '+(window.Mdiv?1:0));
+    
+    if (!window.Mdiv) {
+      let sc=document.createElement('script');
+      sc.src='/util/mdiv.js';
+    sc.onload=function() {
+      //---
+      //onsole.log('mdiv loaded');
+      showDiv();
+      //...
+    }
+      document.body.appendChild(sc);
+    } else showDiv();
+    //...
+  }
   //---
 }
 )(Conet);
 console.log('Conet '+Conet.version);
 //fr o,1
-//fr o,1,5,4
-//fr o,1,6
-//fr o,1,8
 //fr o,1,9,33
 //fr o,1,10,29
 //fr o,1,10,31
-//fr o,1,13
-//fr o,1,13,3
 //fr o,1,13,4
 //fr o,1,13,5
 //fr o,1,13,6
 //fr o,1,13,7
-//fr o,1,13,19
-//fr o,1,13,20
-//fr o,1,13,28
-//fr o,1,13,28,3
-//fr o,1,13,32
-//fr o,1,13,32,4
-//fr o,1,13,38
-//fr o,1,13,41
-//fr o,1,13,42
-//fr o,1,13,70
+//fr o,1,13,8
+//fr o,1,13,17
+//fr o,1,13,22
+//fr o,1,13,23
+//fr o,1,13,31,3
+//fr o,1,13,35,4
+//fr o,1,13,43
+//fr o,1,13,46
+//fr o,1,13,47
+//fr o,1,13,75
 //fr o,1,14,1
 //fr o,1,21,4
 //fr o,1,50,13
 //fr o,1,64,3
 //fr o,1,65,2
-//fr o,1,109
 //fr o,1,117,2
 //fr o,1,117,11
+//fr o,1,121
 //fr o,1,121,3
 //fr o,1,121,4
-//fr o,1,121,8,24
-//fr p,35,24
+//fr o,1,121,8
+//fr o,1,121,8,29
+//fr o,1,121,10,0
+//fr o,1,121,10,0,25
+//fr o,1,124,1
+//fr o,1,124,1,16
+//fr o,1,124,9
+//fr p,57,166

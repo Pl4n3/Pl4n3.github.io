@@ -32,22 +32,69 @@ body {
   let bgt='rgba(230,230,230,0.85)';//rgba(200,200,200,0.85)
   //let bgt='rgba(187,187,187,0.85)';//rgba(200,200,200,0.85)
   
-  let cells;
-  if (path=='editxr') /* */ {
+  let cells,pathDescr,minHeight='150px';
+  if (path=='blockbuild') /* */ {
+    //---
+    pathDescr='Build scenes of blocks and walk through them, isometric or 3rd-person view. Optional with megabonk rendering (mb).';
+    cells=[
     
+    {descr:'Roof blending out in iso-view.',
+    link:'/three/deep/blockBuild.htm?fn=/anim/blockBuild/gameFreeWalkShoot0.json&isoview=0&px=1014&py=390&pz=-611&ay=2.3',
+    linkAdd:[{text:'(mb)',add:'&megabonk=1'}],
+    img:'/anim/blockBuild/thirdPerson.jpg',
+    bgt:'rgba(230,230,230,0.6)',
+    }
+    
+    ,{descr:'Fog test',
+    link:'/three/deep/blockBuild.htm?fn=/anim/blockBuild/fogTest.json',
+    linkAdd:[{text:'(mb)',add:'&megabonk=1'}],
+    img:'/anim/blockBuild/fog.jpg',
+    bgt:'rgba(230,230,230,0.6)',
+    }
+    
+    ,{descr:'Tree, house with mobs.',
+    link:'/three/deep/blockBuild.htm?fn=/anim/blockBuild/houseAndTree.json',
+    linkAdd:[{text:'(mb)',add:'&megabonk=1'}],
+    img:'/anim/blockBuild/treeHouseMobs.jpg',
+    bgt:'rgba(230,230,230,0.6)',
+    }
+    
+    
+    ,{descr:'Tree',
+    link:'/three/deep/blockBuild.htm?fn=/anim/blockBuild/trees0.json',
+    linkAdd:[{text:'(mb)',add:'&megabonk=1'}],
+    img:'/anim/blockBuild/tree.jpg',
+    bgt:'rgba(230,230,230,0.6)',
+    }
+    
+    ,{descr:'Light within architecture',
+    link:'/three/deep/blockBuild.htm?fn=/anim/blockBuild/lightCenter.json',
+    linkAdd:[{text:'(mb)',add:'&megabonk=1'}],
+    img:'/anim/blockBuild/lightCenter.jpg',
+    bgt:'rgba(230,230,230,0.6)',
+    }
+    
+    ];
+    //...
+  }
+  else if (path=='editxr') /* */ {
+    
+    minHeight=undefined;
     cells=[
     
     {descr:'O5tris.<br>'
     +'<a href="/test/webvr/edit.htm?file=file:action/o5tris&editMode=0&scaleCfgI=1&hudPos=Away">Away</a> '
     +'<a href="/test/webvr/edit.htm?file=file:action/o5tris&editMode=0&scaleCfgI=0&hudPos=Away">Near</a>'
-    ,minHeight:''
+    ,conet:1
+    //,minHeight:''
     },
     
     
     {descr:'Action0.<br>'
     +'<a href="/test/webvr/edit.htm?file=file:action0&editMode=0&scaleCfgI=1&hudPos=Away">Away</a> '
     +'<a href="/test/webvr/edit.htm?file=file:action0&editMode=0&scaleCfgI=0&hudPos=Away">Near</a>'
-    ,minHeight:''
+    ,conet:1
+    //,minHeight:''
     },
     
     {descr:'Megabonk inspired vertical maze.<br>'
@@ -56,7 +103,7 @@ body {
     
     ,
     //link:'/test/webvr/edit.htm?file=file:bricksMegab0&editMode=0&scaleCfg=1&hudPos=Away&pathsMegabonk=1',
-    minHeight:'',
+    //minHeight:'',
     },
     
     {descr:'Sculpted landscape with caves.<br>'
@@ -64,11 +111,171 @@ body {
     +'<a href="/test/webvr/edit.htm?file=file:sculptCann&editMode=0&scaleCfgI=0&hudPos=Away">Near</a>'
     ,
     //link:'/test/webvr/edit.htm?file=file:sculptCann&editMode=0&scaleCfg=1&hudPos=Away',
-    minHeight:'',
+    //minHeight:'',
     },
     
     ];
     
+  }
+  else if (path=='turnbased') /* */ {
+    //---
+    pathDescr='Turnbased game tests.';
+    minHeight=undefined;
+    cells=[
+    
+    {descr:'Explore hilly landscape with viewlines.',minHeight:'150px',
+    link:'/three/deep/flight.htm?level=fogOfWar&withHills=1',
+    linkAdd:[{text:'XR',link:'/test/webvr/edit.htm?file=file:flight&flightLevel=fogOfWar&withHills=1'}],
+    img:'/blog/hub/turnbased/fogOfWarWithHills.jpg',
+    },
+    
+    {descr:'Fight 2 flying bees. Turnbased game test.',minHeight:'150px',
+    link:'/three/deep/flight.htm?level=bees',
+    linkAdd:[{text:'XR',link:'/test/webvr/edit.htm?file=file:flight&flightLevel=bees'}],
+    img:'/blog/hub/turnbased/bees.jpg',
+    date:'2023-05-20',
+    twitter:'https://x.com/Pl4n3/status/1671209060488687621',
+    },
+    
+    (function() {
+      let w=10;//20
+      return {descr:'Arkpark test: 1 heal + 2 melee',minHeight:'10px',conet:1,
+      link:'/anim/arkpark/arkpark.htm?file='+encodeURIComponent(JSON.stringify(
+      
+      {onestep:1
+      ,"fog":1
+      ,approachOnTurn:-1,mobCount:w*w/30,medikits:0
+      ,seed:110 
+      ,medicCount:1
+      //,"medicImgSrc":"/canvas/cutout/tiles/samTorch.json","//old":"medicCount 2,meleeCount 3"
+      ,meleeCount:2,spawnMobOnTurn:1
+      ,gw:w,gh:w
+      ,randomBlocks:Math.floor(0.5+w*w*0.4)
+      
+      }
+      
+      )),
+      };
+    }
+    )(),
+    
+    (function() {
+      let w=10;//20
+      return {descr:'Arkpark test: 2 heal + 3 melee',minHeight:'10px',conet:1,
+      link:'/anim/arkpark/arkpark.htm?file='+encodeURIComponent(JSON.stringify(
+      
+      {onestep:1
+      ,"fog":1
+      ,approachOnTurn:-1,mobCount:w*w/20,medikits:0
+      ,seed:120 // all maps are centered
+      ,medicCount:2
+      //,"medicImgSrc":"/canvas/cutout/tiles/samTorch.json","//old":"medicCount 2,meleeCount 3"
+      ,meleeCount:3,spawnMobOnTurn:1
+      ,gw:w,gh:w
+      ,randomBlocks:Math.floor(0.5+w*w*0.4)
+      
+      }
+      
+      )),
+      };
+    }
+    )(),
+    
+    (function() {
+      let w=10;//20
+      return {descr:'Arkpark test: big mobs',minHeight:'10px',conet:1,
+      link:'/anim/arkpark/arkpark.htm?file='+encodeURIComponent(JSON.stringify(
+      
+      {onestep:1
+      ,"fog":0
+      ,approachOnTurn:-1,mobCount:1,medikits:0
+      ,mobCounts:[{w:2,ap:2,hp:10,c:Math.floor(0.5+w*w/30)}]
+      ,seed:120 
+      ,medicCount:1
+      //,"medicImgSrc":"/canvas/cutout/tiles/samTorch.json","//old":"medicCount 2,meleeCount 3"
+      ,meleeCount:2,spawnMobOnTurn:0
+      ,gw:w,gh:w
+      ,randomBlocks:Math.floor(0.5+w*w*0.1)
+      
+      }
+      
+      )),
+      };
+    }
+    )(),
+    
+    (function() {
+      let w=10;//20
+      return {descr:'Arkpark test: heal mobs',minHeight:'10px',conet:1,
+      link:'/anim/arkpark/arkpark.htm?file='+encodeURIComponent(JSON.stringify(
+      
+      {onestep:1
+      ,"fog":0
+      ,approachOnTurn:-1,mobCount:1,medikits:0
+      ,mobCounts:[
+        {c:Math.floor(0.5+w*w/20)},
+        {c:Math.floor(0.5+w*w/40),heal:1,descr:'MEDIC',ap:3}
+      ]
+      ,seed:120 
+      ,medicCount:1
+      //,"medicImgSrc":"/canvas/cutout/tiles/samTorch.json","//old":"medicCount 2,meleeCount 3"
+      ,meleeCount:2,spawnMobOnTurn:0
+      ,gw:w,gh:w
+      ,randomBlocks:Math.floor(0.5+w*w*0.1)
+      
+      }
+      
+      )),
+      };
+    }
+    )(),
+    
+    
+    {descr:'Arkpark, turnbased 2D gametest, 2 healers + 2 melee\'s.',minHeight:'150px',
+    link:'/anim/arkpark/arkpark.htm?fn=/anim/arkpark/maps/arkparkHealersSimple.json',
+    img:'/blog/hub/turnbased/arkparkHealers.jpg',
+    date:'since 2018',conet:1,
+    }
+    
+    
+    ];
+    //...
+  }
+  else if (path=='voxed') /* */ {
+    //---
+    pathDescr='Voxel editor and experiments based on it.';
+    cells=[
+    
+    {descr:'Voxeleditor XR',
+    link:'/three/anim/voxed/voxXr.htm?fn=/blog/2024/hsRumble.voxed.json',
+    date:'2025-12-15',
+    img:'/blog/hub/voxxr0.png',
+    },
+    
+    {descr:'Gamedemo with instancedMesh map based on voxels (<a href="https://x.com/Pl4n3/status/1575891147645681664/photo/1">here</a> with seasonal textures)',
+    link:'/three/anim.htm?sn=anim/voxed.js&fn=/three/anim/voxed/deep8voxbShadows.json&noOrtho',
+    date:'2022-10-09',
+    img:'/blog/hub/voxed/instancedMesh.jpg',
+    twitter:'https://x.com/Pl4n3/status/1579070478555447296',
+    },
+    
+    {descr:'Landscape from via segments of a mesh.',
+    date:'2022-03-24',
+    img:'/blog/hub/voxed/landscape.jpg',
+    twitter:'https://x.com/Pl4n3/status/1506924951441391617',
+    },
+    
+    
+    {descr:'Snake4D game with 4 3d projections.',
+    link:'/three/anim.htm?sn=anim/voxed.js&fn=/three/anim/voxed/snake4d.json',
+    date:'2022-02-08',
+    img:'/blog/hub/voxed/snake4d.jpg',
+    twitter:'https://x.com/Pl4n3/status/1491045066911399939',
+    },
+    
+    
+    ];
+    //...
   }
   else /* */ {
     
@@ -87,6 +294,7 @@ body {
     link:'/three/anim/voxed/voxXr.htm?fn=/blog/2024/hsRumble.voxed.json',
     date:'2025-12-15',
     img:'/blog/hub/voxxr0.png',
+    styles:[['gridRow','auto / span 2']],
     },
     
     {descr:'Generate a maze randomly, parametrized by width and seed. Walk through it via flatscreen or XR. (<a href="/index.html?path=editxr">editxr</a>)',
@@ -153,11 +361,28 @@ body {
     img:'/blog/hub/mushroom.jpg',
     }
     
-    ,{descr:'Midi Recorder',
+    ,{descr:'Midi Recorder.',
+    //needs script from https://github.com/cifkao/html-midi-player put above
+    //+'<midi-player src="/blog/hub/walzer.mid" sound-font></midi-player>'
     link:'/sound/mid/TestMidi.htm',
     date:'2024',
     img:'/blog/hub/testmidi.png',
     imgPos:'top center',
+    }
+    
+    ,{descr:'Turnbased game test.',
+    link:'/three/deep/flight.htm?level=bees',
+    img:'/blog/hub/turnbased/bees.jpg',
+    date:'2023-05-20',
+    twitter:'https://x.com/Pl4n3/status/1671209060488687621',
+    }
+    
+    ,{descr:'<a href="/index.html?path=blockbuild">Blockbuild</a>: build scenes of blocks and walk through them, isometric or 3rd-person view.',
+    link:'/three/deep/blockBuild.htm?fn=/anim/blockBuild/gameFreeWalkShoot0.json&isoview=0&px=1014&py=390&pz=-611&ay=2.3',
+    img:'/anim/blockBuild/thirdPerson.jpg',
+    date:'2023',
+    bgt:'rgba(230,230,230,0.6)',
+    styles:[['gridRow','auto / span 2']],
     }
     
     ,{descr:'Bullet.js physics animation.',
@@ -200,7 +425,9 @@ body {
   let h={
   //startText:'Pl4n3<br>Projects',
   min:'300px',
+  wordBreak:'normal',
   skipStart:1,
+  //minHeight:'150px',
   files:[
   
   {text:
@@ -208,9 +435,9 @@ body {
     
   '<span style="font-size:2.3em;">'
   +'<img src="/blog/img/180611.png" width=45 style="vertical-align:text-top;"/>'
-  +' Pl4n3 <a href="/index.html">..</a>/'+path
-  +'<br></span>'
-    
+  +' Pl4n3 <span style="font-size:0.7em;"><a href="/index.html">..</a>/'+path
+  +'<br></span></span>'
+  +(pathDescr?'<br>'+pathDescr:'')  
     :
     '<span style="font-size:2.3em;">'
   
@@ -224,15 +451,22 @@ body {
   
   
     +'<br></span>'
-    +'<span style="font-size:1em;"><br>'
+    +'<div style="font-size:0.9em;"><ul style="padding-left:20px;">'
     //+'<img src="/canvas/paint/avatar.png" width=20 style="vertical-align:middle;"/>'
-    +'Subsite: <a href="/index.html?path=editxr">EditXr</a><br>'
-    +'v.1.124 '//FOLDORUPDATEVERSION
+    +'<li>Subsites:'
+    +' <a href="/index.html?path=blockbuild">BlockBuild</a>'
+    +', <a href="/index.html?path=editxr">EditXr</a>'
+    +', <a href="/index.html?path=turnbased">Turnbased</a>'
+    +', <a href="/index.html?path=voxed">VoxelEdit</a>'
+    //+'<br>'
+    +'<li>'
     +'Comments appreciated:<br><a href="https://mastodon.social/@Pl4n3">Mastodon</a>'
     +', <a href="https://bsky.app/profile/pl4n3.bsky.social">Bluesky</a>'
     +', <a href="https://www.threads.com/@pl4n3d">Threads</a>'
-    +', <a href="https://twitter.com/Pl4n3">Twitter</a></span>'
-    +'<br>Import/Export <a href="/util/io/lsUploads.htm">localStorage files</a>'
+    +', <a href="https://twitter.com/Pl4n3">Twitter</a>'
+    +'<li>'
+    +'v.1.398 '//FOLDORUPDATEVERSION
+    +'Import/Export <a href="/util/io/lsUploads.htm">localStorage files</a></ul></div>'
     ,minHeight:''
   ,draw:function(el) {
     //---
@@ -247,19 +481,32 @@ body {
   ],
   cont:document.body};
   
+  if (minHeight!==undefined) h.minHeight=minHeight;
+  let conetc='#ed0',grad='border-box linear-gradient(0.2turn, rgba(0,0,0,0), rgba(0,0,0,0) 77.5%, '
+     +' #444 78%,'
+     +conetc+' 78.1%, '
+     +conetc+' 80%, #444 80.1%, rgba(0,0,0,0) 80.5%)',online=Conet.checkOnline();
+  
   
   //for (let i=0;i<2;i++)
   for (let c of cells) {
-    let text=c.text||'';
-    if (c.descr) text+='<span style="font-size:1.1em;background-color:'+bgt+';">'+c.descr+'<br></span>';
-    if (c.link) text+='<span style="font-size:1.5em;background-color:'+bgt+';"><a href="'+c.link+'">► Start&nbsp;</a></span>';
+    if (c.conet&&!online) continue;
+    let text=c.text||'',bgth=c.bgt||bgt;
+    if (c.conet) text+='<span style="background-color:'+conetc+';padding: 0px 4px;border-radius: 4px;margin-right: 4px;">conet</span>';
+    if (c.descr) text+='<span style="font-size:1.1em;background-color:'+bgth+';">'+c.descr+'</span>';
+    if (c.link) {
+      text+='<br><span style="font-size:1.5em;background-color:'+bgth+';"><a href="'+c.link+'">► Start&nbsp;</a>';
+      if (c.linkAdd) for (let h of c.linkAdd)
+        text+=' <a href="'+(h.link||(c.link+h.add))+'">'+h.text+'</a>';
+      text+='</span>';
+    }
     let s='';
     if (c.mastodon) s+=(s.length==0?'<br>':', ')+'<a href="'+c.mastodon+'">Mastodon</a>';
     if (c.bluesky) s+=(s.length==0?'<br>':', ')+'<a href="'+c.bluesky+'">Bluesky</a>';
     if (c.threads) s+=(s.length==0?'<br>':', ')+'<a href="'+c.threads+'">Threads</a>';
     if (c.twitter) s+=(s.length==0?'<br>':', ')+'<a href="'+c.twitter+'">Twitter</a>';
     if (c.date) s+='<br>'+c.date;
-    if (s.length>0) text+='<span style="font-size:1em;background-color:'+bgt+';">'+s+'</span>';
+    if (s.length>0) text+='<span style="font-size:1em;background-color:'+bgth+';">'+s+'</span>';
     h.files.push({
       text:text,
   draw:function(el) {
@@ -267,19 +514,29 @@ body {
     let st=el.style;
     //st.filter='grayscale(1)';
     st.fontSize='1.1em';
-    st.wordBreak='normal';
+    //st.wordBreak='normal';
     
     //st.background='#bbb no-repeat url("'+c.img+'")';
     //---260317 now using same color as text backgroundcolor to dont
     //---  have unnessesary textbeckground if there is no bgimg
-    st.background='rgb(230,230,230) no-repeat url("'+c.img+'")';
+    
+    let sh=(c.img&&c.conet?grad+', ':'')+'rgb(230,230,230)'
+     +(c.img?' no-repeat url("'+c.img+'")':'')
+     +((c.conet&&!c.img)?' '+grad:'')
+     //+(c.img?', no-repeat url("'+c.img+'")':'')
+    
+       ;
+    st.background=sh;
+    
     
     st.backgroundSize='450px';
     st.backgroundPosition=c.imgPos||'center center';
-    st.minHeight=(c.minHeight!==undefined)?c.minHeight:'150px';
+    if (c.minHeight) st.minHeight=c.minHeight;
+    //st.minHeight=(c.minHeight!==undefined)?c.minHeight:'150px';
     //st.lineHeight='1.1';
     //st.backdropFilter='blur(10px)';
     //st.gridColumn='span 2';
+    if (c.styles) for (let a of c.styles) st[a[0]]=a[1];
     //...
   }
     });
@@ -297,7 +554,12 @@ body {
 </html>
 <script>
 //fr o,25
-//fr o,25,9
 //fr o,25,10
-//fr o,25,71
-//fr p,36,162
+//fr o,25,11
+//fr o,25,11,19
+//fr o,25,11,22
+//fr o,25,11,25
+//fr o,25,11,28
+//fr o,25,62
+//fr o,25,96
+//fr p,16,272

@@ -1,7 +1,7 @@
 var Conet={};
 (function(Conet) {
   Conet.offline=false;
-  Conet.version='1.800 ';//FOLDORUPDATEVERSION
+  Conet.version='1.823 ';//FOLDORUPDATEVERSION
   Conet.files={};
   var uploads={},fns,logc,logs=[],//fn=>data,first
       logSameLineCount=0,ac,downloads={},PI=Math.PI;
@@ -1377,6 +1377,7 @@ var Conet={};
       //s.gridTemplateColumns='repeat(auto-fill, minmax(210px, 1fr))';
       s.gridTemplateColumns='repeat(auto-fill, minmax('+(gps.min||'210px')+', 1fr))';
       if (gps.minHeight) s.gridAutoRows='minmax('+gps.minHeight+',auto)';
+      if (gps.gap) s.rowGap=s.columnGap=gps.gap;
       //grid-auto-rows: minmax(100px, auto);
       
       s.background='#777';
@@ -1480,12 +1481,13 @@ var Conet={};
       for (let f of gps.files) {
         let el=document.createElement('div'),s=el.style;
         s.background='#888';
-        s.borderColor='#444';
+        //s.borderColor='#eeeeee';//'#444';
         s.borderRadius='0px 0.5em 0.5em';
-        s.border='1px solid';
+        s.border='1px solid #444444';
         s.padding='2px';
         s.margin='2px';
         s.wordBreak=gps.wordBreak||'break-all';
+        if (gps.boxShadow) s.boxShadow=gps.boxShadow;
         //s.filter='grayscale(1)';
         el.innerHTML=f.text||f.fn;el._fh=f;
         if (gps.formatCell) gps.formatCell(el);
@@ -1596,10 +1598,10 @@ console.log('Conet '+Conet.version);
 //fr o,1,121,3
 //fr o,1,121,4
 //fr o,1,121,8
-//fr o,1,121,8,29
+//fr o,1,121,8,30
 //fr o,1,121,10,0
 //fr o,1,121,10,0,25
 //fr o,1,124,1
 //fr o,1,124,1,16
 //fr o,1,124,9
-//fr p,57,166
+//fr p,31,209

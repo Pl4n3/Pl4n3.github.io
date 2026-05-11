@@ -427,6 +427,8 @@ body {
   min:'300px',
   wordBreak:'normal',
   skipStart:1,
+  gap:'4px',
+  boxShadow:'2px 2px 2px #555555',
   //minHeight:'150px',
   files:[
   
@@ -465,7 +467,7 @@ body {
     +', <a href="https://www.threads.com/@pl4n3d">Threads</a>'
     +', <a href="https://twitter.com/Pl4n3">Twitter</a>'
     +'<li>'
-    +'v.1.398 '//FOLDORUPDATEVERSION
+    +'v.1.438 '//FOLDORUPDATEVERSION
     +'Import/Export <a href="/util/io/lsUploads.htm">localStorage files</a></ul></div>'
     ,minHeight:''
   ,draw:function(el) {
@@ -531,6 +533,9 @@ body {
     
     st.backgroundSize='450px';
     st.backgroundPosition=c.imgPos||'center center';
+    
+    //st.boxShadow='3px 3x 3px #111111';
+    
     if (c.minHeight) st.minHeight=c.minHeight;
     //st.minHeight=(c.minHeight!==undefined)?c.minHeight:'150px';
     //st.lineHeight='1.1';
@@ -544,6 +549,9 @@ body {
   
   
   Conet.grid(h);
+  //h.cont.style.background='no-repeat #eeeeee linear-gradient(gray, green, orange, #888888, #888888 50%, #888888, #eeeeee)';
+  //h.cont.style.background='no-repeat #888888 linear-gradient(#888888, #444444, #888888)';
+  //h.cont.style.background='#888888';
   //---
 }
 )();
@@ -560,6 +568,6 @@ body {
 //fr o,25,11,22
 //fr o,25,11,25
 //fr o,25,11,28
-//fr o,25,62
-//fr o,25,96
-//fr p,16,272
+//fr o,25,64
+//fr o,25,98
+//fr p,20,210

@@ -12,6 +12,12 @@ body { color:#000;background-color:#fff;margin:0px;overflow:hidden;font-family:A
 <script src="/conet.js"></script>
 <script src="/menu.js"></script>
 <script src="/vecmath.js"></script>
+<script src="/three/deep/blockWalk.js"></script>
+
+<script src="/canvas/pd5.js"></script>
+<script src="/three/threePd5.js"></script>
+<script src="/three/smol/megaBonkMaze.js"></script>
+
 </head><body>
 <div id="container"></div>
 <script>
@@ -21,12 +27,13 @@ body { color:#000;background-color:#fff;margin:0px;overflow:hidden;font-family:A
       mMode,raycaster,camera,
       lskey='blockBuild0',blocksOfMesh=[],
       sceneh,mMeshes,controls,ot=Date.now(),game={},
-      selBox,mView;
+      selBox,mView,fogs;
   const vertices=[],colors=[],indices=[],
       objs=[],//--- threejs object3d
       tweens=[],PI=Math.PI,mModes=[],
       mat0=new Vecmath.Mat4(),mat1=new Vecmath.Mat4(),
-      url=Conet.parseUrl(),hooks=[]; 
+      url=Conet.parseUrl(),hooks=[],
+      blockWalk=new BlockWalk(),dist2=blockWalk.dist2; 
   
   function animate() {
     requestAnimationFrame( animate );
@@ -75,7 +82,27 @@ body { color:#000;background-color:#fff;margin:0px;overflow:hidden;font-family:A
   }
   function arraysToObjsMesh(ps) {
     //---
-    const mesh=arraysToMesh({vertices:vertices,indices:indices,m:m0});
+    //onsole.log(blocksOfMesh);
+    let mesh;
+    if (url.megabonk) {
+      let ph={};
+      for (let h of blocksOfMesh) {
+        let t='b';
+        if ((h.t=='ramp')&&(h.ay==0)&&(h.az==0)) t='r0';
+        else if ((h.t=='ramp')&&(h.ay==1)&&(h.az==0)) t='r2';
+        else if ((h.t=='ramp')&&(h.ay==-0.5)&&(h.az==0)) t='r3';
+        else if ((h.t=='ramp')&&(h.ay==0.5)&&(h.az==0)) t='r1';
+        ph[h.x+'_'+h.y+'_'+h.z]={x:h.x,y:h.y,z:h.z,t:t};
+      }
+      mesh=MegaBonkMaze.generate({ph:ph});
+      scene.add(mesh);
+      mesh.matrixAutoUpdate=true;
+      mesh.scale.set(360+15,480+20,360+15);
+      //m.position.z=1000+1000*objs.length;
+      //console.log(m);
+      //onsole.log(ph);
+    } else 
+      mesh=arraysToMesh({vertices:vertices,indices:indices,m:m0});
     mesh.userData.blocksOfMesh=blocksOfMesh;blocksOfMesh=[];
     objs.push(mesh);
     vertices.length=0;
@@ -85,6 +112,9 @@ body { color:#000;background-color:#fff;margin:0px;overflow:hidden;font-family:A
   }
   function box(x,y,z,w,h,b,m,ps) {
     let mesh;
+    
+    //console.log('box ps.buffer='+ps.buffer);
+    //console.trace();
     
     if (1) {
     const w2=w/2,h2=h/2,b2=b/2;
@@ -354,13 +384,15 @@ body { color:#000;background-color:#fff;margin:0px;overflow:hidden;font-family:A
     //script src="https://threejs.org/examples/js/libs/stats.min.js">/script> //r109
     //script src="https://threejs.org/examples/js/controls/OrbitControls.js">/script>  //v81
     
-    Conet.log('v.0.1185 ');//FOLDORUPDATEVERSION
+    const v='0.1360 ';//FOLDORUPDATEVERSION
+    Conet.log('v.'+v);
+    console.log('BlockBuild '+v);
     
     //let renderer,stats;
     
     scene = new THREE.Scene();
     renderer=new THREE.WebGLRenderer({antialias:true});
-    renderer.setClearColor( 0x888888 );
+    renderer.setClearColor(0x888888);
     renderer.shadowMap.enabled=true;
     renderer.shadowMap.type=THREE.BasicShadowMap;
     //renderer.outputEncoding=THREE.sRGBEncoding;
@@ -727,6 +759,8 @@ body { color:#000;background-color:#fff;margin:0px;overflow:hidden;font-family:A
     for (const o of objs) scene.remove(o);
     objs.length=0;
     sceneh=h;
+    fogs=undefined;
+    if (scene.fog) delete(scene.fog);
     }
     
     vertices.length=0;
@@ -744,7 +778,7 @@ body { color:#000;background-color:#fff;margin:0px;overflow:hidden;font-family:A
     
     //h.noVoxelGroupMeshes=1;
     
-    const useBuffer=!h.noVoxelGroupMeshes;
+    const useBuffer=url.megabonk||!h.noVoxelGroupMeshes;
     mMeshes.sub=[];
     
     if (useBuffer&&h.voxelGroups) for (const vg of h.voxelGroups) {
@@ -774,6 +808,10 @@ body { color:#000;background-color:#fff;margin:0px;overflow:hidden;font-family:A
     
     for (let b of h.voxels) {
       b.add=1;if (useBuffer) b.buffer=1;
+      if (b.fog) { 
+        if (!fogs) fogs=[];fogs.push(b); 
+        b.noserial={x:b.x*gw,y:b.y*gw,z:b.z*gw};
+      }
       blockEt(b);
     }
     if (useBuffer) {
@@ -827,6 +865,9 @@ body { color:#000;background-color:#fff;margin:0px;overflow:hidden;font-family:A
       Conet.log('Scene loaded ('+h.blocks.length+' blocks).');
       sceneh=undefined;
     }
+    
+    //onsole.log(fogs);
+    
     //...
   }
   function meshf() {
@@ -950,7 +991,7 @@ body { color:#000;background-color:#fff;margin:0px;overflow:hidden;font-family:A
     for (let m of a0) {
       let ps=m;//.userData;
       if (ps.c===undefined) ps.c=0;
-      a1.push(Conet.hcopy(ps,undefined,undefined,{mesh:1}));
+      a1.push(Conet.hcopy(ps,undefined,undefined,{mesh:1,noserial:1}));
     }
     sc=sceneh||{
       vw:0.03,colors:[[0.5,0.5,0.5]],
@@ -997,8 +1038,9 @@ body { color:#000;background-color:#fff;margin:0px;overflow:hidden;font-family:A
       dir=new THREE.Vector3(),//,dir0=new THREE.Vector3();
       colGreen=new THREE.Color(0x00ff00),
       colWhite=new THREE.Color(0xffffff),
-      fws=sceneh.gameFreeWalkShoot,alwaysShoot=1,
-      bulletGrid={},bullets=[],dist2bu=gw*gw*1;
+      fws=sceneh.gameFreeWalkShoot,alwaysShoot=fws.shootUI?0:1,
+      bulletGrid={},bullets=[],dist2bu=gw*gw*1,
+      bgcol=new THREE.Color(),dbgcol=new THREE.Color(0.53,0.53,0.53);
     //---
     function bulletGridKey(p) {
       //---
@@ -1062,13 +1104,8 @@ body { color:#000;background-color:#fff;margin:0px;overflow:hidden;font-family:A
       
       return mesh;
     }
-    function dist2(p0,p1) {
-      //---
-      const dx=p1.x-p0.x,dy=p1.y-p0.y,dz=p1.z-p0.z;
-      return dx*dx+dy*dy+dz*dz;
-      //...
-    }
-    function checkWalk(u,dx,dz) {
+    //following is now done via blockWalk.checkWalk (also used from voxVr)
+    function _checkWalk(u,dx,dz) {
       //---
       if (u.posytw&&!u.posytw.ended) return false;
       const pos=u.m.position,x=pos.x+dx,z=pos.z+dz;
@@ -1213,6 +1250,7 @@ body { color:#000;background-color:#fff;margin:0px;overflow:hidden;font-family:A
         const x=pos.x,y=pos.y,z=pos.z;
         
         if (objs.length>0) {
+        //console.log(objs.length);
         for (const o of objs) o.visible=true;
         for (const r of clips) {
           if ((r.x0<=x)&&(r.y0<=y)&&(r.z0<=z)&&(r.x1>=x)&&(r.y1>=y)&&(r.z1>=z)) {
@@ -1265,6 +1303,7 @@ body { color:#000;background-color:#fff;margin:0px;overflow:hidden;font-family:A
       
       mobHitMat=new THREE.MeshPhongMaterial({color:0xaaaaee,flatShading:true});
       
+      if (fws.mobs)
       for (const mob of fws.mobs) {
         for (var i=0;i<10;i++) {
         const mm=dirmesh(0,0,0,1*gw-border,2*gw-border,1*gw-border,new THREE.MeshPhongMaterial( { 
@@ -1313,18 +1352,46 @@ body { color:#000;background-color:#fff;margin:0px;overflow:hidden;font-family:A
       
       if (!alwaysShoot) {
       const px=0.045,pw=0.1;
-      Menu.roots.push({s:'\u270a',vertCenter:1,px:px,py:0.22,pw:pw,ph:pw,ydown:true,xright:true,fs:1.4,
+      Menu.roots.push(Menu.initMenu({s:'\u270a',keys:[32],vertCenter:1,px:px,py:0.22,pw:pw,ph:pw,ydown:true,xright:true,fs:1.4,
       actionf:function() {
         tshoot=5000;
       }
-      });
+      }));
       Menu.setMenus(Menu.roots);
       Menu.remove();
       Menu.draw();
       }
       
+      if (fogs) {
+        scene.fog=new THREE.Fog(0x330088,150000,200000);
+        //console.log(controls);
+      }
+      
       updatePlayerView();
       
+      blockWalk.gw=gw;
+      blockWalk.blockAt=blockAt;
+      blockWalk.tweens=tweens;
+      blockWalk.player=player;
+      blockWalk.updatePlayerView=updatePlayerView;
+      
+      //if (1) {
+        let p=player.m.position,v;
+        if ((v=url.px)!==undefined) p.x=parseFloat(v);
+        if ((v=url.py)!==undefined) p.y=parseFloat(v);
+        if ((v=url.pz)!==undefined) p.z=parseFloat(v);
+        if ((v=url.ay)!==undefined) player.m.rotation.y=parseFloat(v);  
+        //player.m.position.set(1014,390,-611);
+        //player.m.rotation.y=2.3;
+        //mIsoView.checked=false;
+        if ((v=url.isoview)!=undefined) {
+          Menu.setChecked(mIsoView,parseInt(v)?true:false);
+          mIsoView.actionf(); 
+        }
+        //console.log(player.m.position);
+        //onsole.log(player);
+        //player.m.position.set(1013.9632915967707,390,-611.4495891653106);
+      //}
       //...
     }
     //---
@@ -1466,12 +1533,12 @@ body { color:#000;background-color:#fff;margin:0px;overflow:hidden;font-family:A
           //const pos=u.m.position;
           const dx=u.speed*dt*Math.sin(u.a+PI);
           const dz=u.speed*dt*Math.cos(u.a+PI);
-          if (!checkWalk(u,dx,dz)) {
+          if (!blockWalk.checkWalk(u,dx,dz)) {
             if (u.bullet) 
               del=true;
             else 
-              if (!checkWalk(u,dx,0)) 
-                checkWalk(u,0,dz);
+              if (!blockWalk.checkWalk(u,dx,0)) 
+                blockWalk.checkWalk(u,0,dz);
           }
         }
         if (del) {
@@ -1496,7 +1563,48 @@ body { color:#000;background-color:#fff;margin:0px;overflow:hidden;font-family:A
         l.distance=4*gw;
         l.intensity=1;
       }
-        
+      
+      //---distance to fog
+      if (fogs) {
+        let fogFound=false;
+        const d1=200000,d0=70000;
+        for (const f of fogs) {
+          const d=dist2(controls.target,f.noserial);//vecmath
+          //onsole.log(d);
+          if (d<d1) {
+            const f1=(d<d0)?1:(1-(d-d0)/(d1-d0)),f0=1-f1;
+            fogdist=f1*0+f0*1000;
+            bgcol.r=f1*f.fog.bgcolor.r+f0*dbgcol.r;
+            bgcol.g=f1*f.fog.bgcolor.g+f0*dbgcol.g;
+            bgcol.b=f1*f.fog.bgcolor.b+f0*dbgcol.b;
+            renderer.setClearColor(bgcol);
+            
+            const c=scene.fog.color;
+            c.r=f.fog.color.r;
+            c.g=f.fog.color.g;
+            c.b=f.fog.color.b;
+            fogFound=true;
+            break;
+            //if (!scene.fog) { console.log('adding fog');scene.fog=new THREE.Fog(0x330088,1500,2000); }
+          } //else {
+          //  fogdist=5000;
+          //  renderer.setClearColor(0x888888);
+          //  //if (scene.fog) { console.log('removing fog');delete(scene.fog); }
+          //}
+        }
+        if (!fogFound) {
+          fogdist=1000;
+          bgcol.r=dbgcol.r;bgcol.g=dbgcol.g;bgcol.b=dbgcol.b;
+          renderer.setClearColor(bgcol);
+        }
+      }
+      
+      if (scene.fog) { 
+        const d=controls.object.position.distanceTo(controls.target);
+        scene.fog.near=d+100+fogdist;
+        scene.fog.far=d+500+fogdist;
+        //console.log(d);
+      }
       //...
     }
     //...
@@ -1588,24 +1696,23 @@ body { color:#000;background-color:#fff;margin:0px;overflow:hidden;font-family:A
 )();
 </script></body>
 </html><script>
-//fr o,17
-//fr o,17,20
-//fr o,17,20,53
-//fr o,17,20,103
-//fr o,17,20,103,1
-//fr o,17,20,108
-//fr o,17,20,130
-//fr o,17,20,165,4
-//fr o,17,20,165,12
-//fr o,17,24,2
-//fr o,17,24,4
-//fr o,17,24,6
-//fr o,17,24,11
-//fr o,17,31
-//fr o,17,31,14
-//fr o,17,31,18
-//fr o,17,31,24
-//fr o,17,31,24,64
-//fr o,17,31,26
-//fr o,17,31,29
-//fr p,0,205
+//fr o,23
+//fr o,23,15
+//fr o,23,21,55
+//fr o,23,21,105
+//fr o,23,21,105,1
+//fr o,23,21,110
+//fr o,23,21,132
+//fr o,23,21,167
+//fr o,23,21,167,4
+//fr o,23,21,167,12
+//fr o,23,23
+//fr o,23,25,2
+//fr o,23,25,4
+//fr o,23,25,6
+//fr o,23,25,11
+//fr o,23,32
+//fr o,23,32,23
+//fr o,23,32,25,58
+//fr o,23,32,25,65
+//fr p,30,112

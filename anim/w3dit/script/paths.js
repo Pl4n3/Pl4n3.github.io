@@ -245,7 +245,7 @@
   //onsole.log('running path.js');
   //onsole.log('dungeonGeometry.js');
   //onsole.log(document.currentScript);
-  let what='Paths v.0.763 ';//FOLDORUPDATEVERSION
+  let what='Paths v.0.764 ';//FOLDORUPDATEVERSION
   
   
   let gps=
@@ -317,7 +317,7 @@
       function mp(x,y,z,t,dontQueue) {
         //---
         //let max=testSmall?1:7
-        //if ((Math.abs(x)>max)||(Math.abs(z)>max)) return;
+        if ((Math.abs(x)>max)||(Math.abs(z)>max)) return;
         
         let yr=0;
         if (t=='r1') yr=Math.PI/2;
@@ -606,4 +606,4 @@
 //fr o,1,25,45,22
 //fr o,1,25,57
 //fr o,1,38
-//fr p,89,208
+//fr p,0,82

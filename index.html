@@ -79,7 +79,7 @@ body {
   }
   else if (path=='editxr') /* */ {
     //---
-    pathDescr='<div style="padding-left:4px;padding-right:4px;padding-bottom:4px;">3D game and animation experiments, running optionally with XR</div>';
+    pathDescr='3D game and animation experiments, running optionally with XR';
     minHeight=undefined;
     cells=[
     
@@ -125,6 +125,10 @@ body {
     date:'2025-03-03',
     twitter:'https://x.com/Pl4n3/status/1896572826435674343'
     }
+    
+    //,{descr:'Test',
+    //styles:[['gridColumn','1 / -1']],}
+    
     
     ];
     
@@ -306,7 +310,7 @@ body {
     link:'/three/anim/voxed/voxXr.htm?fn=/blog/2024/hsRumble.voxed.json',
     date:'2025-12-15',
     img:'/blog/hub/voxxr0.png',
-    styles:[['gridRow','auto / span 2']],
+    twoRows:1,//styles:[['gridRow','auto / span 2']],
     },
     
     {descr:'Generate a maze randomly, parametrized by width and seed. Walk through it via flatscreen or XR. (<a href="/index.html?path=editxr">editxr</a>)',
@@ -394,7 +398,7 @@ body {
     img:'/anim/blockBuild/thirdPerson.jpg',
     date:'2023',
     bgt:'rgba(230,230,230,0.6)',
-    styles:[['gridRow','auto / span 2']],
+    twoRows:1,//styles:[['gridRow','auto / span 2']],
     }
     
     ,{descr:'Bullet.js physics animation.',
@@ -451,7 +455,7 @@ body {
   +'<img src="/blog/img/180611.png" width=45 style="vertical-align:text-top;"/>'
   +' Pl4n3 <span style="font-size:0.7em;"><a href="/index.html">..</a>/'+path
   +'<br></span></span>'
-  +(pathDescr?'<br>'+pathDescr:'')  
+  +(pathDescr?'<div style="padding:4px;margin-top:6px;">'+pathDescr+'</div>':'')  
     :
     '<span style="font-size:2.3em;">'
   
@@ -479,7 +483,7 @@ body {
     +', <a href="https://www.threads.com/@pl4n3d">Threads</a>'
     +', <a href="https://twitter.com/Pl4n3">Twitter</a>'
     +'<li>'
-    +'v.1.462 '//FOLDORUPDATEVERSION
+    +'v.1.493 '//FOLDORUPDATEVERSION
     +'Import/Export <a href="/util/io/lsUploads.htm">localStorage files</a></ul></div>'
     ,minHeight:''
   ,draw:function(el) {
@@ -496,7 +500,9 @@ body {
   ],
   cont:document.body};
   
-  if (minHeight!==undefined) h.minHeight=minHeight;
+  let gridMinHeight=0;//pl260516 dont using global grid minheight, because trailer row would then have too much vertical space
+  
+  if ((minHeight!==undefined)&&gridMinHeight) h.minHeight=minHeight;
   let conetc='#ed0',grad='border-box linear-gradient(0.2turn, rgba(0,0,0,0), rgba(0,0,0,0) 77.5%, '
      +' #444 78%,'
      +conetc+' 78.1%, '
@@ -550,7 +556,13 @@ body {
     
     //st.boxShadow='3px 3x 3px #111111';
     
+    if (c.twoRows) {
+      c.styles=[['gridRow','auto / span 2']];
+      if (!gridMinHeight) c.minHeight='300px';
+    }
+    
     if (c.minHeight) st.minHeight=c.minHeight;
+    else if (!gridMinHeight) st.minHeight='150px';
     //st.minHeight=(c.minHeight!==undefined)?c.minHeight:'150px';
     //st.lineHeight='1.1';
     //st.backdropFilter='blur(10px)';
@@ -561,6 +573,17 @@ body {
     });
   }
   
+  h.files.push({text:'Pl4n3 Hub Version 1.0.23 ',//FOLDORUPDATEVERSION
+  draw:function(el) {
+    //...
+    let st=el.style;
+    st.gridColumn='1 / -1';
+    st.textAlign='right';
+    if (gridMinHeight) st.height='fit-content';
+    st.paddingRight='6px';
+    //---
+  }
+  });
   
   Conet.grid(h);
   //h.cont.style.background='no-repeat #eeeeee linear-gradient(gray, green, orange, #888888, #888888 50%, #888888, #eeeeee)';
@@ -583,5 +606,6 @@ body {
 //fr o,25,11,28
 //fr o,25,13
 //fr o,25,64
-//fr o,25,98
-//fr p,105,77
+//fr o,25,100
+//fr o,25,105
+//fr p,124,301

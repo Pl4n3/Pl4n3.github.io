@@ -245,7 +245,7 @@
   //onsole.log('running path.js');
   //onsole.log('dungeonGeometry.js');
   //onsole.log(document.currentScript);
-  let what='Paths v.0.693 ';//FOLDORUPDATEVERSION
+  let what='Paths v.0.763 ';//FOLDORUPDATEVERSION
   
   
   let gps=
@@ -312,11 +312,12 @@
       //---
       if (!ps) ps={};
       let testSmall=0,max=testSmall?1:(ps.width||7),testSingle=ps.testSingle;
+      //onsole.log('...pathsMegabonk max='+max);
       
       function mp(x,y,z,t,dontQueue) {
         //---
         //let max=testSmall?1:7
-        if ((Math.abs(x)>max)||(Math.abs(z)>max)) return;
+        //if ((Math.abs(x)>max)||(Math.abs(z)>max)) return;
         
         let yr=0;
         if (t=='r1') yr=Math.PI/2;
@@ -435,7 +436,31 @@
       console.log('c='+c);
       }
       } else {
-        max=7;
+        max=ps.mapFromBoxes?100:7;//--- with mapFromBoxes dont have boundary, display all boxes
+        let ogMap=undefined;
+        if (ps.mapFromBoxes) {
+          //onsole.log('mapFromBoxes nao !!1');
+          if (!ps.map) ps.map=[];
+          ogMap=ps.map.concat([]);
+          for (let p of gps.points) {
+            let op=p.userData.op;
+            if (op.box&&!op.fn) {
+              //console.log(op.x+' '+op.y+' '+op.z);
+              //console.log((op.x/0.04)+' '+(op.y/0.03-1/3)+' '+(op.z/0.04));
+              let nt='b';
+              if (op.t=='ramp00') nt='r2';
+              let yr=Math.floor(0.5+((op.yr||0)+Math.PI)*2/Math.PI);
+              if (op.t=='ramp00') nt=(yr==4?'r2':(yr==3?'r1':(yr==2?'r0':(yr==1?'r3':undefined))));
+              //onsole.log(op.t+' '+op.yr+' '+yr);
+              //console.log((op.x/0.04-0.75)+' '+((op.y-0.01)/0.03)+' '+(op.z/0.04));
+              ps.map.push([
+                Math.floor(op.x/0.04-0.75)-10,
+                Math.floor((op.y-0.01)/0.03)-4,
+                Math.floor(op.z/0.04),
+                nt]);
+            }
+          }
+        }
         if (ps.map) {
           let pp;
           if (pp=ps.playerPos) {
@@ -468,6 +493,7 @@
           for (let m of ps.map) mp(m[0],m[1],m[2],m[3]);//console.log(ps.map);
         }
         else mp(0,0,0,'r3');
+        if (ogMap) ps.map=ogMap;
         //mp(0,0,1,'r3');
       }
       
@@ -475,172 +501,12 @@
         console.log(ph);  
       }
       
-      let ge=new THREE.BufferGeometry();
-      let w=0.4*0.2,h=0.3*0.2;
-      let mh={
-        position:[],
-        color:[],
-        index:[],
-        uv:[],
-      };
-      //let groundUv={u0:0,u1:1,v0:0,v1:1};
-      let groundUv={u0:0.1,u1:0.5,v0:0.4,v1:0.64};
-      let greenUv={u0:0.1,u1:0.5,v0:0.7,v1:0.9};
-      
-      function addTri(mh, x0,y0,z0, x1,y1,z1, x2,y2,z2, r,g,b) {
-        let i0=mh.position.length/3;
-        mh.position.push(x0,y0,z0, x1,y1,z1, x2,y2,z2);
-        mh.color.push(r,g,b, r,g,b, r,g,b);
-        mh.index.push(i0+0,i0+1,i0+2);
-        if (mh.uv) {
-          let h=(r==r1)?greenUv:groundUv;
-          mh.uv.push(h.u0,h.v0, h.u1,h.v0, h.u0,h.v1);
-          //mh.uv.push(0,0, 1,0, 0,1);
-        }
-        //...
-      }
-      
-      
-      function addQuad(mh, x0,y0,z0, x1,y1,z1, x2,y2,z2, x3,y3,z3, r,g,b) {
-        let i0=mh.position.length/3;
-        mh.position.push(x0,y0,z0, x1,y1,z1, x2,y2,z2, x3,y3,z3);
-        mh.color.push(r,g,b, r,g,b, r,g,b, r,g,b);
-        mh.index.push(i0+0,i0+1,i0+2,i0+1,i0+3,i0+2);
-        if (mh.uv) {
-          let h=(r==r1)?greenUv:groundUv;
-          mh.uv.push(h.u0,h.v0, h.u1,h.v0, h.u0,h.v1, h.u1,h.v1);
-          //mh.uv.push(0,0, 1,0, 0,1, 1,1);
-        }
-        //...
-      }
-      
-      //let x0=0,y0=0,z0=0;
-      //addQuad(mh, x0-w,y0-h,z0+w, x0+w,y0-h,z0+w, x0-w,y0+h,z0+w ,x0+w,y0+h,z0+w, r0,g0,b0);
-      //x0+=w*2;
-      //addQuad(mh, x0-w,y0-h,z0+w, x0+w,y0-h,z0+w, x0-w,y0+h,z0+w ,x0+w,y0+h,z0+w, r0,g0,b0);
-      
-      for (let p of Object.values(ph)) {
-        //onsole.log(p);
-        let x0=p.x*w*2,y0=p.y*h*2,z0=p.z*w*2,n;
-        if (p.t=='b') {
-        
-          n=et(p.x,p.y,p.z-1)?.t;if ((n!='b')&&(n!='r0')) 
-            addQuad(mh, x0+w,y0-h,z0-w, x0-w,y0-h,z0-w, x0+w,y0+h,z0-w ,x0-w,y0+h,z0-w, r0,g0,b0);
-          n=et(p.x,p.y,p.z+1)?.t;if ((n!='b')&&(n!='r2'))
-            addQuad(mh, x0-w,y0-h,z0+w, x0+w,y0-h,z0+w, x0-w,y0+h,z0+w ,x0+w,y0+h,z0+w, r0,g0,b0);
-            
-          //n=et(p.x,p.y-1,p.z)?.t;if (n!='b')
-          //  addQuad(mh, x0+w,y0-h,z0+w, x0-w,y0-h,z0+w, x0+w,y0-h,z0-w ,x0-w,y0-h,z0-w, r0,g0,b0);
-          n=et(p.x,p.y+1,p.z)?.t;if (!n)
-            addQuad(mh, x0-w,y0+h,z0+w, x0+w,y0+h,z0+w, x0-w,y0+h,z0-w ,x0+w,y0+h,z0-w, r1,g1,b1);
-            
-          n=et(p.x-1,p.y,p.z)?.t;if ((n!='b')&&(n!='r1'))
-            addQuad(mh, x0-w,y0-h,z0-w, x0-w,y0-h,z0+w, x0-w,y0+h,z0-w ,x0-w,y0+h,z0+w, r0,g0,b0);
-          n=et(p.x+1,p.y,p.z)?.t;if ((n!='b')&&(n!='r3'))
-            addQuad(mh, x0+w,y0-h,z0+w, x0+w,y0-h,z0-w, x0+w,y0+h,z0+w ,x0+w,y0+h,z0-w, r0,g0,b0);
-      
-        } else if (p.t=='r0') {
-      
-          n=et(p.x,p.y,p.z+1)?.t;if ((n!='b')&&(n!='r2'))
-            addQuad(mh, x0-w,y0-h,z0+w, x0+w,y0-h,z0+w, x0-w,y0+h,z0+w ,x0+w,y0+h,z0+w, r0,g0,b0);
-      
-          addQuad(mh, x0-w,y0+h,z0+w, x0+w,y0+h,z0+w, x0-w,y0-h,z0-w ,x0+w,y0-h,z0-w, r1,g1,b1);
-      
-      
-          n=et(p.x-1,p.y,p.z)?.t;if ((n!='b')&&(n!='r1')&&(n!='r0'))
-            addTri(mh, x0-w,y0-h,z0+w, x0-w,y0+h,z0+w, x0-w,y0-h,z0-w ,r0,g0,b0);
-          n=et(p.x+1,p.y,p.z)?.t;if ((n!='b')&&(n!='r3')&&(n!='r0'))
-            addTri(mh, x0+w,y0-h,z0+w, x0+w,y0-h,z0-w, x0+w,y0+h,z0+w, r0,g0,b0);
-            //addTri(mh, x0+w,y0+h,z0+w, x0+w,y0-h,z0+w, x0+w,y0-h,z0-w ,r0,g0,b0);
-      
-        } else if (p.t=='r1') {
-      
-          n=et(p.x,p.y,p.z-1)?.t;if ((n!='b')&&(n!='r0')&&(n!='r1'))
-            addTri(mh, x0+w,y0-h,z0-w, x0-w,y0-h,z0-w, x0+w,y0+h,z0-w, r0,g0,b0);
-            //addTri(mh, x0-w,y0-h,z0-w, x0+w,y0+h,z0-w, x0+w,y0-h,z0-w ,r0,g0,b0);
-          n=et(p.x,p.y,p.z+1)?.t;if ((n!='b')&&(n!='r2')&&(n!='r1'))
-            addTri(mh, x0+w,y0-h,z0+w, x0+w,y0+h,z0+w, x0-w,y0-h,z0+w, r0,g0,b0);
-            //addTri(mh, x0-w,y0-h,z0+w, x0+w,y0-h,z0+w, x0+w,y0+h,z0+w ,r0,g0,b0);
-            
-          addQuad(mh, x0-w,y0-h,z0+w, x0+w,y0+h,z0+w, x0-w,y0-h,z0-w ,x0+w,y0+h,z0-w, r1,g1,b1);
-      
-          n=et(p.x+1,p.y,p.z)?.t;if ((n!='b')&&(n!='r3'))
-            addQuad(mh, x0+w,y0-h,z0+w, x0+w,y0-h,z0-w, x0+w,y0+h,z0+w ,x0+w,y0+h,z0-w, r0,g0,b0); 
-        }
-        
-        else if (p.t=='r2') {
-      
-          n=et(p.x,p.y,p.z-1)?.t;if ((n!='b')&&(n!='r0')) 
-            addQuad(mh, x0+w,y0-h,z0-w, x0-w,y0-h,z0-w, x0+w,y0+h,z0-w ,x0-w,y0+h,z0-w, r0,g0,b0);
-      
-          addQuad(mh, x0-w,y0-h,z0+w, x0+w,y0-h,z0+w, x0-w,y0+h,z0-w ,x0+w,y0+h,z0-w, r1,g1,b1);
-      
-          n=et(p.x-1,p.y,p.z)?.t;if ((n!='b')&&(n!='r1')&&(n!='r2'))
-            addTri(mh, x0-w,y0-h,z0-w,  x0-w,y0-h,z0+w,  x0-w,y0+h,z0-w, r0,g0,b0);
-            //addTri(mh, x0-w,y0+h,z0-w, x0-w,y0-h,z0-w, x0-w,y0-h,z0+w ,r0,g0,b0);
-          n=et(p.x+1,p.y,p.z)?.t;if ((n!='b')&&(n!='r3')&&(n!='r2'))
-            addTri(mh, x0+w,y0-h,z0-w, x0+w,y0+h,z0-w, x0+w,y0-h,z0+w, r0,g0,b0);
-            //addTri(mh, x0+w,y0-h,z0+w, x0+w,y0-h,z0-w, x0+w,y0+h,z0-w ,r0,g0,b0);
-      
-        } else if (p.t=='r3') {
-      
-          n=et(p.x,p.y,p.z-1)?.t;if ((n!='b')&&(n!='r0')&&(n!='r3'))
-            addTri(mh, x0-w,y0-h,z0-w, x0-w,y0+h,z0-w, x0+w,y0-h,z0-w, r0,g0,b0);
-          n=et(p.x,p.y,p.z+1)?.t;if ((n!='b')&&(n!='r2')&&(n!='r3'))
-            addTri(mh, x0-w,y0-h,z0+w, x0+w,y0-h,z0+w, x0-w,y0+h,z0+w, r0,g0,b0);
-            //addTri(mh, x0-w,y0+h,z0+w, x0-w,y0-h,z0+w, x0+w,y0-h,z0+w, r0,g0,b0);
-      
-          addQuad(mh, x0-w,y0+h,z0+w, x0+w,y0-h,z0+w, x0-w,y0+h,z0-w ,x0+w,y0-h,z0-w, r1,g1,b1);
-      
-          n=et(p.x-1,p.y,p.z)?.t;if ((n!='b')&&(n!='r1'))
-            addQuad(mh, x0-w,y0-h,z0-w, x0-w,y0-h,z0+w, x0-w,y0+h,z0-w ,x0-w,y0+h,z0+w, r0,g0,b0);
-        }
-        
-        n=et(p.x,p.y-1,p.z)?.t;if (n!='b')
-          addQuad(mh, x0+w,y0-h,z0+w, x0-w,y0-h,z0+w, x0+w,y0-h,z0-w ,x0-w,y0-h,z0-w, r0,g0,b0);
-      }
-      
-      ge.setAttribute('position',new THREE.BufferAttribute(new Float32Array(mh?mh.position:[
-        -w,-h, w, w,-h, w, -w,h, w ,w,h, w//,-w,-h, -w, w,-h, -w, -w,h, -w ,w,h, -w
-      ]),3));
-      ge.setAttribute('color',new THREE.BufferAttribute(new Float32Array(mh?mh.color:[
-        r0,g0,b0 ,r0,g0,b0 ,r0,g0,b0 ,r0,g0,b0//,r1,g1,b1 ,r1,g1,b1 ,r1,g1,b1 ,r1,g1,b1
-      ]),3));
-      if (mh&&mh.uv) ge.setAttribute('uv',new THREE.Float32BufferAttribute(mh.uv,2));
-      ge.setIndex(mh?mh.index:[0,1,2 ,1,3,2 //,1,5,3, 5,7,3
-      ]);
-      ge.computeBoundingBox();
-      ge.computeBoundingSphere();
-      ge.computeVertexNormals();
-      //ge.computeTangents();
-      
-      let mesh;
-      //threeEnv.path='/shooter/';
-      //threeSetMeshMaterial(mesh={diff:'objs/mapGen/d10.jpg',spec:'objs/mapGen/s1.jpg',norm:'objs/mapGen/n1.jpg'},{});//m2=mesh.material;//m0=
-      
-      //threeEnv.path='/shooter/objs/mapGen/';
-      //threeSetMeshMaterial(mesh={diff:'d10.jpg',spec:'s1.jpg',norm:'n1.jpg'},{});//m2=mesh.material;//m0=
-      
-      threeEnv.path='/three/deep/deep8voxb/';
-      threeSetMeshMaterial(mesh={diff:'blockSummerTexDiff.json',spec:'blockSummerTexSpec.json',norm:'blockSummerTex.json'},{});//m2=mesh.material;//m0=
-      threeEnv.path='/shooter/';
-      
-      
-      
-      let m=new THREE.Mesh(ge,
-        mesh.material//new THREE.MeshPhongMaterial({color:0x666666,flatShading:true,vertexColors:true})
-        );
-        
-      //for (let sc of gps.sceneh.scaleCfg) sc.lint*=0.1;
-        
-      m.castShadow=true;
-      m.receiveShadow=true;
-      //onsole.log(m);
-      m.updateMatrix();
-      m.matrixAutoUpdate=false;
+      let m=MegaBonkMaze.generate({ph:ph});
       gps.mesh.parent.add(m);
+      //onsole.log(gps.mesh.parent.children.length);
       editxr.mesh=m;
       editxr.meshMaze=m;
+      
       //...
     }
     
@@ -652,7 +518,20 @@
     if (v) v=decodeURIComponent(v);
     if (v) v=JSON.parse(v);
     if (!v) v=gps.ps.megaBonk;
-    if (v) window.pathsMegabonk(v);
+    if (v) {
+      window.pathsMegabonk(v);
+    Conet.handlerAdd('pointChange',function(m) {
+      //---
+      let p=m.position,op=m.userData.op;
+      op.x=p.x;op.y=p.y;op.z=p.z;
+      //console.log(m.position);
+      //onsole.log(m.userData.op);
+      window.pathsMegabonk(v);
+      //...
+    }
+      );
+      
+    }
     
     //onsole.log(gps.ps.megaBonk);
     //console.log('url.pathsMegabonk');
@@ -723,9 +602,8 @@
 //fr o,1
 //fr o,1,25
 //fr o,1,25,45
-//fr o,1,25,45,19
-//fr o,1,25,45,21
-//fr o,1,25,45,138
-//fr o,1,25,45,141
+//fr o,1,25,45,5
+//fr o,1,25,45,22
+//fr o,1,25,57
 //fr o,1,38
-//fr p,6,188
+//fr p,89,208

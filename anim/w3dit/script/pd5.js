@@ -308,7 +308,7 @@
             //let o5=box.point.userData.o5;
             //if (o5) {
             if (rotateRoom) {
-              let doStrafe=!xrUtil.isSession;
+              let doStrafe=!xrUtil.isSession&&!editxr.mEditMode.checked;//260516 no strafe in editmode
               turna=(doStrafe?0:-x0*0.05)+o5.ay;
               fore=y0<0?y0*0.5:y0;//y0>0;
               strafe=doStrafe?x0*0.75:0;
@@ -764,6 +764,8 @@
       //onsole.log('add box from point');
       let op=p.userData.op,f=0.1/cannonsc;
       //onsole.log('f='+f);
+      if (cfg.noBoxes&&!op.fn) continue;
+      if (1)
       boxes.push(p.userData.cannonBox={
         pos:{x:op.x*10*f,y:-op.z*10*f,z:op.y*10*f},
         dim:{x:op.scx*0.5*f,y:op.scz*0.5*f,z:op.scy*0.5*f},
@@ -970,7 +972,7 @@
     //...
   }
   
-  let what='w3dit.Pd5 v.0.1794 ';//FOLDORUPDATEVERSION
+  let what='w3dit.Pd5 v.0.1812 ';//FOLDORUPDATEVERSION
   
   function vertsMenu() {
     //---
@@ -1396,9 +1398,11 @@
         //---
         //if (1) return;
         if (!rotateRoom) return;
-        //console.log('pd5.pointerMove e.buttons='+e.buttons);
+        if (editxr.mEditMode.checked) return;//260516 follwoing not with editmode
         //onsole.log(e.buttons);
         let controls=editxr.controls;
+        if (controls.enabled) controls.enabled=false;//260516 after editmode toggle
+        console.log('pd5.pointerMove e.buttons='+e.buttons+' e.c.enabled='+controls.enabled);
         //onsole.log('pointerMove e.buttons='+e.buttons);
         if (e.buttons==1) {
           //console.log(Conet.f4((e.x-pointx)/window.innerWidth));
@@ -1522,11 +1526,10 @@
 //fr o,1,16
 //fr o,1,17
 //fr o,1,22
-//fr o,1,24
+//fr o,1,30
 //fr o,1,30,90
-//fr o,1,30,177
-//fr o,1,30,271
-//fr o,1,36
+//fr o,1,30,179
+//fr o,1,30,273
 //fr o,1,36,3
 //fr o,1,36,3,10
 //fr o,1,38
@@ -1536,4 +1539,4 @@
 //fr o,1,38,37,127
 //fr o,1,38,47
 //fr o,1,38,66
-//fr p,6,809
+//fr p,54,1023

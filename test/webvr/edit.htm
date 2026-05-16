@@ -16,6 +16,7 @@
 <script src="/util/gfx/phys.js"></script>
 <script src="/sound.js"></script>
 <script src="/canvas/w3dit.js"></script>
+<script src="/three/smol/megaBonkMaze.js"></script>
 </head>
 <body oncontextmenu="return false;">
 <script type="importmap">
@@ -55,6 +56,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
   
   /* issues */ {
     //---
+    // 26-04-08 megaBonkMaze.js shall be later only loaded if needed (extra point with script for all scenes with megabonk?)
     // should be solved: 24.08.18 xrUtil.rayObjs introduced -> to make texpaint on pd5 work, pd5 meshes must be registered via script, maybe via point.userData.rayObjs...
     //...
   }
@@ -720,7 +722,9 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
           p.x=Math.floor((p.x+f*(d.x||0))/f+0.5)*f;
           p.y=Math.floor((p.y+f*(d.y||0))/f+0.5)*f;
           p.z=Math.floor((p.z+f*(d.z||0))/f+0.5)*f;
+          //onsole.log(m.userData.onchange);
           if (m.userData.onchange) m.userData.onchange(p);
+          Conet.handlerRun('pointChange',m);
         }
         let p=sels[0].position;
         mPoint.ms=Conet.f4(p.x)+' '+Conet.f4(p.y)+' '+Conet.f4(p.z);
@@ -742,7 +746,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     
     //\u25b2 \u25bc
     
-    const version='v.0.2080 ';//FOLDORUPDATEVERSION
+    const version='v.0.2113 ';//FOLDORUPDATEVERSION
     xrUtil.log('Edit '+version);
     
     //
@@ -1213,7 +1217,8 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     ,self.mEditMode={ms:'Editmode',checkbox:1,checked:1,r:1
     ,actionf:function() {
       //---
-      //onsole.log(23);
+      //console.log('editMode.checked='+this.checked);
+      //f (!this.checked) controls.enabled=false;
       //let cp=camera.position;
       //console.log('camPos {"x":'+Conet.f4(cp.x)+',"y":'+Conet.f4(cp.y)+',"z":'+Conet.f4(cp.z)+'}');
       //let ct=controls.target;
@@ -1802,12 +1807,14 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     if (index!==undefined) points.splice(index,0,mesh); else points.push(mesh);
     mesh.userData.op=p;
     
-    if (p.bb&&!p.bb.onlyPd5) {
+    if (1&&p.bb&&!p.bb.onlyPd5) {
       let tb=threeEnv.base;//,m=o.meshes[0].tmesh;
       threeEnv.base=mesh;
       //o.ap=2;o.hp=5;o.ohp=10;
       p.bbdraw=bbdraw;
-      p.bb.tbb=threeBillboardAdd({x:0,y:0,z:0,ar:0.008+0.004*(p.bb.fs||16)*p.bb.sa.length,s:(p.bb.scale||0.015),transparent:true,gw:20,cw:128*2,o:p});
+      //p.bb.tbb=
+      mesh.userData.tbb=
+      threeBillboardAdd({x:0,y:0,z:0,ar:0.008+0.004*(p.bb.fs||16)*p.bb.sa.length,s:(p.bb.scale||0.015),transparent:true,gw:20,cw:128*2,o:p});
       threeEnv.base=tb;
     }
     
@@ -1850,6 +1857,17 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
     try {
     xrUtil.log('Loading '+v.length+'b.');
     let h=JSON.parse(v);
+    let url=Conet.parseUrl();
+    let ph=url.startPos;if (ph) /* */ {
+      //---
+      ph=JSON.parse(ph);
+      ph={x:ph[0],y:ph[1],z:ph[2]};
+      console.log('startPos.y='+ph.y);
+      for (let pt of h.points) if (pt.player) { pt.x=ph.x;pt.y=ph.y;pt.z=ph.z; }
+      if (h.pt) { h.pt.x=ph.x;h.pt.y=ph.y+0.06;h.pt.z=ph.z-0.1; }
+      if (h.pc) { h.pc.x=ph.x;h.pc.y=ph.y+0.1; h.pc.z=ph.z+0.05; }
+      //...
+    }
     
     sceneh=Conet.hcopy(h,undefined,undefined,{points:1,faces:1,lines:1});
     self.sceneh=sceneh;
@@ -1917,7 +1935,7 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       }
     }
     
-    let editMode=Conet.parseUrl().editMode;
+    let editMode=url.editMode;
     if (editMode===undefined) editMode=sceneh.editMode;
     if (editMode!==undefined) Menu.setChecked(self.mEditMode,(editMode==1));
     
@@ -2237,12 +2255,12 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
       let bb;
       if (op) {
         op.material=(op.userData.selected?matPointSel:(childEditPoint(op)||op.userData.op.inv?matPointInv:matPoint0));
-        if (bb=op.userData.op.bb) if (bb.scaleHover) bb.tbb.threeMesh.scale.set(bb.scale,bb.scale,bb.scale);
+        if (bb=op.userData.op.bb) if (bb.scaleHover) op.userData.tbb.threeMesh.scale.set(bb.scale,bb.scale,bb.scale);//was bb.tbb
       }
       nearestPoint=p;  
       if (p) {
         p.material=matPoint1;
-        if (bb=p.userData.op.bb) if (bb.scaleHover) bb.tbb.threeMesh.scale.set(bb.scaleHover,bb.scaleHover,bb.scaleHover);
+        if (bb=p.userData.op.bb) if (bb.scaleHover) p.userData.tbb.threeMesh.scale.set(bb.scaleHover,bb.scaleHover,bb.scaleHover);//was bb.tbb
         //xrUtil.log('nearest point '+points.indexOf(p));
       }
     }
@@ -2276,35 +2294,35 @@ import { XrUtil } from '/util/gfx/XrUtil.js';
 </body>
 </html>
 <script>
-//fr o,37
-//fr o,37,17
-//fr o,37,20
-//fr o,37,20,75,7
-//fr o,37,20,75,9
-//fr o,37,20,75,11
-//fr o,37,20,75,13
-//fr o,37,20,75,17
-//fr o,37,20,75,19
-//fr o,37,20,75,21
-//fr o,37,20,75,23
-//fr o,37,20,75,27
-//fr o,37,20,75,74
-//fr o,37,20,77,3,8
-//fr o,37,20,91
-//fr o,37,20,91,60
-//fr o,37,20,91,73
-//fr o,37,20,91,92
-//fr o,37,20,91,98
-//fr o,37,20,91,141
-//fr o,37,20,93
-//fr o,37,20,93,1
-//fr o,37,20,136
-//fr o,37,20,165
-//fr o,37,20,170
-//fr o,37,29,3
-//fr o,37,33,10
-//fr o,37,33,11
-//fr o,37,48
-//fr o,37,52
-//fr o,37,54
-//fr p,2,504
+//fr o,38
+//fr o,38,20
+//fr o,38,20,75,7
+//fr o,38,20,75,9
+//fr o,38,20,75,11
+//fr o,38,20,75,13
+//fr o,38,20,75,17
+//fr o,38,20,75,19
+//fr o,38,20,75,21
+//fr o,38,20,75,23
+//fr o,38,20,75,27
+//fr o,38,20,75,74
+//fr o,38,20,77,3,8
+//fr o,38,20,91,60
+//fr o,38,20,91,73
+//fr o,38,20,91,92
+//fr o,38,20,91,98
+//fr o,38,20,91,141
+//fr o,38,20,136
+//fr o,38,20,170,21
+//fr o,38,20,212
+//fr o,38,29,3
+//fr o,38,32
+//fr o,38,33
+//fr o,38,33,10
+//fr o,38,33,11
+//fr o,38,38
+//fr o,38,42
+//fr o,38,42,17
+//fr o,38,53
+//fr o,38,54
+//fr p,2,281

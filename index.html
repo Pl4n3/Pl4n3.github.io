@@ -78,7 +78,8 @@ body {
     //...
   }
   else if (path=='editxr') /* */ {
-    
+    //---
+    pathDescr='<div style="padding-left:4px;padding-right:4px;padding-bottom:4px;">3D game and animation experiments, running optionally with XR</div>';
     minHeight=undefined;
     cells=[
     
@@ -99,20 +100,31 @@ body {
     
     {descr:'Megabonk inspired vertical maze.<br>'
     +'<a href="/test/webvr/edit.htm?file=file:bricksMegab0&editMode=0&scaleCfg=1&hudPos=Away&pathsMegabonk=1">Away</a> '
-    +'<a href="/test/webvr/edit.htm?file=file:bricksMegab0&editMode=0&scaleCfgI=0&hudPos=Away&pathsMegabonk=1">Near</a>'
-    
-    ,
+    +'<a href="/test/webvr/edit.htm?file=file:bricksMegab0&editMode=0&scaleCfgI=0&hudPos=Away&pathsMegabonk=1">Near</a>',
+    date:'2025-11-12',
+    img:'/blog/hub/megabonkMaze.gif',
+    minHeight:'150px',
     //link:'/test/webvr/edit.htm?file=file:bricksMegab0&editMode=0&scaleCfg=1&hudPos=Away&pathsMegabonk=1',
     //minHeight:'',
     },
     
     {descr:'Sculpted landscape with caves.<br>'
     +'<a href="/test/webvr/edit.htm?file=file:sculptCann&editMode=0&scaleCfg=1&hudPos=Away">Away</a> '
-    +'<a href="/test/webvr/edit.htm?file=file:sculptCann&editMode=0&scaleCfgI=0&hudPos=Away">Near</a>'
-    ,
+    +'<a href="/test/webvr/edit.htm?file=file:sculptCann&editMode=0&scaleCfgI=0&hudPos=Away">Near</a>',
+    img:'/blog/hub/editxr/sculptCann.jpg',
+    minHeight:'150px',
+    date:'2025-05-03',
     //link:'/test/webvr/edit.htm?file=file:sculptCann&editMode=0&scaleCfg=1&hudPos=Away',
     //minHeight:'',
     },
+    
+    {descr:'Wave animation, inspired by <a href="https://x.com/flockaroo/status/1894088185019318565">this</a>.',
+    link:'/test/webvr/edit.htm?file=file:wave',
+    img:'/blog/hub/editxr/waves.jpg',
+    minHeight:'150px',
+    date:'2025-03-03',
+    twitter:'https://x.com/Pl4n3/status/1896572826435674343'
+    }
     
     ];
     
@@ -428,7 +440,7 @@ body {
   wordBreak:'normal',
   skipStart:1,
   gap:'4px',
-  boxShadow:'2px 2px 2px #555555',
+  //boxShadow:'2px 2px 2px #555555',
   //minHeight:'150px',
   files:[
   
@@ -467,13 +479,14 @@ body {
     +', <a href="https://www.threads.com/@pl4n3d">Threads</a>'
     +', <a href="https://twitter.com/Pl4n3">Twitter</a>'
     +'<li>'
-    +'v.1.438 '//FOLDORUPDATEVERSION
+    +'v.1.462 '//FOLDORUPDATEVERSION
     +'Import/Export <a href="/util/io/lsUploads.htm">localStorage files</a></ul></div>'
     ,minHeight:''
   ,draw:function(el) {
     //---
     let st=el.style;
     //st.fontSize='4em';
+    //st.padding='4px';
     st.fontSize='1.3em';
     st.background='#dd8';//'#aaa';//'rgb(221, 221, 68)';
     //...
@@ -516,6 +529,7 @@ body {
     let st=el.style;
     //st.filter='grayscale(1)';
     st.fontSize='1.1em';
+    //st.padding='4px';
     //st.wordBreak='normal';
     
     //st.background='#bbb no-repeat url("'+c.img+'")';
@@ -563,11 +577,11 @@ body {
 <script>
 //fr o,25
 //fr o,25,10
-//fr o,25,11
 //fr o,25,11,19
 //fr o,25,11,22
 //fr o,25,11,25
 //fr o,25,11,28
+//fr o,25,13
 //fr o,25,64
 //fr o,25,98
-//fr p,20,210
+//fr p,105,77

@@ -87,7 +87,7 @@ body {
     +'<a href="/test/webvr/edit.htm?file=file:action/o5tris&editMode=0&scaleCfgI=1&hudPos=Away">Away</a> '
     +'<a href="/test/webvr/edit.htm?file=file:action/o5tris&editMode=0&scaleCfgI=0&hudPos=Away">Near</a>'
     ,conet:1
-    //,minHeight:''
+    ,minHeight:''
     },
     
     
@@ -95,7 +95,7 @@ body {
     +'<a href="/test/webvr/edit.htm?file=file:action0&editMode=0&scaleCfgI=1&hudPos=Away">Away</a> '
     +'<a href="/test/webvr/edit.htm?file=file:action0&editMode=0&scaleCfgI=0&hudPos=Away">Near</a>'
     ,conet:1
-    //,minHeight:''
+    ,minHeight:''
     },
     
     {descr:'Megabonk inspired vertical maze.<br>'
@@ -125,6 +125,13 @@ body {
     date:'2025-03-03',
     twitter:'https://x.com/Pl4n3/status/1896572826435674343'
     }
+    
+    ,{descr:'XR 3d edit, texture paint',
+    link:'/test/webvr/edit.htm?file=file:mushroom',
+    date:'2025-02-02',
+    img:'/blog/hub/mushroom.jpg',
+    }
+    
     
     //,{descr:'Test',
     //styles:[['gridColumn','1 / -1']],}
@@ -483,7 +490,6 @@ body {
     +', <a href="https://www.threads.com/@pl4n3d">Threads</a>'
     +', <a href="https://twitter.com/Pl4n3">Twitter</a>'
     +'<li>'
-    +'v.1.493 '//FOLDORUPDATEVERSION
     +'Import/Export <a href="/util/io/lsUploads.htm">localStorage files</a></ul></div>'
     ,minHeight:''
   ,draw:function(el) {
@@ -561,7 +567,7 @@ body {
       if (!gridMinHeight) c.minHeight='300px';
     }
     
-    if (c.minHeight) st.minHeight=c.minHeight;
+    if (c.minHeight!==undefined) st.minHeight=c.minHeight;
     else if (!gridMinHeight) st.minHeight='150px';
     //st.minHeight=(c.minHeight!==undefined)?c.minHeight:'150px';
     //st.lineHeight='1.1';
@@ -573,7 +579,7 @@ body {
     });
   }
   
-  h.files.push({text:'Pl4n3 Hub Version 1.0.23 ',//FOLDORUPDATEVERSION
+  h.files.push({text:'Pl4n3 Hub Version 1.0.27 ',//FOLDORUPDATEVERSION
   draw:function(el) {
     //...
     let st=el.style;
@@ -604,8 +610,7 @@ body {
 //fr o,25,11,22
 //fr o,25,11,25
 //fr o,25,11,28
-//fr o,25,13
-//fr o,25,64
-//fr o,25,100
-//fr o,25,105
-//fr p,124,301
+//fr o,25,63
+//fr o,25,99
+//fr o,25,104
+//fr p,0,54

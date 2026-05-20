@@ -108,6 +108,7 @@ body {
     //minHeight:'',
     },
     
+    
     {descr:'Sculpted landscape with caves.<br>'
     +'<a href="/test/webvr/edit.htm?file=file:sculptCann&editMode=0&scaleCfg=1&hudPos=Away">► Away</a> '
     +'<a href="/test/webvr/edit.htm?file=file:sculptCann&editMode=0&scaleCfgI=0&hudPos=Away">► Near</a>',
@@ -126,10 +127,17 @@ body {
     twitter:'https://x.com/Pl4n3/status/1896572826435674343'
     }
     
-    ,{descr:'XR 3d edit, texture paint',
+    ,{descr:'Texture painted with EditXR',
     link:'/test/webvr/edit.htm?file=file:mushroom',
     date:'2025-02-02',
     img:'/blog/hub/mushroom.jpg',
+    }
+    
+    ,{descr:'Cannon car demo',
+    link:'/test/webvr/edit.htm?file=file:cannon0',
+    date:'2024-11-07',
+    img:'/blog/hub/editxr/cannon0.jpg',
+    twitter:'https://x.com/Pl4n3/status/1854587826186469584'
     }
     
     
@@ -516,6 +524,7 @@ body {
   
   
   //for (let i=0;i<2;i++)
+  let els=[],doFilterAnim=false;
   for (let c of cells) {
     if (c.conet&&!online) continue;
     let text=c.text||'',bgth=c.bgt||bgt;
@@ -574,12 +583,14 @@ body {
     //st.backdropFilter='blur(10px)';
     //st.gridColumn='span 2';
     if (c.styles) for (let a of c.styles) st[a[0]]=a[1];
+    
+    if (doFilterAnim) { st.filter='grayscale(100%)';els.push(el); }
     //...
   }
     });
   }
   
-  h.files.push({text:'Pl4n3 Hub Version 1.0.31 ',//FOLDORUPDATEVERSION
+  h.files.push({text:'Pl4n3 Hub Version 1.0.53 ',//FOLDORUPDATEVERSION
   draw:function(el) {
     //...
     let st=el.style;
@@ -592,6 +603,21 @@ body {
   });
   
   Conet.grid(h);
+  
+  if (doFilterAnim) {
+  let eli=-1;
+  setInterval(function() {
+    //---
+    if (els.length==0) return;
+    eli=(eli+1)%els.length;
+    for (let i=0;i<els.length;i++) els[i].style.filter=(i<=eli)?'':'grayscale(100%) blur(5px)';
+    //els[eli].style.filter='';
+    //onsole.log(Math.random());
+    //...
+  }
+  ,200);
+  }
+  //animateCSSGrid.wrapGrid(h.cont,{duration : 600});
   //h.cont.style.background='no-repeat #eeeeee linear-gradient(gray, green, orange, #888888, #888888 50%, #888888, #eeeeee)';
   //h.cont.style.background='no-repeat #888888 linear-gradient(#888888, #444444, #888888)';
   //h.cont.style.background='#888888';
@@ -610,7 +636,8 @@ body {
 //fr o,25,11,22
 //fr o,25,11,25
 //fr o,25,11,28
+//fr o,25,13
 //fr o,25,63
-//fr o,25,99
-//fr o,25,104
-//fr p,94,44
+//fr o,25,100
+//fr o,25,105
+//fr p,0,66

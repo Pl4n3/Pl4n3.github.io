@@ -32,7 +32,47 @@ body {
   let bgt='rgba(230,230,230,0.85)';//rgba(200,200,200,0.85)
   //let bgt='rgba(187,187,187,0.85)';//rgba(200,200,200,0.85)
   
-  let cells,pathDescr,minHeight='150px';
+  let cells,pathDescr,minHeight='150px',cont=document.body;
+  
+  if (1) /* navbar */ {
+    //---
+    let nav=document.createElement('div');
+    nav.innerHTML='<img src="/blog/img/180611.png" width=20 style="vertical-align:text-top;"/> Pl4n3 projects';
+    let s=nav.style;
+    s.background='#dd8';
+    s.borderRadius='0px 0.5em 0.5em';
+    s.border='1px solid #444444';
+    s.padding='4px';
+    s.margin='4px';
+    s.marginBottom='2px';
+    s.boxShadow='2px 2px 2px #555555';
+    s.fontSize='1.4em';
+    
+    s.position='fixed';
+    s.top='-40px';
+    s.width='calc( 100% - 17px )';
+    s.transition='top 0.3s';
+    //s.display='block';
+    
+    document.body.appendChild(nav);
+    cont=document.createElement('div');
+    document.body.appendChild(cont);
+    
+    let prevScrollpos=window.pageYOffset;
+    window.onscroll=function() {
+      let currentScrollPos=window.pageYOffset;
+      //onsole.log(currentScrollPos);
+      if ((prevScrollpos>currentScrollPos)&&(currentScrollPos>20)) {
+        s.top='0';
+      } else {
+        s.top='-40px';
+      }
+      prevScrollpos = currentScrollPos;
+    }
+    //...
+  }
+  
+  
   if (path=='blockbuild') /* */ {
     //---
     pathDescr='Build scenes of blocks and walk through them, isometric or 3rd-person view. Optional with megabonk rendering (mb).';
@@ -168,6 +208,30 @@ body {
     date:'2023-05-20',
     twitter:'https://x.com/Pl4n3/status/1671209060488687621',
     },
+    
+    (function() {
+      let w=10;//20
+      return {descr:'Arkpark test: levelMap',minHeight:'10px',conet:1,
+      link:'/anim/arkpark/arkpark.htm?file='+encodeURIComponent(JSON.stringify(
+      
+      {onestep:1
+      ,"fog":1
+      ,approachOnTurn:-1,mobCount:w*w/30,medikits:0
+      ,seed:110 
+      //,medicCount:1
+      //,"medicImgSrc":"/canvas/cutout/tiles/samTorch.json","//old":"medicCount 2,meleeCount 3"
+      ,meleeCount:3//,spawnMobOnTurn:1
+      ,gw:w,gh:w
+      ,randomBlocks:Math.floor(0.5+w*w*0.4)
+      ,levelGrid:{}
+      
+      }
+      
+      )),
+      };
+    }
+    )(),
+    
     
     (function() {
       let w=10;//20
@@ -513,7 +577,7 @@ body {
   }
   
   ],
-  cont:document.body};
+  cont:cont};
   
   let gridMinHeight=0;//pl260516 dont using global grid minheight, because trailer row would then have too much vertical space
   
@@ -591,7 +655,7 @@ body {
     });
   }
   
-  h.files.push({text:'Pl4n3 Hub Version 1.0.56 ',//FOLDORUPDATEVERSION
+  h.files.push({text:'Pl4n3 Hub Version 1.0.106 ',//FOLDORUPDATEVERSION
   draw:function(el) {
     //...
     let st=el.style;
@@ -633,12 +697,5 @@ body {
 <script>
 //fr o,25
 //fr o,25,10
-//fr o,25,11,19
-//fr o,25,11,22
-//fr o,25,11,25
-//fr o,25,11,28
-//fr o,25,13
-//fr o,25,63
-//fr o,25,100
-//fr o,25,105
-//fr p,81,38
+//fr o,25,10,24
+//fr p,24,52

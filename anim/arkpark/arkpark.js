@@ -1,11 +1,14 @@
 //----
 var Arkpark=function (gps) {
-  var arrows,w=gps.w||50,gw=gps.gw||20,gh=gps.gh||20,grid=[],party=0,mturn,ta0,attacko,
-      gridPath=new GridPath(grid,gw,gh),os=[],selo,path,pathi,
-      fow=gps.fog!==undefined?gps.fog:true,
+  //var arrows,w=gps.w||50,gw=gps.gw||20,gh=gps.gh||20,grid=[],party=0,mturn,ta0,attacko,
+  //    gridPath=new GridPath(grid,gw,gh),os=[],selo,path,pathi,
+  //    fow=gps.fog!==undefined?gps.fog:true,
+  let arrows,w,gw,gh,grid=[],party=0,mturn,ta0,attacko,
+      gridPath,os=[],selo,path,pathi,fow,
       parties=[{huerot:140,col:'#0cf'},{huerot:350,col:'#f90',ai:1}],//env=[],
-      edit=false,aic=0,version='1.414 ',//FOLDORUPDATEVERSION
-      msg,x0,y0,startt,process,processi=0,pplay=false;
+      edit=false,aic=0,version='1.1434 ',//FOLDORUPDATEVERSION
+      msg,x0,y0,startt,process,processi=0,pplay=false,
+      cano,markattacko,turns,levelGrid=gps.levelGrid,mmenu,url;
   //...
   function nu(v0,v1) {
     if (v0!==undefined) return v0;
@@ -13,7 +16,11 @@ var Arkpark=function (gps) {
     //...
   }
   function remC(c) {
-    c.parentNode.removeChild(c);//...
+    if (arrows) c.parentNode.removeChild(c);//...
+    if (cano) {
+      var i=cano.objs.indexOf(c);
+      cano.objs.splice(i,1);
+    }
   }
   function dist(o0,o1,o0x,o0y) {
     if (o0x===undefined) o0x=o0.x;
@@ -24,7 +31,7 @@ var Arkpark=function (gps) {
     return d;
   }
   function rani(m) {
-    return Math.floor(Math.random()*m);//...
+    return Conet.rani(m);//Math.floor(Math.ra ndom()*m);//...
   }
   function ai() {
     aic++;Menu.ms(mturn,'A.I. '+aic);
@@ -34,7 +41,8 @@ var Arkpark=function (gps) {
       var o=os[i];
       if (o.party===party) {
         if (o.stunned) { o.moveDone=true;o.stunned=false;updateText(o);o.wasStunned=1; }
-        if (!o.moveDone) { selo=o;break; }
+        if (!o.moveDone//||!o.attackDone
+        ) { selo=o;break; }
       }
     }
     
@@ -53,6 +61,15 @@ var Arkpark=function (gps) {
       var oh=os[i];
       if ((oh!=o)&&(oh.party==party)&&(oh.hp<oh.mhp)) { someNeedHeal=true;break; }
     }
+    
+    var approachTurn=true;
+    if (gps.approachOnTurn!==undefined) {
+      if (gps.approachOnTurn>=1) 
+        approachTurn=(turns%gps.approachOnTurn)==0;
+      else 
+        approachTurn=false;
+    }
+    console.log('approachTurn='+approachTurn);
     
     var gs=[],score=0;
     for (var y=0;y<gh;y++) for (var x=0;x<gw;x++) {
@@ -85,7 +102,7 @@ var Arkpark=function (gps) {
           g.aiAttackG=grid[yh][xh];
           //break; 
         }//todo: the lower hp, the higher score
-        else if (gps.onestep) { if (oh.party!=party) s=100-doo;continue; }
+        else if (gps.onestep&&approachTurn) { if (oh.party!=party) s=100-doo;continue; }
         else if (o.heal&&(s<500)&&(oh.party==party)&&(oh.hp<oh.mhp)) {
           s+=1/(doo*doo);
         } else if ((!(o.heal&&someNeedHeal))&&(doo<=4)&&(s<500)) {//---abstand nah genug fuer gegner-attacke und nicht selbst attackierend
@@ -109,7 +126,7 @@ var Arkpark=function (gps) {
     }
     //onsole.log('gs.len='+gs.length+' score='+score+' party='+party);
     if (gs.length>0) { pathStart(gs[rani(gs.length)]);return; }
-    selo.moveDone=true;
+    selo.moveDone=true;//selo.attackDone=true;
     if (selo.wasStunned) selo.wasStunned--;
     selo=undefined;
     ai();
@@ -120,14 +137,25 @@ var Arkpark=function (gps) {
     if (t>mt) { t=mt;fin=true; }
     var d=Math.sin(2*Math.PI*t/mt);
     //console.log(t);
-    var o=selo,s=o.c.style;
-    s.left=(x0+(Math.sin(o.a)*d/4+o.x+(o.w-1)/2)*w-230)+'px';
-    s.top=(y0+(-Math.cos(o.a)*d/4+o.y+(o.w-1)/2)*w-230)+'px';
-    
+    var o=selo,s;//=o.c.style;
+    if (arrows) {
+      s=o.c.style;
+      s.left=(x0+(Math.sin(o.a)*d/4+o.x+(o.w-1)/2)*w-230)+'px';
+      s.top=(y0+(-Math.cos(o.a)*d/4+o.y+(o.w-1)/2)*w-230)+'px';
+    }
+    if (cano) {
+      o.c.x=(x0+(Math.sin(o.a)*d/4+o.x+0.1)*w-gw*w/2);
+      o.c.y=(y0+(-Math.cos(o.a)*d/4+o.y+0.1)*w-gh*w/2);
+    }
     o=attacko;
     if (o) {
-      s=o.c.style;
-      s.transform='scale('+0.13*o.w+') rotate('+(o.a+d/2)+'rad)';
+      if (arrows) {
+        s=o.c.style;
+        s.transform='scale('+0.13*o.w+') rotate('+(o.a+d/2)+'rad)';
+      }
+      if (cano) {
+        o.animda=d/2;
+      }
     }
     
     if (fin) finishAttack(); else 
@@ -155,22 +183,42 @@ var Arkpark=function (gps) {
     //...
   }
   function updateText(o) {
+    if (arrows)
     o.chp.innerHTML=(o.descr?('<b>'+o.descr+'</b><br>'):'')
       +(o.heal?'HEAL':'AP')+' <b style="font-size:2em;">'+o.ap+'</b><br>'
       +'HP <b style="color:'
       +(o.hp==o.mhp?'#080':'#f00')+';font-size:2em;">'+o.hp+'</b>'
       +(o.frags?'<br>'+o.frags+' frags':'')
       +(o.stunned?'<br><b>Stunned</b>':'');
+    if (cano) {
+      o.c.sa=[];
+      if (o.descr) o.c.sa.push(o.descr);
+      o.c.sa.push((o.heal?'HEAL':'AP')+':'+o.ap+' HP:'+o.hp
+      +(o.frags?' Frags:'+o.frags:'')
+      +(o.stunned?' Stunned':''));
+    }
     //...
   }
+  
+  function countParties() {
+    //---
+    for (var i=parties.length-1;i>=0;i--) parties[i].count=0;
+    for (var i=os.length-1;i>=0;i--) {
+      var o=os[i];if (o.party===undefined) continue;parties[o.party].count++;
+    }
+    //...
+  }
+  
   function finishAttack() {
+    console.log('...finishAttack');
+    //onsole.trace();
     gridPath.lenInit();
     gridMarks();
     selo.moveDone=1;//---for if there was no move
     selo.attackDone=1;
     var o=attacko,dbg=0;
     if (o) {
-      o.hp=selo.heal?Math.min(o.hp+selo.ap,o.mhp):Math.max(0,o.hp-selo.ap);
+      o.hp=Conet.f4(selo.heal?Math.min(o.hp+selo.ap,o.mhp):Math.max(0,o.hp-selo.ap));
       if ((o.party==1)&&!o.wasStunned&&gps.withStun) { 
         var ia=Math.floor(0.5+o.a/1.57),
             facing=((ia==0)&&(selo.y<o.y))||((ia==1)&&(selo.x>o.x))||((ia==2)&&(selo.y>o.y))||((ia==3)&&(selo.x<o.x));
@@ -190,16 +238,22 @@ var Arkpark=function (gps) {
         //remC(o.chp);//o.chp.parentNode.removeChild(o.chp);
         
         //check for gameover
-        for (var i=parties.length-1;i>=0;i--) parties[i].count=0;
-        for (var i=os.length-1;i>=0;i--) {
-          var o=os[i];if (o.party===undefined) continue;parties[o.party].count++;
-        }
+        //for (var i=parties.length-1;i>=0;i--) parties[i].count=0;
+        //for (var i=os.length-1;i>=0;i--) {
+        //  var o=os[i];if (o.party===undefined) continue;parties[o.party].count++;
+        //}
+        countParties();
+        //onet.log('Mobs '+parties[1].count);
         if ((parties[1].count==0)||(parties[0].count==0)||dbg) {
-          var sec=Math.floor(0.5+(Date.now()-startt)/1000);
-          showMsg('Game over, <b>you '+(parties[0].count==0?'lost! D:':'won! :D')
-            +'</b><br>Game time: '+Math.floor(sec/60)+'min, '+sec%60+' sec.'
-            +' <button id="newgame">New Game</button>');
-          document.getElementById('newgame').onclick=restart;
+          let sec=Math.floor(0.5+(Date.now()-startt)/1000);
+          if (levelGrid) 
+            levelGrid.onGameEnd(sec);
+          else {
+            showMsg('Game over, <b>you '+(parties[0].count==0?'lost! D:':'won! :D')
+              +'</b><br>Game time: '+Math.floor(sec/60)+'min, '+sec%60+' sec.'
+              +' <button id="newgame">New Game</button>');
+            document.getElementById('newgame').onclick=restart;
+          }
           return;
         }
       } else {
@@ -211,13 +265,7 @@ var Arkpark=function (gps) {
     if (parties[party].ai) {
       selo=undefined;ai();
     } else if (gps.onestep) {
-      for (var o of os) {
-        if ((o.party!=party)||(o.moveDone)) continue;
-        var g=grid[o.y][o.x];
-        g.c.arrowSel();
-        return;
-      }
-      turn();
+      nextUnitOrTurn();
     }
     //...
   }
@@ -232,7 +280,7 @@ var Arkpark=function (gps) {
       if (y<gh-1) { g1=grid[y+1][x];if ((g1.len!=-1)&&(g1.len<g0.len)) gs.push(g1); }
       if (x<gw-1) { g1=grid[y][x+1];if ((g1.len!=-1)&&(g1.len<g0.len)) gs.push(g1); }
       if (gs.length==0) break;
-      g0=gs[Math.floor(Math.random()*gs.length)];
+      g0=gs[rani(gs.length)];
       path.splice(0,0,//g0.gpos||
         g0);
       //path.push(g0.gpos||g0);
@@ -260,23 +308,36 @@ var Arkpark=function (gps) {
   }
   function pathAnim() {
     //if (!path) return;
-    var g=path[pathi],o=selo,doTurn=false;
+    let g=path[pathi],o=selo,doTurn=false;
     if (g.y<o.y) o.a=0;
     else if (g.y>o.y) o.a=Math.PI;
     else if (g.x<o.x) o.a=3*Math.PI/2;
     else if (g.x>o.x) o.a=Math.PI/2;
-    //o.a=2*Math.random()*Math.PI;
+    //o.a=2*Math.ra ndom()*Math.PI;
     place(o,g);
     Sound.osc({a:[{fr:[40,20],v:0,n:1},{t:10,v:1},{t:240,v:0}]});
     pathi++;
-    if (pathi<path.length) setTimeout(pathAnim,100); else {
+    if (pathi<path.length) 
+      setTimeout(pathAnim,20); //100
+    else {
+      console.log('...pathAnim 0 o.moveDone='+o.moveDone+' o.attackDone='+o.attackDone);
       path=undefined;
       gridPath.lenInit();
       o.moveDone=1;
-      var fooInRange=checkMarkAttack();
+      let gs;
+      var fooInRange=gs=checkMarkTarget();
+      console.log('...pathAnim 0.5 fooInRange='+fooInRange);
       if (!parties[party].ai) {
+        console.log('...pathAnim 1');
         if (gps.onestep) {
-          if (fooInRange) gridMarks(); else doTurn=1;
+          console.log('...pathAnim 2');
+          if (fooInRange) { 
+            gridMarks();
+            if (gs.length==1) { //26-04-16 new auto action if only 1 target
+              console.log('...pathAnim autoAttack now');
+              gs[0].c.arrowSel();
+            }
+          } else doTurn=1;
         } else 
           gridMarks();
       }
@@ -292,7 +353,7 @@ var Arkpark=function (gps) {
         //console.log(g);
         if (g.aiAttackG) 
           attackStart(g.aiAttackG);
-        //checkMarkAttack();
+        //checkMarkTarget();
         else { selo=undefined;ai(); }
       } else if ((g.os.length==2)&&(o.hp<o.mhp)) {
         var o1=g.os[1];
@@ -308,22 +369,51 @@ var Arkpark=function (gps) {
         //console.log(g);
       }
     }
+    console.log('...pathAnim doTurn='+doTurn);
     if (doTurn) {
-      for (var o of os) {
-        if ((o.party!=party)||(o.moveDone)) continue;
-        var g=grid[o.y][o.x];
-        g.c.arrowSel();
-        return;
-      }
-      turn();
+      nextUnitOrTurn();
     }
     //...
   }
-  function checkMarkAttack() {
+  
+  function nextUnitOrTurn() {
+    //---invoked by pathAnim and finishAttack
+    let o=selo,io=os.indexOf(o);
+    console.log('...nextUnitOrTurn io='+io);
+    for (let i=0;i<os.length;i++) {
+    //for (let on of os) {
+      let on=os[(io+1+i)%os.length];
+      if ((on.party!=party)||(on.moveDone&&on.attackDone)) continue;
+      if (on.moveDone) {
+        o=on;
+        if (!checkMarkTarget()) continue;
+      }
+      let g=grid[on.y][on.x];
+      
+      //---next arrowSel/click is for selecting next, not do any mark related thus
+      //---delete mark first (where is mark else deleted?)
+      //for (var y=0;y<gh;y++) for (var x=0;x<gw;x++) {
+      //   var g=grid[y][x];
+         delete(g.mark);
+      //}
+      //-----
+      
+      g.c.arrowSel();
+      //onsole.log('...pathAnim arrowSel='+doTurn);
+      return;
+    }
+    console.log('...nextUntOrTurn real turn');
+    turn();
     //...
+  }
+  
+  function checkMarkTarget() {
+    //...
+    console.log('...checkMarkTarget');
     var o=selo;
     if (o.attackDone) return;
-    var ar=o.ar||1,ow=o.w||1,fooInRange=false;
+    var ar=o.ar||1,ow=o.w||1;//,fooInRange=false;
+    let gs=[];
     for (var y=o.y-ar;y<o.y+ow+ar;y++) for (var x=o.x-ar;x<o.x+ow+ar;x++) {
       if ((x<0)||(y<0)||(x>=gw)||(y>=gh)) continue;
       var dx=x<o.x?x-o.x:(x>o.x+ow-1?x-o.x-ow+1:0),
@@ -333,14 +423,24 @@ var Arkpark=function (gps) {
       if ((Math.abs(dx)+Math.abs(dy))>ar) continue;
       var g=grid[y][x];
       if (!gps.friendlyFire&&!o.heal)
-      if (g.os.length>0) {
-        var o0=g.os[0];
-        if (o0.party===party) continue;//no friendly fire
-        else if (o0.hp>0) fooInRange=true;
+        if (g.os.length>0) {
+          let o0=g.os[0];
+          if (o0.party===party) continue;//no friendly fire
+          else if (o0.hp>0) gs.push(g);//fooInRange=true; 
+        }
+      if (o.heal&&(g.os.length>0)) {
+        let o0=g.os[0];
+        if ((o0.party===party)&&(o0.hp<o0.mhp)) gs.push(g);//fooInRange=true; 
       }
       if (!g.block) g.mark=1;
     }
-    return fooInRange;
+    markattacko=o;
+    return gs.length>0?gs:undefined;//fooInRange;
+    //...
+  }
+  function markMove() {
+    var o=selo;
+    return gridPath.calcLen(o.x,o.y,gridPath.maxlen-(o.movelen||3)-1,o);
     //...
   }
   function click() {
@@ -368,6 +468,7 @@ var Arkpark=function (gps) {
     if (g.os.length>0) { var o0=g.os[0];if (!o0.env) o=o0; }//this._o;
     
     if (g.mark) {
+      console.log('...click attackStart');
       attackStart(g);
       return;
     }
@@ -376,14 +477,19 @@ var Arkpark=function (gps) {
       if (o.party==party) {
         gridPath.lenInit();
         if (o==selo) {
-          checkMarkAttack();
+          if ((markattacko==o)&&!o.moveDone) {
+            markattacko=undefined;
+            var l=markMove();
+            if (l==1) checkMarkTarget();
+          } else
+            checkMarkTarget();
         } else {
           selo=o;//console.log(o);
           //gridPath.lenInit();
           if (!o.moveDone) {
-            var l=gridPath.calcLen(o.x,o.y,gridPath.maxlen-(o.movelen||3)-1,o);
-            if (l==1) checkMarkAttack();
-          } else checkMarkAttack();
+            var l=markMove();//gridPath.calcLen(o.x,o.y,gridPath.maxlen-(o.movelen||3)-1,o);
+            if (l==1) checkMarkTarget();
+          } else checkMarkTarget();
         }
         gridMarks();
       }
@@ -409,9 +515,11 @@ var Arkpark=function (gps) {
       var g=grid[y][x],os=g.os;
       if (yes) {
         os.splice(0,0,o);g.block=false;
+        o.g0=g;
       } else {
         var i=os.indexOf(o);
         if (i!=-1) os.splice(i,1);
+        o.g0=undefined;
       }
     }
     
@@ -419,6 +527,8 @@ var Arkpark=function (gps) {
     //...
   }
   function place(o,p) {
+    //onsole.log('place');
+    //onsole.trace();
     placeGrid(o,false);
     //for (var y=o.y;y<o.y+o.w;y++) for (var x=o.x;x<o.x+o.w;x++) {
     //  var os=grid[y][x].os,i=os.indexOf(o);
@@ -426,6 +536,8 @@ var Arkpark=function (gps) {
     //}
     var f=0.77;
     o.x=p.x;o.y=p.y;
+    
+    if (arrows) {
     var s=o.c.style;
     if (o.isMedi) {
       //----
@@ -434,7 +546,14 @@ var Arkpark=function (gps) {
       s.left=(x0*f*0+(o.x+(o.w-1)/2)*w-230)+'px';
       s.top=(y0*f*0+(o.y+(o.w-1)/2)*w-230)+'px';
       s.transform='scale('+(o.sc||0.13)*o.w+') rotate('+o.a+'rad)';//0.13*o.w
+    }}
+    
+    if (cano) {
+      o.c.x=((o.x+0.1)*w-gw*w/2);
+      o.c.y=((o.y+0.1)*w-gh*w/2);
+      //cano.tween(o.c,{t:'move',x:((o.x+0.1)*w-gw*w/2),y:((o.y+0.1)*w-gh*w/2)});
     }
+    
     placeGrid(o,true);
     //for (var y=o.y;y<o.y+o.w;y++) for (var x=o.x;x<o.x+o.w;x++) {
     //  var g=grid[y][x];
@@ -464,20 +583,39 @@ var Arkpark=function (gps) {
         g.view=view;
         if (view) { g.wview=true; }
       }
+      if (gps.showAggroRange) {
+        g.aggroRange=false;
+        for (var i=os.length-1;i>=0;i--) {
+          var o=os[i];
+          if (o.party!==1) continue;
+          if (o.descr=='MEDIC') continue;
+          if (fow&&!o.g0.view) continue;
+          var d=(x<o.x?o.x-x:(x>o.x+o.w-1?x-o.x-o.w+1:0))+
+              (y<o.y?o.y-y:(y>o.y+o.w-1?y-o.y-o.w+1:0));
+          if (d<5) g.aggroRange=true;
+        }
+      }
       var col;
       //if (g.os.length>0) col=g.os.length>1?'#f00':'#ff0';else 
       if (!view&&!g.wview) 
-        col='#000';
+        col='#444';
       else {
         col=view?'#aaa':'#a90';
         if (g.block) col=view?'#777':'#760';
       }
       //if ((g.len!=-1)&&g.gpos) col='#0a0'; else if (g.len!=-1) col='#0f0';else if (g.gpos) col='#080';
-      if ((g.len!=-1)||g.gpos) col='#0d0';
-      if (g.mark) col=g.mark==2?'#f00':'#b55';
+      if (g.aggroRange&&!g.block&&view) col='#b99';
+      if ((g.len!=-1)||g.gpos) col='#dd0';//'#0d0';
+      if (g.mark) {
+        if (selo.heal) 
+          col=g.mark==2?'#0f0':'#5b5';
+        else
+          col=g.mark==2?'#f00':'#b55';
+      }
       if (g.os.length>0) if ((g.os[0]==selo)&&(party==0)) 
         col='#ff0';
-      g.c.style.backgroundColor=col;
+      if (cano) g.c.bgcol=col;
+      if (arrows) g.c.style.backgroundColor=col;
     }
     if (!fow) return;
     for (var i=os.length-1;i>=0;i--) {
@@ -485,6 +623,7 @@ var Arkpark=function (gps) {
       if (o.party===0) continue;
       objViewCheck(o);
     }
+    //onsole.log(selo);
     //for (var i=env.length-1;i>=0;i--) {
     //  var o=env[i];
     //  //if (o.party==0) continue;
@@ -492,21 +631,91 @@ var Arkpark=function (gps) {
     //}
     //...
   }
+  function loadImage(fn) {
+    var img=new Image();
+    Conet.download({fn:fn,f:function(v) {
+      if (fn.endsWith('.json')) {
+        img.src=JSON.parse(v).data;
+      } else
+        img.src=v;//...
+    }
+    })
+    return img;
+    //...
+  }
+  function textShadow(ct,s,x,y,d,color) {
+    ct.fillStyle='#fff';
+    ct.fillText(s,x+d,y+d);
+    ct.fillStyle=color||'#000';
+    ct.fillText(s,x,y);
+    //...
+  }
+  
+  //let cdi=0;
+  function canoDraw(ct,x,y,w,h) {
+    //---
+    var c=this,o=c.userData.o;
+    
+    //cdi++;
+    //if (cdi%1000==0) {
+    //  console.log('canoDraw '+cdi);
+    //  console.log(o);
+    //}
+    
+    ct.save();
+    ct.translate(x+w/2,y+h/2);
+    ct.rotate(o.a+(o.animda||0));
+    if (c.img) ct.drawImage(c.img,-w/2,-h/2,w,h);
+    
+    ct.restore();
+    var wh=w/o.w,dh=wh/150;
+    
+    let wb=wh*18/20,hp=o.hp/o.mhp;
+    ct.fillStyle='#f00';
+    ct.fillRect(x+wh/20+wb*hp,y+wh*17/20,wb*(1-hp),wh*2/20);
+    ct.fillStyle='#0f0';
+    ct.fillRect(x+wh/20,y+wh*17/20,wb*hp,wh*2/20);
+    
+    //ct.rotate(-0.1);
+    ct.font='bold '+(wh/4)+'px serif';
+    ct.textAlign='left';
+    ct.textBaseline='bottom';
+    ct.fillStyle='#000';
+    let y0=y+h-h/8;//y+h
+    textShadow(ct,o.ap,x+wh*0.02,y0,dh);
+    ct.textAlign='right';
+    textShadow(ct,o.hp,x+w-wh*0.02,y0,dh,(o.hp<o.mhp?'#c00':'#080'));
+    
+    var fh=wh/8,yt=y+wh/30,xt=x+wh/30;
+    ct.font='bold '+fh+'px sans-serif';
+    ct.textAlign='left';
+    ct.textBaseline='top';
+    if (o.descr) { textShadow(ct,o.descr,xt,yt,dh);yt+=fh; }
+    if (o.stunned) { textShadow(ct,'Stunned',xt,yt,dh);yt+=fh; }
+    if (o.frags) { textShadow(ct,'Frags:'+o.frags,xt,yt,dh);yt+=fh; }
+    //onsole.log(o.descr);
+    //...
+  }
+  
   function objInit(o) {
     //---
+    //onsole.log('objInit os.length='+os.length);//onsole.trace();
     //var o={x:10,y:10};
     if (!o.w) o.w=1;
     if (!o.ap) o.ap=1;
     if (!o.hp) o.hp=5;
     if (!o.mhp) o.mhp=o.hp;
-    var bo=(o.party==0)?(Math.min(gw,gh)/2-2):0;
+    var bo=(o.party==0)?(Math.floor(Math.min(gw,gh)/2)-2):0;
     
     //newpos:
     if (o.x===undefined) {
+    let tries=0;
     newpos:
     while (true) {
-      var xp=Math.floor(Math.random()*(gw-o.w+1-bo*2))+bo,
-          yp=Math.floor(Math.random()*(gh-o.w+1-bo*2))+bo;
+      tries++;
+      if (tries>=100) { console.log('Tried '+(tries-1)+' times to find free position, skip.');return; }
+      var xp=Math.floor(Conet.rand()*(gw-o.w+1-bo*2))+bo,
+          yp=Math.floor(Conet.rand()*(gh-o.w+1-bo*2))+bo;
       //onsole.log('objInit o.w='+o.w+' xp='+xp+' yp='+yp);
       for (var y=yp;y<yp+o.w;y++) for (var x=xp;x<xp+o.w;x++) {
         var g=grid[y][x];if (g.block||(g.os.length>0)) continue newpos;
@@ -519,11 +728,12 @@ var Arkpark=function (gps) {
       o.x=xp;o.y=yp;
       break;
     }
+    //onsole.log('got pos '+o.x+','+o.y+' tries='+tries);
     }
     //onsole.log('objInit o.w='+o.w+' o.x='+o.x+' o.y='+o.y);
     
     //if (pplay) console.log(o.a);
-    if (o.a===undefined) o.a=Math.floor(Math.random()*4);//*Math.PI/2;//2*Math.random()*Math.PI;
+    if (o.a===undefined) o.a=Math.floor(Conet.rand()*4);//*Math.PI/2;//2*Math.ra ndom()*Math.PI;
     //if (pplay) console.log(o.a);
     processPush(['oinit',Object.assign({},o)]);
     o.a*=Math.PI/2;
@@ -531,7 +741,9 @@ var Arkpark=function (gps) {
     var fx=0.77,fy=0.77;
     if (o.env) { fx=0.955;fy=0.97; }//var f=o.env?0.97:0.77;
     //for (var x=0;x<10;x++) for (var y=0;y<10;y++) {
-    var c=arrows.div({src:
+    var c;
+    if (arrows) {
+    c=arrows.div({src:
       o.src||(o.env?'/canvas/paint/test/medikitSmall.png.txt':'/canvas/cutout/tiles/'+(o.heal?'md':'sw')+'.png.txt')
       //'/canvas/paint/test/medikitSmall.png.txt'
       ,img:1
@@ -539,7 +751,8 @@ var Arkpark=function (gps) {
       ,y:(o.y*w)+'px'//y0*fy
       ,t:(o.env?'scale(0.4)':'scale('+0.1*o.w+') rotate('+o.a+'rad)')//0.13*o.w
       ,transformOrigin:'center'});
-    c._o=o;c.arrowSel=click;o.c=c;
+    c._o=o;c.arrowSel=click;
+    o.c=c;
     //if (o.p!=0) 
     if (o.party!==undefined)
       c.style.filter='sepia(100%) hue-rotate('+parties[o.party].huerot+'deg) saturate(5)';
@@ -555,6 +768,15 @@ var Arkpark=function (gps) {
       updateText(o);
       place(o,o);
     }
+    }
+    
+    if (cano) {
+      cano.objs.push(c=cano.initObj({x:0,y:0,w:w*(0.8+o.w-1),h:w*(0.8+o.w-1),bgcol:((o.party!==undefined)?parties[o.party].col:undefined)
+        ,img:loadImage(o.src||('/canvas/cutout/tiles/'+(o.heal?'md':'sw')+'.png.txt')),selectable:0,draw:canoDraw,userData:{o:o}}));
+      o.c=c;
+      updateText(o);
+      place(o,o);
+    }
     //place(o,o);
     //...
   }
@@ -565,12 +787,23 @@ var Arkpark=function (gps) {
       if (g.view) { view=true;break; }
       if (g.wview) wview=true;
     }
+    if (arrows) {
     if (o.env) {
       o.c.style.display=view||wview?'initial':'none';
       o.c.style.filter=wview&&!view?'sepia(100%) blur(5px)':'';
     } else 
       o.c.style.display=view?'initial':'none';
     if (o.chp) o.chp.style.display=view?'initial':'none';
+    }
+    if (cano) {
+      var i=cano.objs.indexOf(o.c);
+      if (view) {
+        if (i==-1) cano.objs.push(o.c);
+      } else {
+        if (i!=-1) cano.objs.splice(i,1);
+      }
+    }
+    //o.view=view;
   }
   function objRemove(o) {
     placeGrid(o,false);
@@ -593,8 +826,10 @@ var Arkpark=function (gps) {
     //var f0=rani(100,200),f1=rani(25,50);
     //sound([{fr:[100,200],v:0,n:1},{t:10,v:1},{t:100,v:1},{t:140,v:0,fr:[25,50]}],o);
     
-    
     party=(party+1)%parties.length;
+    if (party==0) {
+      turns++;console.log('turns='+turns);
+    }
     
     //if (!fow) arrows.setScale(party==0?1:0.3);
     //console.log('arkpark.turn '+arrows.getSc());
@@ -625,10 +860,17 @@ var Arkpark=function (gps) {
       //console.log(g);
     }
     
+    if (gps.spawnMobOnTurn) if (turns%10==0) {
+      objInit({party:1,hp:3,descr:'MELEE'});
+      countParties();
+      Conet.log('Spawned mob, now '+parties[1].count+'.');
+    }
+    //---
   }
   function setBlock(g) {
     g.block=1;
-    g.c.style.backgroundColor='#777';
+    if (arrows) g.c.style.backgroundColor='#777';
+    if (cano) g.c.bgcol='#777';
     //...
   }
   function gridPattern(x0,y0,a) {
@@ -660,16 +902,23 @@ var Arkpark=function (gps) {
     o.w=1;o.env=1;o.isMedi=1;
     processPush(['oinit',Object.assign({},o)]);
     var f=0.97;
-    var c=arrows.div({src:
-      '/canvas/paint/test/medikitSmall.png.txt'
-      ,img:1
-      ,x:(x0*0+o.x*w)+'px'//x0*0.955
-      ,y:(y0*0+(0.1+o.y)*w)+'px'//y0*f
-      //,y:(y0*0+o.y*w)+'px'//y0*f
-      ,t:'scale('+0.008*w+')'
-      ,_transformOrigin:'center'});
-    c.arrowSel=click;
-    c.style.pointerEvents='none';o.c=c;
+    var c;
+    if (arrows) {
+      c=arrows.div({src:
+        '/canvas/paint/test/medikitSmall.png.txt'
+        ,img:1
+        ,x:(x0*0+o.x*w)+'px'//x0*0.955
+        ,y:(y0*0+(0.1+o.y)*w)+'px'//y0*f
+        //,y:(y0*0+o.y*w)+'px'//y0*f
+        ,t:'scale('+0.008*w+')'
+        ,_transformOrigin:'center'});
+      c.arrowSel=click;
+      c.style.pointerEvents='none';
+    } else {
+      cano.objs.push(c={s:'Medikit',x:(o.x+0.1)*w-gw*w/2,y:(o.y+0.1)*w-gh*w/2,w:w*0.8,h:w*0.8,bgcol:'#ccc'
+        ,img:loadImage('/canvas/paint/test/medikitSmall.png.txt'),selectable:0});
+    }
+    o.c=c;
     var g=grid[o.y][o.x];g.os.push(o);os.push(o);
     //...
   }
@@ -691,9 +940,40 @@ var Arkpark=function (gps) {
     //  +'<br>4) <span style="text-decoration:line-through;">Profit.</span> Win the game! <button id="disbut">Dismiss introduction</button>';
     document.body.appendChild(c);
   }
+  
+  function clearGrid() {
+    //---
+    let objs=undefined;
+    if (cano) { objs=cano.objs;
+      //objs.length=0; 
+      for (let i=objs.length-1;i>=0;i--) {
+        let c=objs[i];
+        if (levelGrid.objs.indexOf(c)!=-1) continue;
+        objs.splice(i,1);
+      }
+    }
+    //...
+  }
+  
   function initGrid() {
-    var c=arrows.cont;while (c.firstChild) c.removeChild(c.firstChild);
+    w=gps.w||50;gw=gps.gw||20;gh=gps.gh||20;
+    grid=[];
+    gridPath=new GridPath(grid,gw,gh);
+    fow=gps.fog!==undefined?gps.fog:true;
+    var c;
+    Conet.seed(gps.seed||1);
+    
+    
+    if (arrows) { c=arrows.cont;while (c.firstChild) c.removeChild(c.firstChild); }
     //arrows.setScale(1);startt=Date.now();process=[['gameVersion',version]];
+    
+    //var objs=cano.objs,sels=cano.sels,view=cano.view,url;
+    var objs=undefined;
+    if (cano) { objs=cano.objs;
+      //objs.length=0; 
+      clearGrid();
+    }
+    
     
     selo=undefined;os=[];
     x0=0;y0=0;//x0=gw*w;y0=gh*w;
@@ -701,43 +981,167 @@ var Arkpark=function (gps) {
     for (var y=0;y<gh;y++) {
       grid[y]=[];
       for (var x=0;x<gw;x++) {
-        var block=false;//Math.random()<0.3;
-        var c=arrows.div({s:' ',x:x*w+x0+'px',y:y*w+y0+'px',
-          w:(w-0)+'px',h:(w-0)+'px',c:block?'#777':'#aaa'});
-        var s=c.style;s.borderStyle='solid';s.borderColor='#888';
-        c.arrowSel=click;//onclick
+        var block=false;//Math.ra ndom()<0.3;
+        //if (Math.ran dom()<0.5) continue;
+        var c;
+        if (arrows) {
+          c=arrows.div({s:' ',x:x*w+x0+'px',y:y*w+y0+'px',
+            w:(w-0)+'px',h:(w-0)+'px',c:block?'#777':'#aaa'});
+          var s=c.style;s.borderStyle='solid';s.borderColor='#888';
+          //c.arrowSel=click;//onclick
+        }
+        if (cano) {
+          objs.push(c={s:' ',x:x*w+x0-gw*w/2,y:y*w+y0-gh*w/2,w:w,h:w,dontmove:1,bgcol:'#aaa',onselect:click});
+        }
+        c.arrowSel=click;
         var g={block:block,c:c,x:x,y:y,len:-1,os:[]};c._g=g;
         grid[y][x]=g;
       }
     }
-    arrows.div({s:' ',x:x0*3+'px',y:y0*3+'px'});
+    if (arrows) arrows.div({s:' ',x:x0*3+'px',y:y0*3+'px'});
     //gridPattern(4,7,['BBBBB','B','BBBBB']);
     
-    if (!gps.onestep)
-    gridPattern(0,0,['         B          ','         B          ','  BB  B     BBB  BB ',
-    '  B  BB     B       ','    BB   BB B       ','  B      B         B',
-    '  BB B  BB         B','        B   B       ','            B      B',
-    'BBB  BBBB BBB      B','        B B         ','                    ',
-    '  BBBB      BBBBBB  ','     B BBBBBB       ','            B       ',
-    '  B    BBBB B  B BB ','  B  B B    B  B B  ','  B  B B BBBB  B BB ',
-    '       B B     B  B ','       B   BB BB BB ']);
+    if (gps.gridPattern||!gps.onestep)
+    gridPattern(0,0,gps.gridPattern||[
+    '         B          ',
+    '         B          ',
+    '  BB  B     BBB  BB ',
+    '  B  BB     B       ',
+    '    BB   BB B       ',
+    '  B      B         B',
+    '  BB B  BB         B',
+    '        B   B       ',
+    '            B      B',
+    'BBB  BBBB BBB      B',
+    '        B B         ',
+    '                    ',
+    '  BBBB      BBBBBB  ',
+    '     B BBBBBB       ',
+    '            B       ',
+    '  B    BBBB B  B BB ',
+    '  B  B B    B  B B  ',
+    '  B  B B BBBB  B BB ',
+    '       B B     B  B ',
+    '       B   BB BB BB ']);
     
-    if (gps.blocks)
-    for (var i=gps.blocks.length-1;i>=0;i--) {
-      var b=gps.blocks[i],g=grid[b.y][b.x];
-      setBlock(g);
+    if (gps.randomBlocks) {
+      if (!gps.blocks) gps.blocks=[];
+      for (let i=0;i<gps.randomBlocks;i++) gps.blocks.push({x:rani(gw),y:rani(gh),notSerialize:1});
     }
+    
+    if (gps.blocks) {
+      for (let i=gps.blocks.length-1;i>=0;i--) {
+        let b=gps.blocks[i],g=grid[b.y][b.x];
+        setBlock(g);
+      }
+        
+    
+    if (1)  
+    if (gps.randomBlocks) /* connect holes */ {
+      //...
+      //onsole.log('...initGrid connect holes');//+gw+' '+gh);
+      
+      //find 1st monblock cell c0
+      let c0,ch;
+      for (let y=(gh-1);y>=0;y--) {
+        for (let x=(gw-1);x>=0;x--) {
+          if (!(ch=grid[y][x]).block) { c0=ch;break; }
+        }
+        if (c0) break;
+      }
+      
+      //console.log(c0);
+      let count=0;
+      
+      while (1) 
+      //for (let j=0;j<5;j++)
+      {
+      //---find all connected to c0
+      for (let y=gh-1;y>=0;y--) for (let x=gw-1;x>=0;x--) delete(grid[y][x].checked);
+      let check=[c0],cn,ca=[];
+      while (check.length>0) {
+        for (let i=check.length-1;i>=0;i--) {
+          let c=check[i],x=c.x,y=c.y;
+          if (!c.checked&&!c.block) {
+            c.checked=1;ca.push(c);//count++;
+            //c.c.bgcol='#7f7';
+            //setBlock(c);
+            //if (x>0) { cn=grid[y][x-1];if (!cn.block&&!cn.checked) check.push(cn); }
+            //if (y>0) { cn=grid[y-1][x];if (!cn.block&&!cn.checked) check.push(cn); }
+            //if (x<gw-1) { cn=grid[y][x+1];if (!cn.block&&!cn.checked) check.push(cn); }
+            //if (y<gh-1) { cn=grid[y+1][x];if (!cn.block&&!cn.checked) check.push(cn); }
+            
+            if (x>0) { cn=grid[y][x-1];check.push(cn); }
+            if (y>0) { cn=grid[y-1][x];check.push(cn); }
+            if (x<gw-1) { cn=grid[y][x+1];check.push(cn); }
+            if (y<gh-1) { cn=grid[y+1][x];check.push(cn); }
+          }
+          check.splice(i,1);
+        }
+      }
+      //onsole.log('ca.length='+ca.length);
+      
+      //---tried opti to remove inner cells from ca so that only border cells are checked for pairs
+      //---because calc was slow, but main issue was duplicates in ca; opti didnt helped, made 
+      //---calc even slower because there where too few inner cells
+      //for (let i=ca.length-1;i>=0;i--) {
+      //  let c=ca[i],x=c.x,y=c.y;;
+      //  if (x>0) if (!grid[y][x-1].checked) continue;
+      //  if (y>0) if (!grid[y-1][x].checked) continue;
+      //  if (x<gw-1) if (!grid[y][x+1].checked) continue;
+      //  if (y<gh-1) if (!grid[y+1][x].checked) continue;
+      //  ca.splice(i,1);
+      //}
+      //console.log('opti ca.length='+ca.length);
+      
+      //---find closest pair of nonblock cell, where one is checked, the other not
+      let mind=Number.MAX_VALUE,pairs=[];
+      for (let i=ca.length-1;i>=0;i--) {
+        c0=ca[i];
+        for (let y=gh-1;y>=0;y--) for (let x=gw-1;x>=0;x--) {
+          if ((x==c0.x)&&(y==c0.y)) continue;
+          let c1=grid[y][x];
+          if (c1.block||c1.checked) continue;
+          let dx=c1.x-c0.x,dy=c1.y-c0.y,d=dx*dx+dy*dy;
+          if (d>mind) continue;
+          if (d<mind) { pairs.length=0;mind=d; }
+          pairs.push([c0,c1]);
+        }
+      }
+      //onsole.log('pairs.length='+pairs.length);
+      if (pairs.length==0) break;
+      {
+        let i=rani(pairs.length);
+        let p=pairs[i],c0=p[0],c1=p[1];
+        //onsole.log(p);  
+        while (c1.x!=c0.x) { c1=grid[c1.y][c1.x+(c1.x>c0.x?-1:1)];delete(c1.block); }
+        while (c1.y!=c0.y) { c1=grid[c1.y+(c1.y>c0.y?-1:1)][c1.x];delete(c1.block); }
+        count++;
+      }
+      }
+      if (count>0) console.log('Connected '+count+' areas.');
+      //---
+    }
+    
+    }
+    
     
     //...
   }
   function restart() {
+    //---
+    
+    //---260528 for levelGrid, so that after loss, restart starts with party0
+    party=0;
+    mturn.bgcol=parties[party].col;
+    mturn.c.style.backgroundColor=mturn.bgcol;
     
     //var c=arrows.cont;while (c.firstChild) c.removeChild(c.firstChild);
     //selo=undefined;os=[];x0=gw*w;y0=gh*w,f=0.77;//4
     //for (var y=0;y<gh;y++) {
     //  grid[y]=[];
     //  for (var x=0;x<gw;x++) {
-    //    var block=false;//Math.random()<0.3;
+    //    var block=false;//Math.ra ndom()<0.3;
     //    var c=arrows.div({s:' ',x:x*w+x0+'px',y:y*w+y0+'px',
     //      w:(w-0)+'px',h:(w-0)+'px',c:block?'#777':'#aaa'});
     //    var s=c.style;s.borderStyle='solid';s.borderColor='#888';
@@ -755,10 +1159,9 @@ var Arkpark=function (gps) {
     //'  BBBB      BBBBBB  ','     B BBBBBB       ','            B       ',
     //'  B    BBBB B  B BB ','  B  B B    B  B B  ','  B  B B BBBB  B BB ',
     //'       B B     B  B ','       B   BB BB BB ']);
-    
+    turns=0;
     initGrid();
-    arrows.setScale(1);startt=Date.now();process=[['gameVersion',version]];
-    
+    if (arrows) arrows.setScale(1);startt=Date.now();process=[['gameVersion',version]];
     
     if (!edit) {
       //gridRandom();
@@ -778,8 +1181,18 @@ var Arkpark=function (gps) {
       if (gps.objs) {
         for (var o of gps.objs) for (var i=(o.count||1)-1;i>=0;i--) objInit(Conet.hcopy(o));
       } else {
-        for (var i=0;i<3;i++) objInit({x_:11,y:8,party:0});
-        for (var i=0;i<10;i++) objInit({party:1,hp:3});
+        for (var o of gps.objs0) for (var i=(o.count||1)-1;i>=0;i--) objInit(Conet.hcopy(o));//same as objs
+        for (var i=0;i<(gps.meleeCount||3);i++) objInit({x_:11,y:8,party:0,descr:'MELEE'});
+        for (var i=0;i<(gps.medicCount||0);i++) {
+          var h={x_:11,y:8,party:0,descr:'MEDIC',heal:1,ap:5};
+          if (gps.medicImgSrc) h.src=gps.medicImgSrc;
+          objInit(h);//{x_:11,y:8,party:0,descr:'MEDIC',heal:1,ap:5,src:'/canvas/cutout/tiles/samTorch.json'});
+        }
+        if (gps.mobCounts) 
+          for (let h of gps.mobCounts) 
+            for (let i=0;i<h.c;i++) objInit(Conet.hcopy(h,{party:1,hp:3,descr:'MELEE'}));
+        else 
+          for (var i=0;i<((gps.mobCount===undefined)?10:gps.mobCount);i++) objInit({party:1,hp:3,descr:'MELEE'});
       }
     } else {
       gridPattern(8,7,['BBBBBB','B     ','BBBBBBB']);var o;
@@ -816,11 +1229,41 @@ var Arkpark=function (gps) {
       //...
     }
     ,50);
+    if (arrows) {
     arrows.cont0.scrollTop=(y0*3-window.innerHeight)/2;
     arrows.cont0.scrollLeft=(x0*3-window.innerWidth)/2;
+    }
     gridPath.setFreeFor(freeFor);
     //alert('Arkpark turn-based-strategy game test\n1) Click your units (cyan) to move and attack\n2) Hit "Turn" Button');
     //...
+    //if (gps.levelGrid) levelGrid();
+    
+    countParties();
+    let p1c0=parties[1].count;
+    cano.objs.push({x:0,y:20,w:180,h:20,dontmove:1,bgcol:'#aaa',s:'Number of Mobs',selNoDeco:1,pos:['bottom','center']
+    
+    ,draw:function(ct,x,y,w,h) {
+      //---
+      let c=parties[1].count,f=w*c/p1c0;
+      
+      ct.fillStyle='#aea';
+      ct.fillRect(x,y,w-f,h);
+      ct.fillStyle='#eaa';
+      ct.fillRect(x+(w-f),y,f,h);
+      
+      ct.font=(14*cano.view.dpr)+'px sans-serif';
+      ct.textAlign='center';
+      ct.textBaseline='middle';
+      ct.fillStyle='#000';
+      ct.fillText('Remaining mobs: '+c,x+w/2,y+h/2);
+      ct.textAlign='start';
+      ct.textBaseline='alphabetic';
+      
+      //...
+    }
+    
+    });
+    
     
     
     //...
@@ -859,16 +1302,454 @@ var Arkpark=function (gps) {
     pplay=!pplay;
     if (pplay) { processPlay();this.s='Stop'; } else { this.s='Play'; }
   }
+  function load(fn) {
+    
+    Conet.download({fn:fn,f:function(v) {
+      gps=JSON.parse(v);
+      restart();
+    }
+    });
+    //...
+  }
+  //---
+  function initLevelGrid() {
+    //---
+    let levelStarted,levelSelected,lskey='arkpark0_'+(gps.seed||1),info,objs0Init;
+    
+    console.log('seed='+(gps.seed||1));
+    
+    if (levelGrid=='3melees') {
+      levelGrid={};
+      Conet.hcopy(
+    
+    {onestep:1
+    ,fog:1
+    ,approachOnTurn:-1
+    ,medikits:0
+    ,meleeCount:-1 //hack, means 0
+    ,objs0:[
+      {party:0,descr:'Athos',ap:1,hp:5,mhp:5,w:1},
+      {party:0,descr:'Porthos',ap:1,hp:5,mhp:5,w:1},
+      {party:0,descr:'Aramis',ap:1,hp:5,mhp:5,w:1}
+    ],
+    info:'Arkpark Game Test'+
+    '<br>'+
+    '<br>- Minimal turnbased game with level up.'+
+    '<br>'+
+    '<br>More details:'+
+    '<br>'+
+    '<br>- Simple turnbased gameplay.'+
+    '<br>- Multiple random generated game levels of increasing difficulty.'+
+    '<br>- Maintain a party of units and level up on won games.'+
+    '<br>'+
+    '<br>Even more details:'+
+    '<br>'+
+    '<br>- Your units are blue, opponent is orange.'+
+    '<br>- Units can move, then attack. Click on them to switch between move/attack.'+
+    '<br>- On your turn, your units can be played at variable order, click to select and move/attack.'+
+    '<br>- Game levels are set as a grid, simple ones at top, difficult at bottom.'+
+    '<br>- At start the top simple levels are playable, if a level is won, the more difficult level below it gets playable.'+
+    '<br>- On won game a unit levels up, if a game isn\'t winnable, level up units playing easier games first.'+
+    '<br>- Games are random generated with a seed. You can change the seed in the menu to get a whole new campaign.'
+    ,
+    }
+      
+      ,gps);
+    }
+    
+    objs0Init=cloneA(gps.objs0);
+    //onsole.log(objs0Init);
+    
+    function cloneA(a) {
+      //---
+      return JSON.parse(JSON.stringify(a));
+      //...
+    }
+    
+    function saveGameState() {
+      //---
+      let sh=JSON.stringify(levelGrid.persist);
+      if (Conet.checkOnline()) Conet.upload({fn:'gamesaves/'+lskey+'.json',data:sh});
+      else localStorage[lskey]=sh;
+      //...
+    }
+    
+    levelGrid.onGameEnd=function(sec) {
+      //---
+      let i=levelGrid.objs.indexOf(levelStarted);
+      console.log('i='+i);
+      let lost=(parties[0].count==0),persist=levelGrid.persist;
+      let games=levelGrid.persist.objs[i].games;
+      games.push({won:!lost,sec:sec,ts:Conet.dateToString(new Date())});
+      
+      let wincount=0;for (let g of games) if (g.won) wincount++;
+      
+      let unitLevelUp='';
+      if ((wincount==1)&&!lost) {
+        Conet.seed(gps.seed);
+        let i0=Conet.rani(persist.objs0.length),i1=Conet.rani(2);
+        let u=persist.objs0[i0],k=(i1==0?'ap':'hp');
+        u[k]=Conet.f4(u[k]+0.5);
+        if (k=='hp') u.mhp=u.hp;
+        unitLevelUp='<br><br>Unit level up: '+u.descr+'.'+k+' = '+u[k];
+        levelGrid.persist.objs[i].info='Last level up: '+u.descr+'.'+k;
+      }
+      
+      saveGameState();
+      //onsole.log('wrote to ls: '+sh);
+      
+      Conet.alert('Game over, you '+(lost?'lost! D:':'won! :D')
+        +'<br>Game time: '+Math.floor(sec/60)+'min, '+sec%60+' sec.'+unitLevelUp);
+        
+      clearGrid();
+      showParty();
+      //...
+    }
+    
+    function click() {
+      //---
+      //console.log(this);
+      //console.log('Restart with level '+this.seed);
+      console.log('Level seed='+this.level.seed);
+      
+      //start level at start or on doubleclick
+      if (//(!levelStarted)||
+        (levelSelected===this)) {
+      
+        let allPlayable=false;
+        if (!allPlayable
+          //&&levelStarted
+          &&!this.levelGridPs.playable) {
+          //alert('This level is currently not playable.\nThe yellow ones are.');
+          Conet.alert('This level is currently not playable.<br>The yellow, green or red ones are.');
+          return;
+        }
+      
+        if (levelStarted) {
+          //let i=levelGrid.objs.indexOf(levelStarted);
+          //levelStarted.sa=[levelGrid.persist.objs[i].games.length||' '];
+        }
+        levelStarted=this;
+        //this.sa=['Run'];
+        Conet.hcopy(this.level,gps);
+        //gps.seed=this.seed;
+        restart();
+        cano.tweens.push({o:cano.view,t:0,mt:500,k:'posx',v0:cano.view.posx,v1:0});
+      }
+      
+      
+      if (levelSelected) {
+        //levelSelected.bgcol='#aaa';
+      }
+      levelSelected=this;
+      let i=levelGrid.objs.indexOf(levelSelected);
+      //onsole.log(levelGrid.persist.objs[i]);
+      info.sa=['Selected level: '+i%lw+','+Math.floor(i/lw)];
+      let lpoi=levelGrid.persist.objs[i];
+      let games=lpoi.games;
+      if (games.length>0) {
+        let wins=0,losses=0;
+        for (let g of games) if (g.won) wins++; else losses++;
+        info.sa.push((wins>0?wins+' wins ':'')+(losses>0?losses+' losses':''));
+      }
+      if (lpoi.info) info.sa.push(lpoi.info);
+      //this.bgcol='#eee';
+      //...
+    }
+    
+    function hasWins(x,y) {
+      //---
+      if ((x<0)||(x>=lw)||(y<0)||(y>=lh)) return false;
+      let i=y*lw+x,games=levelGrid.persist.objs[i].games;
+      for (let g of games) if (g.won) return true;
+      return false;
+      //...
+    }
+    
+    //let di=0;
+    function draw(ct,x,y,w,h) {
+      //---
+      //console.log(this);
+      let i=this.levelGridPs.i;
+      let games=levelGrid.persist.objs[this.levelGridPs.i].games;
+      //if (games.length==0) return;
+      
+      let wins=0,losses=0;
+      for (let g of games) if (g.won) wins++; else losses++;
+      
+      let playable=false;
+      if ((Math.floor(i/lw)==0)||(games.length>0)) playable=true;
+      else {
+        let lx=i%lw,ly=Math.floor(i/lw);
+        if (hasWins(lx,ly-1)||hasWins(lx-1,ly)||hasWins(lx+1,ly)) playable=true;
+      }
+      this.levelGridPs.playable=playable;
+      
+      ct.fillStyle=wins>0?'#6f0':(losses>0?'#f60':(playable?'#eea':'#aaa'));
+      ct.fillRect(x,y,w,h);
+      ct.fillStyle='#000';
+      
+      let v=cano.view,fs=7*v.dpr*v.scy,y0=y+fs/10,x0=x+fs/10;
+      
+      if (this===levelStarted) {
+        ct.lineWidth=fs*1.5;
+        ct.strokeStyle='#fff';
+        ct.strokeRect(x,y,w-1,h-1);
+      }
+      
+      if (this===levelSelected) {
+        ct.lineWidth=fs*1;
+        ct.strokeStyle='#ff0';
+        ct.strokeRect(x,y,w-1,h-1);
+      }
+      
+      ct.font=fs+'px sans-serif';
+      if (wins>0) { ct.fillText(wins+' wins',x0,y0);y0+=fs; }
+      if (losses>0) { ct.fillText(losses+' losses',x0,y0);y0+=fs; }
+      
+      //di++;
+      //if (di%10000==0) {
+      //  console.log(di);
+      //  //onsole.log(cano.view);
+      //}
+      //onsole.log(this.intern.fsh);
+      //...
+    }
+    
+    function resetGameState() {
+      //---
+      levelGrid.persist={
+        objs:[],
+        objs0:cloneA(objs0Init),
+      };
+      gps.objs0=levelGrid.persist.objs0;
+      for (let y=0;y<lh;y++) for (let x=0;x<lw;x++) 
+        levelGrid.persist.objs.push({games:[]});
+        
+      saveGameState();
+      clearGrid();
+      showParty();
+      //...
+    }
+    
+    function init(sh) {
+      //---
+      let initPersist=true;
+      
+      if (sh) { 
+        levelGrid.persist=JSON.parse(sh);
+        //onsole.log(levelGrid.persist); 
+        if (levelGrid.persist.objs0) gps.objs0=levelGrid.persist.objs0;
+        initPersist=false;
+      }
+      //if (initPersist) levelGrid.persist={objs:[]};
+      
+      for (let y=0;y<lh;y++)
+      for (let x=0;x<lw;x++) {
+        let gw=y+5;
+        let c={s:' ',//(initPersist?' ':levelGrid.persist.objs[levelGrid.objs.length].games.length||' '),
+          x:400+x*w,//(gw+1)*w-gw*w/2
+          y:y*w-lh*w/2,
+          w:w-b,h:w-b,dontmove:1,bgcol:'#aaa',onselect:click,draw:draw,
+          levelGridPs:{
+            i:levelGrid.objs.length
+          },
+          level:{
+            seed:(gps.seed||1)+(x+y*lw)*11,
+            blocks:[],
+            gw:gw,gh:gw,
+            randomBlocks:Math.floor(0.5+gw*gw*0.4),
+            mobCount:2+Math.floor(0.5+gw*gw/30)+y,
+          }};
+        levelGrid.objs.push(c);
+        //if (initPersist) levelGrid.persist.objs.push({games:[]});
+        cano.objs.push(c);
+      }
+      
+      if (initPersist) resetGameState();
+      
+      let c;
+      cano.objs.push(c={x:400,y:lh*w/2+w/2,w:lw*w-b,h:1.5*w,dontmove:1,fs:12,bgcol:'#aaa',s:'Level info.'
+      
+      ,onselect:function() {
+        //---
+        //console.log(cano.view);
+        //cano.view.posx=0;
+        cano.tweens.push({o:cano.view,t:0,mt:500,k:'posx',v0:cano.view.posx,v1:0});
+        //alert(23);
+        //...
+      }
+      
+      });
+      levelGrid.objs.push(c);info=c;
+      //
+      mmenu.sub.splice(0,0,Menu.initMenu({s:'Gamesave',fs:0.9,_noTri:true,sub:[
+      {s:'Ex/Import..',vCenter:1,doctrl:'Export/Import Gamesave',ta:true,jsonCheck:1,
+      
+      valuef:function() {
+        //---
+        return JSON.stringify(levelGrid.persist,undefined,' ');
+        //...
+      }
+      
+      ,setfunc:function(v) {
+        //---
+        levelGrid.persist=JSON.parse(v);
+        if (levelGrid.persist.objs0) gps.objs0=levelGrid.persist.objs0;
+        
+        let sh=JSON.stringify(levelGrid.persist);
+        if (Conet.checkOnline()) Conet.upload({fn:'gamesaves/'+lskey+'.json',data:sh});
+        else localStorage[lskey]=sh;
+        //...
+      }
+      
+      }
+      ,{s:'Reset',actionf:function() {
+        //---
+        Conet.prompt('Really reset gamesave?<br>Game progress will get lost.',{onyes:resetGameState});
+        //...
+      }
+      }
+      
+      ,{s:'Seed..',actionf:function() {
+        let s=prompt('Current seed is '+gps.seed+', change it?\n(You can then bookmark url to quickly get back to it.)',gps.seed);
+        if (!s) return;
+        if (s==gps.seed) return;
+        
+        let h=JSON.parse(decodeURIComponent(url.file));
+        h.seed=parseInt(s);
+        s='/anim/arkpark/arkpark.htm?file='+encodeURIComponent(JSON.stringify(h));
+        document.location=s;
+        //console.log(s);
+        //alert(s);
+        //...
+      }
+      }
+      
+      
+      ]}
+      
+      ));
+      
+      //mmenu.sub.splice(0,0,Menu.initMenu({s:'Seed..'}));
+      
+      //
+      
+      showParty();
+      
+      //levelGrid.objs[0].onselect();
+      //...
+    }
+    
+    function showParty() {
+      //---
+      levelStarted=undefined;
+      
+      //cano.objs.push({sa:['Your Party ↴    Start a game →'],alignCenter:1,fs:16,x:-w*4,y:-w*1.65,w:w*8,h:w,dontmove:1,bgcol:'#eea'});
+      
+      cano.objs.push({sa:['Your Party ↴'],alignCenter:1,fs:16,x:-w*4-w/4,y:-w*1.65,w:w*4,h:w,dontmove:1,bgcol:'#aaa'});
+      cano.objs.push({sa:['Start a game →'],alignCenter:1,fs:16,x:w/4,y:-w*1.65,w:w*4,h:w,dontmove:1,bgcol:'#eea'
+      
+      ,onselect:function() {
+        //---
+        cano.tweens.push({o:cano.view,t:0,mt:500,k:'posx',v0:cano.view.posx,v1:-400-lw*w/2+b/2});
+        //...
+      }
+      
+      });
+      
+      
+      let f=4,bf=0.2,l=gps.objs0.length;
+      for (let i=0;i<l;i++) {
+        console.log('showParty '+i);
+        let o=Conet.hcopy(gps.objs0[i]);
+        o.x=i;o.y=0;o.a=Math.PI;//o.mhp=o.hp;o.w=1;
+        let c={s:'u'+i,x:(i-l/2+bf/2)*w*f,y:0,w:w*f*(1-bf),h:w*f*(1-bf),dontmove:1,
+          bgcol:parties[o.party].col,
+          userData:{o:o},draw:canoDraw,
+          img:loadImage(o.src||('/canvas/cutout/tiles/'+(o.heal?'md':'sw')+'.png.txt'))
+        };
+        cano.objs.push(c);
+      }
+      //...
+    }
+    
+    let w=(gps.w||50)*0.7,//,lw=w*0.7
+        b=w*0.15,lw=5,lh=10; 
+    
+    
+    levelGrid.objs=[];
+    
+    //console.log('initLevelGrid 0');
+    //Conet.prompt('Really restart?',{});
+    //console.log('initLevelGrid 1');
+    
+    if (Conet.checkOnline())
+    Conet.download({fn:'gamesaves/'+lskey+'.json',f:function(v) {
+      //---
+      //onsole.log(v);
+      init(v);
+      //...
+    }
+      });
+    else init(localStorage[lskey]);
+      
+    //console.log(c);
+    //...
+  }
   //---
   (function() {
     //...
-    
-    edit=Conet.parseUrl().edit;
+    url=Conet.parseUrl();
+    edit=url.edit;
     if (edit) fow=false;
     Sound.vol=0.1;
-    arrows=new Arrows({noStartLoad:1,elStick:1,bgcol:'#888',minsc:0.3,
-    menu:[{s:'&#9776;',noTri:true,fs:1.4,pw:0.05,sub:[{s:'Restart',fs:1.4,vCenter:1,actionf:restart}
-    ,{s:'Replay',vCenter:1,fs:1.2,sub:[
+    Conet.seed(url.seed?parseInt(url.seed):1);
+    
+    if (url.file) {
+      gps=JSON.parse(decodeURIComponent(url.file));
+      levelGrid=gps.levelGrid;
+    }
+    
+    let cfm;
+    
+    if (!levelGrid) {
+    cfm=Conet.fileMenu({fn:'/anim/arkpark/maps/files.txt',defFn:'/anim/arkpark/maps/small.json',url:'fn',noStartLoad:url.file?1:0,
+    loadf:load
+    ,_savef:function(v) {
+      
+      //---
+      
+    }
+    });
+    
+    cfm.sub.push({s:'Ex-/Import',cstay:1,r:1,doctrl:'Export/Import level',ta:true,jsonCheck:1
+    ,valuef:function() {
+      //---
+      let a=[];
+      for (let b of gps.blocks) if (!b.notSerialize) a.push(b);
+      let h=Conet.hcopy(gps);
+      if (a.length>0) h.blocks=a; else delete(h.blocks);
+      return JSON.stringify(h,undefined,' ');
+      //...
+    }
+    ,setfunc:function(v) {
+      //---
+      gps=JSON.parse(v);
+      restart();
+      //...
+    }
+    
+    });
+    }
+    
+    let mRestart={s:'Restart',fs:1.4,vCenter:1,actionf:function() {
+      //---
+      Conet.prompt('Really Restart ?',{onyes:restart});
+      //...
+    }
+        },
+        mReplay={s:'Replay',vCenter:1,fs:1.2,sub:[
     {s:'Data',fs:1.4,doctrl:'Replay export',ta:true,close_:true,valuef:function() {
       var s='';
       for (var i=0;i<process.length;i++) s+=(i==0?'[':',\n')+JSON.stringify(process[i]);
@@ -3509,23 +4390,52 @@ var Arkpark=function (gps) {
     }
     }
     ]},
-    {s:'Info',fs:1.4,vCenter:1,actionf:function() {
+    mInfo={s:'Info',fs:1.4,vCenter:1,actionf:function() {
       
-      showMsg('<b style="color:#fff;">Arkenpark</b><span style="color:#fff;"> &middot; Turn-Based-Strategy Game Test </span>'
-        //+' Version '+version//;//+'<br><a href="javascript:alert(23);" style="font-weight:bold;">Start game</a>';
+      //showMsg('<b style="color:#fff;">Arkenpark</b><span style="color:#fff;"> &middot; Turn-Based-Strategy Game Test </span>'
+      //  //+' Version '+version//;//+'<br><a href="javascript:alert(23);" style="font-weight:bold;">Start game</a>';
+      //  +'<br>1) Click your (blue) units to move and attack/heal.<br>2) Hit "Turn" Button, A.I. processes, Repeat.'
+      //  +'<br>3) ...'//Move onto medikits to reset health.
+      //  +'<br>4) <span style="text-decoration:line-through;">Profit.</span> Win the game! <button id="disbut">Close introduction</button>');
+      //document.getElementById('disbut').onclick=checkDismissMsg;
+      
+      Conet.alert(gps.info?gps.info:'Arkenpark\nTurn-Based-Strategy Game Test'
         +'<br>1) Click your (blue) units to move and attack/heal.<br>2) Hit "Turn" Button, A.I. processes, Repeat.'
         +'<br>3) ...'//Move onto medikits to reset health.
-        +'<br>4) <span style="text-decoration:line-through;">Profit.</span> Win the game! <button id="disbut">Close introduction</button>');
-      document.getElementById('disbut').onclick=checkDismissMsg;
+        +'<br>4) Win the game!');
       
       //...
     }
+    },mVersion={s:'Version '+version,fs:1.2,vertCenter:1,ph:0.02,noinp:1};
+    
+    let menu=[mmenu={s:'&#9776;',noTri:true,fs:1.4,pw:0.05,sub:
+      levelGrid?[mRestart,mInfo,Menu.mFullscreen,mVersion]
+      :[cfm,mRestart,mReplay,mInfo,Menu.mFullscreen,mVersion]
     },
-    {s:'Version '+version,fs:1.2,vertCenter:1,ph:0.02,noinp:1}]},
       mturn={s:'Turn',msid:'mturn',ms:'',
-      fs:1.4,vCenter:1,bgcol:parties[0].col,actionf:turn}]});
-    arrows.etScene().elStick=1;
-    if (!gps.noStart) restart();
+      fs:1.4,vCenter:1,bgcol:parties[0].col,actionf:turn}];
+    
+    
+    if (gps.canvNotes||!url.arrows) {
+      cano=new CanvNotes({nomenu:1});
+      cano.smallScale=0.00001;
+      cano.selCount=0;
+      Menu.init(menu,{listen:1});
+      //...
+    } else {
+      arrows=new Arrows({noStartLoad:1,elStick:1,bgcol:'#888',minsc:0.3,menu:menu});
+      arrows.etScene().elStick=1;
+    }
+    
+    if (url.file) {
+      if (levelGrid) {
+        initLevelGrid();
+        //levelGrid.objs[0].onselect();
+      } else restart();
+    }
+    
+    
+    //if (gps.load) load(gps.load); else if (!gps.noStart) restart();
     
     //...
   }
@@ -3536,9 +4446,36 @@ var Arkpark=function (gps) {
 //----
 
 //fr o,1
-//fr o,1,9
-//fr o,1,22
-//fr o,1,24
-//fr o,1,35
-//fr o,1,40,14
-//fr p,40,84
+//fr o,1,11
+//fr o,1,21
+//fr o,1,34,1
+//fr o,1,38
+//fr o,1,51
+//fr o,1,53
+//fr o,1,54
+//fr o,1,54,109
+//fr o,1,56
+//fr o,1,58,1
+//fr o,1,60
+//fr o,1,60,47
+//fr o,1,60,49
+//fr o,1,60,51
+//fr o,1,60,53
+//fr o,1,60,58
+//fr o,1,60,60
+//fr o,1,60,62
+//fr o,1,60,62,38
+//fr o,1,60,62,46
+//fr o,1,60,62,48
+//fr o,1,60,62,51
+//fr o,1,60,62,54
+//fr o,1,60,64
+//fr o,1,60,64,8
+//fr o,1,60,77
+//fr o,1,62
+//fr o,1,62,17
+//fr o,1,62,21
+//fr o,1,62,22
+//fr o,1,62,27
+//fr o,1,62,36
+//fr p,27,707

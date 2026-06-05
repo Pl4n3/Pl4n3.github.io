@@ -1,7 +1,7 @@
 var Conet={};
 (function(Conet) {
   Conet.offline=false;
-  Conet.version='1.830 ';//FOLDORUPDATEVERSION
+  Conet.version='1.844 ';//FOLDORUPDATEVERSION
   Conet.files={};
   var uploads={},fns,logc,logs=[],//fn=>data,first
       logSameLineCount=0,ac,downloads={},PI=Math.PI;
@@ -1569,6 +1569,59 @@ var Conet={};
     } else showDiv();
     //...
   }
+  
+  Conet.dateToString=function(d) {
+    //...
+    var local=d;//new Date(this);
+    local.setHours(d.getHours()+(d.getTimezoneOffset()/-60) );
+    let r=local.toJSON();
+    return r.substr(0,16).replaceAll('T',' ');
+    //---
+  }
+  Conet.alert=function(s) {
+    //---
+    let d=document.createElement('dialog');
+    let b=document.createElement('button');
+    b.innerHTML='Close';
+    b.onclick=function() {
+      d.close();
+    }
+    //d.appendChild(document.createTextNode('This level is currently not playable.\nThe yellow ones are.'));
+    d.innerHTML=s+'<br><br>';//'This level is currently not playable.<br>The yellow ones are.<br><br>';
+    d.appendChild(b);
+    document.body.appendChild(d);
+    d.showModal();
+    //...
+  }
+  
+  Conet.prompt=function(s,ps) {
+    //---
+    let d=document.createElement('dialog');
+    d.innerHTML=s+'<br><br>';
+    
+    let b=document.createElement('button');
+    b.innerHTML='Yes';
+    b.onclick=function() {
+      d.close();
+      if (ps.onyes) ps.onyes();
+    }
+    d.appendChild(b);
+    
+    d.appendChild(document.createTextNode(' '));
+    
+    b=document.createElement('button');
+    b.innerHTML='No';
+    b.onclick=function() {
+      d.close();
+    }
+    d.appendChild(b);
+    
+    
+    document.body.appendChild(d);
+    d.showModal();
+    //...
+  }
+  
   //---
 }
 )(Conet);
@@ -1577,7 +1630,6 @@ console.log('Conet '+Conet.version);
 //fr o,1,9,33
 //fr o,1,10,29
 //fr o,1,10,31
-//fr o,1,13
 //fr o,1,13,4
 //fr o,1,13,5
 //fr o,1,13,6
@@ -1600,15 +1652,16 @@ console.log('Conet '+Conet.version);
 //fr o,1,65,2
 //fr o,1,117,2
 //fr o,1,117,11
-//fr o,1,121
 //fr o,1,121,3
 //fr o,1,121,4
 //fr o,1,121,8
 //fr o,1,121,8,32
-//fr o,1,121,10
 //fr o,1,121,10,0
 //fr o,1,121,10,0,26
 //fr o,1,124,1
 //fr o,1,124,1,16
 //fr o,1,124,9
-//fr p,73,137
+//fr o,1,127
+//fr o,1,129
+//fr o,1,129,6
+//fr p,44,156

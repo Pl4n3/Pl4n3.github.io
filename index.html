@@ -195,6 +195,21 @@ body {
     minHeight=undefined;
     cells=[
     
+    (function() {
+      let w=10;//20
+      return {descr:'Arkpark test: levelGrid',minHeight:'10px',//conet:1,
+      img:'/blog/hub/turnbased/arkparkHealers.jpg',
+      date:'2026-06-05',
+      link:'/anim/arkpark/arkpark.htm?file='+encodeURIComponent(JSON.stringify(
+      
+      {seed:110,levelGrid:'3melees'}
+      
+      )),
+      };
+    }
+    )(),
+    
+    
     {descr:'Explore hilly landscape with viewlines.',minHeight:'150px',
     link:'/three/deep/flight.htm?level=fogOfWar&withHills=1',
     linkAdd:[{text:'XR',link:'/test/webvr/edit.htm?file=file:flight&flightLevel=fogOfWar&withHills=1'}],
@@ -209,14 +224,16 @@ body {
     twitter:'https://x.com/Pl4n3/status/1671209060488687621',
     },
     
+    /*
     (function() {
       let w=10;//20
-      return {descr:'Arkpark test: levelMap',minHeight:'10px',conet:1,
+      return {descr:'Arkpark test: levelGrid',minHeight:'10px',conet:1,
       link:'/anim/arkpark/arkpark.htm?file='+encodeURIComponent(JSON.stringify(
       
       {onestep:1
       ,"fog":1
-      ,approachOnTurn:-1,mobCount:w*w/30,medikits:0
+      ,approachOnTurn:-1,mobCount:w*w/30
+      ,medikits:0
       ,seed:110 
       //,medicCount:1
       //,"medicImgSrc":"/canvas/cutout/tiles/samTorch.json","//old":"medicCount 2,meleeCount 3"
@@ -231,7 +248,7 @@ body {
       };
     }
     )(),
-    
+    */
     
     (function() {
       let w=10;//20
@@ -655,7 +672,7 @@ body {
     });
   }
   
-  h.files.push({text:'Pl4n3 Hub Version 1.0.106 ',//FOLDORUPDATEVERSION
+  h.files.push({text:'Pl4n3 Hub Version 1.0.115 ',//FOLDORUPDATEVERSION
   draw:function(el) {
     //...
     let st=el.style;
@@ -698,4 +715,5 @@ body {
 //fr o,25
 //fr o,25,10
 //fr o,25,10,24
-//fr p,24,52
+//fr o,25,15
+//fr p,0,100

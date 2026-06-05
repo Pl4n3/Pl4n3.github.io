@@ -227,6 +227,8 @@ var CanvNotes=function(gps) {
       //onsole.log('unselecting '+sels.length);
       for (var oh of sels) oh.sel=undefined;
       sels.splice(0,sels.length);
+      let mc=Menu.mcontrol;
+      if (mc) Menu.getTf().value='';
     }
     
     if (o) {
@@ -237,15 +239,17 @@ var CanvNotes=function(gps) {
         o.sel=undefined;
         var i=sels.indexOf(o);sels.splice(i,1);
       } else {
-      if (sels.length<self.selCount) {
-      o.sel=1;
-      //o.intern.selx=o.x;
-      //o.intern.sely=o.y;
-      //if (o.children) for (var o0 of o.children) {
-      //  o0.intern.selx=o0.x;
-      //  o0.intern.sely=o0.y;
-      //}
-      sels.push(o);
+        if (sels.length<self.selCount) {
+        o.sel=1;
+        //o.intern.selx=o.x;
+        //o.intern.sely=o.y;
+        //if (o.children) for (var o0 of o.children) {
+        //  o0.intern.selx=o0.x;
+        //  o0.intern.sely=o0.y;
+        //}
+        sels.push(o);
+        let mc=Menu.mcontrol;
+        if (mc) Menu.getTf().value=mc.valuef();
       }
       //onsole.log('selected obj index '+objs.indexOf(o));
       if (o.textfield) {
@@ -611,7 +615,17 @@ var CanvNotes=function(gps) {
     c.addEventListener('touchend',touchEnd);
     c.addEventListener('DOMMouseScroll',mouseScroll,false);
     c.addEventListener('mousewheel',mouseScroll,false);
-    
+    c.addEventListener('click',function(e) {
+      //---
+      let o=inpObj();
+      handlerRun('click',e,o);
+      if (e.detail<2) return;
+      //let o=inpObj();
+      //onsole.log('dblclick');
+      handlerRun('dblclick',o);
+      //...
+    }
+    ,false);
     
     if (window.DeviceOrientationEvent) {
     window.addEventListener('deviceorientation', function () {
@@ -903,12 +917,19 @@ var CanvNotes=function(gps) {
       mtime.value=Math.floor(0.5+v*10000)/10000;
       //mtime.s=v;
       //console.log('animate mtime '+v);
+      if (mtimeOn) {
+        let tf=document.getElementById('menutf');
+        if (tf) tf.value=mtime.value;
+        let r=document.getElementById('menuRange');
+        r.value=mtime.value;
+      }
     }
     
     //drawShapes(ctx);
     //onsole.log(tweens.length);
     
-    let th=mtime.value;
+    //if (mtime) {
+    let th=mtime?mtime.value:0;
     for (var ti=tweens.length-1;ti>=0;ti--) {
       var t=tweens[ti],f;
       if (!t.wasActive) continue;
@@ -940,7 +961,7 @@ var CanvNotes=function(gps) {
       t.o[t.k]=t.v0+f*(t.v1-t.v0);
       if ((!t.mtime)&&(t.t==t.mt)) tweens.splice(ti,1);
     }
-    
+    //}
     //console.log(tweens.length);
     
     var posx=view.posx,posy=view.posy,scx=view.scx,scy=view.scy;
@@ -988,8 +1009,11 @@ var CanvNotes=function(gps) {
     for (var o of objs) {
       var x,y,w,h;
       if (o.pos) {
-        x=(o.pos[1]=='left')?o.x*dpr:width-(o.x)*dpr;
-        y=o.y*dpr;w=o.w*dpr;h=o.h*dpr;
+        w=o.w*dpr;h=o.h*dpr;
+        let op0=o.pos[0],op1=o.pos[1];
+        x=(op1=='left')?o.x*dpr:((op1=='center')?(width/2-w/2+o.x*dpr):width-w-(o.x)*dpr);
+        y=(op0=='bottom')?height-h-o.y*dpr:o.y*dpr;
+        //w=o.w*dpr;h=o.h*dpr;
       } else {
         x=round(width/2 +(o.x+posx)*dpr*scx);//+0.5,
         y=round(height/2+(o.y+posy)*dpr*scy);//+0.5,
@@ -1171,7 +1195,7 @@ var CanvNotes=function(gps) {
     }
     
     ctx.fillStyle='#000000';
-    ctx.fillText('CanvNotes v.0.937 - '+fpss,10*dpr,10*dpr);//FOLDORUPDATEVERSION
+    ctx.fillText('CanvNotes v.0.959 - '+fpss,10*dpr,10*dpr);//FOLDORUPDATEVERSION
     for (var h=0;h<logs.length;h++)
       ctx.fillText(logs[h],10*dpr,10*dpr+fs+h*fs);
     
@@ -1260,24 +1284,27 @@ var CanvNotes=function(gps) {
 //console.log(CanvNotes);
 //...
 //fr o,1
+//fr o,1,14
 //fr o,1,15
 //fr o,1,23
 //fr o,1,25
 //fr o,1,26
-//fr o,1,27
+//fr o,1,33
 //fr o,1,43
 //fr o,1,43,9
-//fr o,1,45
-//fr o,1,45,42
-//fr o,1,45,52
-//fr o,1,45,56
-//fr o,1,45,65
-//fr o,1,45,65,2
-//fr o,1,45,70
-//fr o,1,45,73
-//fr o,1,45,76
-//fr o,1,45,82
-//fr o,1,45,93
+//fr o,1,45,15
+//fr o,1,45,43
+//fr o,1,45,53
+//fr o,1,45,57
+//fr o,1,45,61
+//fr o,1,45,62
+//fr o,1,45,66
+//fr o,1,45,66,2
+//fr o,1,45,71
+//fr o,1,45,74
+//fr o,1,45,77
+//fr o,1,45,83
 //fr o,1,45,94
+//fr o,1,45,95
 //fr o,1,46
-//fr p,17,866
+//fr p,75,460

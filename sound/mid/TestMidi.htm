@@ -1,10 +1,12 @@
 <!doctype html><html><head>
 <meta http-equiv="content-type" content="text/html; charset=UTF-8">
 <meta name="viewport" content="width=device-width, user-scalable=yes, minimum-scale=1.0, maximum-scale=10.0">
-
+<title>Midit</title>
 <script src="/conet.js"></script>
 <script src="/sound.js"></script>
+<script src="/menu.js"></script>
 <script src="/anim/arrows/canvApps/audio.js"></script>
+<script src="/sound/mid/jsmidgen.js"></script>
 <style>
 button { font-size:20px;margin-right:4px;margin-bottom:4px; }
 </style>
@@ -14,6 +16,23 @@ button { font-size:20px;margin-right:4px;margin-bottom:4px; }
 <script type="text/javascript">
 (function() {
   //---
+  let data,ta,canvas,CONTROL=0xb0,mpreset,mRibSel,svg,//control=pedal
+      na=[];
+  
+  function clear() {
+    //---
+    //if (confirm('Really clear?')) 
+    
+    //ta.value='';
+    data.notes.length=0;
+    data.datemod=new Date().toISOString();
+    data.datenew=new Date().toISOString();
+    data.descr='';
+    ta.value=serialize(data);
+    
+    canvas.render();//ta.on input();
+    //...
+  }
   
   function serialize(d) {
     //
@@ -29,310 +48,777 @@ button { font-size:20px;margin-right:4px;margin-bottom:4px; }
     //...
   }
   
-  let data={},b=document.createElement('button'),ta=document.createElement('textarea');
-  b.innerHTML='Record Midi';
-  b.onclick=function() {
-    //---
+  function init() {
     
-    let midi = null; // global MIDIAccess object
-    
-    function onMIDISuccess(midiAccess) {
+    data={};let b=document.createElement('button');ta=document.createElement('textarea');
+    Conet.initJsonTa({c:ta});
+    b.innerHTML='Record Midi';
+    b.onclick=function() {
       //---
-      console.log('MIDI ready!');
-      midi = midiAccess; // store in the global (in real usage, would probably keep in an object instance)
-      let t0=0;
       
-      function onMIDIMessage(event) {
+      let midi = null; // global MIDIAccess object
+      
+      function onMIDISuccess(midiAccess) {
+        //---
+        console.log('MIDI ready!');
+        midi = midiAccess; // store in the global (in real usage, would probably keep in an object instance)
+        let t0=0;
         
-        //onsole.log('midi '+event.data.length);
-        logTick();
-        if (event.data.length==1) return;
-        
-        let t=Math.floor(event.timeStamp+0.5);
-        let str = `MIDI message received at timestamp ${event.timeStamp}[${event.data.length} bytes]: `,
-            a=[t-t0];
-        t0=t;
-        for (const character of event.data) {
-          str += `0x${character.toString(16)} `;
-          a.push(character);
+        function onMIDIMessage(event) {
+          
+          //onsole.log('midi '+event.data.length);
+          logTick();
+          if (event.data.length==1) return;
+          
+          let t=Math.floor(event.timeStamp+0.5);
+          let str = `MIDI message received at timestamp ${event.timeStamp}[${event.data.length} bytes]: `,
+              a=[t-t0];
+          t0=t;
+          for (const character of event.data) {
+            str += `0x${character.toString(16)} `;
+            a.push(character);
+          }
+          console.log(str);
+          
+          //ta.value+=(ta.value.length>0?',':'')+JSON.stringify(a)+'\n';
+          data.notes.push(a);
+          data.datemod=new Date().toISOString();
+          ta.value=serialize(data);
+          canvas.render();//ta.on input();
         }
-        console.log(str);
         
-        //ta.value+=(ta.value.length>0?',':'')+JSON.stringify(a)+'\n';
-        data.notes.push(a);
-        data.datemod=new Date().toISOString();
-        ta.value=serialize(data);
-        canvas.render();//ta.on input();
+        
+        midiAccess.inputs.forEach((entry) => {
+          entry.onmidimessage = onMIDIMessage;
+        });
+        
+        
+        //---> possible output
+        //MIDI ready!
+        //TestMidi.htm:31 MIDI message received at timestamp 6884.800000190735[3 bytes]: 0x90 0x3c 0x2c 
+        //TestMidi.htm:31 MIDI message received at timestamp 7093.800000190735[3 bytes]: 0x90 0x3c 0x0 
+        //TestMidi.htm:31 MIDI message received at timestamp 8141.900000095367[3 bytes]: 0x90 0x3c 0x2d 
+        //TestMidi.htm:31 MIDI message received at timestamp 8416.800000190735[3 bytes]: 0x90 0x3c 0x0 
+        //TestMidi.htm:31 MIDI message received at timestamp 9064.900000095367[3 bytes]: 0x90 0x3c 0x2c 
+        //TestMidi.htm:31 MIDI message received at timestamp 9984.800000190735[3 bytes]: 0x90 0x3c 0x0 
+        
+        
+        //---
       }
       
-      
-      midiAccess.inputs.forEach((entry) => {
-        entry.onmidimessage = onMIDIMessage;
-      });
-      
-      
-      //---> possible output
-      //MIDI ready!
-      //TestMidi.htm:31 MIDI message received at timestamp 6884.800000190735[3 bytes]: 0x90 0x3c 0x2c 
-      //TestMidi.htm:31 MIDI message received at timestamp 7093.800000190735[3 bytes]: 0x90 0x3c 0x0 
-      //TestMidi.htm:31 MIDI message received at timestamp 8141.900000095367[3 bytes]: 0x90 0x3c 0x2d 
-      //TestMidi.htm:31 MIDI message received at timestamp 8416.800000190735[3 bytes]: 0x90 0x3c 0x0 
-      //TestMidi.htm:31 MIDI message received at timestamp 9064.900000095367[3 bytes]: 0x90 0x3c 0x2c 
-      //TestMidi.htm:31 MIDI message received at timestamp 9984.800000190735[3 bytes]: 0x90 0x3c 0x0 
-      
-      
-      //---
-    }
-    
-    function onMIDIFailure(msg) {
-      console.error(`Failed to get MIDI access - ${msg}`);
-    }
-    
-    navigator.requestMIDIAccess().then(onMIDISuccess, onMIDIFailure);
-    this.disabled=true;
-    //...
-  }
-  ta.style.width='400px';ta.style.height='200px';
-  data=JSON.parse('{'
-  +'"notes":[[0,144,60,51]\n'
-  +',[234,144,60,0]\n'
-  +',[105,144,62,52]\n'
-  
-  +',[179,144,62,0]\n'
-  +',[137,144,64,46]\n'
-  +',[278,144,64,0]\n'
-  +',[35,144,65,51]\n'
-  +',[237,144,65,0]\n'
-  +',[121,144,67,58]\n'
-  +',[245,144,67,0]\n'
-  +',[295,144,67,53]\n'
-  +',[183,144,67,0]\n'
-  
-  +']}\n');
-  data.descr='Song of ice and fire';
-  data.datenew=new Date().toISOString();
-  data.datemod=new Date().toISOString();
-  ta.value=serialize(data);
-  console.log(data);
-  document.body.appendChild(b);
-  
-  canvAppsAudio.loadWebaudiofont();
-  b=document.createElement('button');
-  b.innerHTML='Play';
-  b.onclick=function() {
-    //---
-    
-    if (0) {
-    canvAppsAudio.queueNode({
-      //sa:['{\"pitch\":[0,5],\"preset\":\"gp\"}']
-      children:[
-        {sah:{pitch:[0,5],preset:'gp',when:0,duration:0.5}}
-        //{sah:{pitch:[0,5],preset:'gp',when:0.5,duration:2}}
-      ]
-    });
-    return; 
-    }
-    
-    
-    
-    let d=JSON.parse(ta.value),a=d.notes,t=-a[0][0];
-    //console.log(a);
-    let openNotes={};
-    let queue=[];
-    
-    for (let b of a) {
-      t+=b[0];
-      if ((b[3]==0)||(b[1]==128)) {
-        let h=openNotes[b[2]];
-        if (!h) continue;
-        openNotes[b[2]]=undefined;
-        let dt=t-h.t;  
-        if (queue) {
-          queue.push({sah:{pitch:b[2],preset:'gp',when:h.t/1000,duration:dt/1000}});
-        } else {
-    let f=440*Math.pow(2,(b[2]-49-24)/12),dt=t-h.t,v=h.v/100;
-    setTimeout(function() {
-      Sound.osc({a:[
-        {f:f,v:v},
-        //{t:10,v:1},
-        {t:dt,v:v},
-        {t:10,v:0}]
-      });
-      console.log(dt);
-    }
-    ,h.t);
-    } 
-        
-        continue;//note off
+      function onMIDIFailure(msg) {
+        console.error(`Failed to get MIDI access - ${msg}`);
       }
-      openNotes[b[2]]={t:t,v:b[3]};  
-    }
-    
-    if (queue) canvAppsAudio.queueNode({children:queue});
-    //Sound.osc({a:[{"fr":[50,500],"v":0,"n":1},{"t":10,"v":1},{"t":200,"v":1},{"t":140,"v":0,"fr":[200,400]}]});
-    //Sound.osc({a:[{f:400,v:1}]});
-    
-    //...
-  }
-  document.body.appendChild(b);
-  
-  b=document.createElement('button');
-  b.onclick=function() {
-    //---
-    //if (confirm('Really clear?')) 
-    
-    //ta.value='';
-    data.notes.length=0;
-    data.datemod=new Date().toISOString();
-    ta.value=serialize(data);
-    
-    canvas.render();//ta.on input();
-    //...
-  }
-  b.innerHTML='Clear';
-  document.body.appendChild(b);
-  
-  
-  b=document.createElement('button');
-  b.onclick=async function() {
-    //---
-    try {
-      await navigator.share({text:ta.value});
-    } catch (err) {
-      console.log(`Error: ${err}`);
-    }
-    //...
-  }
-  b.innerHTML='Share';
-  document.body.appendChild(b);
-  
-  let logTick=(
-  function() {
-    //---
-    let c=document.createElement('span');c.style.fontSize='12px';
-    let version='v.0.135 ';//FOLDORUPDATEVERSION
-    c.innerHTML=version;
-    document.body.appendChild(c);
-    let count=0;
-    let a=[
-    //'|||||',';||||',';;|||',';;;||',';;;;|'
-    //,';;;;;',';;;;:',';;;::',';;:::',';::::'
-    '::::::::::','.:::::::::','..::::::::','...:::::::','....::::::'
-    ,'.....:::::','......::::','.......:::','........::','.........:'
-    ,'..........','.........','........','.......','......','.....'
-    ,'....','...','..','.',''
-    ];
-    
-    
-    return function() {
-      //---
-      count++;
-      c.innerHTML=version+a[//a.length-1-
-        count//Math.floor(count/2)
-        %a.length];
+      
+      navigator.requestMIDIAccess().then(onMIDISuccess, onMIDIFailure);
+      this.disabled=true;
       //...
     }
-    //...
-  }
-  )();
-  
-  //setInterval(logTick,50);
-  
-  document.body.appendChild(document.createElement('br'));
-  document.body.appendChild(ta);
-  ta.oninput=function() {
-    //---
-    try {
+    let st=ta.style;
+    st.width='400px';st.height='200px';
+    st.boxSizing='border-box';
+    data=JSON.parse('{'
+    +'"notes":[[0,144,60,51]\n'
+    +',[234,144,60,0]\n'
+    +',[105,144,62,52]\n'
     
-    data=JSON.parse(ta.value);
+    +',[179,144,62,0]\n'
+    +',[137,144,64,46]\n'
+    +',[278,144,64,0]\n'
+    +',[35,144,65,51]\n'
+    +',[237,144,65,0]\n'
+    +',[121,144,67,58]\n'
+    +',[245,144,67,0]\n'
+    +',[295,144,67,53]\n'
+    +',[183,144,67,0]\n'
+    
+    +']}\n');
+    data.descr='Song of ice and fire';
+    data.datenew=new Date().toISOString();
     data.datemod=new Date().toISOString();
-    canvas.render();
+    ta.value=serialize(data);
+    //onsole.log(data);
+    document.body.appendChild(b);
     
-    } catch (e) {}
-    //...
-  }
-  ta.onblur=function() {
-    //---
-    ta.value=serialize(data);//to display changed datemod
-    //...
-  }
-  
-  let canvas=new function() {
-    //---
-    let c=document.createElement('canvas'),sw=400,sh=200,dpr=window.devicePixelRatio;
-    c.width=sw*dpr;c.height=sh*dpr;
-    c.style.width=sw+'px';
-    c.style.height=sh+'px';
-    c.style.backgroundColor='#ccc';
-    document.body.appendChild(document.createElement('br'));
-    document.body.appendChild(c);
-    
-    
-    this.render=function() {
+    canvAppsAudio.loadWebaudiofont();
+    b=document.createElement('button');
+    let sPlay='►Play',sStop='■Stop';
+    b.innerHTML=sPlay;
+    b.onclick=function() {
       //---
+      let s=this.innerHTML;
+      this.innerHTML=(s==sPlay)?sStop:sPlay;
+      if (s==sStop) {
+        canvAppsAudio.cancelQueue();
+        canvas.cursor.running=false;
+        canvas.cursor.pos=0;
+        canvas.render();
+        return;
+      }
+      canvas.cursor.pos=0;
+      canvas.cursor.running=true;
       
-      let ct=c.getContext('2d'),w=c.width,h=c.height;
-      ct.strokeStyle='#000';
-      ct.clearRect(0,0,w,h);
-      ct.strokeRect(0,0,w,h);
-      ct.fillStyle='#0c0';
       
-      //try {
-      //let a=JSON.parse('['+ta.value+']')
-      let d=data,//JSON.parse(ta.value),
-          a=d.notes;
+      if (0) {
+      canvAppsAudio.queueNode({
+        //sa:['{\"pitch\":[0,5],\"preset\":\"gp\"}']
+        children:[
+          {sah:{pitch:[0,5],preset:'gp',when:0,duration:0.5}}
+          //{sah:{pitch:[0,5],preset:'gp',when:0.5,duration:2}}
+        ]
+      });
+      return; 
+      }
+      
+      
+      
+      let d=JSON.parse(ta.value),a=d.notes;
       if (a.length==0) return;
       let t=-a[0][0];
-      //data=d;
-      let openNotes={},na=[],n0=1000,n1=-1000,t1=0;
+      //console.log(a);
+      let openNotes={};
+      let queue=[];
+      
       for (let b of a) {
         t+=b[0];
-        let n=b[2];
+        if (b[1]==CONTROL) continue;//pedal
         if ((b[3]==0)||(b[1]==128)) {
-          let h=openNotes[n];
+          let h=openNotes[b[2]];
           if (!h) continue;
-          delete(openNotes[b[2]]);//=undefined;
+          openNotes[b[2]]=undefined;
           let dt=t-h.t;  
+          if (queue) {
+            queue.push({sah:{pitch:b[2],preset:mpreset.ms//'gp'
+             ,when:h.t/1000,duration:dt/1000}});
+          } else {
+      let f=440*Math.pow(2,(b[2]-49-24)/12),dt=t-h.t,v=h.v/100;
+      setTimeout(function() {
+        Sound.osc({a:[
+          {f:f,v:v},
+          //{t:10,v:1},
+          {t:dt,v:v},
+          {t:10,v:0}]
+        });
+        console.log(dt);
+      }
+      ,h.t);
+      } 
+          
+          continue;//note off
+        }
+        openNotes[b[2]]={t:t,v:b[3]};  
+      }
+      
+      if (queue) canvAppsAudio.queueNode({children:queue});
+      //Sound.osc({a:[{"fr":[50,500],"v":0,"n":1},{"t":10,"v":1},{"t":200,"v":1},{"t":140,"v":0,"fr":[200,400]}]});
+      //Sound.osc({a:[{f:400,v:1}]});
+      
+      canvas.cursor.tges=t;
+      //...
+    }
+    document.body.appendChild(b);
+    
+    b=document.createElement('button');
+    b.onclick=clear;
+    b.innerHTML='Clear';
+    document.body.appendChild(b);
+    
+    
+    b=document.createElement('button');
+    b.onclick=async function() {
+      //---
+      try {
+        await navigator.share({text:ta.value});
+      } catch (err) {
+        console.log(`Error: ${err}`);
+      }
+      //...
+    }
+    b.innerHTML='Share';
+    document.body.appendChild(b);
+    
+    let logTick=(
+    function() {
+      //---
+      let c=document.createElement('span');c.style.fontSize='12px';
+      let version='v.0.610 ';//FOLDORUPDATEVERSION
+      c.innerHTML=version;
+      document.body.appendChild(c);
+      let count=0;
+      let a=[
+      //'|||||',';||||',';;|||',';;;||',';;;;|'
+      //,';;;;;',';;;;:',';;;::',';;:::',';::::'
+      '::::::::::','.:::::::::','..::::::::','...:::::::','....::::::'
+      ,'.....:::::','......::::','.......:::','........::','.........:'
+      ,'..........','.........','........','.......','......','.....'
+      ,'....','...','..','.',''
+      ];
+      
+      
+      return function() {
+        //---
+        count++;
+        c.innerHTML=version+a[//a.length-1-
+          count//Math.floor(count/2)
+          %a.length];
+        //...
+      }
+      //...
+    }
+    )();
+    
+    //setInterval(logTick,50);
+    
+    document.body.appendChild(document.createElement('br'));
+    document.body.appendChild(ta);
+    
+    ta.addEventListener('input',function(e) {
+      //---
+      //---was oninput, but then didnt worked with conet.initJsonTa
+      try {
+      
+      data=JSON.parse(ta.value);
+      data.datemod=new Date().toISOString();
+      canvas.render();
+      
+      } catch (e) {}
+      //...
+    }
+    );
+    
+    ta.onblur=function() {
+      //---
+      ta.value=serialize(data);//to display changed datemod
+      //...
+    }
+    
+    canvas=new function() {
+      //---
+      let c=undefined,bo=20,sw=400,sh=200,dpr=window.devicePixelRatio;
+      
+      if (0) {
+      c=document.createElement('canvas');
+      c.width=sw*dpr;c.height=sh*dpr;
+      c.style.width=sw+'px';
+      c.style.height=sh+'px';
+      c.style.backgroundColor='#ccc';
+      document.body.appendChild(document.createElement('br'));
+      document.body.appendChild(c);
+      }
+      
+      let cursor={pos:0,running:0,tges:30000},ot=Date.now();
+      svg={
+        //sel:{x:50,y:10,w:40,h:20},
+        sel:{x:-50,y:1,w:1,h:1},
+        scale:1
+      };
+      
+      /* svg */ {
+        //---
+        let c=document.createElement('div'),s=c.style;
+        s.overflow='auto';
+        //s.backgroundColor='#0f0';
+        s.width=(sw+bo)+'px';s.height=(sh+bo)+'px';
+        document.body.appendChild(document.createElement('br'));
+        document.body.appendChild(c);
+        svg.div=c;
+        //...
+      }
+      
+      svg.div.addEventListener('wheel',function(e) {
+        //---
+        svg.scale=Math.max(1,svg.scale*((e.deltaY<0)?1.1:1/1.1));
+        //console.log(svg.scale);
+        svg.div.firstChild.style.transform='scale('+svg.scale+')';
+        
+        e.preventDefault();
+        e.stopPropagation();
+        //...
+      }
+      );
+      
+      function selPos(x,y) {
+        //---
+        //console.log('selPos '+x+' '+y);
+        let c=svg.div.firstChild;
+        c=c.childNodes[c.childNodes.length-1];
+        //onsole.log(c);
+        let sel=svg.sel;
+        
+        sel.x=x;sel.y=y;sel.w=1;sel.h=1;
+        c.setAttribute('x',sel.x);
+        c.setAttribute('y',sel.y);
+        c.setAttribute('width',sel.w);
+        c.setAttribute('height',sel.h);
+        //...
+      }
+      
+      function selDim(x,y) {
+        //---
+        let c=svg.div.firstChild;
+        c=c.childNodes[c.childNodes.length-1];
+        let sel=svg.sel;
+        
+        sel.w=Math.max(1,x-sel.x);
+        sel.h=Math.max(1,y-sel.y);
+        
+        c.setAttribute('width',sel.w);
+        c.setAttribute('height',sel.h);
+        //...
+      }
+      
+      function scrollStart(x,y) {
+        //---
+        let c=svg.div;
+        svg.scrollLeft=c.scrollLeft;
+        svg.scrollTop=c.scrollTop;
+        svg.x=x;svg.y=y;
+        //...
+      }
+      
+      function scrollMove(x,y) {
+        //---
+        let c=svg.div;
+        c.scrollLeft=svg.scrollLeft-(x-svg.x);//*svg.scale;
+        c.scrollTop=svg.scrollTop-(y-svg.y);//*svg.scale;
+        //...
+      }
+      
+      svg.div.addEventListener('mousedown',function(e) {
+        //---
+        //onsole.log(e);
+        //onsole.log(e.offsetX+' '+e.offsetY+' - '+e.x+' '+e.y);
+        
+        //onsole.log('mouseDown '+svg.div.scrollLeft);
+        
+        if (mRibSel.checked) 
+          selPos(e.offsetX,e.offsetY);
+        else
+          scrollStart(e.clientX,e.clientY);
+          
+        //---Approach: click sets pos, next click sets dim, then repeat.
+        //---If with dim click pos is changed (no negative dim), 
+        //---next click is dim click again.
+        //svg.setpos=!svg.setpos;
+        //if (svg.setpos) {
+        //  sel.x=x;if ((sel.w+x+1)>sw) sel.w=sw-x-1;
+        //  sel.y=y;if ((sel.h+y+1)>sh) sel.h=sh-y-1;
+        //} else {
+        //  let x0=sel.x,y0=sel.y,x1=sel.x+sel.w,y1=sel.y+sel.h;
+        //  if (x<x0) { svg.setpos=1;x0=x; } else x1=x;
+        //  if (y<y0) { svg.setpos=1;y0=y; } else y1=y;
+        //  sel.w=x1-x0;sel.h=y1-y0;
+        //  sel.x=x0;sel.y=y0;
+        //}
+        //c.setAttribute('x',sel.x);
+        //c.setAttribute('y',sel.y);
+        //c.setAttribute('width',sel.w);
+        //c.setAttribute('height',sel.h);
+        
+        //...
+      }
+      );
+      
+      svg.div.addEventListener('mousemove',function(e) {
+        //---
+        //console.log(e.button+' '+e.buttons);
+        if (e.buttons==0) return;//mouse
+        if (e.pressure==0) return;//pointer
+        
+        if (mRibSel.checked) 
+          selDim(e.offsetX,e.offsetY);
+        else 
+          scrollMove(e.clientX,e.clientY);
+        //...
+      }
+      );
+      
+      let touch2={};//values for 2 touch pinch
+      
+      svg.div.addEventListener('touchstart',function(e) {
+        //---
+        //console.log(e.touches.length);
+        let et=e.touches,t0=et[0],
+            c=svg.div;
+        if (et.length==2) {
+          let t1=et[1];
+          touch2.x=(t0.pageX+t1.pageX)/2;
+          touch2.y=(t0.pageY+t1.pageY)/2;
+          let dx=t1.pageX-t0.pageX,dy=t1.pageY-t0.pageY;
+          touch2.dist=Math.sqrt(dx*dx+dy*dy);
+          touch2.scale0=svg.scale||1;
+          touch2.scrollLeft=c.scrollLeft;
+          touch2.scrollTop=c.scrollTop;
+          //console.log(t0);
+          //console.log(t1); 
+        } else {
+          //onsole.log('touchstart selPos '+t0.pageX+' '+t0.pageY);
+          //onsole.log(e);
+          //onsole.log(t0);
+          if (mRibSel.checked) {
+            let c=svg.div;
+            let r=c.getBoundingClientRect();
+            //onsole.log('touchstart '+t0.pageX+' '+t0.pageY+' - '+r.x+' '+r.y); 
+            selPos((t0.pageX-r.x+c.scrollLeft)/svg.scale,(t0.pageY-r.y+c.scrollTop)/svg.scale);
+          } else
+            scrollStart(t0.pageX,t0.pageY);
+        }
+        e.preventDefault();
+        e.stopPropagation();
+        //...
+      }
+      );
+      
+      svg.div.addEventListener('touchmove',function(e) {
+        //---
+        //console.log('m'+e.touches.length);
+        let et=e.touches,t0=et[0],
+            c=svg.div;
+        if (et.length==2) {
+          let t1=et[1];
+          let dx=t1.pageX-t0.pageX,dy=t1.pageY-t0.pageY,d=Math.sqrt(dx*dx+dy*dy);
+          //onsole.log(Conet.f4(d/touch2.dist));
+          svg.scale=Math.max(1,touch2.scale0*d/touch2.dist);
+          svg.div.firstChild.style.transform='scale('+svg.scale+')';
+        
+          //---scroll with 2 pinch currently not optimal because 2 pinch zoom not centered
+          //dx=(t0.pageX+t1.pageX)/2-touch2.x,
+          //dy=(t0.pageY+t1.pageY)/2-touch2.y;
+          //c.scrollLeft=Math.max(0,touch2.scrollLeft-dx);
+          //c.scrollTop =Math.max(0,touch2.scrollTop -dy);
+          
+        } else {
+          if (mRibSel.checked) {
+            let c=svg.div;
+            let r=c.getBoundingClientRect();
+            selDim((t0.pageX-r.x+c.scrollLeft)/svg.scale,(t0.pageY-r.y+c.scrollTop)/svg.scale);
+          } else
+            scrollMove(t0.pageX,t0.pageY);
+        }
+        e.preventDefault();
+        e.stopPropagation();
+        //...
+      }
+      );
+      
+      
+      
+      setInterval(function() {
+        //---
+        let t=Date.now(),dt=t-ot;ot=t;
+        if (!cursor.running) return;
+        cursor.pos+=sw*dpr*dt/cursor.tges;
+        render();
+        //onsole.log(23);
+        //...
+      }
+      ,100);
+      
+      function renderSVG(na,t1,n0,n1) {
+        //---
+        if ((svg.naLen===undefined)||(na.length!=svg.naLen)) {
+        
+        let s=
+        '<svg width='+sw+' height='+sh+'>'+
+        '<rect width="100%" height="100%" fill="#ccc" stroke="black" stroke-width=1 />'+
+        '<rect width="100" height="200" fill="#888" />';
+        
+        let w=sw,h=sh,ba=[0,1,0,1,0,0,1,0,1,0,1,0];
+        
+        //onsole.log(n0+' '+n1);
+        
+        for (let n=n0;n<=n1;n++) {
+          let y=0+h*(n-n0)/(n1-n0+1);
+          s+='<rect x='+0+' y='+y+' width='+w+' height='+h/(n1-n0+1)+' fill="'+(ba[n%12]?'rgba(0,0,0,0.2)':'rgba(255,255,255,0.2)')+'" stroke="black" stroke-width=0.1 />';
+        }
+        
+        for (let o of na) {
+          let x=0.5+w*o.t/t1,y=0.5+h*(o.n-n0)/(n1-n0+1),wh=Math.max(0.5,w*o.dt/t1-1),hh=h/(n1-n0+1)-1;
+          //ct.fillRect(x,y,wh,hh);
+          o.x=x;o.y=y;o.w=wh;o.h=hh;
+          //ct.strokeRect(x,y,wh,hh);
+          s+='<rect x='+x+' y='+y+' width='+wh+' height='+hh+' fill="#4c4" stroke="black" stroke-width=0.5 />';
+        }
+        
+        let sel=svg.sel;
+        s+='<rect x='+sel.x+' y='+sel.y+' width='+sel.w+' height='+sel.h+' fill="rgba(200,200,100,0.5)" stroke="black" stroke-width=0.5 />';
+        
+        //s+='<rect x=10 y=5 width=20 height=10 fill="#4c4" stroke="black" stroke-width=0.2 />';
+        //s+='<rect x=10 y=20 width=20 height=10 fill="#4c4" stroke="black" stroke-width=0.2 />';
+        s+='</svg>';
+        
+        svg.naLen=na.length;
+        svg.div.innerHTML=s;
+        
+        svg.div.firstChild.style='transform-origin: top left;transform: scale(1);';
+        
+        }
+        
+        
+        let c=svg.div.firstChild;
+        c=c.childNodes[1];
+        c.setAttribute('width',cursor.pos/dpr);
+        //onsole.log(c);
+        //...
+      }
+      
+      function render() {
+        //---
+        //onsole.log('render');
+        
+        
+        //try {
+        //let a=JSON.parse('['+ta.value+']')
+        let d=data,//JSON.parse(ta.value),
+            a=d.notes;
+        if (a.length==0) return;
+        let t=-a[0][0];
+        //data=d;
+        let openNotes={},n0=1000,n1=-1000,t1=0,ni=-1;
+        na.length=0;
+        for (let b of a) {
+          ni++;
+          t+=b[0];
+          if (b[1]==CONTROL) continue;//pedal
+          let n=b[2];
+          if ((b[3]==0)||(b[1]==128)) {
+            let h=openNotes[n];
+            if (!h) continue;
+            delete(openNotes[n]);//b[2]//=undefined;
+            let dt=t-h.t;  
+            na.push({n:n,t:h.t,dt:dt,openi:h.openi,closei:ni});    
+            n0=Math.min(n,n0);
+            n1=Math.max(n,n1);
+            t1=t;
+            continue;//note off
+          }
+          openNotes[n]={t:t,v:b[3],openi:ni};  
+        }
+        
+        for (let n of Object.keys(openNotes)) {
+          //console.log('still open:'+n);
+          let h=openNotes[n];
+          let dt=t-h.t+10;//t-h.t;  
+          //if (dt<10) dt=10;
           na.push({n:n,t:h.t,dt:dt});    
           n0=Math.min(n,n0);
           n1=Math.max(n,n1);
-          t1=t;
-          continue;//note off
+          t1=t+10;
         }
-        openNotes[n]={t:t,v:b[3]};  
+        
+        //onsole.log(w+' '+h);
+        
+        if (c) {
+        let ct=c.getContext('2d'),w=c.width,h=c.height;
+        ct.strokeStyle='#000';
+        ct.clearRect(0,0,w,h);
+        
+        ct.fillStyle='#888';
+        ct.fillRect(0,0,cursor.pos,h);
+        
+        ct.strokeRect(0,0,w,h);
+        ct.fillStyle='#0c0';
+        
+        
+        for (let o of na) {
+          let x=0.5+w*o.t/t1,y=0.5+h*(o.n-n0)/(n1-n0+1),wh=w*o.dt/t1-1,hh=h/(n1-n0+1)-1;
+          ct.fillRect(x,y,wh,hh);
+          ct.strokeRect(x,y,wh,hh);
+        }
+        }
+        
+        renderSVG(na,t1,n0,n1);
+        
+        
+        //ct.strokeRect(0,0,w,h);
+        //onsole.log('canvas render');
+        //} catch (e) {}
+        //...
       }
       
-      for (let n of Object.keys(openNotes)) {
-        //console.log('still open:'+n);
-        let h=openNotes[n];
-        let dt=t-h.t+10;//t-h.t;  
-        //if (dt<10) dt=10;
-        na.push({n:n,t:h.t,dt:dt});    
-        n0=Math.min(n,n0);
-        n1=Math.max(n,n1);
-        t1=t+10;
-      }
+      this.render=render;
+      this.cursor=cursor;
       
-      //onsole.log(w+' '+h);
-      
-      for (let o of na) {
-        let x=0.5+w*o.t/t1,y=0.5+h*(o.n-n0)/(n1-n0+1),wh=w*o.dt/t1-1,hh=h/(n1-n0+1)-1;
-        ct.fillRect(x,y,wh,hh);
-        ct.strokeRect(x,y,wh,hh);
-      }
-      
-      //ct.strokeRect(0,0,w,h);
-      //onsole.log('canvas render');
-      //} catch (e) {}
+      //ta.oni nput=this.render;
+      render();
       //...
     }
+    ;
     
-    //ta.oni nput=this.render;
-    this.render();
+    //---init menu
+    (function() {
+      //---
+      let cfm=Conet.fileMenu({fn:'/sound/mid/recordfiles.txt',_noStartLoad:1,url:'fn',
+      loadf:function(fn) {
+        //---
+        Conet.download({fn:fn,f:function(v) {
+          //---
+          ta.value=v;
+          data=JSON.parse(v);
+          canvas.render();
+          
+          //delRibbon();//---temp for test
+          //onet.log('Loaded '+fn+'.');
+          //...
+        }
+        })
+        //...
+      }
+      ,savef:function(fn) {
+        Conet.upload({fn:fn,data:serialize(data)});
+        //onet.log('Saved '+fn+'.');
+        //...
+      }
+      ,newf:clear
+      });
+      
+      cfm.sub.push({s:'Export MIDI',actionf:function() {
+        //---
+        let file=new Midi.File();
+        //onsole.log(file);
+        
+        let track = new Midi.Track();
+        file.addTrack(track);
+        
+        if (0) {
+        track.addNote(0, 'c4', 64);
+        track.addNote(0, 'd4', 64);
+        track.addNote(0, 'e4', 64);
+        track.addNote(0, 'f4', 64);
+        track.addNote(0, 'g4', 64);
+        track.addNote(0, 'a4', 64);
+        track.addNote(0, 'b4', 64);
+        track.addNote(0, 'c5', 64);
+        } else {
+        let d=JSON.parse(ta.value),a=d.notes;
+        a[0][0]=0;
+        for (let b of a) {
+          //onsole.log(b);
+          let t=Math.floor(b[0]/4);
+          
+          //if (b[1]===CONTROL) {
+            track.addEvent(new Midi.Event({type:b[1],channel:0,param1:b[2],param2:b[3],time:t}));
+          //  continue;
+          //}
+          
+          //if ((b[3]==0)||(b[1]==128)) {
+          //  track.addNoteOff(0,b[2],t,b[3]);
+          //  //onsole.log('note off '+b[2]+' t='+t);
+          //} else {
+          //  //onsole.log('note on '+b[2]+' t='+t);
+          //  track.addNoteOn(0,b[2],t,b[3]);
+          //}
+        }
+        }
+        
+        let bytes=file.toBytes();
+        //onsole.log('Bytes: '+bytes);
+        //onsole.log(Uint8Array.from(bytes.split('').map(letter => letter.charCodeAt(0))));
+        //onsole.log(Uint8Array.fromBase64(bytes));
+        let ua=Uint8Array.from(Array.from(bytes).map(letter => letter.charCodeAt(0)));
+        //onsole.log(ua);
+        //onsole.log(file.toBlob());
+        //onsole.log(navigator.canShare([file.toBlob()]));
+        
+        let a=document.createElement('a');
+        document.body.appendChild(a);
+        a.style.display='none';
+        
+        //let blob=file.toBlob();
+        //let ua=file.toUint8Array();
+        //console.log(ua);
+        let blob=new Blob([ua],{type:'audi/x-midi'});//'octet/stream'});
+        let url=window.URL.createObjectURL(blob);
+        
+        a.href=url;
+        a.download='export.mid';
+        a.click();
+        //...
+      }
+      });
+      
+      Menu.init(
+      [{s:'&#9776;',noTri:true,fs:1.4,pw:0.05,sub:[
+      cfm
+      ,mpreset={s:'Preset',ms:'gp',autoval:2,sub:[{s:'gp'},{s:'guitar'},{s:'ahhs'},{s:'ohit'}]}
+      ,{s:'Edit',sub:[
+      mRibSel={checkbox:1,r:1,ms:'Ribbon select',actionf:function() {
+        //---
+        console.log('mRibSel.checked='+this.checked);
+        if (!this.checked) {
+        
+        let c=svg.div.firstChild;
+        c=c.childNodes[c.childNodes.length-1];
+        //onsole.log(c);
+        let sel=svg.sel;
+        
+        sel.x=-50;sel.y=1;sel.w=1;sel.h=1;
+        c.setAttribute('x',sel.x);
+        c.setAttribute('y',sel.y);
+        c.setAttribute('width',sel.w);
+        c.setAttribute('height',sel.h);
+        
+        
+        }
+        //...
+      }
+      },
+      {s:'Delete',ms:'notes via ribbon',actionf:delRibbon}
+      ]}
+      ]
+      }]
+      ,{listen:1});
+      //...
+    }
+    )();
+    //canvas.render();
+    
+    
+  }
+  
+  function delRibbon() {
+    //---
+    console.log('Nao del ribbon.');
+    //onsole.log(na);
+    
+    let sel=svg.sel,sx0=sel.x,sx1=sel.x+sel.w,sy0=sel.y,sy1=sel.y+sel.h,c=0,indexa=[];
+    
+    for (let n of na) {
+      if ((n.x>sx1)||(n.x+n.w<sx0)||(n.y>sy1)||(n.y+n.h<sy0)) continue;
+      c++;
+      //onsole.log(n);
+      //n.openi and n.closei must be sorted, then delete d.nodes starting with biggest i
+      
+      indexa.push(n.openi);
+      indexa.push(n.closei);
+      //data.notes.splice(n.closei,1);
+      //data.notes.splice(n.openi,1);
+    }
+    
+    indexa.sort();
+    for (let i=indexa.length-1;i>=0;i--) {
+      let ih=indexa[i];
+      if (ih<data.notes.length-1) {
+        let n0=data.notes[ih],n1=data.notes[ih+1];
+        n1[0]+=n0[0];
+        //onsole.log('delRibbon added t '+n0[0]);
+      }
+      data.notes.splice(ih,1);
+    }
+    //onsole.log(indexa);
+    
+    console.log('delRibbon, deleted notes count = '+c);
+    data.datemod=new Date().toISOString();
+    ta.value=serialize(data);
+    canvas.render();
+    
+    Conet.alert('Deleted '+c+' notes.');
+    
     //...
   }
   
-  //canvas.render();
+  
+  init();
   
   //...
 }
@@ -341,11 +827,26 @@ button { font-size:20px;margin-right:4px;margin-bottom:4px; }
 
 </body>
 </html><script>
-//fr o,14
-//fr o,14,6
-//fr o,14,6,4
-//fr o,14,6,4,5
-//fr o,14,49,16
-//fr o,14,59
-//fr o,14,59,10
-//fr p,32,97
+//fr o,16
+//fr o,16,4
+//fr o,16,6
+//fr o,16,8
+//fr o,16,8,4,4
+//fr o,16,8,4,4,5
+//fr o,16,8,63
+//fr o,16,8,63,25
+//fr o,16,8,63,27
+//fr o,16,8,63,29
+//fr o,16,8,63,31
+//fr o,16,8,63,33
+//fr o,16,8,63,36
+//fr o,16,8,63,41
+//fr o,16,8,63,44
+//fr o,16,8,63,52
+//fr o,16,8,63,54
+//fr o,16,8,67
+//fr o,16,8,67,2
+//fr o,16,8,67,2,1
+//fr o,16,8,67,3
+//fr o,16,10
+//fr p,2,519

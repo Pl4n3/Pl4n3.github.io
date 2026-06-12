@@ -4,7 +4,7 @@
   let url=Conet.parseUrl(),
       audioContext,player,presets,timeoutIds={};
   
-  console.log('v.0.38 ');//FOLDORUPDATEVERSION
+  console.log('v.0.59 ');//FOLDORUPDATEVERSION
   
   function scriptUrls() {
     //---
@@ -39,9 +39,11 @@
     
     if (ph) {
       //if (ph.whenAdd&&h.whenAdd) ph.whenAdd+=h.whenAdd;
-      Conet.hcopy(ph,h,undefined,{whenAdd:1});//,undefined,undefined,1);
+      Conet.hcopy(ph,h,undefined,{whenAdd:1,vol:1});//,undefined,undefined,1);
       h.whenAdd=(ph.whenAdd||0)+(h.whenAdd||0);
+      if (ph.vol) h.vol=(h.vol||1)*ph.vol;
     }
+    //onsole.log(h);
     
     if (!parseErr) {
     var selectedPreset=presets[h.preset]||window[h.preset]||presets.ahhs;
@@ -51,7 +53,7 @@
     //var audioBufferSourceNode=player.queueWaveTable(audioContext,audioContext.destination,selectedPreset,audioContext.currentTime+0.6,h.pitch,0.2);
     //var audioBufferSourceNode=player.queueWaveTable(audioContext,audioContext.destination,selectedPreset,audioContext.currentTime+0.8,h.pitch,4);
     var pitch=h.pitch;
-    if (pitch!==undefined) {
+    if ((pitch!==undefined)&&!o.children) {
       if (Array.isArray(pitch)) pitch=pitch[0]+pitch[1]*12;
       if (h.pitchAdd) pitch+=h.pitchAdd;
       var when=h.when||0;
@@ -61,7 +63,12 @@
       }
       if (h.whenMul) when*=h.whenMul;
       if (1) 
-        var audioBufferSourceNode=player.queueWaveTable(audioContext,audioContext.destination,selectedPreset,audioContext.currentTime+when,pitch,h.duration||1);
+        var audioBufferSourceNode=player.queueWaveTable(audioContext,audioContext.destination,selectedPreset,
+          audioContext.currentTime+when,
+          pitch,
+          h.duration||1,
+          h.vol||1
+          );
       else { //following maybe with param like node.times4
         player.queueWaveTable(audioContext,audioContext.destination,selectedPreset,audioContext.currentTime+when    ,pitch,0.4);
         player.queueWaveTable(audioContext,audioContext.destination,selectedPreset,audioContext.currentTime+when+0.4,pitch,0.2);
@@ -93,10 +100,22 @@
     }
     }
     
-    if (o.children) for (var oh of o.children) queueNode(oh,h,depth+1);
+    if (o.children) {
+      //f (h.pitch) console.error('Nodes with children shouldnt have pitch, instead use pitchAdd.');
+      for (var oh of o.children) queueNode(oh,h,depth+1);
+    }
     
     //---
   }
+  
+  function cancelQueue() {
+    //---
+    player.cancelQueue(audioContext);
+    for (var id of Object.keys(timeoutIds)) clearTimeout(id);
+    timeoutIds={};
+    //...
+  }
+  
   function init() {
     //---
     console.log('audio.js init');
@@ -107,9 +126,10 @@
     cano.onUp=function(o) {
       //...
       if (!cano.audioQueuesStay) {
-        player.cancelQueue(audioContext);
-        for (var id of Object.keys(timeoutIds)) clearTimeout(id);
-        timeoutIds={};
+        cancelQueue();
+        //player.cancelQueue(audioContext);
+        //for (var id of Object.keys(timeoutIds)) clearTimeout(id);
+        //timeoutIds={};
       } //else console.log('audio queues stay');
       queueNode(o);
       //---
@@ -128,6 +148,7 @@
       snaredrum2:_drum_40_6_FluidR3_GM_sf2_file,
       closedhihat:_drum_42_6_FluidR3_GM_sf2_file,
       gp:_tone_0000_FluidR3_GM_sf2_file,//---grand piano
+      guitar:_tone_0300_Chaos_sf2_file,
     };
     
     for (var preset of Object.values(presets)) player.adjustPreset(audioContext,preset);
@@ -150,7 +171,8 @@
     {fn:'/sound/webaudiofont/12835_6_FluidR3_GM_sf2_file.js'},
     {fn:'/sound/webaudiofont/12840_6_FluidR3_GM_sf2_file.js'},
     {fn:'/sound/webaudiofont/12842_6_FluidR3_GM_sf2_file.js'},
-    {fn:'/sound/webaudiofont/0000_FluidR3_GM_sf2_file.js'}
+    {fn:'/sound/webaudiofont/0000_FluidR3_GM_sf2_file.js'},
+    {fn:'/sound/webaudiofont/0300_Chaos_sf2_file.js'}
     ],onAll:init});
     //...
   }
@@ -250,6 +272,7 @@
     loadWebaudiofont:loadWebaudiofont,
     queueNode:queueNode,
     parseMusicXml:parseMusicXml,
+    cancelQueue:cancelQueue,
   };
   
   if (window.cano) cano.addScriptHook(loadWebaudiofont);
@@ -260,12 +283,11 @@
 //...
 //fr o,1
 //fr o,1,6
-//fr o,1,8
-//fr o,1,8,44
-//fr o,1,8,44,6
-//fr o,1,9
-//fr o,1,9,6
-//fr o,1,11
-//fr o,1,13
-//fr o,1,13,6
-//fr p,9,71
+//fr o,1,8,51
+//fr o,1,8,51,6
+//fr o,1,10
+//fr o,1,12
+//fr o,1,12,6
+//fr o,1,14
+//fr o,1,16
+//fr p,16,48

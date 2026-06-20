@@ -390,6 +390,36 @@ body {
     ];
     //...
   }
+  
+  else if (path=='music') /* */ {
+    //---
+    pathDescr='Music visualization, playback and Midi recording.';
+    cells=[
+    
+    {descr:'Piano editor.'
+    +' <a href="/anim/arrows/canv.htm?fn=/anim/arrows/canvNotes/pianoTab002.json">Example1</a>'
+    +' <a href="/anim/arrows/canv.htm?fn=/anim/arrows/canvNotes/pianoTab003.json">Example2</a>'
+    //link:'/sound/mid/TestMidi.htm',
+    ,date:'2026-06-20',
+    img:'/blog/hub/music/pianoTab.jpg',
+    },
+    
+    
+    
+    {descr:'Midi Recorder.',
+    //needs script from https://github.com/cifkao/html-midi-player put above
+    //+'<midi-player src="/blog/hub/walzer.mid" sound-font></midi-player>'
+    link:'/sound/mid/TestMidi.htm',
+    date:'2024',
+    img:'/blog/hub/testmidi.png',
+    imgPos:'top center',
+    }
+    
+    
+    ];
+    //...
+  }
+  
   else /* */ {
     
     cells=[
@@ -573,6 +603,7 @@ body {
     +', <a href="/index.html?path=editxr">EditXr</a>'
     +', <a href="/index.html?path=turnbased">Turnbased</a>'
     +', <a href="/index.html?path=voxed">VoxelEdit</a>'
+    +', <a href="/index.html?path=music">Music</a>'
     //+'<br>'
     +'<li>'
     +'Comments appreciated:<br><a href="https://mastodon.social/@Pl4n3">Mastodon</a>'
@@ -672,7 +703,7 @@ body {
     });
   }
   
-  h.files.push({text:'Pl4n3 Hub Version 1.0.116 ',//FOLDORUPDATEVERSION
+  h.files.push({text:'Pl4n3 Hub Version 1.0.124 ',//FOLDORUPDATEVERSION
   draw:function(el) {
     //...
     let st=el.style;
@@ -715,6 +746,8 @@ body {
 //fr o,25
 //fr o,25,10
 //fr o,25,10,24
-//fr o,25,15
 //fr o,25,15,5
-//fr p,18,87
+//fr o,25,16
+//fr o,25,18
+//fr o,25,20
+//fr p,91,122

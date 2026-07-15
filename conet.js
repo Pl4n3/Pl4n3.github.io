@@ -1,7 +1,7 @@
 var Conet={};
 (function(Conet) {
   Conet.offline=false;
-  Conet.version='1.851 ';//FOLDORUPDATEVERSION
+  Conet.version='1.955 ';//FOLDORUPDATEVERSION
   Conet.files={};
   var uploads={},fns,logc,logs=[],//fn=>data,first
       logSameLineCount=0,ac,downloads={},PI=Math.PI;
@@ -382,21 +382,92 @@ var Conet={};
     
     
     if (p.grid) {
-    m.sub.push({s:'Loadgrid..',r:1,actionf:function() {
+    m.sub.push({s:'Filegrid..',r:1,actionf:function() {
       //---
       //let md=new Mdiv.Cont(50,50,Math.min(800,window.innerWidth-100),Math.min(600,window.innerHeight-100));
-      let md=new Mdiv.Cont(20,20,window.innerWidth-140,window.innerHeight-100);
-      Conet.grid({cont:md.c,dir:'/blog',closeButton:1,files:m.files,
-      onclick:function(fh) {
+      let md=new Mdiv.Cont(20,20,window.innerWidth-140,window.innerHeight-100),withCtrl=1,c,tf,gridCont;
+      md.c.style.backgroundColor='#888';
+      md.c.style.fontSize='14px';
+      
+      function gridClick(fh) {
         //---
         Conet.lastLoadMenu={cfmo:fh};
-        p.loadf(fh.fn);
-        
-        //onsole.log('grid.onclick');
-        checkIconUpdate();
+        if (withCtrl) 
+          tf.value=fh.fn;
+        else {
+          //Conet.lastLoadMenu={cfmo:fh};
+          p.loadf(fh.fn);
+          //onsole.log('grid.onclick');
+          checkIconUpdate();
+          //---
+          md.c.parentNode.removeChild(md.c);
+        }
         //...
       }
-      }); 
+      
+      function doGrid() {
+        //---
+        let s=tf.value;
+        let a=[];
+        for (let h of m.files) {
+          if ((s.length>0)&&(h.fn.indexOf(s)==-1)) continue;
+          let hn={fn:h.fn};
+          if (hn.fn==m.curFn) hn.background='#ffa';
+          a.push(hn);
+        }
+        //onsole.log(a.length);
+        gridCont.innerHTML='';
+        Conet.grid({cont:gridCont,dir:'/blog',closeButton:1,closeCont:md.c,files:a,background:'#ccc',onclick:gridClick
+        ,startText:'Files '+a.length+((a.length==m.files.length)?'':' / '+m.files.length)
+        });
+        //...
+      }
+      
+      
+      if (withCtrl) {
+      c=document.createElement('div');let c0;
+      //c.innerHTML='Test123 <button>123</button>';
+      //c0=document.createElement('p');
+      //c.appendChild(c0);
+      
+      //c.appendChild(document.createTextNode('\u00A0File'));
+      c0=document.createElement('input'),st=c0.style;tf=c0;
+      st.width='200px';st.margin='4px';
+      tf.type='search';tf.placeholder='filename';
+      tf.oninput=function() {
+        //---
+        delete(Conet.lastLoadMenu);
+        doGrid();
+        //...
+      }
+      c.appendChild(c0);
+      c0=document.createElement('button');c0.innerHTML='Load';
+      c0.onclick=function() {
+        //---
+        if (tf.value.length==0) {
+          Conet.alert('Enter or click file first.');
+          return;
+        }
+        
+        //Conet.lastLoadMenu={cfmo:fh};
+        p.loadf(tf.value);
+        if (Conet.lastLoadMenu) checkIconUpdate();
+        //---
+        md.c.parentNode.removeChild(md.c);
+        //...
+      }
+      c.appendChild(c0);
+      c0=document.createElement('button');c0.innerHTML='Save';
+      c.appendChild(c0);
+      md.c.appendChild(c);
+      
+      c=document.createElement('div');//let st=c.style;st.fontSize='14px';
+      md.c.appendChild(c);
+      } else c=md.c;
+      gridCont=c;
+      
+      //onsole.log(m.files);
+      doGrid();
       //onsole.log(m.files);
       //...
     }
@@ -816,7 +887,7 @@ var Conet={};
       tw.tc=Math.min(tw.t,(tw.tc||0)+dt);
       //if (tw.x0===undefined) { tw.x0=tw.o.x;tw.y0=tw.o.y;tw.z0=tw.o.z; }
       var f1=tw.tc/tw.t;
-      f1=0.5-Math.cos(f1*Math.PI)/2;
+      if (!tw.linear) f1=0.5-Math.cos(f1*Math.PI)/2;
       var f0=1-f1;
       
       if (tw.key) {
@@ -1388,7 +1459,7 @@ var Conet={};
       if (gps.gap) s.rowGap=s.columnGap=gps.gap;
       //grid-auto-rows: minmax(100px, auto);
       
-      s.background='#777';
+      //s.background='#777';//commented out, if needed, set after/before Conet.grid()
       s.padding='4px';
       //s.fontSize='12px';//260419 removed so that /sound/mid/index.html has bigger font
       s.color='#000';
@@ -1412,7 +1483,8 @@ var Conet={};
         let s=c.style;s.float='left';s.transform='rotate(90deg);';s.margin='2px';
       //s.position='absolute';s.top='2px';s.left='2px';
       c.onclick=function() {
-        cont.parentNode.removeChild(cont);
+        let c=gps.closeCont||cont;
+        c.parentNode.removeChild(c);
       }
         e.appendChild(c);
       }
@@ -1491,7 +1563,7 @@ var Conet={};
       start(gps.startText||'Files');
       for (let f of gps.files) {
         let el=document.createElement('div'),s=el.style;
-        s.background='#888';
+        s.background=f.background||gps.background||'#888';
         //s.borderColor='#eeeeee';//'#444';
         s.borderRadius='0px 0.5em 0.5em';
         s.border='1px solid #444444';
@@ -1509,7 +1581,8 @@ var Conet={};
         s.cursor='pointer';
     el.onclick=function() {
       //---
-      cont.parentNode.removeChild(cont);
+      //let c=gps.closeCont||cont;
+      //c.parentNode.removeChild(c);
       gps.onclick(this._fh);
       //console.log('load file nao: '+this._fn);
       //...
@@ -1602,7 +1675,7 @@ var Conet={};
     //...
   }
   
-  Conet.prompt=function(s,ps) {
+  Conet.confirm=function(s,ps) {
     //---
     let d=document.createElement('dialog');
     d.innerHTML=s+'<br><br>';
@@ -1638,7 +1711,6 @@ console.log('Conet '+Conet.version);
 //fr o,1,9,33
 //fr o,1,10,29
 //fr o,1,10,31
-//fr o,1,13
 //fr o,1,13,4
 //fr o,1,13,5
 //fr o,1,13,6
@@ -1647,9 +1719,11 @@ console.log('Conet '+Conet.version);
 //fr o,1,13,17
 //fr o,1,13,22
 //fr o,1,13,23
+//fr o,1,13,31
 //fr o,1,13,31,3
-//fr o,1,13,35
-//fr o,1,13,35,4
+//fr o,1,13,35,6
+//fr o,1,13,35,21
+//fr o,1,13,35,24
 //fr o,1,13,43
 //fr o,1,13,46
 //fr o,1,13,47
@@ -1658,20 +1732,20 @@ console.log('Conet '+Conet.version);
 //fr o,1,14,1
 //fr o,1,21,4
 //fr o,1,50,13
+//fr o,1,53
+//fr o,1,55
+//fr o,1,55,5
 //fr o,1,64,3
 //fr o,1,65,2
 //fr o,1,117,2
 //fr o,1,117,11
-//fr o,1,121,3
-//fr o,1,121,4
 //fr o,1,121,8
 //fr o,1,121,8,32
 //fr o,1,121,10,0
 //fr o,1,121,10,0,26
+//fr o,1,121,32
 //fr o,1,124,1
 //fr o,1,124,1,16
 //fr o,1,124,9
-//fr o,1,127
-//fr o,1,129
 //fr o,1,129,6
-//fr p,17,265
+//fr p,18,63

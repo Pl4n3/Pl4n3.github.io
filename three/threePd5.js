@@ -213,7 +213,7 @@ function threeSetMeshMaterial(m,lo) {
   */
   
   
-  var shader=THREE.ShaderLib["normalmap"];
+  var shader=THREE.ShaderLib?THREE.ShaderLib["normalmap"]:undefined;
   if (!shader) {
     //onsole.log('threeSetMeshMaterial: no shaderlib normalmap');
     //console.log(JSON.stringify(lo,undefined,' '));
@@ -1306,4 +1306,4 @@ threeEnv.dungeonGeometry=function (ps,view) {
 //fr o,28,57
 //fr o,38
 //fr o,41
-//fr p,29,641
+//fr p,65,204

@@ -424,6 +424,14 @@ body {
     
     cells=[
     
+    {descr:'Test: Added a spider running through the forest of the threejs r185 fog example.',
+    link:'/three/r185/examples/webgpu_custom_fog_pl.html',
+    date:'2026-07-15',
+    img:'/blog/hub/spiderforest.jpg',
+    threads:'https://www.threads.com/@pl4n3d/post/Daz_DpWEsxW',
+    },
+    
+    
     {descr:'Webgazer.js cam tracking and animation. Test Hearthstone stream with the avatar: <a href="https://www.youtube.com/watch?v=HFLdFzOJY5A">Link</a>.',
     link:'/test/cam/webgazer/www/collisionPl.html',
     date:'2026-01-27',
@@ -642,7 +650,12 @@ body {
     if (c.conet&&!online) continue;
     let text=c.text||'',bgth=c.bgt||bgt;
     if (c.conet) text+='<span style="background-color:'+conetc+';padding: 0px 4px;border-radius: 4px;margin-right: 4px;">conet</span>';
-    if (c.descr) text+='<span style="font-size:1.1em;background-color:'+bgth+';">'+c.descr+'</span>';
+  
+    if (c.descr) text+='<span style="font-size:1.1em;background-color:'+bgth+';">'+c.descr+'</span>'; 
+    //idea from https://stackoverflow.com/a/18416038/1059763 add padding to a span through nesting, but doesnt work good with transparent colors
+    //let bgt2='rgba(230,230,230,0.6)';//less alpha then bgt beccause its drawn twice
+    //if (c.descr) text+='<span style="font-size:1.1em;background-color:'+bgt2+';"><span style="position:relative;left:4px;background-color:'+bgt2+';">'+c.descr+'</span></span>';
+  
     if (c.link) {
       text+='<br><span style="font-size:1.5em;background-color:'+bgth+';"><a href="'+c.link+'">► Start&nbsp;</a>';
       if (c.linkAdd) for (let h of c.linkAdd)
@@ -703,7 +716,7 @@ body {
     });
   }
   
-  h.files.push({text:'Pl4n3 Hub Version 1.0.124 ',//FOLDORUPDATEVERSION
+  h.files.push({text:'Pl4n3 Hub Version 1.0.139 ',//FOLDORUPDATEVERSION
   draw:function(el) {
     //...
     let st=el.style;
@@ -747,7 +760,6 @@ body {
 //fr o,25,10
 //fr o,25,10,24
 //fr o,25,15,5
-//fr o,25,16
-//fr o,25,18
 //fr o,25,20
-//fr p,91,122
+//fr o,25,71
+//fr p,9,90

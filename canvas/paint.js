@@ -1,7 +1,7 @@
 var Paint={};
 (function(Paint) {
   var canvas,ix,iy,id,iw,ih,oix,oiy,scale,oscale;
-  var version='1.3749 ';//FOLDORUPDATEVERSION
+  var version='1.4843 ';//FOLDORUPDATEVERSION
   var md=false,imx,imy,mx,my,omx,omy,moused=new Array(4),br=0,bg=0,bb=250,bp=0.1,bra=10;
   var touches={},TM_DRAW=1,TM_IMG=2,touchMode=TM_DRAW,touchlast;
   //var menuroots,menus;
@@ -12,7 +12,7 @@ var Paint={};
   var pra=[],pri=0,prr=-1,prg=-1,prb=-1,prp=-1,prra=-1,priw,prih,prmode,prgif=false,egif;//,skipDemo=true;,prer,pruner
   var sr={x:10,y:10,w:20,h:20};//{x:170,y:110,w:10,h:20};
   var srm=0,movep={x:0,y:0},srid,lsKey='wepaintf',nbid;
-  var MDRAW=0,MSELR=1,MMOVE=2,MERASE=3,MUNERASE=4,MREPLAY=5,MCOPYBRUSH=6,MCUTOUT=7,mode=MDRAW;
+  var MDRAW=0,MSELR=1,MMOVE=2,MERASE=3,MUNERASE=4,MREPLAY=5,MCOPYBRUSH=6,MCUTOUT=7,MFILL=8,MTEVE=9,mode=MDRAW;
   var pages,pagei=0,loadpagec=1,loadcs='',brushpat=false,normal;
   var NMDOWN=0,NMUP=1,NMCOL=2,normalMode=NMCOL,eraseConf={bp:0.3,bra:50},drawConf={};
   var normalBlend=false,npi=-1,dpi=-1,spi=-1,drawArea=undefined;
@@ -89,10 +89,11 @@ var Paint={};
   {r:4,g:4,b:4},
   ];
   var cutout={ rects:[],bones:[] },cutoutP,
-      canvlo,wasBrush,acoH={},canvm,cfmenu,tridata=undefined,canvDraw=true,ctdraw,changec=0;
+      canvlo,wasBrush,acoH={},canvm,cfmenu,tridata=undefined,canvDraw=true,ctdraw,changec=0,
+      loadTextPs,canvp,canvpt,mpageblend,mpageanimate,pageAnimUp=true,canvs,dpr,bod2;
   
   function arc(x,y,r) {
-    var ctx=canvas.getContext('2d');
+    var ctx=getCt(canvas);//canvas.get_Context('2d');
     ctx.putImageData(getId(),0,0)
     ctx.strokeStyle='rgb('+br+','+bg+','+bb+')';
     //ctx.fillText(s,x,y);
@@ -103,6 +104,9 @@ var Paint={};
     if (pages) pages[pagei].id=id;
   }
   function brush(xp,yp,nopr) {
+    //if (mode==MFILL) {
+    //  return;
+    //}
     if (!nopr) {
       prCfg();
       pra.push('b,'+strf(xp,10)+','+strf(yp,10));pri++;
@@ -114,7 +118,9 @@ var Paint={};
     
     var iscp=((mode==MCOPYBRUSH)&&copybrush);
     var normalud=normal&&(normalMode!=NMCOL);
-    if (canvDraw&&(mode==MDRAW)&&!normalud) {
+    if (canvDraw&&(mode==MDRAW)&&!normalud
+      //&&!adata.renderingPixelated
+      ) {
       //onsole.log('brush '+nopr);
       if (!nopr||!ctdraw) {
         var ct=canvas.getContext('2d');
@@ -124,9 +130,24 @@ var Paint={};
       var ct=ctdraw;
       ct.fillStyle='rgba('+br+','+bg+','+bb+','+bp+')';
       //ct.fillRect(xp-r,yp-r,r*2,r*2);
-      ct.beginPath();
-      ct.arc(xp,yp,r,0,Math.PI*2);
-      ct.fill();
+      //onsole.log('paint.brush xp='+xp+' yp='+yp);
+      //onsole.trace();
+      if (r==1) ct.fillRect(xp,yp,r,r); 
+      else if (adata.renderingPixelated) {
+        //ct.fillRect(xp-r/2,yp-r/2,r,r);
+        r++;
+        let r2=r/2;
+        for (let x=0;x<r;x++) for (let y=0;y<r;y++) {
+          let rh=Math.sqrt((x-r2)*(x-r2)+(y-r2)*(y-r2));
+          if ((rh+0.5)>r2) continue;
+          ct.fillRect(xp-Math.floor(r2)+x,yp-Math.floor(r2)+y,1,1);
+        }
+        r--;
+      } else {
+        ct.beginPath();
+        ct.arc(xp,yp,r,0,Math.PI*2);
+        ct.fill();
+      }
       id=undefined;
     } else
     for (var yr=-r;yr<=r;yr++) for (var xr=-r;xr<=r;xr++) {
@@ -140,6 +161,8 @@ var Paint={};
       }
       var f1=1-(xr*xr+yr*yr)/(r*r);
       if (f1<0) continue;
+      //console.log('brush '+adata.renderingPixelated);
+      //if (adata.renderingPixelated) f1=1;
       var of1=f1;
       f1*=bp;
       f=1-f1;
@@ -249,7 +272,8 @@ var Paint={};
     var dx=imx-x,dy=imy-y;
     var d=Math.sqrt(dx*dx+dy*dy);
     for (var h=0;h<d;h+=Math.floor(bra/3+0.5)+1) 
-      brush(Math.floor(x+dx*h/d+0.5),Math.floor(y+dy*h/d+0.5),true);
+      brush(Math.floor(x+dx*h/d),Math.floor(y+dy*h/d),true);
+      //brush(Math.floor(x+dx*h/d+0.5),Math.floor(y+dy*h/d+0.5),true);
     if (!nopr&&!(canvDraw&&(mode==MDRAW))) {
       drawBrush(imx,imy,x,y);
     }
@@ -271,20 +295,83 @@ var Paint={};
       //---
     }
   }
+  function canvsDown(isMove) {
+    if (Paint.canvsDownExt) return Paint.canvsDownExt(isMove);
+    return false;
+    //...
+  }
+  function canvsDraw() {
+    //---
+    if (!canvs) return;
+    var c=canvs.c,ct=c.getContext('2d'),w=c.width,h=c.height;
+    ct.clearRect(0,0,w,h);
+    ct.lineWidth=1*dpr;
+    if (canvs.x!==undefined) {
+      var x=canvs.x*dpr+0.5,y=canvs.y*dpr+0.5,d=1*dpr;
+      ct.strokeStyle='#444';ct.beginPath();ct.moveTo(0,y+d);ct.lineTo(w,y+d);ct.moveTo(x+d,0);ct.lineTo(x+d,h);ct.stroke();
+      ct.strokeStyle='#aaa';ct.beginPath();ct.moveTo(0,y);ct.lineTo(w,y);ct.moveTo(x,0);ct.lineTo(x,h);ct.stroke();
+    }
+    var b=2*dpr+0.5,l=50*dpr;
+    ct.strokeStyle='#000';
+    ct.beginPath();
+    ct.moveTo(b,b);ct.lineTo(b+l,b);ct.moveTo(b,b);ct.lineTo(b,b+l);
+    ct.moveTo(w-b,h-b);ct.lineTo(w-b,h-b-l);ct.moveTo(w-b,h-b);ct.lineTo(w-b-l,h-b);
+    
+    var x,y;
+    x=ix*dpr-b;y=iy*dpr-b;
+    ct.moveTo(x,y);
+    ct.lineTo(x+l,y);
+    ct.moveTo(x,y);
+    ct.lineTo(x,y+l);
+    x=Math.floor(ix*dpr+iw*scale*dpr+4*dpr+0.5)+0.5;
+    y=Math.floor(iy*dpr+ih*scale*dpr+4*dpr+0.5)+0.5;
+    ct.moveTo(x,y);ct.lineTo(x-l,y);ct.moveTo(x,y);ct.lineTo(x,y-l);
+    
+    ct.stroke();
+    
+    if (Paint.canvsDrawExt) Paint.canvsDrawExt(ct);
+    
+    //var u=bod2u;
+    //if (u) {
+    //  bod2.calcVerts(u);
+    //  bod2.drawObj(ct,u,ix*dpr+(iw-50)*scale*dpr,iy*dpr,scale*dpr);
+    //}
+    
+    //canvs.count=(canvs.count||0)+1;ct.fillStyle='#000';ct.fillText('draw.count='+canvs.count,200,10);
+    
+    //...
+  }
   function cDown(x,y) {
-    if (mode==MMOVE) {
+    //onsole.log('cDown '+x+' '+y);
+    
+    if (canvsDown()) return;
+    
+    if (mode==MFILL) {
+      x=Math.floor(x+0.5);y=Math.floor(y+0.5);
+      if ((x>=0)&&(x<iw)&&(y>=0)&&(y<ih)) {
+        var d=getId().data;
+        var di=(y*iw+x)*4;
+        var r=d[di],g=d[di+1],b=d[di+2];
+        console.log('cdown '+r+' '+g+' '+b);
+        fill(x,y,r,g,b);
+        draw();
+      }
+      //---
+    } else if (mode==MMOVE) {
       movep.ox=movep.x;movep.oy=movep.y;
     } else if (mode==MCUTOUT) {
       cutoutP=cutoutGet(x*scale,y*scale);
       draw();
       //alert
-    } else if (mode==MSELR) {
+    } else if (mode==MTEVE) {
       var done=false;
       if (lo||tridata) {
         done=selectv(x,y);
         console.log('paint.cDown done='+done);
       }
-      if (!done) {
+      
+    } else if (mode==MSELR) {
+      //if (!done) {
       var lx=x<sr.x+sr.w/2;
       var ly=y<sr.y+sr.h/2;
       if (lx) {
@@ -293,7 +380,7 @@ var Paint={};
         if (ly) srm=3; else srm=2;
       }
       setsr(x,y);
-      }
+      //}
     } else if (pickm) 
       pick(x,y);
     else if (mode==MCOPYBRUSH&&!copybrush) {
@@ -308,7 +395,8 @@ var Paint={};
       if (keyd[16]&&lastBrush)
         brushline(lastBrush.x,lastBrush.y,x,y);
       else
-        brush(Math.floor(x+0.5),Math.floor(y+0.5));
+        brush(Math.floor(x),Math.floor(y));
+        //brush(Math.floor(x+0.5),Math.floor(y+0.5));
       lastBrush.x=x;lastBrush.y=y;
       
       if (!(canvDraw&&(mode==MDRAW))) draw();
@@ -374,7 +462,12 @@ var Paint={};
     
   }
   function cMove(x,y) {
-    if (mode==MMOVE) {
+    
+    if (canvsDown(true)) return;// works for now, probably later own 'canvsMove'
+    
+    if (mode==MFILL) {
+      //---
+    } else if (mode==MMOVE) {
       movep.x=Math.floor(movep.ox+x-imx+0.5);
       movep.y=Math.floor(movep.oy+y-imy+0.5);
       mrectMs();
@@ -396,13 +489,14 @@ var Paint={};
         draw();
       }
     } else if (mode==MSELR) {
-      if (selv.length==0) {
+      //if (selv.length==0) {
         setsr(x,y);imx=x;imy=y;
-      } else {
+      //} else {
         //ggf vorher clip
+    } else if (mode==MTEVE) {
         movev(x,y);
     
-      }
+      //}
     } else if (pickm) {
       pick(x,y); 
       imx=x;imy=y;
@@ -456,6 +550,15 @@ var Paint={};
   }
   function conetLoad(v,atStart,callback,ps) {
     if (!ps) ps={};
+    console.log('conetLoad v='+v);
+    if (!v.endsWith('.json')         //210812 paint didnt load multipage images (e.g. .._4.png) now its doing it again
+      &&!v.endsWith('.json.txt')) {  //220423 cutouts-edit couldnt load/edit texture, now it works again
+      loadDataUrl(v);
+      return;
+    }
+    //onsole.log(Conet.lastLoadMenu);
+    ps.loadMenu=Conet.lastLoadMenu;
+    ps.fn=v;//200105 fuer checklistfile bei cutouts (in loadText)
     //cutout=undefined;
     Conet.download({fn:v,f:function(v0) {
       loadText(v0,v.indexOf('.json')!=-1,ps,callback);
@@ -491,7 +594,7 @@ var Paint={};
     }
     wasBrush=false;
     
-    if ((mode==MSELR)&&lo) W3dit.meshUpdate();
+    if ((mode==MTEVE)&&lo) W3dit.meshUpdate();
     
   }
   function cutoutGet(x,y) {
@@ -517,24 +620,72 @@ var Paint={};
     
     return mav;
   }
+  function cutoutStr() {
+    //...
+    
+    var a=[
+      //['rects',['x','y','w','h','cx','cy',['ps',['x','y']]],1],
+      //['bones',['i','p','pp','z'],1],
+      //'carves',
+      ['carves',['p0','p1','bo','dabs','bbo'],1],
+      ['rects',['x','y','w','h','cx','cy'],1],
+      ['bones',['i','p','z','a','x','y','xs','ys','u','v'],1],
+      ['tris',['p0','p1','p2','z']],
+      ['anims',['name',['a',['t',['a',['a','x','y','xs','ys','i']]],1]]],
+      ['iks',['name','target','rotation']]
+    ];
+    
+    function stri(a,o) {
+      var s='{';
+      var first=true;
+      for (var h=0;h<a.length;h++) {
+        var v=a[h],k,aa=undefined;
+        if (typeof(v)=='string') k=v; else { k=v[0];aa=v; }
+        var ok=o[k];
+        if (ok===undefined) continue;
+        s+=(first?'':',')+'"'+k+'":';first=false;
+        if (aa) {
+          s+='[';
+          for (var i=0;i<ok.length;i++) {
+            s+=(i==0?'':',')+stri(v[1],ok[i]);if (v.length==3) s+="\n";
+          }
+          s+=']';
+        } else {
+          s+=JSON.stringify(ok);
+        }
+      }
+      s+='}';
+      return s;
+    }
+    
+    var ret=stri(a,cutout);
+    //onsole.log('paint.cutoutStr ret='+ret);
+    return ret;
+  }
   function draw(tcnew) {
     if (!canvas) return;
     if (!canvas.getContext) return;
     var ctx = canvas.getContext('2d');
     
-    //console.log('paint.draw');console.trace();
+    //console.log('paint.draw');//console.trace();
     
-    if (clearCanv) {
+    var blendPages=pages&&(pages.length>3)&&mpageblend.checked;
+    if (blendPages&&!canvm) {
+      var c=document.createElement('canvas');c.width=iw;c.height=ih;canvm=c;
+    }
+    
+    
+    if (clearCanv||blendPages) {
       var cm=canvm?canvm.getContext('2d'):undefined;
       if (cm) cm.clearRect(0,0,iw,ih);
     }
     
     //og('draw');
     
-    /*
-    ctx.fillStyle='#cccccc';
-    ctx.fillRect(0,0,canvas.width,canvas.height);
-    */
+    
+    //ctx.fillStyle='#cccccc';
+    //ctx.fillRect(0,0,canvas.width/2,canvas.height/2);
+    
     /*
     var normalblend=false;
     if (pages) if (pages.length>1) {
@@ -624,13 +775,40 @@ var Paint={};
     
     
     //if (!normalBlend) 
-    ctx.putImageData(getId(),0,0);
-    
+    if (blendPages) {
+      if (!canvpt) {
+        canvp=document.createElement('canvas');canvp.width=iw;canvp.height=ih;
+        canvpt=canvp.getContext('2d');
+      }
+      cm.clearRect(0,0,iw,ih);
+      cm.globalAlpha=0.2;
+      if (pagei<pages.length-2) { canvpt.putImageData(pages[pagei+2].id,0,0);cm.drawImage(canvp,0,0); }
+      if (pagei>1) { canvpt.putImageData(pages[pagei-2].id,0,0);cm.drawImage(canvp,0,0); }
+      cm.globalAlpha=0.2;
+      if (pagei<pages.length-1) { canvpt.putImageData(pages[pagei+1].id,0,0);cm.drawImage(canvp,0,0); }
+      if (pagei>0) { canvpt.putImageData(pages[pagei-1].id,0,0);cm.drawImage(canvp,0,0); }
+      cm.globalAlpha=1;
+      ctx.putImageData(getId(),0,0);
+      
+      /* //--- following doesnt work, directly writing ctx with other pages changes current picture
+      ctx.clearRect(0,0,iw,ih);
+      ctx.globalAlpha=0.5;
+      if (pagei<pages.length-1) { cm.putImageData(pages[pagei+1].id,0,0);ctx.drawImage(canvm,0,0); }
+      if (pagei>0) { cm.putImageData(pages[pagei-1].id,0,0);ctx.drawImage(canvm,0,0); }
+      //cm.clearRect(0,0,iw,ih);
+      cm.putImageData(pages[pagei].id,0,0);
+      //cm.putImageData(getId(),0,0);
+      
+      ctx.drawImage(canvm,0,0);
+      ctx.globalAlpha=1;
+      */
+    } else 
+      ctx.putImageData(getId(),0,0);
     
     //var cm=canvm?canvm.getContext('2d'):undefined;
     //if (cm) cm.clearRect(0,0,iw,ih);
     
-    if ((mode==MSELR)&&cm) {
+    if (((mode==MSELR)||(mode==MTEVE))&&cm) {
       //var ctr=ctx;
       //cm.clearRect(0,0,iw,ih);
       cm.lineWidth=1;
@@ -867,6 +1045,35 @@ var Paint={};
     	}
     	return output;
   }
+  function fill(x,y,r,g,b) {
+    var a=[[x,y]];
+    while (a.length>0) {
+    x=a[0][0];y=a[0][1];
+    a.splice(0,1);
+    
+    if ((x>=0)&&(x<iw)&&(y>=0)&&(y<ih)) {
+      var d=getId().data;
+      var di=(y*iw+x)*4;
+      var rh=d[di],gh=d[di+1],bh=d[di+2],
+          dr=r-rh,dg=g-gh,db=b-bh,
+          d2=dr*dr+dg*dg+db*db;
+      if (d2<50) {//(r==rh)&&(g==gh)&&(b==bh)) {
+        d[di]=br;d[di+1]=bg;d[di+2]=bb;
+        a.push([x-1,y]);//fill(x-1,y,r,g,b);
+        a.push([x+1,y]);//fill(x+1,y,r,g,b);
+        a.push([x,y-1]);//fill(x,y-1,r,g,b);
+        a.push([x,y+1]);//fill(x,y+1,r,g,b);
+      }
+    }
+    }
+    //...
+  }
+  
+  function getCt(c) {
+    return c.getContext('2d',{willReadFrequently:true});
+    //...
+  }
+  
   function getId() {
     if (!id) id=canvas.getContext('2d').getImageData(0,0,iw,ih);
     return id;
@@ -917,7 +1124,7 @@ var Paint={};
     return id1;
   }
   function isize() {
-    //onsole.log('isize '+ix+' '+iy);
+    //onsole.log('isize '+ix+' '+iy+' '+scale);
     canvas.style.top=iy;canvas.style.left=ix;
     canvas.style.width=iw*scale;canvas.style.height=ih*scale;
     
@@ -953,8 +1160,908 @@ var Paint={};
     
     if (lo) W3dit.shortKeys(kc);
   }
-  function loadDataUrl(d,addPages,callback) {
+  function loadBod2(fn) {
+    //---
+    log('loadBod2 fn='+fn);
+    
+    let manims,bod2u,u,barb=20,barh=50,animRunning=true,
+        selak,selpart,sels=[],selpair,selwp,selv,selpoly,
+        modeParts=true,modeWeights=false,modeVerts=false,modeView=false,
+        funcs={},mx0,my0,mmode,vertsChanged=false;
+    
+    function pairDel(pai) {
+      //---
+      u.pairs.splice(pai,1);
+      //onsole.log('weight-count:'+u.weights[pai].wps.length);
+      //let wps=u.weights[pai].wps;
+      //for (let wi=wps.length-1;wi>=0;wi--) { wc++;weightDel(wps[wi]); }
+      //for (let w of u.weights[pai].wps) { wc++;weightDel(w); }
+      //u.weights.splice(pai,1);
+      //...
+      //return wc;
+    }
+    function vertDel(v) {
+      //---
+      let u=bod2u;
+      for (let pi=u.polys.length-1;pi>=0;pi--) {
+        let i=u.polys[pi].verts.indexOf(v);
+        if (i==-1) continue;
+        u.polys.splice(pi,1);
+      }
+      let i=u.verts.indexOf(v);
+      u.verts.splice(i,1);
+      tridata.verts.splice(i,1);
+      vertsChanged=true;
+      //...
+    }
+    function weightDel(w) {
+      //---
+      for (let v of u.verts) if (v.wps.indexOf(w)!=-1) vertDel(v);
+      for (let ws of u.weights) {
+        let i=ws.wps.indexOf(w);
+        if (i==-1) continue;
+        ws.wps.splice(i,1);
+      }
+      //...
+    }
+    function setManims() {
+      //---
+      manims.sub.length=0;
+      for (let fc of u.fcs) {
+      manims.sub.push({s:fc.name,actionf:function() {
+        //onsole.log(this);//...
+        bod2.setFc(bod2u,this.s);
+        animRunning=true;
+        selak=undefined;
+      }
+        });
+      }
+      //...
+    }
+    
+    
+    Paint.canvsDrawExt=function (ct) {
+      //---
+      
+      var u=bod2u;
+      if (!u) return;
+      var fc=u.currentFc,pw;
+      
+      bod2.calcVerts(u);
+      var o=u.calcFcSkipM,
+          x0=ix*dpr+(iw-(o?-20:50))*scale*dpr,
+          y0=iy*dpr+(o?100:0)*scale*dpr;
+      bod2.drawObj(ct,u,x0,y0,scale*dpr);
+      
+      if (!modeView) {
+      
+      ct.fillStyle='#fff';
+      for (var p of u.parts) { p.xd=x0+p.x0*scale*dpr;p.yd=y0+p.y0*scale*dpr; }
+      
+      var c0='rgba(0,0,0,0.3)',c1='rgba(255,255,255,0.3)';
+      
+      //--- pairs & parts
+      
+      var d=1*dpr;
+      ct.lineWidth=d;
+      for (var pa of u.pairs) {
+        var p0=u.parts[pa[0]],p1=u.parts[pa[1]];
+        ct.strokeStyle='#000';ct.beginPath();ct.moveTo(p0.xd+d,p0.yd);ct.lineTo(p1.xd+d,p1.yd);ct.stroke();
+        ct.strokeStyle='#000';ct.beginPath();ct.moveTo(p0.xd,p0.yd+d);ct.lineTo(p1.xd,p1.yd+d);ct.stroke();
+        ct.strokeStyle=(modeParts&&(pa===selpair)?'#fff':
+          '#888');ct.beginPath();ct.moveTo(p0.xd,p0.yd);ct.lineTo(p1.xd,p1.yd);ct.stroke();
+        
+        if (//((p0===selpart)||(p1===selpart))&&
+          modeParts&&selak) {
+          var ak=u.fcs[0].a[0];
+          if (ak!==selak) {
+            var p00=ak.a[pa[0]],p01=ak.a[pa[1]];
+            if ((p00===undefined)||(p01===undefined)) {
+              console.log('p00 or p01 undefined');
+            } else {
+              //console.log(p00);
+              //console.log(p01);
+              var dx=p01.x-p00.x,dy=p01.y-p00.y,l0=Math.sqrt(dx*dx+dy*dy);
+              dx=p1.x0-p0.x0;dy=p1.y0-p0.y0;var l=Math.sqrt(dx*dx+dy*dy);
+              var x=p0.xd+(p1.xd-p0.xd)*l0/l;
+              var y=p0.yd+(p1.yd-p0.yd)*l0/l;
+              //var i=fc.a.indexOf(selak);
+              //console.log(x+' '+y+' '+l+' '+l0);
+              pw=6*dpr;
+              ct.fillStyle='#000';ct.fillRect(x-pw/2+d,y-pw/2+d,pw,pw);
+              ct.fillStyle=(p1===selpart?'#fff':'#888');ct.fillRect(x-pw/2,y-pw/2,pw,pw);
+            }
+          }
+        }
+      }
+      
+      pw=3*dpr;
+      if (modeParts) for (var p of u.parts) {
+        ct.fillStyle='#000';ct.fillRect(p.xd-pw/2+d,p.yd-pw/2+d,pw,pw);
+        ct.fillStyle=((sels.indexOf(p)!=-1)?'#fff':'#888');ct.fillRect(p.xd-pw/2,p.yd-pw/2,pw,pw);
+      }
+      
+      //--- polys
+      
+      for (var p of u.polys) {
+        for (var pass=0;pass<3;pass++) {
+        var first=true;
+        ct.strokeStyle=pass==2?(p===selpoly?'#fff':c1):c0;
+        ct.beginPath();var x00,y00;
+        for (var v of p.verts) {
+           var x=x0+v.x*scale*dpr+(pass==0?d:0),y=y0+v.y*scale*dpr+(pass==1?d:0);
+           if (first) { ct.moveTo(x,y);x00=x;y00=y; } else ct.lineTo(x,y);first=false;
+        }
+        ct.lineTo(x00,y00);
+        ct.stroke();
+        }
+      }
+      
+      
+      
+      
+      //--- weights
+      
+      var wi=0;//selpairi=selpair===undefined?-1:u.pairs.indexOf(selpair);
+      for (var w of u.weights) { 
+        let selWeights=modeParts&&w.p0===sels[0]&&w.p1===sels[1];
+        for (var wp of w.wps) {
+          wp.xd=x0+wp.xr*scale*dpr;wp.yd=y0+wp.yr*scale*dpr;
+          //var x=x0+wp.xr*scale*dpr-pw/2,y=y0+wp.yr*scale*dpr-pw/2;
+          ct.fillStyle=modeWeights?'#000':c0;ct.fillRect(wp.xd-pw/2+d,wp.yd-pw/2+d,pw,pw);
+          ct.fillStyle=(sels.indexOf(wp)!=-1)?'#fff':(
+            selWeights//(wi==selpairi)
+            ?'#0f0':(modeWeights?'#888':c1));ct.fillRect(wp.xd-pw/2,wp.yd-pw/2,pw,pw);
+        }
+        wi++;
+      }
+      
+      
+      
+      //--- polys & verts
+      
+      //if (modeVerts) 
+      {
+      
+      
+      //if (modeWeights) 
+      pw=6*dpr; 
+      for (var v of u.verts) {
+        v.xd=x0+v.x*scale*dpr;v.yd=y0+v.y*scale*dpr;
+        
+        if (v===selv) for (let pass=0;pass<3;pass++) {
+          ct.strokeStyle=pass==2?c1:c0;
+          let dx=pass==0?d:0,dy=pass==1?d:0;
+          ct.beginPath();
+          for (let w of v.wps) {
+            ct.moveTo(w.xd+dx,w.yd+dy);
+            ct.lineTo(v.xd+dx,v.yd+dy);
+          }
+          ct.stroke();
+        }
+        
+        
+        //if (modeWeights) {
+          ct.strokeStyle=c0;ct.strokeRect(v.xd+d-pw/2,v.yd+d-pw/2,pw,pw);
+          ct.strokeStyle=(sels.indexOf(v)!=-1)?'#fff':c1;ct.strokeRect(v.xd-pw/2,v.yd-pw/2,pw,pw);
+        //} else {  
+        //  ct.fillStyle=c0;ct.fillRect(v.xd+d-pw/2,v.yd+d-pw/2,pw,pw);
+        //  ct.fillStyle=(sels.indexOf(v)!=-1)?'#fff':c1;ct.fillRect(v.xd-pw/2,v.yd-pw/2,pw,pw);
+        //}
+      }
+      
+      }}
+      
+      //----anim bar
+      
+      var w=canvs.c.width,h=canvs.c.height,b=barb*dpr,bh=barh*dpr;
+      ct.fillStyle='rgba(100,100,100,0.5)';
+      var y=h-b-bh;
+      ct.fillRect(b,y,w-b-b,bh);
+      
+      ct.textBaseline='top';
+      ct.textAlign='left';
+      var fs=12*dpr;
+      ct.font=fs+'px sans-serif';
+      ct.fillStyle='#000';
+      let yp;
+      let tg=0;for (var ak of fc.a) tg+=ak.t;
+      ct.fillText('Anim:'+fc.name+' '+Math.floor(tg*100+0.5)/100,b+2*dpr,yp=h-b-bh+2*dpr);
+      ct.fillText('Mode '+mmode.ms+', selected: '+sels.length,b+2*dpr,yp+fs);
+      ct.fillText(u.parts.length+' parts, '+u.pairs.length+' pairs, '+u.weights.length+' weightgroups, '+u.verts.length+' verts, '+u.fcs.length+' anims.',b+2*dpr,yp+fs+fs+fs);
+      
+      var t=0;
+      ct.textAlign='right';let ai=0;
+      for (var ak of fc.a) {
+        t+=ak.t;
+        ct.strokeStyle=(ak===selak)?'#fff':'#000';
+        ct.beginPath();
+        var x=b+(w-b-b)*t/tg;
+        ct.moveTo(x,h-b-bh);
+        ct.lineTo(x,h-b);ct.stroke();
+        ct.stroke();
+        ct.fillStyle=(ak==selak)?'#fff':'#000';
+        let y=h-b-bh+2*dpr;
+        ct.fillText(ai,x-2*dpr,y);ai++;//ak.t
+        //ct.fillText(ak.a.length+' parts',x-2*dpr,y+fs);
+        if (ak.sound) ct.fillText('sound:'+ak.sound,x-2*dpr,y+fs+fs);
+      }
+      
+      if (!selak) {
+      x=b+(w-b-b)*fc.t/tg;
+      ct.strokeStyle='#fff';
+      ct.beginPath();
+      ct.moveTo(x,h-b-bh);
+      ct.lineTo(x,h-b);ct.stroke();
+      ct.stroke();
+      }
+      //...
+    }
+    
+    Paint.canvsDownExt=function(isMove) {
+      //--
+      var x=canvs.x*dpr,y=canvs.y*dpr,
+          w=canvs.c.width,h=canvs.c.height,b=barb*dpr,bh=barh*dpr,
+          u=bod2u;
+          
+      if (!isMove) { mx0=x;my0=y; }
+          
+      /* anim bar */ {
+        if ((x>=b)&&(y>=h-b-bh)&&(x<=w-b)&&(y<=h-b)) {
+          x=(x-b)/(w-b-b);
+          
+          var fc=u.currentFc;
+          var tg=0;for (var ak of fc.a) tg+=ak.t;
+          var th=tg*x;
+          
+          if (isMove) {
+            if (selak) {
+              let th0=tg*(mx0-b)/(w-b-b);
+              selak.t=Math.max(0,selak.t0+(th-th0));
+            }
+            //---change selak.t
+          } else {
+            let t=0,mind=Number.MAX_VALUE,mint,minak;
+            for (var ak of fc.a) {
+              t+=ak.t;
+              var d=Math.abs(t-th);
+              if (d>mind) break;
+              mind=d;
+              mint=t;
+              minak=ak;
+            }
+          
+            if ((mind/tg)<0.02) {
+              th=mint;selak=minak;selak.t0=selak.t;
+            } else {
+              selak=undefined;
+            }
+            //if (!selak) 
+            animRunning=false;
+          }
+          
+          fc.t=th;
+          bod2.calcFc(fc,0);
+          canvsDraw();
+          
+          //onsole.log('x='+x);
+          //animRunning=false;
+          return true;
+        }
+      }
+      /* modeParts */ {
+        if (modeParts) {
+        if (isMove) {
+          var p=selpart;
+          if (p&&selak) {
+            var o=u.calcFcSkipM,
+                x0=ix*dpr+(iw-(o?-20:50))*scale*dpr,
+                y0=iy*dpr+(o?100:0)*scale*dpr;
+            p.x0=(x-x0)/(scale*dpr);
+            p.y0=(y-y0)/(scale*dpr);
+            
+            var i=u.parts.indexOf(p);
+            var fp=selak.a[i];
+            //onsole.log(fp.x+' '+fp.y);
+            fp.x=p.x0-u.mx;
+            fp.y=p.y0-u.my;
+            //console.log(fp.x+' '+fp.y);
+            //onsole.log('u '+u.mx+' '+u.my+' '+u.sc);
+            
+            canvsDraw();
+            return true;
+          }
+          //---
+        } else {
+          var mind=Number.MAX_VALUE,minp;
+          for (var p of u.parts) {
+            var dx=x-p.xd,dy=y-p.yd,d=dx*dx+dy*dy;
+            if (d>=mind) continue;
+            mind=d;minp=p;
+          }
+          selpart=undefined;selpair=undefined;
+          if ((mind/(w*h))<0.001) {
+            selpart=minp;
+            //onsole.log(selpart);
+            if (sels.indexOf(minp)==-1) sels.push(minp);
+            if (sels.length>=2) {
+              //onsole.log('checking for pair');
+              for (var pair of u.pairs) 
+                if ((sels[sels.length-2]===u.parts[pair[0]])&&(sels[sels.length-1]===u.parts[pair[1]])) {
+                  selpair=pair;
+                  //onsole.log('selpair set');
+                }
+            }
+            //onsole.log('part selected');
+            canvsDraw();
+            return true;
+          } 
+          sels.length=0;
+        }
+        }
+      }
+      /* modeWeights */ {
+        //---
+        //onsole.log(42);
+        if (modeWeights) {
+          if (isMove) {
+            if (selwp) {
+              selwp.x=selwp.mx0+100*(x-mx0)/(w+h);
+              selwp.y=selwp.my0+10*(y-my0)/(w+h);
+              //onsole.log(selwp.x+' '+selwp.y);
+              canvsDraw();
+              return true;
+            }
+          } else {
+            let mind=Number.MAX_VALUE,minwp;
+            for (let we of u.weights) { 
+              for (let wp of we.wps) {
+                let dx=x-wp.xd,dy=y-wp.yd,d=dx*dx+dy*dy;
+                if (d>=mind) continue;
+                mind=d;minwp=wp;
+              }
+            }
+            selwp=undefined;
+            if ((mind/(w*h))<0.001) {
+              selwp=minwp;selwp.mx0=selwp.x;selwp.my0=selwp.y;
+              if (sels.indexOf(minwp)==-1) sels.push(minwp);
+              canvsDraw();
+              return true;
+            }
+            sels.length=0;
+          }
+        }
+        //...
+      }
+      /* modeVerts */ {
+        //---
+        if (modeVerts) {
+          if (isMove) {
+          } else {
+            let mind=Number.MAX_VALUE,minv;
+            for (let v of u.verts) {
+              let dx=x-v.xd,dy=y-v.yd,d=dx*dx+dy*dy;
+              if (d>=mind) continue;
+              mind=d;minv=v;
+            }
+            selv=undefined;selpoly=undefined;
+            if ((mind/(w*h))<0.001) {
+              selv=minv;
+              if (sels.indexOf(minv)==-1) sels.push(minv);
+              if (sels.length>=3) {
+                for (let p of u.polys) for (let o=0;o<3;o++) {
+                  if ((sels[sels.length-3]===p.verts[o%3])&&(sels[sels.length-2]===p.verts[(1+o)%3])&&(sels[sels.length-1]===p.verts[(2+o)%3])) {
+                    selpoly=p;//log('Tri selected.');
+                  }
+                }
+              }
+              canvsDraw();
+              return true;
+            }
+            sels.length=0;
+          }
+        }
+        //...
+      }
+      
+      
+      return false;
+      //...
+    }
+    
+    Paint.triDataChanged=function(v) {
+      //---
+      var i=tridata.verts.indexOf(v);
+      var vh=bod2u.verts[i];
+      vh.u=v[0];vh.v=v[1];
+      //onsole.log(i);
+      //...
+    }
+    
+    Conet.download({fn:fn,f:function (v) {
+      //og('bod2 load 0.');
+      if (!bod2) {
+        bod2=new Bod2();
+        setInterval(
+      function() {
+        //---
+        //console.log(123);
+        if (!bod2u) return;
+        if (animRunning) {
+          bod2.calcFc(bod2u.currentFc,10);
+          canvsDraw();
+        }
+        //...
+      }
+        ,20);
+        var mbod2;
+        
+      mmode={ms:'Parts'};
+      function modeSelect() {
+        let v=this.s;
+        selpoly=undefined;
+        modeParts=false;modeWeights=false;modeVerts=false;modeView=false;
+        sels.length=0;
+        if (v=='Weights')  modeWeights=true; 
+        if (v=='Parts')  modeParts=true; 
+        if (v=='Verts') modeVerts=true;
+        if (v=='View') modeView=true;
+        mmode.ms=v;
+        mbod2.ms=v;
+        //...
+      }
+        
+        
+        mmenu.sub.push(mbod2={s:'Bod2',r:1,sub:[
+      
+      {s:'Edit',ms:'Mode & select',sub:[
+      {s:'Parts',ms:'Mode',actionf:modeSelect}
+      ,{s:'Weights',ms:'Mode',actionf:modeSelect}
+      ,{s:'Verts',ms:'Mode',actionf:modeSelect}
+      ,{s:'View',ms:'Mode',actionf:modeSelect}
+      
+      ,{s:'SelectAll',actionf:function() {
+        //---
+        sels.length=0;
+        if (modeParts) for (let p of u.parts) sels.push(p);
+        //...
+      }
+      }
+      ]}
+      
+      ,{s:'Part',sub:[
+      {s:'Add',actionf:function() {
+        //---
+        //if (!modeParts) { log('To add part, set parts mode.');return; }
+        let p={x0:0,y0:0};
+        if (selpart) { p.x0=selpart.x0+1;p.y0=selpart.y0+1; }
+        u.parts.push(p);
+        for (let fc of u.fcs) for (let ak of fc.a) { ak.a.push({x:p.x0-u.mx,y:p.y0-u.my}); }
+        u.firsta.push({x:p.x0-u.mx,y:p.y0-u.my});
+        log('Added part.');//partsChanged=true;
+        canvsDraw();
+        //...
+      }
+      }
+      ,{s:'Delete',actionf:function() {
+        //---
+        //f (!modeParts) { log('To delete parts, select parts mode.');return; }
+        let wc=0;
+        for (let p of sels) {
+          let pi=u.parts.indexOf(p);
+          for (let pai=u.pairs.length-1;pai>=0;pai--) {
+            let pa=u.pairs[pai];
+            if ((pa[0]==pi)||(pa[1]==pi)) pairDel(pai);
+            else {
+              if (pa[0]>pi) pa[0]--;
+              if (pa[1]>pi) pa[1]--;
+            }
+          }
+          for (let wi=u.weights.length-1;wi>=0;wi--) {
+            let ws=u.weights[wi];
+            if ((ws.p0!==p)&&(ws.p1!==p)) continue;
+            //or (let w of ws.wps) { wc++;weightDel(w); }
+            for (let i0=ws.wps.length-1;i0>=0;i0--) { wc++;weightDel(ws.wps[i0]); }
+            u.weights.splice(wi,1);
+          }
+          u.parts.splice(pi,1);
+          for (let fc of u.fcs) for (let ak of fc.a) ak.a.splice(pi,1);
+          u.firsta.splice(pi,1);
+        }
+        log('Deleted '+sels.length+' parts (and '+wc+' weights).');
+        sels.length=0;//partsChanged=true;
+        canvsDraw();
+        //...
+      }
+      }
+      ,{s:'Copy',ms:'all to clipboard',actionf:function() {
+        //---
+        for (let p of u.parts) { p.xcb=p.x0;p.ycb=p.y0; }
+        log('Copied all parts to clipboard.');
+        //...
+      }
+      }
+      
+      ,{s:'Paste',ms:'from clipboard to sel',actionf:function() {
+        //---
+        if (!selak) { log('To paste parts, select animkey.');return; }
+        
+        for (let p of sels) if (p.xcb!==undefined) { 
+          p.x0=p.xcb;p.y0=p.ycb; 
+        
+          var i=u.parts.indexOf(p);
+          var fp=selak.a[i];
+          //onsole.log(fp.x+' '+fp.y);
+          fp.x=p.x0-u.mx;
+          fp.y=p.y0-u.my;
+          
+        }
+        log('Pasted clipboard to selected.');
+        //...
+      }
+      }
+      
+      ]
+      ,vcheckf:function() {
+        //---
+        return modeParts;
+        //...
+      }
+      }
+      
+      ,{s:'Pair',sub:[
+      {s:'Add',actionf:function() {
+        //---
+        if (!modeParts) { log('To add pair, set parts mode.');return; }
+        if (sels.length!=2) { log('To add pair, select 2 parts.');return; }
+        
+        let pa=[u.parts.indexOf(sels[0]),u.parts.indexOf(sels[1])];
+        //onsole.log(pa);
+        
+        u.pairs.push(pa);
+        //u.weights.push({p0:sels[0],p1:sels[1],l:10,wps:[]});
+        log('Pair added.');
+        canvsDraw();
+        //...
+      }
+      }
+      ,{s:'Delete',actionf:function() {
+        //...
+        if (!selpair) { log('To delete pair, select one.');return; } 
+        let pai=u.pairs.indexOf(selpair);
+        pairDel(pai);
+        log('Pair deleted.');
+        canvsDraw();
+        //---
+      }
+      }
+      ]}
+        
+        ,{s:'Weight',sub:[
+      {s:'Add',ms:'Weight',r:1,actionf:function() {
+        //---
+        if (!modeParts) { log('To add weight, set mode parts.');return; } 
+        if (sels.length!=2) { log('To add weight, select 2 parts.');return; } 
+        let ws0;
+        for (let ws of u.weights) if ((ws.p0===sels[0])&&(ws.p1===sels[1])) ws0=ws;
+        if (!ws0) { ws0={p0:sels[0],p1:sels[1],l:10,wps:[]};u.weights.push(ws0); }
+        ws0.wps.push({x:1,y:1,wv:1});
+        //onsole.log('sdsd');
+        //if (!selpair) { log('To add weight, select pair.');return; }
+        //let u=bod2u,i=u.pairs.indexOf(selpair);
+        //u.weights[i].wps.push({x:1,y:1,wv:1});
+        //og('Added  weight #'+(u.weights[i].wps.length-1)+' to pair #'+i+'.');
+        log('Weight added.');
+        //onsole.log(u);
+        canvsDraw();
+        //...
+      }
+        }
+      ,{s:'Delete',actionf:function() {
+        //---
+        if (!modeWeights) { log('To delete weights(s), select mode "Weights".');return; }
+        for (let w of sels) weightDel(w);
+        log('Deleted '+sels.length+' weights.');
+        sels.length=0;
+        canvsDraw();
+        //...
+      }
+      }  
+       
+      ,{s:'Weight...',actionf:function() {
+        //---
+        if (!modeWeights) { log('To set weight.weight, select mode "Weights".');return; }
+        if (sels.length==0) { log('To set weight.weight, select weights.');return; }
+        let v=prompt('Weight value',sels[0].wv);
+        if (v!==undefined) sels[0].wv=parseFloat(v);
+        //...
+      }
+      } 
+        
+        ]}
+        
+      ,{s:'Vert',sub:[
+      {s:'Add',ms:'Vert',r:1,actionf:function() {
+        //---
+        if (!modeWeights) { log('To add a vert, select mode "Weights".');return; }
+        if (sels.length==0) { log('To add a vert, select weights.');return; }
+        let u=bod2u;
+        let v={u:0.5,v:0.5,wps:[]};
+        for (let w of sels) v.wps.push(w);
+        u.verts.push(v);
+        tridata.verts.push([0.5,0.5]);vertsChanged=true;
+        canvsDraw();
+        log('Added vert #'+(u.verts.length-1)+'.');
+        //...
+      }
+      }
+      ,{s:'Delete',actionf:function() {
+        //---
+        if (!modeVerts) { log('To delete vert(s), select mode "Verts".');return; }
+        let u=bod2u;
+        for (let v of sels) {
+          //let i=u.verts.indexOf(v);
+          //u.verts.splice(i,1);
+          //tridata.verts.splice(i,1);
+          vertDel(v);
+        }
+        log('Deleted '+sels.length+' verts.');
+        sels.length=0;
+        canvsDraw();
+        //...
+      }
+      }  
+      ]}
+        
+      ,{s:'Polygon',sub:[
+      {s:'Toggle',ms:'Polygon',r:1,actionf:function() {
+        //---
+        if (!modeVerts) { log('To toggle tri, select mode "Verts".');return; }
+        let u=bod2u;
+        if (selpoly) {
+          let i=u.polys.indexOf(selpoly);
+          u.polys.splice(i,1);
+          canvsDraw();
+          selpoly=undefined;
+          log('Tri removed, now '+u.polys.length+'.');
+        } else {
+          if (sels.length!=3) { log('To add tri select 3 verts.'); } 
+          else {
+            u.polys.push(selpoly={verts:[sels[0],sels[1],sels[2]],img:canvas});
+            canvsDraw();
+            log('Tri added, now '+u.polys.length+'.');
+          }
+        }
+        //...
+      }
+        }
+      ,{s:'Set Index..',ms:'Polygon',r:1,actionf:function() {
+        //---
+        if (!selpoly) { log('To set polygon index, select polygon.');return; }
+        let i0,i1=prompt('Set Polygon Index (0-'+(u.polys.length-1)+')',i0=u.polys.indexOf(selpoly));
+        if (i1===undefined) return;
+        u.polys.splice(i0,1);
+        u.polys.splice(i1,0,selpoly);
+        log('Index of poly changed.');
+        //...
+      }
+      }
+      ]}  
+      
+      
+      ,{s:'Anim',sub:[
+      {s:'Rename..',actionf:function() {
+        //...
+        let fc=u.currentFc,name=prompt('Set anim name',fc.name);
+        if (name===undefined) return;
+        fc.name=name;
+        u.fch[name]=fc;
+        setManims();
+        log('Anim renamed.');
+        //...
+      }
+      }
+      ,{s:'New anim..',actionf:function() {
+        //---
+        //f (!selak) { log('To add new anim, select animkey.');return; }
+        let fco=u.currentFc;
+        let name=prompt('New anim name',fco.name+'_');
+        if (name===undefined) return;
+        let fc;
+        if (selak) {
+          fc={name:name,a:[{t:500,a:[],mx:selak.mx,my:selak.my}]};
+          for (let fp of selak.a) fc.a[0].a.push({x:fp.x,y:fp.y});
+        } else {
+          fc={name:name,a:[]};
+          for (let ako of fco.a) {
+            let ak={t:ako.t,a:[],mx:ako.mx,my:ako.my};
+            for (let fp of ako.a) ak.a.push({x:fp.x,y:fp.y});
+            fc.a.push(ak);
+          }
+        }
+        //console.log(fc);
+        u.fcs.push(fc);
+        u.fch[name]=fc;
+        bod2.setFc(u,name);
+        animRunning=true;
+        selak=undefined;
+        fc.u=u;
+        setManims();
+        log('Anim added.');
+        //...
+      }
+      }
+      
+      ,{s:'Del anim',actionf:function() {
+        if (u.fcs.length<=1) { log('To delete anim, there must be at least 2.');return; }
+        let fc=u.currentFc;
+        u.fcs.splice(u.fcs.indexOf(fc),1);
+        bod2.setFc(u,u.fcs[0].name);
+        selak=undefined;
+        setManims();
+        log('Anim deleted.');
+        //...
+      }
+      }
+      
+      ,{s:'New akey',ms:'Anim',r:1,actionf:function() {
+        //---
+        if (selak||animRunning) { log('To add akey, set time between akeys.');return; }
+        
+        let fc=u.currentFc;
+        
+        //fc.t=Math.floor(fc.t);//*100+0.5)/100;
+        
+        let t=0,i=-1;
+        for (let ih=0;ih<fc.a.length;ih++) {
+          t+=fc.a[ih].t;
+          if (fc.t<=t) { i=ih;break; }
+        }
+        
+        let ak1=fc.a[i],ak0=fc.a[i==0?fc.a.length-1:i-1];
+        let t0=t-ak1.t;
+        let f=(fc.t-t0)/(t-t0);//f=Math.floor(f*100+0.5)/100;
+        let f1=1-f;
+        let akn={
+          t:fc.t-t0,a:[]
+          ,mx:ak0.mx*f1+ak1.mx*f
+          ,my:ak0.my*f1+ak1.my*f
+        };ak1.t-=akn.t;
+        for (let pi=0;pi<ak1.a.length;pi++) {
+          let p0=ak0.a[pi],p1=ak1.a[pi];
+          akn.a.push({x:p0.x*f1+p1.x*f,y:p0.y*f1+p1.y*f});
+        }
+        fc.a.splice(i,0,akn);
+        log('Animkey added.');
+        //onsole.log(ak1.a.length+' '+akn.a.length);
+        //onsole.log(i);
+        //...
+      }
+      }
+      ,{s:'Del akey',actionf:function() {
+        //---
+        if (!selak) { log('To delete anim key, select one.');return; }
+        let fc=u.currentFc,i=fc.a.indexOf(selak);
+        if (i<fc.a.length-1) fc.a[i+1].t+=selak.t;
+        fc.a.splice(i,1);
+        selak=undefined;
+        log('Anim key deleted.');
+        //...
+      }
+      }
+      
+      ,{s:'Akey time..',actionf:function() {
+        //---
+        if (!selak) { log('To set akey time, select akey.');return; }
+        let v=prompt('Akey time',selak.t);
+        if (v!==undefined) selak.t=parseFloat(v);
+        //...
+      }
+      }
+      ,{s:'Toggle run',ms:'Anim',r:1,actionf:function() {
+        animRunning=!animRunning;//...
+      }
+      }
+      
+      ]}
+      
+      ,manims={s:'Anims',r:1,sub:[]}
+       
+      ,{s:'Save',actionf:function() {
+        //---
+        let wps=[];
+        for (let w of u.weights) for (let wp of w.wps) wps.push(wp);
+        //onsole.log(u.fcs);
+        let d=JSON.stringify(u
+        ,function(k,v) {
+          //---
+          if (this===u.parts) {
+            //onsole.log(k+' '+v);
+            //onsole.log(v);
+            return [v.x0,v.y0];
+          }
+          if (this===u.fcs) { 
+            //onsole.log(k+' '+v);
+            //onsole.log(v);
+            let a=[v.name];
+            for (let ak of v.a) {
+              let a0=[ak.t];
+              for (let p of ak.a) a0.push(p.x+ak.mx,p.y+ak.my);
+              a.push(a0);
+            }
+            return a;
+          }
+          if (this===u.weights) {
+            //onsole.log(k+' '+v);
+            //onsole.log(v);
+            let a=[u.parts.indexOf(v.p0),u.parts.indexOf(v.p1),[]];
+            for (let w of v.wps) a[2].push(w.x,w.y,w.wv);
+            return a;
+          }
+          if (this===u.verts) {
+            //onsole.log(k+' '+v);
+            let a=[];
+            for (let wp of v.wps) a.push(wps.indexOf(wp));
+            return a;
+          }
+          if (this===u.polys) {
+            let a=[200,200,100,[]];
+            for (let ve of v.verts) a[3].push(u.verts.indexOf(ve));
+            return a;
+          }
+          if (this===u) {
+            if ({fch:1,currentFc:1,calcFcSkipM:1,mx:1,my:1,omx:1,omy:1,firsta:1,constraints:1}[k]) return undefined;
+          }
+          //if (k=='u') return undefined;
+          return v;
+          //...
+        }
+        );
+        
+        Conet.upload({fn:adata.bod2,data:d,log:log});
+        
+        if (vertsChanged) {
+          vertsChanged=false;
+          cfmenu.sub[1].actionf();
+        }
+        //...
+      }
+      } 
+       
+      ]});
+        
+        
+        //mbod2.sub.push({fullscale:1,canv:true,px:0.1,py:0.02,pw:0.8//,ph:0.07
+        //,fixh:40,ydown:true,fs:1.4,noa:true,stay:1,a:'bod2anim'});//pw 0.78
+      }
+      u=bod2u=bod2.loadUnit(JSON.parse(v),0,0);
+      //log('bod2 load 1.');
+      for (let wi=u.weights.length-1;wi>=0;wi--) 
+        if (u.weights[wi].wps.length==0) u.weights.splice(wi,1);
+      //onsole.log(u);
+      //onsole.log(cfmenu);
+      //onsole.log(adata.bod2);
+      //onsole.log(cfmenu.sub[1]);
+      //onsole.log(tridata);
+      bod2u.calcFcSkipM=1;
+      setManims();
+      
+      ix=100;iy=100;scale=2.4;isize();
+      
+      bod2.setSkin(u,canvas,{tridata:tridata});
+      bod2.setFc(u,u.fcs[0].name);//bod2u,'run');
+      //modeWeights=true;modeParts=false;
+      //onsole.log(bod2u.currentFc);
+      canvsDraw();
+    }
+    });
+    
+    //...
+  }
+  function loadDataUrl(d,addPages,callback,ps) {
     if (!d) return;
+    //onsole.log('loadDataUrl d.length='+d.length);
+    //onsole.trace();
     var isfn=d.length<100;
     //log('Loading '+(isfn?d:d.length+' bytes')+'.');
     var sp=' ';//sal?'&nbsp;':' ';
@@ -972,6 +2079,7 @@ var Paint={};
         }
       }
       
+      if (!(ps&&ps.noCutout)) {
       i=d.lastIndexOf('.');
       if (i!=-1) {
         var r=new XMLHttpRequest();
@@ -980,20 +2088,26 @@ var Paint={};
     r.onreadystatechange=function() {
       if (this.readyState==4) {
         try {
+        //onsole.log(this.responseText);
         cutout=JSON.parse(this.responseText);
         if (mode==MCUTOUT) draw();
         log('Cutout loaded from url: '+(cutout&&cutout.rects?cutout.rects.length:0)+' rects.');
         //alert(this.responseText);
-        } catch (e) { log('Error while loading cutout: '+e); }
+        } catch (e) { 
+          //og('Error while loading cutout: '+e); 
+        }
       }
     }
         try {
         r.send(null)
         } catch (e) { }
-      }
+      }}
     }
     nbm=0;
     //og('loadDataUrl loadpagec='+loadpagec);
+    
+    if (ps&&ps.d&&ps.d.pagec) loadpagec=ps.d.pagec;
+    
     var img=new Image();
     img.onload=function() {
       nbid=undefined;
@@ -1056,9 +2170,11 @@ var Paint={};
           //cm.strokeRect(0,0,canvm.width,canvm.height);
       
           //console.log(canvm);
-          var ct=canvas.getContext('2d');
+          let ct=canvas.getContext('2d');//2301 param isnt set: ,{willReadFrequently:true});
+          //onsole.log(ct.getContextAttributes());
           ct.drawImage(this,0,0,this.width*loadScale,this.height*loadScale);
           try {
+          //ct.willReadFrequently=true;
           id=ct.getImageData(0,0,iw,ih);
           } catch (e) {
             log('!!! Security Error');
@@ -1116,6 +2232,7 @@ var Paint={};
       var pl=pages?pages.length:1;
       mpage.ms=(pagei+1)+'/'+pl;
       if (pl>3) mpage.sub=mpage._sub; else delete mpage.sub;
+      if (adata.bod2) mode=MTEVE;
       setMode(mode);
       //mode=-1;//?
       
@@ -1139,27 +2256,61 @@ var Paint={};
             loadcs='n1';
             lo.loadnext='spec';
           } else delete lo.loadnext;
-          loadDataUrl(m[ln]);
+          loadDataUrl(m[ln],undefined,undefined,ps);
         }
+      }
+      if (!Paint.noMenuIconUpdate) { //2301 temp for now, probably better use ps
+        //onsole.log('paint.loadDataUrl.onload before menuIconUpdate');
+        menuIconUpdate();
       }
       if (callback) callback();
     }
-    img.src=d;
+    
+    if (isfn&&d.endsWith('.json')) 
+    
+    Conet.download({fn:d,f:function(v) {
+      img.src=JSON.parse(v).data;
+      //...
+    }
+    });
+    
+    else if (isfn&&d.endsWith('.txt')) 
+    
+    Conet.download({fn:d,f:function(v) {
+      img.src=v;
+      //...
+    }
+    });
+    
+    
+    else  img.src=d;
     if (isfn) mmenu.ms=d;
     return img;
   }
   function loadText(v0,json,ps,callback) {
     //...
+    //onsole.log('paint.loadText json.length='+json.length);
     cutout=undefined;
     if (!ps.dataUrlF) adata={};
     var s;
     Menu.setChecked(mprocesscs,false);
     //if (v.endsWith('.json.txt')) {
+    loadTextPs=ps;
     if (json) {//v.indexOf('.json')!=-1) {
       var d=JSON.parse(v0);
       if (ps.dataUrlF) { ps.dataUrlF(d.data);return; }
-      loadDataUrl(d.data,undefined,callback);
+      loadDataUrl(d.data,undefined,callback,{d:d});
+      
+      //onsole.log(d.data);
+      //loadTextPs=ps;
+      //var m=ps.loadMenu;//Conet.lastLoadMenu;
+      //m.c2=new Image();m.c2.src=d.data;
+      //console.log('paint.loadText');
+      //console.log(m);
+      
       if (d.cutout) cutout=d.cutout;
+      //onsole.log('paint.loadText cutout=');
+      //onsole.log(JSON.stringify(cutout,undefined,' '));
       tridata=d.tridata;
       if (s=d.background) mbackground.setfunc(s);
       if (s=d.bp) mbp.setfunc(''+s);
@@ -1187,10 +2338,16 @@ var Paint={};
       //...
     }
     }); else clearCanv=true;
+      if (s=d.bod2) loadBod2(s);
+    
+      if (d.renderingPixelated) canvas.style.imageRendering='pixelated';
       
       draw();
-      if (d.cutout) if (cutout.carves||(cutout.rects&&(cutout.rects.length>0))) cfmenu.checkListFile(v);
-      var sh={data:1,bp:1,bra:1,col:1,background:1,scale:1,ix:1,iy:1,tridata:1,process:1};
+      if (d.cutout) if (cutout.carves||(cutout.rects&&(cutout.rects.length>0))) {
+        //console.log(ps);
+        cfmenu.checkListFile(ps.fn);//v0
+      }
+      var sh={data:1,bp:1,bra:1,col:1,background:1,scale:1,ix:1,iy:1,tridata:1,process:1,cutout:1};
       for (var k in d) if (d.hasOwnProperty(k)) if (!sh[k]) adata[k]=d[k];
       //onsole.log('conetLoad adata=');onsole.log(adata);
       //---sth cutout edit loads last loaded cutout on restart
@@ -1230,28 +2387,30 @@ var Paint={};
   function log(s) {
     console.log(//'paint.log '+
       s);
-    Paint.log(s);
+    //onsole.error(s);
+    //Paint.log(s);
+    Conet.log(s);
   }
   function lsLoad() {
     //...
     setTimeout(
     
     function() {
-    var d=localStorage[lsKey+'json'];
-    if (d) loadText(d,1,{lsLoad:1});
-    else {
-      log('No image found in localStorage.');
-      //--- same code as in loadDataUrl, either make func 
-      //--- or call loadDataUrl with empty pic
-      setMode(mode);
-      if (sal&&mmenu.shown) {
-        Menu.cmenu=mmenu;//mcolor;
-        Menu.action();
-        Menu.cmenu=mmenu;//mcolor;
-        Menu.action();
-        //Menu.draw();
+      var d=localStorage[lsKey+'json'];
+      if (d) loadText(d,1,{lsLoad:1});
+      else {
+        log('No image found in localStorage.');
+        //--- same code as in loadDataUrl, either make func 
+        //--- or call loadDataUrl with empty pic
+        setMode(mode);
+        if (sal&&mmenu.shown) {
+          Menu.cmenu=mmenu;//mcolor;
+          Menu.action();
+          Menu.cmenu=mmenu;//mcolor;
+          Menu.action();
+          //Menu.draw();
+        }
       }
-    }
     }
     
     ,100);
@@ -1298,6 +2457,7 @@ var Paint={};
   function mouseDown(e) {
     //alert(e.pageX+' '+e.pageY);
     if (Menu.mouseDown()) return;
+    if (e.target.nodeName!='CANVAS') return;//250916
     wasBrush=false;
     var x=e.pageX,y=e.pageY;
     mx=x;my=y;
@@ -1315,14 +2475,17 @@ var Paint={};
       return;
     }
     if (Menu.mcontrol||replay) return;
+    if (canvs) { canvs.x=x;canvs.y=y;canvsDraw(); }
     md=true;
     x-=ix;y-=iy;x/=scale;y/=scale;
     imx=x;imy=y;
     cDown(x,y);
   }
   function mouseMove(e) {
+    //f (e.target.nodeName!='CANVAS') return;//250916
     var x=e.pageX,y=e.pageY;
     mx=x;my=y;
+    if (canvs) { canvs.x=x;canvs.y=y;canvsDraw(); }
     if (moused[3]) return;
     if (moused[2]) {//moused[3]
     //else if (keyA[18]||moused[2]||(moused[1]&&!keyA[17])) {//alt
@@ -1347,7 +2510,7 @@ var Paint={};
         //---
       }
       
-      if ((mode==MSELR)&&lo) { //ggf clip to next
+      if ((mode==MTEVE)&&lo) { //ggf clip to next
         var mav=getv(x,y);
         if (mav) { x=mav.u*iw*scale;y=mav.v*ih*scale; }
         //x=10;y=10;
@@ -1366,6 +2529,7 @@ var Paint={};
       return;
     }
     if (Menu.mcontrol) return;
+    //if (canvs) { canvs.x=x;canvs.y=y;canvsDraw(); }
     x-=ix;y-=iy;x/=scale;y/=scale;
     //var dx=imx-x,dy=imy-y;
     //var d=Math.sqrt(dx*dx+dy*dy);
@@ -1376,6 +2540,8 @@ var Paint={};
   }
   function mouseScroll(e) {
     if (Menu.mcontrol) return;
+    if (e.target.nodeName!='CANVAS') return;//250916
+    //onsole.log(e.target);
     var up=false;
     if (e.wheelDelta!=undefined) up=e.wheelDelta>0;
     else up=e.detail<0;
@@ -1388,6 +2554,7 @@ var Paint={};
     ix=Math.floor(mx-(mx-ix)*scale/scale0+0.5);
     iy=Math.floor(my-(my-iy)*scale/scale0+0.5);
     isize();
+    if (canvs) canvsDraw();
     //canvas.style.top=iy;canvas.style.left=ix;
     //canvas.style.width=iw*scale;canvas.style.height=ih*scale;
     //canvm.style.left=ix+1;canvm.style.top=iy+1;
@@ -1407,8 +2574,12 @@ var Paint={};
     //}
     
     Menu.mouseUp();
+    if (e.target.nodeName!='CANVAS') return;//250916
+    
     
     cUp();
+    if (canvs) { canvs.x=undefined;canvsDraw(); }
+    
     //--alert(canvas.toDataURL("image/png"));
     //--self.location=canvas.toDataURL("image/png");
     //window.open(canvas.toDataURL("image/png"),'PngExport');
@@ -1430,6 +2601,7 @@ var Paint={};
       if (tridata) {
         //onsole.log(v);
         v[0]=v.ou+dx;v[1]=v.ov+dy; 
+        if (Paint.triDataChanged) Paint.triDataChanged(v);
       } else {
         v.u=v.ou+dx;v.v=v.ov+dy; 
       }
@@ -1454,6 +2626,20 @@ var Paint={};
   function mRemove(m) {
     var ih=mroots.indexOf(m);if (ih!=-1) { mroots.splice(ih,1);return true; }
     return false;
+  }
+  function pageAnimate() {
+    if (!mpageanimate.checked) return;
+    
+    var pi=pagei,turn=false;
+    if (pageAnimUp) pi++; else pi--;
+    pi=(pages.length+pi)%pages.length;
+    if ((pi==0)||(pi==pages.length-1)) { turn=true;pageAnimUp=!pageAnimUp; }
+    
+    setPage(pi);
+    //setPage((pagei+1)%pages.length);
+    
+    setTimeout(pageAnimate,turn?500:100);
+    //...
   }
   function pick(x,y) {
     x=Math.floor(x+0.5);y=Math.floor(y+0.5);
@@ -1561,8 +2747,22 @@ var Paint={};
     gf.addFrame(mix, miy, w2, h2,ia,{delay:10,transparent:trai,disposal:1});
   }
   function resize(e) {
-    //log('resize');
-    Menu.draw();
+    //onsole.log('paint.resize '+sal);
+    
+    if (canvs) {
+      var c=document.body,w=c.clientWidth,h=c.clientHeight;dpr=window.devicePixelRatio||1;
+      c=canvs.c;
+      c.width=w*dpr;c.height=h*dpr;
+      c.style.width=w+'px';c.style.height=h+'px';
+      //var ct=c.getContext('2d');
+      //ct.strokeStyle='#f00';
+      //ct.beginPath();
+      //ct.moveTo(0,0);ct.lineTo(c.width,c.height);
+      //ct.stroke();
+      canvsDraw();
+    }
+    
+    if (sal) Menu.draw();
   }
   function round(v) {
     return Math.floor(0.5+v);
@@ -1620,6 +2820,7 @@ var Paint={};
         +'"scale":'+scale+','
         +'"ix":'+ix+','
         +'"iy":'+iy//+','
+        +((pages&&(pages.length>1))?',"pagec":'+pages.length:'')
         +(mprocesscs.checked?',"process":'+(JSON.stringify(pd=pra.join('\n'))):'')
         +(adata.noData?'':',"data":"'+data+'"');
       //console.log('loaded.savef adata=');console.log(adata);
@@ -1698,8 +2899,13 @@ var Paint={};
     if (pl>3) mpage.sub=mpage._sub; else delete mpage.sub;
   }
   function setMode(m) {
-    //log('setMode '+m);return;
+    //og('setMode '+m);//return;
     //Paint.stacktrace();
+    
+    //var MDRAW=0,MSELR=1,MMOVE=2,MERASE=3,MUNERASE=4,MREPLAY=5,MCOPYBRUSH=6,MCUTOUT=7,MFILL=8,MTEVE=9,mode=MDRAW;
+    
+    mtools.ms=['Brush','Rect','Move','Erase','Unerase','Replay','CopyBrush','Cutout','Fill','Texverts'][m];
+    
     if (mode==MMOVE) {
       mode=MSELR;
       mrect.s='Rect';
@@ -1719,12 +2925,18 @@ var Paint={};
     //case MERASE:  a=[mtools,mbp,mbra,mcolor,merase];break;//mpr,
     //case MUNERASE:a=[mtools,mbp,mbra,munerase];break;//mpr,
       case MCOPYBRUSH:a=[mtools,mcopybrush];break;//mpr,
-      case MDRAW:   a=[mcolors].concat(mcolors.sub);break;//mcolor//mpr,merase
-      case MERASE:  a=[mtools,mcolor,merase,mbp,mbra];break;//mpr,
-      case MUNERASE:a=[mtools,munerase,mbp,mbra];break;//mpr,
-      case MSELR:   a=[mtools,mrect,mrscale,mrload,mcut,mtexify,mvertsel,mpolygon
+      case MFILL:     a=[mcolors].concat(mcolors.sub.slice(3));break;//.concat(mcolors.sub);break;//
+      case MDRAW:     a=[mcolors].concat(mcolors.sub);break;//mcolor//mpr,merase
+      case MERASE:    a=[mtools,mcolor,merase,mbp,mbra];break;//mpr,
+      case MUNERASE:  a=[mtools,munerase,mbp,mbra];break;//mpr,
+      case MSELR:     a=[mtools,mrect,mrscale,mrload,mcut
+        //,mtexify,mvertsel,mpolygon
+        //,mselmv,mstayselv,mTridatavAdd
+        ];break;
+      case MTEVE:     a=[mtools//,mrect,mrscale,mrload,mcut
+        ,mtexify,mvertsel,mpolygon
         ,mselmv,mstayselv,mTridatavAdd];break;
-      case MCUTOUT: a=[mtools,mcomain];break;
+      case MCUTOUT:   a=[mtools,mcomain];break;
     }
     //alert(stacktrace());
     
@@ -1763,10 +2975,18 @@ var Paint={};
     pagei=i;//(pagei+1)%pages.length;
     
     page=pages[pagei];
-    br=page.color[0];bg=page.color[1];bb=page.color[2];
-    mcolorCol();
+    
+    if (pages.length<=3) {
+      br=page.color[0];bg=page.color[1];bb=page.color[2];
+      mcolorCol();
+    }
+    
     id=pages[pagei].id;
-    pra=pages[pagei].pra;pri=pra.length;Menu.ms(mpr,pri);
+    
+    if (pages.length<=3) {
+      pra=pages[pagei].pra;pri=pra.length;Menu.ms(mpr,pri);
+    }
+    
     draw();
     //m.ms=(pagei+1)+'/'+pages.length;
     Menu.ms(mpage,(pagei+1)+'/'+pages.length);
@@ -1796,6 +3016,34 @@ var Paint={};
     draw();
     //Menu.ms(mrect,sr.x+','+sr.y+'\u00b7'+sr.w+','+sr.h);
     mrectMs();
+  }
+  function menuIconUpdate() {
+    if (!loadTextPs) { 
+      //onsole.log('paint.menuIconUpdate: no loadTextPs -> skip');
+      return; }
+    var m=loadTextPs.loadMenu;//Conet.lastLoadMenu;
+    
+    if (!m) { console.log('paint.menuIconUpdate: no loadMenu -> skip');return; }
+    
+    var c=document.createElement('canvas');
+    c.width=20;c.height=20;
+    var ct=c.getContext('2d');
+    ct.imageSmoothingQuality='high';
+    ct.imageSmoothingEnabled=true;
+    ct.drawImage(canvas,0,0,c.width,c.height);
+    
+    var isrc=c.toDataURL('image/png');//d.data;
+    //console.log(m.cfmo);
+    if (m.cfmo.isrc!=isrc) {
+      m.c2=new Image();
+      m.c2.src=isrc;
+      //onsole.log('paint.menuIconUpdate png.len='+isrc.length+' pixlen='+(c.width*c.height*3));
+      m.cfmo.isrc=isrc;
+      cfmenu.uploadFilenames();
+    } else console.log('paint.menuIconUpdate: same src, no upload');
+    
+    loadTextPs=undefined;
+    //...
   }
   function showProcess() {
     if (!replay) return;
@@ -1872,7 +3120,11 @@ var Paint={};
       return;
     }
     
-    if ((pri==pra.length)&&(replay==1)) { replay=false;return; }
+    if ((pri==pra.length)&&(replay==1)) { 
+      menuIconUpdate();
+      //log('NAO menu update.');
+      replay=false;return; 
+    }
     
     //if (pri!=0)
       setTimeout(showProcess,pri==pra.length?3000:10);
@@ -1894,6 +3146,17 @@ var Paint={};
     id=ctx.getImageData(0,0,iw,ih);
     if (pages) pages[pagei].id=id;
   }
+  function touchCheckStopPropagation(e) {
+    //---
+    //onsole.log('touchCheckStopPropagation target.canvas='+(e.target.nodeName=='CANVAS'));
+    if (
+      (e.target.nodeName=='CANVAS')&&//250917 added this check so that loadgrid works with touch
+      !Menu.mcontrol&&!isExport) {
+      if (e.preventDefault) e.preventDefault();
+      if (e.stopPropagation) e.stopPropagation();
+    }
+    //...
+  }
   function touchEnd(e) {
     if (!Menu.touchEnd()&&!replay&&(touchMode==TM_DRAW)) {
       if (mode==MSELR) {
@@ -1905,13 +3168,16 @@ var Paint={};
         brush(Math.floor(touchlast.oimx+0.5),Math.floor(touchlast.oimy+0.5));
         if (!canvDraw) draw();
       }
+      //if (canvs) { canvs.x=undefined;canvsDraw(); }
       cUp();
     }
+    if (canvs) { canvs.x=undefined;canvsDraw(); }
     
-    if (!Menu.mcontrol&&!isExport) {
-      if (e.preventDefault) e.preventDefault();
-      if (e.stopPropagation) e.stopPropagation();
-    }
+    //if (!Menu.mcontrol&&!isExport) {
+    //  if (e.preventDefault) e.preventDefault();
+    //  if (e.stopPropagation) e.stopPropagation();
+    //}
+    touchCheckStopPropagation(e);
     isTouch=false;
   }
   function touchMove(e) {
@@ -1930,6 +3196,7 @@ var Paint={};
       //brush(Math.floor(imx+0.5),Math.floor(imy+0.5));
       //draw();
       if (touchMode==TM_DRAW) {
+        if (canvs) { canvs.x=x;canvs.y=y;canvsDraw(); }
         cMove((x-ix)/scale,(y-iy)/scale);
         //var imx=(x-ix)/scale;
         //var imy=(y-iy)/scale;
@@ -1971,7 +3238,7 @@ var Paint={};
         canvm.style.left=ix+1;canvm.style.top=iy+1;
         canvm.style.width=iw*scale;canvm.style.height=ih*scale;
         //bra=Math.floor(10/scale+0.5);
-        
+        if (canvs) canvsDraw();    
         //canvas.style.left=ix;canvas.style.top=iy;
         //og('touchMove '+ix+' '+iy);
       }
@@ -1983,13 +3250,15 @@ var Paint={};
       //mousep=c;
       //odx=dx;ody=dy;vx=0;vy=0;
     }
-    if (!Menu.mcontrol&&!isExport) {
-      if (e.preventDefault) e.preventDefault();
-      if (e.stopPropagation) e.stopPropagation();
-    }
+    //if (!Menu.mcontrol&&!isExport) {
+    //  if (e.preventDefault) e.preventDefault();
+    //  if (e.stopPropagation) e.stopPropagation();
+    //}
+    touchCheckStopPropagation(e);
+    //---
   }
   function touchStart(e) {
-    //onsole.log('paint.touchStart isExport='+isExport);
+    console.log('paint.touchStart');// isExport='+isExport);
     isTouch=true;
     for (var h=0;h<e.touches.length;h++) {
       var t=e.touches[h];
@@ -2021,6 +3290,7 @@ var Paint={};
       //  selectv(tl.oimx,tl.oimy);
       //  //var mav=getv(tl.oimx*scale,tl.oimy*scale,false,1000);log('>'+mav);
       //}
+      if (canvs) { canvs.x=e.touches[0].pageX;canvs.y=e.touches[0].pageY;canvsDraw(); }
       cDown(imx,imy);
       }
     } else if (l==2) { 
@@ -2029,10 +3299,13 @@ var Paint={};
     }
     //lo.t=0;lo.ta=0;aY+=0.2;ida=[];//undefined;
     //log('touchstart '+sh);
-    if (!Menu.mcontrol&&!isExport) {
-      if (e.preventDefault) e.preventDefault();
-      if (e.stopPropagation) e.stopPropagation();
-    }
+    //if (!Menu.mcontrol&&!isExport) {
+    //  console.log('paint.touch stopPropagation');
+    //  if (e.preventDefault) e.preventDefault();
+    //  if (e.stopPropagation) e.stopPropagation();
+    //}
+    touchCheckStopPropagation(e);
+    //---
   }
   function windowDataUrl(url,s) {
     var img=new Image();img.src=url;
@@ -2096,11 +3369,13 @@ var Paint={};
     c.addEventListener('keydown',keyDown,false);
     c.addEventListener('keyup',keyUp,false);
     //Menu.colBg='rgba(100,100,100,0.4)';
-    Menu.init(mroots,{diw:750});
+    Menu.init(mroots,{diw:750,prompt:1});
     mrectMs();
     mcolorCol();
     //log('mode='+mode);
     if (mode==-1) mode=MDRAW;//mode was -1 via w3dit, but now no more
+    
+    //onsole.log('idima='+idima);
     
     //if (idima) {
     if (!idima) { idima={ix:10,iy:10,scale:1}; }
@@ -2109,6 +3384,7 @@ var Paint={};
     //} else idima={ix:ix,iy:iy,scale:scale};
   }
   Paint.cfmLoad=function(s) {
+    console.log('...cfmLoad');
     cfmenu.cfmLoad(s);
   }
   Paint.deactivate=function() {
@@ -2116,7 +3392,7 @@ var Paint={};
     {
       idima={ix:ix,iy:iy,scale:scale};
       //ix=idimda.ix;iy=idimda.iy;scale=idimda.scale;
-      ix=0;iy=100;scale=50/iw;
+      ix=0;iy=110;scale=50/iw;
       isize();
     }
     var c=window;//canvas;//window
@@ -2136,7 +3412,10 @@ var Paint={};
     draw(true);
   }
   Paint.etCutout=function(o) {
-    if (o) cutout=o;
+    if (o) {
+      console.log('Paint.etCutout setting cutout.');
+      cutout=o;
+    }
     return cutout;//...
   }
   Paint.getCutoutP=function() {
@@ -2165,7 +3444,7 @@ var Paint={};
       urls=Conet.parseUrl();
     } else { 
       //mode=MSELR;sr.x=0;sr.y=0;  //-- if sr isnt set to 0,0, images are loaded with translation..
-      mode=MCUTOUT;
+      mode=MCUTOUT;//better for w3dit would be MTEVE
     } 
     //alert(-105%100);
     log(title);
@@ -2182,7 +3461,7 @@ var Paint={};
       canvas.style.cssText='position:absolute;top:10px;left:10px;border-style:solid;border-width:1px;border-color:#000000;background-image:url(paintbg.png);background-attachment:fixed;cursor:none;';
       document.body.appendChild(canvas);
     }
-    
+    canvas.getContext('2d',{willReadFrequently:true});//240928 following getContext-invokes will get that param
     //----
     
     
@@ -2192,10 +3471,11 @@ var Paint={};
       iw=512;ih=512;//iw=256;ih=256; 
       scale=acoH.scale?acoH.scale:1;
     } else { 
-      ix=0;iy=100;
+      ix=0;iy=110;//iy=100
       iw=64;ih=64; 
       scale=50/iw;
     }
+    var scriptRunAtStart=false;//sal;
     //scale=acoH.scale?acoH.scale:(sal?1:0.5);//1
     canvas.width=iw;canvas.height=ih;
     canvas.style.width=iw*scale;canvas.style.height=ih*scale;
@@ -2238,47 +3518,6 @@ var Paint={};
     //window.onkeyup=keyUp;
     
     
-    function cutoutStr() {
-      //...
-      
-      var a=[
-        //['rects',['x','y','w','h','cx','cy',['ps',['x','y']]],1],
-        //['bones',['i','p','pp','z'],1],
-        //'carves',
-        ['carves',['p0','p1','bo','dabs','bbo'],1],
-        ['rects',['x','y','w','h','cx','cy'],1],
-        ['bones',['i','p','z','a','x','y','xs','ys','u','v'],1],
-        ['tris',['p0','p1','p2','z']],
-        ['anims',['name',['a',['t',['a',['a','x','y','xs','ys']]],1]]]
-      ];
-      
-      function stri(a,o) {
-        var s='{';
-        var first=true;
-        for (var h=0;h<a.length;h++) {
-          var v=a[h],k,aa=undefined;
-          if (typeof(v)=='string') k=v; else { k=v[0];aa=v; }
-          var ok=o[k];
-          if (ok===undefined) continue;
-          s+=(first?'':',')+'"'+k+'":';first=false;
-          if (aa) {
-            s+='[';
-            for (var i=0;i<ok.length;i++) {
-              s+=(i==0?'':',')+stri(v[1],ok[i]);if (v.length==3) s+="\n";
-            }
-            s+=']';
-          } else {
-            s+=JSON.stringify(ok);
-          }
-        }
-        s+='}';
-        return s;
-      }
-      
-      return stri(a,cutout);
-      
-      
-    }
     
     mbp={s:'0.1',ms:'brush pressure',autoval:true,lskey:'wepaintbp',setfunc:function(v) {
       bp=parseFloat(v);this.s=v;
@@ -2320,7 +3559,14 @@ var Paint={};
     }
     };
     mcanvas.msf=mcanvas.valuef;
-    mtools={s:'Tools',vertCenter:1,sub:[{s:'Brush'},mrect={s:'Rect',ms:'-',msid:'mrectms'},merase={s:'Eraser'},munerase={s:'Uneraser'},mcopybrush={s:'Copy Brush'},mcutout={s:'Cutout'}]};
+    mtools={s:'Tools',vertCenter:1,sub:[{s:'Brush'},mrect={s:'Rect',ms:'-',msid:'mrectms'},merase={s:'Eraser'},munerase={s:'Uneraser'},mcopybrush={s:'Copy Brush'}
+      ,mcutout={s:'Cutout'},
+    {s:'Fill',_actionf:function() {
+      setMode(MFILL);
+    }
+    }
+    ,{s:'TexVerts'}
+    ]};
     mscript={s:'Edit&middot;Run',doctrl:'Run script',cstay:true,lskey_:'paintscript0',mcfs:0.07,ta:true,tacols:50,tarows:20,ms:script0.length,value:script0,setfunc:function(v,initLoad) {
       this.value=v;
       this.ms=v.length;
@@ -2343,8 +3589,21 @@ var Paint={};
       var a=ca[i],sh=a[0]+','+a[1]+','+a[2];mcolors.sub.push({s:'',bgcol:'rgb('+sh+')',a:'col_'+sh,pw:0.05,stay:1});
     }
     
-    cfmenu=Conet.fileMenu({fn:'paint/files.txt',defFn:'test.png.txt',filesRef:'paint',noStartLoad:sal?0:1
-      ,loadf:conetLoad,noh:!sal||!urls.withh,nolistf:lsLoad
+    cfmenu=Conet.fileMenu({fn:'paint/files.txt',defFn:'test.png.txt',filesRef:'paint',noStartLoad:sal?scriptRunAtStart:1,loadUrlKey:'cfmload',
+      loadf:conetLoad,noh:!sal||!urls.withh,nolistf:lsLoad,loadList:1,grid:1,gridLs:'conet2'
+    
+    ,serialize:function(fn)   {
+      //---
+      return serialize(fn.indexOf('.json')!=-1);
+      //...
+    }
+    
+    ,load:function(ps) {
+      //---
+      loadText(ps.data,ps.fn.indexOf('.json')!=-1,{});
+      //...
+    }
+      
     ,savef:function(v) {
       //---
       var data=serialize(v.indexOf('.json')!=-1);
@@ -2398,8 +3657,27 @@ var Paint={};
       this.value=v;
       if (!initLoad) loadDataUrl(v);
     }
-    },{s:'Export',ms:'png'},{s:'Export(blend)<br>page',fs:0.75,ms:'png',a:'exportpage'},
-    {s:'Export(blend)<br>page',fs:0.75,ms:'jpeg',a:'exportpagejpeg'},
+    },{s:'Export',ms:'png'},
+    
+    {s:'Export(blend)<br>page',fs:0.75,sub:[
+    {s:'Png',a:'exportpage'},
+    {s:'Jpeg',a:'exportpagejpeg'},
+    {s:'JsonFile',doctrl:'Page Json Filename',value:'*.json',
+    setfunc:function(v) {
+      if (!confirm('Save Page to '+v)) return;
+      
+      //windowDataUrl(Paint.saveCanvas(false,true).toDataURL("image/png"),'PngExport');
+      Conet.upload({
+        fn:v,
+        data:JSON.stringify({data:Paint.saveCanvas(false,true).toDataURL("image/png")},undefined,' ')
+      });
+    }
+    },
+    //{s:'Export(blend)<br>page',fs:0.75,ms:'png',a:'exportpage'},
+    //{s:'Export(blend)<br>page',fs:0.75,ms:'jpeg',a:'exportpagejpeg'},
+    //{s:'Export(blend)<br>page',fs:0.75,ms:'json-file',a:'exportpagejsonfile'},
+    ]},
+    
     {s:'Export',ms:'gif',a:'_gifa',sub:[
     {s:'Export',a:'Gif'},
     mgiftr={s:'transparency<br>cur.color',fs:0.75,ms:'no',stay:true},
@@ -2423,7 +3701,7 @@ var Paint={};
     
     //{s:'Version '+version,fs:1.4,ph:0.02,noinp:1},
     
-    cfmenu,
+    cfmenu,cfmenu.fileGrid,
     
     
     //]},
@@ -2630,10 +3908,10 @@ var Paint={};
       {s:'Info',ms:'Help'}]}
     
     ,{s:'Fullscreen',actionf:function() {
-      var c=document.body.parentNode;
-      if (c.requestFullscreen) c.requestFullscreen();
-      else if (c.mozRequestFullScreen) c.mozRequestFullScreen();
-      else if (c.webkitRequestFullScreen) c.webkitRequestFullscreen();
+      var c=document.body.parentNode,h={navigationUI:'hide'};
+      if (c.requestFullscreen) c.requestFullscreen(h);
+      else if (c.mozRequestFullScreen) c.mozRequestFullScreen(h);
+      else if (c.webkitRequestFullScreen) c.webkitRequestFullscreen(h);
       //...
     }
     }
@@ -2643,14 +3921,15 @@ var Paint={};
     ]},  
       
     
-    Conet.fileMenu({fn:'paint/script/files.txt',defFn:'asciiAnim.txt',noStartLoad_:1,m:{r_:1,s:'Script',sub:[mscript]},
+    Conet.fileMenu({fn:'paint/script/files.txt',defFn:'asciiAnim.txt',noStartLoad:!scriptRunAtStart,m:{r:1,s:'Script',sub:[mscript]},
     loadf:function(v,atStart) {
-      //log('script loading '+v);
-      Conet.download({fn:'paint/script/'+v,f:function(v) {
+      let fn=(v.startsWith('/')?'':'paint/script/')+v;
+      log('Script loading: '+fn);
+      Conet.download({fn:fn,f:function(v) {
         if (v===undefined) return;
         mscript.value=v;
         mscript.ms=v.length;
-        if (!atStart)
+        if (scriptRunAtStart||!atStart)
         try {
           eval(v);
         } catch (e) { log(e);console.log(e); }
@@ -2659,7 +3938,7 @@ var Paint={};
     }
     ,savef:function(v) {
       if (v===undefined) { log('Script.save: no filename.');return; }
-      Conet.upload({fn:'paint/script/'+v,data:mscript.value,log:log});
+      Conet.upload({fn:(v.startsWith('/')?'':'paint/script/')+v,data:mscript.value,log:log});
     }
     })
     
@@ -2699,7 +3978,10 @@ var Paint={};
     
     msetcol.msf=msetcol.valuef;
     mpage={s:'Page',msid:'mpagems',ms:(pagei+1)+'/'+(pages?pages.length:1) //2190,2192 / 21d0,21d2
-      ,_sub:[{s:'\u21e6',stay:1,a:'pageleft'},{s:'\u21e8',stay:1,a:'pageright'},{s:'Delete',a:'pagedel',stay:1}]
+      ,_sub:[{s:'\u21e6',stay:1,a:'pageleft'},{s:'\u21e8',stay:1,a:'pageright'}
+      ,mpageblend={s:Menu.son,checkbox:1,stay:1,ms:'Blend pages',checked:1,actionf:draw}
+      ,mpageanimate={s:Menu.soff,checkbox:1,stay:1,ms:'Animate pages',checked:0,actionf:pageAnimate}
+      ,{s:'Delete',a:'pagedel',stay:1}]
     };
     mpat={s:'Test<br>pattern',fs:0.8,a:'Pattern'};
     mnorm={s:'Normal<br>mode',fs:0.8,ms:'color',a:'normmode',msid:'mnormms'};
@@ -2868,6 +4150,16 @@ var Paint={};
       }}
     }
     
+    if (sal) {
+      var c=document.createElement('canvas');canvs={c:c};
+      c.width=100;c.height=100;
+      c.style.position='absolute';
+      var ct=c.getContext('2d');
+      ct.strokeStyle='#0f0';
+      ct.strokeRect(2,2,c.width-4,c.height-4);
+      document.body.appendChild(c);
+      resize();
+    }
     
     //if (sal) { loadDataUrl('paint/monalisa.png');scale=0.7;setMode(MCUTOUT); }
     //Menu.cmenu=mpr;Menu.action();
@@ -2878,9 +4170,17 @@ var Paint={};
     if (le) le.innerHTML+=s+'<br>';
   }
   Paint.menuSwitch=function (m,a) {
-    //og('menuswitch '+a);
+    //onsole.log('Paint.menuswitch '+a);
+    //onsole.log(a);
+    if (Array.isArray(a)) {
+      console.error('Paint.menuswitch a is array');
+      //console.error(a);
+      return;
+    }
     var replayStarted=false;
-    if (a=='Brush'||a=='Pick') {
+    if (a=='Fill') setMode(MFILL);
+    else if (a=='TexVerts') setMode(MTEVE);
+    else if (a=='Brush'||a=='Pick') {
       //lert('mode='+mode);
       if (mode!=MDRAW) {
         setMode(MDRAW);
@@ -3393,7 +4693,7 @@ var Paint={};
     //console.log('Paint.set3d '+lo.meshes.length);
     if (m.diff) {
       setdim(iw,ih,1);
-      loadDataUrl(m.diff);
+      loadDataUrl(m.diff,undefined,undefined,{noCutout:1});
       lo.loadnext='norm';
     }
     /*
@@ -3419,14 +4719,39 @@ var Paint={};
 )(Paint);
 
 //fr o,1
-//fr o,1,100
-//fr o,1,115
-//fr o,1,149,3
-//fr o,1,158,119
-//fr o,1,158,119,2
-//fr o,1,158,174
-//fr o,1,158,270
-//fr o,1,158,281,2
-//fr o,1,158,283
-//fr o,1,158,338,9
-//fr p,16,163
+//fr o,1,103
+//fr o,1,103,11
+//fr o,1,106,14
+//fr o,1,122,16,7
+//fr o,1,122,20
+//fr o,1,122,20,9
+//fr o,1,122,20,73
+//fr o,1,122,20,75
+//fr o,1,122,20,81
+//fr o,1,122,20,86
+//fr o,1,122,20,88
+//fr o,1,122,20,95
+//fr o,1,122,20,95,5
+//fr o,1,123,42
+//fr o,1,123,47
+//fr o,1,124
+//fr o,1,124,37
+//fr o,1,124,37,3
+//fr o,1,161,3
+//fr o,1,170
+//fr o,1,170,125
+//fr o,1,170,127
+//fr o,1,170,129
+//fr o,1,170,129,2
+//fr o,1,170,146
+//fr o,1,170,194
+//fr o,1,170,195
+//fr o,1,170,238
+//fr o,1,170,247
+//fr o,1,170,247,2
+//fr o,1,170,248
+//fr o,1,170,294
+//fr o,1,170,305,2
+//fr o,1,170,307
+//fr o,1,170,362,9
+//fr p,38,420

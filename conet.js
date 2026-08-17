@@ -1,7 +1,7 @@
 var Conet={};
 (function(Conet) {
   Conet.offline=false;
-  Conet.version='1.955 ';//FOLDORUPDATEVERSION
+  Conet.version='1.1023 ';//FOLDORUPDATEVERSION
   Conet.files={};
   var uploads={},fns,logc,logs=[],//fn=>data,first
       logSameLineCount=0,ac,downloads={},PI=Math.PI;
@@ -382,23 +382,28 @@ var Conet={};
     
     
     if (p.grid) {
-    m.sub.push({s:'Filegrid..',r:1,actionf:function() {
+    m.sub.push(m.fileGrid={s:'Filegrid..',r:1,actionf:function() {
       //---
       //let md=new Mdiv.Cont(50,50,Math.min(800,window.innerWidth-100),Math.min(600,window.innerHeight-100));
-      let md=new Mdiv.Cont(20,20,window.innerWidth-140,window.innerHeight-100),withCtrl=1,c,tf,gridCont;
+      let md=new Mdiv.Cont(20,20,window.innerWidth-140,window.innerHeight-100),withCtrl=1,c,tf,gridCont,clickEl;
       md.c.style.backgroundColor='#888';
       md.c.style.fontSize='14px';
       
-      function gridClick(fh) {
+      function gridClick(fh,el) {
         //---
         Conet.lastLoadMenu={cfmo:fh};
-        if (withCtrl) 
+        if (withCtrl) {
           tf.value=fh.fn;
-        else {
-          //Conet.lastLoadMenu={cfmo:fh};
+          //onsole.log(el);
+          if (clickEl) clickEl.style.backgroundColor='#ccc';
+          el.style.backgroundColor='#efe';
+          clickEl=el;
+        } else {
+          ////Conet.lastLoadMenu={cfmo:fh};
+          checkListFile(fh.fn);
           p.loadf(fh.fn);
-          //onsole.log('grid.onclick');
-          checkIconUpdate();
+          ////onsole.log('grid.onclick');
+          //checkIconUpdate();
           //---
           md.c.parentNode.removeChild(md.c);
         }
@@ -407,33 +412,73 @@ var Conet={};
       
       function doGrid() {
         //---
-        let s=tf.value;
+        let s=tf?tf.value:'';
         let a=[];
+        //if (0)
+        
+        if (p.gridLs) {
+          let s0=localStorage[p.gridLs+'index'];
+          if (s0) {
+            let d=JSON.parse(s0);
+            for (let fn of Object.keys(d)) {
+              fn='ls:'+fn;
+              if ((s.length>0)&&(fn.indexOf(s)==-1)) continue;
+              let hn={fn:fn};
+              a.push(hn);
+            }
+          }
+          //onsole.log(d);
+        }
+        
         for (let h of m.files) {
           if ((s.length>0)&&(h.fn.indexOf(s)==-1)) continue;
-          let hn={fn:h.fn};
+          //onsole.log(h);
+          let hn={fn:h.fn
+            ,isrc:h.isrc//260815 added this, probably previously m.files was used directly, not a
+          };
           if (hn.fn==m.curFn) hn.background='#ffa';
           a.push(hn);
         }
         //onsole.log(a.length);
         gridCont.innerHTML='';
-        Conet.grid({cont:gridCont,dir:'/blog',closeButton:1,closeCont:md.c,files:a,background:'#ccc',onclick:gridClick
+        Conet.grid({cont:gridCont,dir:'/blog',closeButton:!withCtrl,closeCont:md.c,files:a,background:'#ccc',onclick:gridClick
         ,startText:'Files '+a.length+((a.length==m.files.length)?'':' / '+m.files.length)
         });
         //...
       }
       
+      function buttonStyle(st) {
+        //---
+        //st.all='revert';//not using this, because in chrome devtools then revert for all styles
+        st.fontSize='16px';st.margin='2px';
+        //...
+      }
       
       if (withCtrl) {
       c=document.createElement('div');let c0;
+      let st=c.style;
+      st.padding='2px';
+      //st.paddingLeft='2px';
+      st.marginBottom='-6px';
       //c.innerHTML='Test123 <button>123</button>';
       //c0=document.createElement('p');
       //c.appendChild(c0);
       
+      c0=document.createElement('button');c0.innerHTML='X';
+      c0.onclick=function() {
+        //---
+        md.c.parentNode.removeChild(md.c);
+        //...
+      }
+      st=c0.style;
+      buttonStyle(st);//st.all='revert';st.fontSize='16px';st.margin='2px';
+      c.appendChild(c0);
+      
       //c.appendChild(document.createTextNode('\u00A0File'));
-      c0=document.createElement('input'),st=c0.style;tf=c0;
+      c0=document.createElement('input');st=c0.style;tf=c0;
       st.width='200px';st.margin='4px';
       tf.type='search';tf.placeholder='filename';
+      
       tf.oninput=function() {
         //---
         delete(Conet.lastLoadMenu);
@@ -441,23 +486,61 @@ var Conet={};
         //...
       }
       c.appendChild(c0);
-      c0=document.createElement('button');c0.innerHTML='Load';
+      c0=document.createElement('button');
+      st=c0.style;
+      //st.fontSize='16px';
+      buttonStyle(st);//st.all='revert';st.fontSize='16px';st.margin='2px';
+      
+      c0.innerHTML='Load';
       c0.onclick=function() {
         //---
-        if (tf.value.length==0) {
-          Conet.alert('Enter or click file first.');
+        let fn=tf.value;
+        if (fn.length==0) {
+          Conet.alert('Enter or select file first.');
           return;
         }
         
         //Conet.lastLoadMenu={cfmo:fh};
-        p.loadf(tf.value);
-        if (Conet.lastLoadMenu) checkIconUpdate();
+        if (fn.startsWith('ls:')) {
+          m.curFn=fn;
+          fn=fn.substr(3);
+          let d=Conet.lsDownload({fn:fn});
+          p.load({fn:fn,data:d});
+        } else {
+          checkListFile(fn);
+          p.loadf(fn);
+        }
+        //if (Conet.lastLoadMenu) checkIconUpdate();
         //---
         md.c.parentNode.removeChild(md.c);
         //...
       }
       c.appendChild(c0);
       c0=document.createElement('button');c0.innerHTML='Save';
+      c0.onclick=function() {
+        //---
+        let fn=tf.value;
+        if (fn.length==0) {
+          Conet.alert('Enter or click file first.');
+          return;
+        }
+        
+        //checkListFile(fn);
+        if (fn.startsWith('ls:')) {
+          fn=fn.substr(3);
+          let d=p.serialize(fn);
+          console.log(d); 
+          lsUpload({fn:fn,data:d});
+        } else {
+          checkListFile(fn);
+          p.savef(fn);//,'saveas');
+        }
+        //onet.alert('Save nao.');
+        md.c.parentNode.removeChild(md.c);
+        //...
+      }
+      st=c0.style;
+      buttonStyle(st);//st.all='revert';st.fontSize='16px';st.margin='2px';
       c.appendChild(c0);
       md.c.appendChild(c);
       
@@ -468,6 +551,7 @@ var Conet={};
       
       //onsole.log(m.files);
       doGrid();
+      if (withCtrl) tf.value=m.curFn;
       //onsole.log(m.files);
       //...
     }
@@ -1583,7 +1667,7 @@ var Conet={};
       //---
       //let c=gps.closeCont||cont;
       //c.parentNode.removeChild(c);
-      gps.onclick(this._fh);
+      gps.onclick(this._fh,this);
       //console.log('load file nao: '+this._fn);
       //...
     }
@@ -1708,9 +1792,14 @@ var Conet={};
 )(Conet);
 console.log('Conet '+Conet.version);
 //fr o,1
+//fr o,1,6
+//fr o,1,8
+//fr o,1,9
 //fr o,1,9,33
+//fr o,1,10
 //fr o,1,10,29
 //fr o,1,10,31
+//fr o,1,13
 //fr o,1,13,4
 //fr o,1,13,5
 //fr o,1,13,6
@@ -1721,9 +1810,14 @@ console.log('Conet '+Conet.version);
 //fr o,1,13,23
 //fr o,1,13,31
 //fr o,1,13,31,3
+//fr o,1,13,35
 //fr o,1,13,35,6
-//fr o,1,13,35,21
-//fr o,1,13,35,24
+//fr o,1,13,35,8
+//fr o,1,13,35,10
+//fr o,1,13,35,23
+//fr o,1,13,35,33
+//fr o,1,13,35,41
+//fr o,1,13,35,44
 //fr o,1,13,43
 //fr o,1,13,46
 //fr o,1,13,47
@@ -1732,13 +1826,13 @@ console.log('Conet '+Conet.version);
 //fr o,1,14,1
 //fr o,1,21,4
 //fr o,1,50,13
-//fr o,1,53
 //fr o,1,55
 //fr o,1,55,5
 //fr o,1,64,3
 //fr o,1,65,2
 //fr o,1,117,2
 //fr o,1,117,11
+//fr o,1,121
 //fr o,1,121,8
 //fr o,1,121,8,32
 //fr o,1,121,10,0
@@ -1748,4 +1842,4 @@ console.log('Conet '+Conet.version);
 //fr o,1,124,1,16
 //fr o,1,124,9
 //fr o,1,129,6
-//fr p,18,63
+//fr p,13,442

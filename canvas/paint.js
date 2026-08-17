@@ -1,7 +1,7 @@
 var Paint={};
 (function(Paint) {
   var canvas,ix,iy,id,iw,ih,oix,oiy,scale,oscale;
-  var version='1.4843 ';//FOLDORUPDATEVERSION
+  var version='1.4845 ';//FOLDORUPDATEVERSION
   var md=false,imx,imy,mx,my,omx,omy,moused=new Array(4),br=0,bg=0,bb=250,bp=0.1,bra=10;
   var touches={},TM_DRAW=1,TM_IMG=2,touchMode=TM_DRAW,touchlast;
   //var menuroots,menus;
@@ -2284,7 +2284,7 @@ var Paint={};
     
     
     else  img.src=d;
-    if (isfn) mmenu.ms=d;
+    if (isfn&&mmenu) mmenu.ms=d;
     return img;
   }
   function loadText(v0,json,ps,callback) {
@@ -3592,7 +3592,7 @@ var Paint={};
     cfmenu=Conet.fileMenu({fn:'paint/files.txt',defFn:'test.png.txt',filesRef:'paint',noStartLoad:sal?scriptRunAtStart:1,loadUrlKey:'cfmload',
       loadf:conetLoad,noh:!sal||!urls.withh,nolistf:lsLoad,loadList:1,grid:1,gridLs:'conet2'
     
-    ,serialize:function(fn)   {
+    ,serialize:function(fn) {
       //---
       return serialize(fn.indexOf('.json')!=-1);
       //...
@@ -4732,6 +4732,7 @@ var Paint={};
 //fr o,1,122,20,88
 //fr o,1,122,20,95
 //fr o,1,122,20,95,5
+//fr o,1,123
 //fr o,1,123,42
 //fr o,1,123,47
 //fr o,1,124
@@ -4754,4 +4755,4 @@ var Paint={};
 //fr o,1,170,305,2
 //fr o,1,170,307
 //fr o,1,170,362,9
-//fr p,38,420
+//fr p,15,202

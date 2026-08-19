@@ -64,6 +64,13 @@ V.0.1 <b>Following files were uploaded to localStorage:</b>
   }
     c.appendChild(b);
     
+    let isrc=localStorage['conet2i'+fn];
+    if (isrc) {
+      let i=new Image();
+      i.height=50;
+      i.src=isrc;
+      c.appendChild(i);
+    }
     
     c.appendChild(document.createTextNode(fn+' '+JSON.stringify(d[fn])+' '+fdata.length+'b'));
     //d[fn].data=fdata; //needed for alldata but problematic in delete, dont bloat d
@@ -107,4 +114,4 @@ V.0.1 <b>Following files were uploaded to localStorage:</b>
 //fr o,11,17
 //fr o,11,17,2
 //fr o,11,22
-//fr p,2,25
+//fr p,16,69

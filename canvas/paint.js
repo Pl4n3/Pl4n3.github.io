@@ -1,7 +1,7 @@
 var Paint={};
 (function(Paint) {
   var canvas,ix,iy,id,iw,ih,oix,oiy,scale,oscale;
-  var version='1.4845 ';//FOLDORUPDATEVERSION
+  var version='1.4854 ';//FOLDORUPDATEVERSION
   var md=false,imx,imy,mx,my,omx,omy,moused=new Array(4),br=0,bg=0,bb=250,bp=0.1,bra=10;
   var touches={},TM_DRAW=1,TM_IMG=2,touchMode=TM_DRAW,touchlast;
   //var menuroots,menus;
@@ -3039,7 +3039,13 @@ var Paint={};
       m.c2.src=isrc;
       //onsole.log('paint.menuIconUpdate png.len='+isrc.length+' pixlen='+(c.width*c.height*3));
       m.cfmo.isrc=isrc;
-      cfmenu.uploadFilenames();
+      console.log('trying to do iconupdate '+m.cfmo.fn);
+      if (m.cfmo.fn.startsWith('ls:')) {
+        let k;
+        localStorage[k=('conet2i'+m.cfmo.fn.substr(3))]=isrc;
+        console.log('ls icon stored, key='+k);
+      } else
+        cfmenu.uploadFilenames();
     } else console.log('paint.menuIconUpdate: same src, no upload');
     
     loadTextPs=undefined;
@@ -3600,7 +3606,7 @@ var Paint={};
     
     ,load:function(ps) {
       //---
-      loadText(ps.data,ps.fn.indexOf('.json')!=-1,{});
+      loadText(ps.data,ps.fn.indexOf('.json')!=-1,{loadMenu:{cfmo:{fn:'ls:'+ps.fn}}});
       //...
     }
       
@@ -4733,11 +4739,13 @@ var Paint={};
 //fr o,1,122,20,95
 //fr o,1,122,20,95,5
 //fr o,1,123
+//fr o,1,123,38
 //fr o,1,123,42
 //fr o,1,123,47
 //fr o,1,124
 //fr o,1,124,37
 //fr o,1,124,37,3
+//fr o,1,151
 //fr o,1,161,3
 //fr o,1,170
 //fr o,1,170,125
@@ -4755,4 +4763,4 @@ var Paint={};
 //fr o,1,170,305,2
 //fr o,1,170,307
 //fr o,1,170,362,9
-//fr p,15,202
+//fr p,31,508

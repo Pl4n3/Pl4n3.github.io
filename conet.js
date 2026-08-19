@@ -1,7 +1,7 @@
 var Conet={};
 (function(Conet) {
   Conet.offline=false;
-  Conet.version='1.1023 ';//FOLDORUPDATEVERSION
+  Conet.version='1.1076 ';//FOLDORUPDATEVERSION
   Conet.files={};
   var uploads={},fns,logc,logs=[],//fn=>data,first
       logSameLineCount=0,ac,downloads={},PI=Math.PI;
@@ -369,7 +369,12 @@ var Conet={};
           m0.c2.src=isrc;
           //onsole.log('paint.menuIconUpdate png.len='+isrc.length+' pixlen='+(c.width*c.height*3));
           m0.cfmo.isrc=isrc;
-          m.uploadFilenames();
+          if (m0.cfmo.fn.startsWith('ls:')) {
+            let k;
+            localStorage[k=('conet2i'+m0.cfmo.fn.substr(3))]=isrc;
+            console.log('ls icon stored, key='+k);
+          } else 
+            m.uploadFilenames();
         } else console.log('menuIconUpdate: same src, no upload');
         //onsole.log(renderer);
         //c.style='position:absolute;';
@@ -412,8 +417,8 @@ var Conet={};
       
       function doGrid() {
         //---
-        let s=tf?tf.value:'';
-        let a=[];
+        let s=tf?tf.value:'',
+            a=[],cmax=0;
         //if (0)
         
         if (p.gridLs) {
@@ -421,9 +426,11 @@ var Conet={};
           if (s0) {
             let d=JSON.parse(s0);
             for (let fn of Object.keys(d)) {
-              fn='ls:'+fn;
+              cmax++;
               if ((s.length>0)&&(fn.indexOf(s)==-1)) continue;
-              let hn={fn:fn};
+              let isrc=localStorage['conet2i'+fn];
+              fn='ls:'+fn;
+              let hn={fn:fn,isrc:isrc};
               a.push(hn);
             }
           }
@@ -431,6 +438,7 @@ var Conet={};
         }
         
         for (let h of m.files) {
+          cmax++;
           if ((s.length>0)&&(h.fn.indexOf(s)==-1)) continue;
           //onsole.log(h);
           let hn={fn:h.fn
@@ -442,7 +450,10 @@ var Conet={};
         //onsole.log(a.length);
         gridCont.innerHTML='';
         Conet.grid({cont:gridCont,dir:'/blog',closeButton:!withCtrl,closeCont:md.c,files:a,background:'#ccc',onclick:gridClick
-        ,startText:'Files '+a.length+((a.length==m.files.length)?'':' / '+m.files.length)
+        ,startText:'Files '+a.length
+        //+((a.length==m.files.length)?'':' / '+m.files.length)
+        +((a.length==cmax)?'':' / '+cmax)
+        ,padding:'0px 4px 4px 4px'
         });
         //...
       }
@@ -459,7 +470,7 @@ var Conet={};
       let st=c.style;
       st.padding='2px';
       //st.paddingLeft='2px';
-      st.marginBottom='-6px';
+      st.marginBottom='0px';//'-6px';
       //c.innerHTML='Test123 <button>123</button>';
       //c0=document.createElement('p');
       //c.appendChild(c0);
@@ -502,7 +513,7 @@ var Conet={};
         
         //Conet.lastLoadMenu={cfmo:fh};
         if (fn.startsWith('ls:')) {
-          m.curFn=fn;
+          m.curFn=fn;//so that fn stays after load for quick save
           fn=fn.substr(3);
           let d=Conet.lsDownload({fn:fn});
           p.load({fn:fn,data:d});
@@ -529,8 +540,8 @@ var Conet={};
         if (fn.startsWith('ls:')) {
           fn=fn.substr(3);
           let d=p.serialize(fn);
-          console.log(d); 
-          lsUpload({fn:fn,data:d});
+          //onsole.log(d); 
+          lsUpload({fn:fn,data:d});  
         } else {
           checkListFile(fn);
           p.savef(fn);//,'saveas');
@@ -542,9 +553,26 @@ var Conet={};
       st=c0.style;
       buttonStyle(st);//st.all='revert';st.fontSize='16px';st.margin='2px';
       c.appendChild(c0);
+      
+      st=md.c.style;
+      st.display='flex';
+      st.flexDirection='column';
+      st.paddingBottom='6px';
+      st.paddingRight='6px';
+      //st.boxSizing='border-box';
+      
+      c.style.flex='0 0 auto';
       md.c.appendChild(c);
       
+      
       c=document.createElement('div');//let st=c.style;st.fontSize='14px';
+      st=c.style;
+      //st.position='relative';
+      //st.height='calc( 100% - 42px )';
+      st.flex='0 1 auto';
+      //st.backgroundColor='#0f0';
+      //st.padding='-2px';
+      st.overflow='auto';
       md.c.appendChild(c);
       } else c=md.c;
       gridCont=c;
@@ -1544,7 +1572,7 @@ var Conet={};
       //grid-auto-rows: minmax(100px, auto);
       
       //s.background='#777';//commented out, if needed, set after/before Conet.grid()
-      s.padding='4px';
+      s.padding=gps.padding||'4px';
       //s.fontSize='12px';//260419 removed so that /sound/mid/index.html has bigger font
       s.color='#000';
       if (gps.skipStart) return;
@@ -1842,4 +1870,4 @@ console.log('Conet '+Conet.version);
 //fr o,1,124,1,16
 //fr o,1,124,9
 //fr o,1,129,6
-//fr p,13,442
+//fr p,27,481

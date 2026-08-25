@@ -1,7 +1,7 @@
 //--- bricks
 var Bricks={};
 (function (Bricks) {
-  let version='1.1531 ',stats,//FOLDORUPDATEVERSION
+  let version='1.1585 ',stats,//FOLDORUPDATEVERSION
       brickts={},bricktc=0,
       camera,controls,scene,renderer,sel,mmode,mmenu,mtype,mmultisel,
       mpos,mdim,click,raycaster,//=new THREE.Raycaster(),
@@ -11,7 +11,7 @@ var Bricks={};
       multi=false,mvcol,loaderPs,url=Conet.parseUrl(document.URL),
       userData,groundBox,clock,tsd,
       blockWalk,unitPlayer,defLights=[],render0,
-      lint=1,xrUtil,room,lights=[],mScale,meditable;
+      lint=1,xrUtil,room,lights=[],mScale,meditable,cfmenu;
   const PI=Math.PI;
   
   //onsole.log('Brick Construction Tool, Version '+version);
@@ -426,8 +426,14 @@ var Bricks={};
     Menu.colBg='rgba(150,150,150,0.9)';
     Menu.cpy=0.07;
     var loadMs=false;
-    var cfm=Conet.fileMenu({fn:'/three/lego/files.txt',defFn:'/three/lego/test0.txt',url:'fn',noStartLoad:url.data||url.gen,loadMs:loadMs,loadList:1,
-    loadf:function(v) {
+    let cfm=Conet.fileMenu({fn:'/three/lego/files.txt',defFn:'/three/lego/test0.txt',url:'fn',noStartLoad:url.data||url.gen,loadMs:loadMs,loadList:1,
+      grid:1,gridLs:'conet2',serialize:serialize
+    ,load:function(ps) {
+      //---
+      parseLoad(ps.data);
+      //...
+    }
+    ,loadf:function(v) {
       Conet.download({fn:v+'?1',f:parseLoad});
     }
     ,savef:function(v) {
@@ -437,6 +443,7 @@ var Bricks={};
       });
     }
     });
+    cfmenu=cfm;
     
     cfm.sub.push(
     
@@ -465,6 +472,8 @@ var Bricks={};
     Menu.init([mmenu={s:'Menu',ms:'Version '+version,msid:'mmenums',sub:
     
     (loadMs?cfm.sub:[cfm]).concat([
+    
+    cfm.fileGrid,
     
     {s:'ColorIndex',r:1,actionf:function() {
       var col=(sel.col+1)%ms.length;
@@ -745,6 +754,7 @@ var Bricks={};
     }
     if (brh) bricks[0].mesh=meshAdd({g:brickGeometryFinish(brh),m:mvcol});
     if (!loaderPs) Menu.ms(mmenu,bricks.length+' bricks');
+    setTimeout(menuIconUpdate,300);
     //...
   }
   function brickLoaded(v) {
@@ -921,7 +931,7 @@ var Bricks={};
       }
       s+='],\n';
     }
-    if (userData) s+='"userData":'+JSON.stringify(userData)+',\n';
+    if (userData) s+='"userData":'+JSON.stringify(userData,undefined,' ')+',\n';
     s+='"bricks":[\n';
     for (var i=0;i<bricks.length;i++) {
       var b=cloneWithout(bricks[i],without);
@@ -949,7 +959,7 @@ var Bricks={};
     
     init();
     scene=new THREE.Scene();
-    renderer=new THREE.WebGLRenderer({antialias:true});
+    renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});
     renderer.setClearColor(0x888888);
     renderer.shadowMap.enabled=true;
     //renderer.shadowMap.type=THREE.BasicShadowMap;
@@ -1209,11 +1219,13 @@ var Bricks={};
     
     function o5Loaded(v) {
       //---
+      //onsole.log(this.scale);
+      
       let o=Pd5.load(v),isAi=this.isAi;
       o.scale=1;
       //Pd5.animStart(o,'stand2');
       if (isAi) o.meshes[0].diff=o.meshes[0].norm;
-      threeAddObj(o,0,0,0,50*factor);//100);
+      threeAddObj(o,0,0,0,(this.scale||50)*factor);//100);
       
       let m=o.meshes[0].tmesh,pos=this.pos;
       //if (ps.pos) {
@@ -1235,13 +1247,15 @@ var Bricks={};
       //m.position.set(-171,-142,-47);
       //m.position.set(-131 + 8*40,-142 + 2*30,-7 + 3*40);
       let ohp=5;
-      let u={speed:0,speedRun:0.15,a:0,o:o,m:m,hp:ohp,ohp:ohp,ap:1,col:-4,
+      let u={speed:0,speedRun:0.15,a:0,o:o,m:m,//hp:ohp,
+        ohp:ohp,ap:1,col:-4,
         animIdle:'stand2',animRun:'run',animAttack:'attack2',animHit:'hit',
         animLost:'lost',animBlock:'block',
-        bbdraw:bbdraw,blockHeight:2,collr:20
+        bbdraw:bbdraw,blockHeight:2,collr:20//,collr:this.collr||20
         };//0.0001
       //onsole.log(o.ps);
       Conet.hcopy(this,u);
+      if (!u.hp) u.hp=u.ohp;
       o.ay=u.a;o.ps.roty=u.a;
       if (!isAi) { 
         unitPlayer=u; 
@@ -1495,7 +1509,8 @@ var Bricks={};
     
     if (1) {
       let h=ps.player;
-      Conet.download({fn:'/shooter/objs/templar/o5.txt',hp:5,ohp:5,a:h.a||0,pos:{x:h.x,y:h.y,z:h.z},f:o5Loaded,autoAttack:h.autoAttack});
+      //Conet.download({fn:'/shooter/objs/templar/o5.txt',hp:5,ohp:5,a:h.a||0,pos:{x:h.x,y:h.y,z:h.z},f:o5Loaded,autoAttack:h.autoAttack});
+      Conet.download(Conet.hcopy(h,{fn:'/shooter/objs/templar/o5.txt',hp:5,ohp:5,a:h.a||0,pos:{x:h.x,y:h.y,z:h.z},f:o5Loaded}));
     }
     
     if (ps.randomSeed) Conet.seed(ps.randomSeed);
@@ -1506,6 +1521,7 @@ var Bricks={};
     
     if (ps.mobs) for (let i=0;i<ps.mobs.length;i++) {
       let h=ps.mobs[i];
+      //onsole.log(h.scale);
       Conet.download(Conet.hcopy(h,{fn:'/shooter/objs/templar/o5.txt',a:h.a||0,speedRun:0.075,speedTurn:0.004,isAi:1,pos:{x:h.x,y:h.y,z:h.z},f:o5Loaded}));
     }
     //console.log(blockWalk.units.length);
@@ -1539,7 +1555,7 @@ var Bricks={};
     }),
     );
     if (!ps.noAttack)
-    Menu.push(
+    Menu.roots.push(
     Menu.initMenu({s:'a',px:0.01,py:0.02+dy,pw:0.116,ph:0.116,ydown:true,xright:true,fs:1.4,keys:[86],actionf:function() {
       //---
       if (!blockWalk) return;
@@ -1664,6 +1680,43 @@ var Bricks={};
     //...
   }
   
+  function menuIconUpdate() {
+    //---
+    
+    let c=document.createElement('canvas');
+    c.width=20;c.height=c.width;
+    let ct=c.getContext('2d');
+    ct.imageSmoothingQuality='high';
+    ct.imageSmoothingEnabled=true;
+    ct.drawImage(renderer.domElement,0,0,c.width,c.height);
+    //ct.fillStyle='#0f0';ct.fillRect(0,0,10,20);
+    //onsole.log(renderer);
+    
+    let isrc=c.toDataURL('image/png');//d.data;
+    //onsole.log(isrc.length);
+    //onsole.log(isrc);
+    
+    let m=Conet.lastLoadMenu;
+    //onsole.log(m);
+    
+    if (m.cfmo.isrc!=isrc) {
+      m.c2=new Image();
+      m.c2.src=isrc;
+      //onsole.log('paint.menuIconUpdate png.len='+isrc.length+' pixlen='+(c.width*c.height*3));
+      m.cfmo.isrc=isrc;
+      console.log('trying to do iconupdate '+m.cfmo.fn);
+      if (m.cfmo.fn.startsWith('ls:')) {
+        let k;
+        localStorage[k=('conet2i'+m.cfmo.fn.substr(3))]=isrc;
+        console.log('ls icon stored, key='+k);
+      } else
+        cfmenu.uploadFilenames();
+    } else console.log('bricks.menuIconUpdate: same src, no upload');
+    
+    //...
+  }
+  window.menuIconUpdate=menuIconUpdate;
+  
   
   //---init();
   Bricks.initEditor=initEditor;
@@ -1681,20 +1734,29 @@ var Bricks={};
 
 
 //fr o,2
-//fr o,2,33,22
-//fr o,2,33,51
-//fr o,2,33,55
-//fr o,2,33,65
-//fr o,2,33,84
+//fr o,2,33
+//fr o,2,33,13
+//fr o,2,33,14
+//fr o,2,33,15
+//fr o,2,33,25
+//fr o,2,33,56
+//fr o,2,33,60
+//fr o,2,33,70
 //fr o,2,33,89
+//fr o,2,33,94
+//fr o,2,36
+//fr o,2,38
+//fr o,2,43
+//fr o,2,44
 //fr o,2,44,86
-//fr o,2,46
 //fr o,2,46,67
 //fr o,2,46,68
 //fr o,2,46,69
 //fr o,2,46,76,45
-//fr o,2,46,110
-//fr o,2,46,143
-//fr o,2,46,143,2
-//fr o,2,46,147
-//fr p,2,224
+//fr o,2,46,112
+//fr o,2,46,145
+//fr o,2,46,145,2
+//fr o,2,46,149
+//fr o,2,48
+//fr o,2,54
+//fr p,2,506

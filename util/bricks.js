@@ -1,7 +1,7 @@
 //--- bricks
 var Bricks={};
 (function (Bricks) {
-  let version='1.1585 ',stats,//FOLDORUPDATEVERSION
+  let version='1.1595 ',stats,//FOLDORUPDATEVERSION
       brickts={},bricktc=0,
       camera,controls,scene,renderer,sel,mmode,mmenu,mtype,mmultisel,
       mpos,mdim,click,raycaster,//=new THREE.Raycaster(),
@@ -219,7 +219,9 @@ var Bricks={};
     
     var cr=0.5,cg=0.5,cb=0;
     
-    if (brick&&data.colors) {
+    if (brick
+      //&&data
+      &&data.colors) {
       var c=data.colors[brick.col];
       cr=((c>>16)&0xff)*1.0/0xff;
       cg=((c>>8)&0xff)*1.0/0xff;
@@ -775,9 +777,11 @@ var Bricks={};
     
     if (!groundBox.visible) { room.add(groundBox);groundBox.visible=true; }
     var o=JSON.parse(d);
-    if (Array.isArray(o)) 
-      bricks=o;
-    else {
+    if (Array.isArray(o)) {
+      o={bricks:o,colors:['0x666666','0x333333','0xdddddd']};//260826
+      //bricks=o;
+    } //else 
+    {
       bricks=o.bricks;data=o;
       if (o.bricktypes) for (var k in o.bricktypes) if (o.bricktypes.hasOwnProperty(k)) {
         bricktc++;
@@ -1734,13 +1738,16 @@ var Bricks={};
 
 
 //fr o,2
+//fr o,2,21
 //fr o,2,33
 //fr o,2,33,13
 //fr o,2,33,14
 //fr o,2,33,15
+//fr o,2,33,21
 //fr o,2,33,25
 //fr o,2,33,56
 //fr o,2,33,60
+//fr o,2,33,64
 //fr o,2,33,70
 //fr o,2,33,89
 //fr o,2,33,94
@@ -1759,4 +1766,4 @@ var Bricks={};
 //fr o,2,46,149
 //fr o,2,48
 //fr o,2,54
-//fr p,2,506
+//fr p,2,467

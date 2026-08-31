@@ -5,7 +5,7 @@ import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFa
 let XrUtil={};
 (function(pself) {
   //---
-  let version='v.1.777 ',//FOLDORUPDATEVERSION
+  let version='v.1.779 ',//FOLDORUPDATEVERSION
       self=pself,ctrl0,ctrl1,gp0,gp1,camera,scene,room,vrPos,huds=[],hudMesh,
       hud={lines:['XrUtil '+version],cursor:{x:0.5,y:0.5,vis:false},buttons:[]},
       raycaster,INTERSECTED,hudCount=0,needDrawUi=false,input,uisc=2,gps,
@@ -831,11 +831,11 @@ let XrUtil={};
         //  //blockWalk.tweens.push({o:vrPos,key:'y',t:t,value:scfg.vrPos.y});
         //  //blockWalk.tweens.push({o:vrPos,key:'z',t:t,value:scfg.vrPos.z});
         }
-        if (scfg.far) {
-          camera.far=scfg.far;
-          camera.updateProjectionMatrix();
-          //onsole.log('far='+camera.far);
-        }
+        //if (scfg.far) {
+        //  camera.far=scfg.far;
+        //  camera.updateProjectionMatrix();
+        //  //onsole.log('far='+camera.far);
+        //}
       } else {
         let cp=camera.position;
         //self.log('camPos '+Conet.f4(cp.x)+' '+Conet.f4(cp.y)+' '+Conet.f4(cp.z));
@@ -858,6 +858,9 @@ let XrUtil={};
           camera.updateProjectionMatrix();
         }
       }
+      if (scfg.far) { camera.far=scfg.far;camera.updateProjectionMatrix(); }
+      if (scfg.near) { camera.near=scfg.near;camera.updateProjectionMatrix(); }
+      
       
       if (self.onScaleSwitch) self.onScaleSwitch({oroomsc:oroomsc,scfg:scfg});
       
@@ -1244,4 +1247,4 @@ export { XrUtil };
 //fr o,5,32,23
 //fr o,5,32,25
 //fr o,5,34
-//fr p,3,417
+//fr p,70,440

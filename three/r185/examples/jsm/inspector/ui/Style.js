@@ -35,7 +35,7 @@ export class Style {
 	.profiler-toggle {
 		position: fixed;
 		top: 15px;
-		right: 15px;
+		right: 150px; //pl260826 was 15px;
 		background-color: rgba(30, 30, 36, 0.85);
 		border: 1px solid #4a4a5a54;
 		border-radius: 12px 6px 6px 12px;

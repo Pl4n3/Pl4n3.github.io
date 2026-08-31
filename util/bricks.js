@@ -1,7 +1,7 @@
 //--- bricks
 var Bricks={};
 (function (Bricks) {
-  let version='1.1595 ',stats,//FOLDORUPDATEVERSION
+  let version='1.1667 ',stats,//FOLDORUPDATEVERSION
       brickts={},bricktc=0,
       camera,controls,scene,renderer,sel,mmode,mmenu,mtype,mmultisel,
       mpos,mdim,click,raycaster,//=new THREE.Raycaster(),
@@ -11,14 +11,15 @@ var Bricks={};
       multi=false,mvcol,loaderPs,url=Conet.parseUrl(document.URL),
       userData,groundBox,clock,tsd,
       blockWalk,unitPlayer,defLights=[],render0,
-      lint=1,xrUtil,room,lights=[],mScale,meditable,cfmenu;
+      lint=1,xrUtil,room,lights=[],mScale,meditable,cfmenu,
+      renderPipeline;
   const PI=Math.PI;
   
   //onsole.log('Brick Construction Tool, Version '+version);
   //---
   function animate() {
     
-    renderer.setAnimationLoop( render );
+    renderer.setAnimationLoop(render);
     
     //requestAnimationFrame( animate );
     
@@ -429,14 +430,17 @@ var Bricks={};
     Menu.cpy=0.07;
     var loadMs=false;
     let cfm=Conet.fileMenu({fn:'/three/lego/files.txt',defFn:'/three/lego/test0.txt',url:'fn',noStartLoad:url.data||url.gen,loadMs:loadMs,loadList:1,
-      grid:1,gridLs:'conet2',serialize:serialize
-    ,load:function(ps) {
+      grid:1,gridLs:'conet2',serialize:serialize,//fixPath:'/three/',
+    load:function(ps) {
       //---
       parseLoad(ps.data);
       //...
     }
     ,loadf:function(v) {
+      //---
       Conet.download({fn:v+'?1',f:parseLoad});
+      xrUtil.log(v+' loaded.');
+      //...
     }
     ,savef:function(v) {
       Conet.upload({fn:v,data:serialize(),f:function(d) {
@@ -772,10 +776,10 @@ var Bricks={};
   }
   function parseLoad(d) {
     clear();
-    renderer.setClearColor(0x888888);
+    if (renderer) renderer.setClearColor(0x888888);
     for (l of defLights) l.visible=true;
     
-    if (!groundBox.visible) { room.add(groundBox);groundBox.visible=true; }
+    if (groundBox&&!groundBox.visible) { room.add(groundBox);groundBox.visible=true; }
     var o=JSON.parse(d);
     if (Array.isArray(o)) {
       o={bricks:o,colors:['0x666666','0x333333','0xdddddd']};//260826
@@ -797,14 +801,14 @@ var Bricks={};
           ms.push(m);
         }
       }
-      if (o.cam0) camera.position.set(o.cam0.x,o.cam0.y,o.cam0.z);
-      if (o.cam1) controls.target.set(o.cam1.x,o.cam1.y,o.cam1.z);
+      if (o.cam0&&camera) camera.position.set(o.cam0.x,o.cam0.y,o.cam0.z);
+      if (o.cam1&&controls) controls.target.set(o.cam1.x,o.cam1.y,o.cam1.z);
       if (o.noDefaultLights) for (l of defLights) l.visible=false;
       userData=o.userData;
       if (userData) {
-        if (userData.noground) { room.remove(groundBox);groundBox.visible=false; }
+        if (userData.noground&&groundBox) { room.remove(groundBox);groundBox.visible=false; }
         if (userData.blockWalk) blockWalkInit(userData.blockWalk);
-        if (userData.clearColor) renderer.setClearColor(new THREE.Color(userData.clearColor));
+        if (userData.clearColor&&renderer) renderer.setClearColor(new THREE.Color(userData.clearColor));
       }
     }
     
@@ -884,9 +888,17 @@ var Bricks={};
     if (stats) stats.update();
     xrUtil.renderHud();
     
-    //---
-    renderer.render(scene,camera);
+    //let p=camera.position,t=controls.target;
+    //console.log('campos x:'+Conet.f4(p.x)+',y:'+Conet.f4(p.y)+',z:'+Conet.f4(p.z)
+    //  +' target x:'+Conet.f4(t.x)+',y:'+Conet.f4(t.y)+',z:'+Conet.f4(t.z)
+    //);//+' '
     
+    //---
+    if (renderPipeline)
+      renderPipeline.render();
+    else
+      renderer.render(scene,camera);
+    //...
   }
   function select(b,multisel) {
     brickPos(sel,0);
@@ -963,8 +975,15 @@ var Bricks={};
     
     init();
     scene=new THREE.Scene();
-    renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});
-    renderer.setClearColor(0x888888);
+    let gpu=false;
+    if (THREE.WebGLRenderer) {
+      renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});
+      renderer.setClearColor(0x888888);
+    } else {
+      renderer=new THREE.WebGPURenderer();//{preserveDrawingBuffer:true});
+      gpu=true;  
+      scene.background=new THREE.Color(0x888888);
+    }
     renderer.shadowMap.enabled=true;
     //renderer.shadowMap.type=THREE.BasicShadowMap;
     renderer.xr.enabled = true;
@@ -988,6 +1007,117 @@ var Bricks={};
     controls.rotateSpeed=0.4;
     //onsole.log(controls);
     
+    if (gpu) {
+    
+    				renderPipeline = new THREE.RenderPipeline( renderer );
+    
+    				const scenePass = pass( scene, camera );
+    				scenePass.setMRT( mrt( {
+    					output: output,
+    					diffuseColor: diffuseColor,
+    					normal: packNormalToRGB( normalView ),
+    					velocity: velocity
+    				} ) );
+    
+    				const scenePassColor = scenePass.getTextureNode( 'output' );
+    				const scenePassDiffuse = scenePass.getTextureNode( 'diffuseColor' ).toInspector( 'Diffuse Color' );
+    				const scenePassDepth = scenePass.getTextureNode( 'depth' ).toInspector( 'Depth', () => {
+    
+    					return scenePass.getLinearDepthNode();
+    
+    				} );
+    
+    				const scenePassNormal = scenePass.getTextureNode( 'normal' ).toInspector( 'Normal' );
+    				const scenePassVelocity = scenePass.getTextureNode( 'velocity' ).toInspector( 'Velocity' );
+    
+    				// bandwidth optimization
+    
+    				const diffuseTexture = scenePass.getTexture( 'diffuseColor' );
+    				diffuseTexture.type = THREE.UnsignedByteType;
+    
+    				const normalTexture = scenePass.getTexture( 'normal' );
+    				normalTexture.type = THREE.UnsignedByteType;
+    
+    				const sceneNormal = sample( ( uv ) => {
+    
+    					return unpackRGBToNormal( scenePassNormal.sample( uv ) );
+    
+    				} );
+    
+    				// gi
+    
+    				const giPass = ssgi( scenePassColor, scenePassDepth, sceneNormal, camera );
+    				giPass.sliceCount.value = 2;
+    				giPass.stepCount.value = 8;
+    
+    				// composite
+    
+    				const ao = giPass.getAONode().toInspector( 'SSGI.AO' );
+    				const gi = giPass.getGINode().toInspector( 'SSGI.GI' );
+    
+    				const compositePass = vec4( add( scenePassColor.rgb.mul( ao.r ), ( scenePassDiffuse.rgb.mul( gi.rgb ) ) ), scenePassColor.a );
+    				compositePass.name = 'Composite';
+    
+    				// traa
+    
+    				const traaPass = traa( compositePass, scenePassDepth, scenePassVelocity, camera );
+    				renderPipeline.outputNode = traaPass;
+    
+    				renderer.inspector=new Inspector();
+        //onsole.log(renderer.inspector);
+    
+    				const params = {
+    					output: 0
+    				};
+    
+    				const types = { Combined: 0, Direct: 3, AO: 1, GI: 2 };
+    
+    				const gui = renderer.inspector.createParameters( 'SSGI settings' );
+    				gui.add( params, 'output', types ).onChange( updatePostprocessing );
+    				gui.add( giPass.sliceCount, 'value', 1, 4, 1 ).name( 'slice count' );
+    				gui.add( giPass.stepCount, 'value', 1, 32, 1 ).name( 'step count' );
+    				gui.add( giPass.radius, 'value', 1, 25 ).name( 'radius' );
+    				gui.add( giPass.expFactor, 'value', 1, 3 ).name( 'exp factor' );
+    				gui.add( giPass.thickness, 'value', 0.01, 10 ).name( 'thickness' );
+    				gui.add( giPass.backfaceLighting, 'value', 0, 1 ).name( 'backface lighting' );
+    				gui.add( giPass.aoIntensity, 'value', 0, 4 ).name( 'AO intensity' );
+    				gui.add( giPass.giIntensity, 'value', 0, 100 ).name( 'GI intensity' );
+    				gui.add( giPass.useLinearThickness, 'value' ).name( 'use linear thickness' );
+    				gui.add( giPass.useScreenSpaceSampling, 'value' ).name( 'screen-space sampling' );
+    				gui.add( giPass, 'useTemporalFiltering' ).name( 'temporal filtering' ).onChange( updatePostprocessing );
+                                    renderer.inspector.hide();
+                                    //console.log(renderer.inspector);
+    
+    function updatePostprocessing( value ) {
+      
+      					if ( value === 1 ) {
+      
+      						renderPipeline.outputNode = vec4( vec3( ao ), 1 );
+      
+      					} else if ( value === 2 ) {
+      
+      						renderPipeline.outputNode = vec4( gi, 1 );
+      
+      					} else if ( value === 3 ) {
+      
+      						renderPipeline.outputNode = scenePassColor;
+      
+      					} else {
+      
+      						renderPipeline.outputNode = giPass.useTemporalFiltering ? traaPass : compositePass;
+      
+      					}
+      
+      					renderPipeline.needsUpdate = true;
+      
+      
+    }
+    
+    
+    
+    
+    }
+    
     room=new THREE.Group();scene.add(room);
     //let sc=0.1;lint*=sc*sc;room.scale.set(sc,sc,sc);
     
@@ -1006,7 +1136,8 @@ var Bricks={};
     
     let pl0,pl1;
     if (1) {
-    var l=new THREE.AmbientLight(0x555555),f=3;room.add(l);defLights.push(l);
+    var l,f=3;
+    l=new THREE.AmbientLight(0x555555);room.add(l);defLights.push(l);
     l=new THREE.PointLight(0xffffff,lint,0);l.position.set(-100*f,200*f,100*f);room.add(l);defLights.push(l);lights.push({light:l,intensity:1});
     l=pl0=new THREE.PointLight(0xffffff,lint,0);l.position.set(100*f,100*f,100*f);defLights.push(l);lights.push({light:l,intensity:1});
     l.castShadow=true;
@@ -1035,8 +1166,12 @@ var Bricks={};
       ,ondown:xrUtil.scaleSwitch({
         scaleCfg:[
           //{sc:0.0015,lint:0.000003*lint,bgop:0,flightSpeed:0.001,camPos:{x:0,y:0.24,z:1}   ,roomPos:{x:-0.48,y:0.99,z:-0.65}},
-          {sc:0.0007,lint:0.0000005*lint,bgop:0,flightSpeed:0.001,camPos:{x:0,y:0.24,z:1}   ,roomPos:{x:-0.48,y:0.99,z:-0.65}},
-          {sc:0.025 ,lint:0.001 *lint  ,bgop:1,flightSpeed:0.01 ,camPos:{x:0,y:2.2 ,z:14.7},roomPos:{x:2.43,y:3.38,z:-3.79}},
+          {sc:0.0007,lint:0.0000005*lint,bgop:0,flightSpeed:0.001
+             ,camPos:{x:0.0,y:0.1,z:0.4}//{x:0,y:0.24,z:1}   
+             ,conTar:{x:0,y:0,z:0},near:0.01,far:40
+             ,roomPos:{x:-0.48,y:0.99,z:-0.65}},
+          {sc:0.025 ,lint:0.001 *lint  ,bgop:1,flightSpeed:0.01 ,camPos:{x:0,y:2.2 ,z:14.7},roomPos:{x:2.43,y:3.38,z:-3.79
+             ,near:0.1,far:4000}},
         ]
         //,pl0:pl0,pl1:pl1
         ,bgMeshScale:100,noStartScfg:1,lights:lights})
@@ -1054,16 +1189,22 @@ var Bricks={};
     }
     xrUtil.onScaleSwitch=function(ps) {
       //---
-      //console.log(ps);//
+      //onsole.log(ps);//
       //onsole.log(ps.oroomsc+' -> '+ps.scfg.sc);
-      //onsole.log(lights);
+      //console.log(lights.length);
+      console.log(lights);
       for (let l of lights) {
-        if (l.light.distance==0) continue;
-        //onsole.log('dist0 '+l.light.distance);
-        l.light.distance=l.light.distance*ps.scfg.sc/ps.oroomsc;
-        //onsole.log('dist1 '+l.light.distance);
-        //onsole.log(l.light.intensity);
-        //l.light.intensity=0.5;
+        //if (l.light.distance==0) continue;
+        //l.light.distance=l.light.distance*ps.scfg.sc/ps.oroomsc;
+        ////onsole.log('dist0 '+l.light.distance);
+      
+        //260830 above switched light on arcsWalk off
+        if (l.distance==0) continue;
+        l.light.distance=l.distance*ps.scfg.sc;
+      
+        ////onsole.log('dist1 '+l.light.distance);
+        ////onsole.log(l.light.intensity);
+        ////l.light.intensity=0.5;
       }
       //...
     }
@@ -1080,6 +1221,8 @@ var Bricks={};
     
     
     animate();
+    
+    return {scene:scene};
     
     //...
   }
@@ -1686,36 +1829,49 @@ var Bricks={};
   
   function menuIconUpdate() {
     //---
-    
+    if (!renderer) return;
     let c=document.createElement('canvas');
     c.width=20;c.height=c.width;
     let ct=c.getContext('2d');
     ct.imageSmoothingQuality='high';
     ct.imageSmoothingEnabled=true;
-    ct.drawImage(renderer.domElement,0,0,c.width,c.height);
-    //ct.fillStyle='#0f0';ct.fillRect(0,0,10,20);
-    //onsole.log(renderer);
     
-    let isrc=c.toDataURL('image/png');//d.data;
-    //onsole.log(isrc.length);
-    //onsole.log(isrc);
+    let img=new Image();
+    let du=renderer.domElement.toDataURL('image/png');
+    img.onload=function() {
+      //---
+      //console.log('du.len='+du.length);
+      
+      ct.drawImage(img,0,0,c.width,c.height);
+      //ct.drawImage(renderer.domElement,0,0,c.width,c.height);  //doesnt work with webgpurenderer
+      ////ct.fillStyle='#0f0';ct.fillRect(0,0,10,20);
+      ////onsole.log(renderer);
+      
+      let isrc=c.toDataURL('image/png');//d.data;
+      //onsole.log(isrc.length);
+      //onsole.log(isrc);
+      
+      let m=Conet.lastLoadMenu;
+      //onsole.log(m);
+      
+      if (m.cfmo.isrc!=isrc) {
+        m.c2=new Image();
+        m.c2.src=isrc;
+        //onsole.log('paint.menuIconUpdate png.len='+isrc.length+' pixlen='+(c.width*c.height*3));
+        m.cfmo.isrc=isrc;
+        console.log('trying to do iconupdate '+m.cfmo.fn+' isrc.len='+isrc.length);
+        if (m.cfmo.fn.startsWith('ls:')) {
+          let k;
+          localStorage[k=('conet2i'+m.cfmo.fn.substr(3))]=isrc;
+          console.log('ls icon stored, key='+k);
+        } else
+          cfmenu.uploadFilenames();
+      } else console.log('bricks.menuIconUpdate: same src, no upload');
+      
+      //...
+    }
+    img.src=du;
     
-    let m=Conet.lastLoadMenu;
-    //onsole.log(m);
-    
-    if (m.cfmo.isrc!=isrc) {
-      m.c2=new Image();
-      m.c2.src=isrc;
-      //onsole.log('paint.menuIconUpdate png.len='+isrc.length+' pixlen='+(c.width*c.height*3));
-      m.cfmo.isrc=isrc;
-      console.log('trying to do iconupdate '+m.cfmo.fn);
-      if (m.cfmo.fn.startsWith('ls:')) {
-        let k;
-        localStorage[k=('conet2i'+m.cfmo.fn.substr(3))]=isrc;
-        console.log('ls icon stored, key='+k);
-      } else
-        cfmenu.uploadFilenames();
-    } else console.log('bricks.menuIconUpdate: same src, no upload');
     
     //...
   }
@@ -1738,32 +1894,32 @@ var Bricks={};
 
 
 //fr o,2
-//fr o,2,21
-//fr o,2,33
-//fr o,2,33,13
-//fr o,2,33,14
-//fr o,2,33,15
-//fr o,2,33,21
-//fr o,2,33,25
-//fr o,2,33,56
-//fr o,2,33,60
-//fr o,2,33,64
-//fr o,2,33,70
-//fr o,2,33,89
-//fr o,2,33,94
-//fr o,2,36
-//fr o,2,38
-//fr o,2,43
-//fr o,2,44
-//fr o,2,44,86
-//fr o,2,46,67
-//fr o,2,46,68
-//fr o,2,46,69
-//fr o,2,46,76,45
-//fr o,2,46,112
-//fr o,2,46,145
-//fr o,2,46,145,2
-//fr o,2,46,149
-//fr o,2,48
-//fr o,2,54
-//fr p,2,467
+//fr o,2,16
+//fr o,2,34
+//fr o,2,34,13
+//fr o,2,34,14
+//fr o,2,34,15
+//fr o,2,34,21
+//fr o,2,34,25
+//fr o,2,34,56
+//fr o,2,34,60
+//fr o,2,34,64
+//fr o,2,34,70
+//fr o,2,34,89
+//fr o,2,34,94
+//fr o,2,39
+//fr o,2,45,186
+//fr o,2,45,187
+//fr o,2,47
+//fr o,2,47,67
+//fr o,2,47,68
+//fr o,2,47,69
+//fr o,2,47,76,45
+//fr o,2,47,112
+//fr o,2,47,145
+//fr o,2,47,145,2
+//fr o,2,47,149
+//fr o,2,49
+//fr o,2,49,10
+//fr o,2,55
+//fr p,5,405

@@ -1,1 +1,1 @@
-[{"fn":"/three/lego/towerDarkBright2025.json"},{"fn":"lego/roof0.txt"},{"fn":"lego/test.txt"},{"fn":"lego/fortnite0.txt"},{"fn":"lego/marble0.txt"},{"fn":"lego/moreColors.txt"}]
+[{"fn":"/three/lego/towerDarkBright2025.json"},{"fn":"/three/lego/roof0.txt"},{"fn":"/three/lego/test.txt"},{"fn":"/three/lego/fortnite0.txt"},{"fn":"/three/lego/marble0.txt"},{"fn":"/three/lego/moreColors.txt"},{"fn":"/three/lego/arcsWalk.txt"}]

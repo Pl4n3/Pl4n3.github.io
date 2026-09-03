@@ -7,6 +7,7 @@
 <script src="/menu.js"></script>
 <script src="/anim/arrows/canvApps/audio.js"></script>
 <script src="/sound/mid/jsmidgen.js"></script>
+<script src="/util/mdiv.js"></script>
 <style>
 button { font-size:20px;margin-right:4px;margin-bottom:4px; }
 </style>
@@ -16,8 +17,8 @@ button { font-size:20px;margin-right:4px;margin-bottom:4px; }
 <script type="text/javascript">
 (function() {
   //---
-  let data,ta,canvas,CONTROL=0xb0,mpreset,mRibSel,svg,//control=pedal
-      na=[];
+  let data,ta,canvas,CONTROL=0xb0,mpreset,mRibSel,svg,//control=pedal,b0=176
+      na=[],startWithRibbon=false;
   
   function clear() {
     //---
@@ -146,7 +147,7 @@ button { font-size:20px;margin-right:4px;margin-bottom:4px; }
     b.innerHTML=sPlay;
     b.onclick=function() {
       //---
-      let s=this.innerHTML;
+      let s=this.innerHTML,t0=mRibSel.checked?35000:0;
       this.innerHTML=(s==sPlay)?sStop:sPlay;
       if (s==sStop) {
         canvAppsAudio.cancelQueue();
@@ -155,7 +156,7 @@ button { font-size:20px;margin-right:4px;margin-bottom:4px; }
         canvas.render();
         return;
       }
-      canvas.cursor.pos=0;
+      canvas.cursor.pos=0;//t0/1000;
       canvas.cursor.running=true;
       
       
@@ -176,8 +177,7 @@ button { font-size:20px;margin-right:4px;margin-bottom:4px; }
       if (a.length==0) return;
       let t=-a[0][0];
       //console.log(a);
-      let openNotes={};
-      let queue=[];
+      let openNotes={},queue=[];
       
       for (let b of a) {
         t+=b[0];
@@ -188,8 +188,10 @@ button { font-size:20px;margin-right:4px;margin-bottom:4px; }
           openNotes[b[2]]=undefined;
           let dt=t-h.t;  
           if (queue) {
+            //console.log(h.t);
+            if (h.t>t0)
             queue.push({sah:{pitch:b[2],preset:mpreset.ms//'gp'
-             ,when:h.t/1000,duration:dt/1000}});
+             ,when:(h.t-t0)/1000,duration:dt/1000}});
           } else {
       let f=440*Math.pow(2,(b[2]-49-24)/12),dt=t-h.t,v=h.v/100;
       setTimeout(function() {
@@ -213,6 +215,7 @@ button { font-size:20px;margin-right:4px;margin-bottom:4px; }
       //Sound.osc({a:[{"fr":[50,500],"v":0,"n":1},{"t":10,"v":1},{"t":200,"v":1},{"t":140,"v":0,"fr":[200,400]}]});
       //Sound.osc({a:[{f:400,v:1}]});
       
+      canvas.cursor.tpos=t0/t;
       canvas.cursor.tges=t;
       //...
     }
@@ -241,7 +244,7 @@ button { font-size:20px;margin-right:4px;margin-bottom:4px; }
     function() {
       //---
       let c=document.createElement('span');c.style.fontSize='12px';
-      let version='v.0.611 ';//FOLDORUPDATEVERSION
+      let version='v.0.642 ';//FOLDORUPDATEVERSION
       c.innerHTML=version;
       document.body.appendChild(c);
       let count=0;
@@ -308,8 +311,9 @@ button { font-size:20px;margin-right:4px;margin-bottom:4px; }
       
       let cursor={pos:0,running:0,tges:30000},ot=Date.now();
       svg={
-        //sel:{x:50,y:10,w:40,h:20},
-        sel:{x:-50,y:1,w:1,h:1},
+        sel:startWithRibbon
+          ?{x:50,y:10,w:40,h:20}
+          :{x:-50,y:1,w:1,h:1},
         scale:1
       };
       
@@ -507,7 +511,9 @@ button { font-size:20px;margin-right:4px;margin-bottom:4px; }
         //---
         let t=Date.now(),dt=t-ot;ot=t;
         if (!cursor.running) return;
-        cursor.pos+=sw*dpr*dt/cursor.tges;
+        cursor.tpos+=dt/cursor.tges;
+        cursor.pos=sw*dpr*cursor.tpos;
+        //cursor.pos+=sw*dpr*dt/cursor.tges;
         render();
         //onsole.log(23);
         //...
@@ -594,13 +600,14 @@ button { font-size:20px;margin-right:4px;margin-bottom:4px; }
           }
           openNotes[n]={t:t,v:b[3],openi:ni};  
         }
+        //onsole.log(openNotes);
         
         for (let n of Object.keys(openNotes)) {
           //console.log('still open:'+n);
           let h=openNotes[n];
           let dt=t-h.t+10;//t-h.t;  
           //if (dt<10) dt=10;
-          na.push({n:n,t:h.t,dt:dt});    
+          na.push({n:n,t:h.t,dt:dt,openi:h.openi});    
           n0=Math.min(n,n0);
           n1=Math.max(n,n1);
           t1=t+10;
@@ -648,8 +655,23 @@ button { font-size:20px;margin-right:4px;margin-bottom:4px; }
     //---init menu
     (function() {
       //---
-      let cfm=Conet.fileMenu({fn:'/sound/mid/recordfiles.txt',_noStartLoad:1,url:'fn',
-      loadf:function(fn) {
+      let cfm=Conet.fileMenu({fn:'/sound/mid/recordfiles.txt',_noStartLoad:1,url:'fn',grid:1,gridLs:'conet2',
+      
+      serialize:function(fn) {
+        //---
+        return serialize(data);
+        //...
+      }
+      
+      ,load:function(ps) {
+        //---
+        ta.value=ps.data;
+        data=JSON.parse(ps.data);
+        canvas.render();
+        //...
+      }
+      
+      ,loadf:function(fn) {
         //---
         Conet.download({fn:fn,f:function(v) {
           //---
@@ -739,10 +761,10 @@ button { font-size:20px;margin-right:4px;margin-bottom:4px; }
       
       Menu.init(
       [{s:'&#9776;',noTri:true,fs:1.4,pw:0.05,sub:[
-      cfm
+      cfm,cfm.fileGrid
       ,mpreset={s:'Preset',ms:'gp',autoval:2,sub:[{s:'gp'},{s:'guitar'},{s:'ahhs'},{s:'ohit'}]}
       ,{s:'Edit',sub:[
-      mRibSel={checkbox:1,r:1,ms:'Ribbon select',actionf:function() {
+      mRibSel={checkbox:1,r:1,ms:'Ribbon select',checked:startWithRibbon,actionf:function() {
         //---
         console.log('mRibSel.checked='+this.checked);
         if (!this.checked) {
@@ -827,26 +849,25 @@ button { font-size:20px;margin-right:4px;margin-bottom:4px; }
 
 </body>
 </html><script>
-//fr o,16
-//fr o,16,4
-//fr o,16,6
-//fr o,16,8
-//fr o,16,8,4,4
-//fr o,16,8,4,4,5
-//fr o,16,8,63
-//fr o,16,8,63,25
-//fr o,16,8,63,27
-//fr o,16,8,63,29
-//fr o,16,8,63,31
-//fr o,16,8,63,33
-//fr o,16,8,63,36
-//fr o,16,8,63,41
-//fr o,16,8,63,44
-//fr o,16,8,63,52
-//fr o,16,8,63,54
-//fr o,16,8,67
-//fr o,16,8,67,2
-//fr o,16,8,67,2,1
-//fr o,16,8,67,3
-//fr o,16,10
-//fr p,57,443
+//fr o,17
+//fr o,17,8
+//fr o,17,8,4,4
+//fr o,17,8,4,4,5
+//fr o,17,8,63,26
+//fr o,17,8,63,28
+//fr o,17,8,63,30
+//fr o,17,8,63,32
+//fr o,17,8,63,34
+//fr o,17,8,63,37
+//fr o,17,8,63,42
+//fr o,17,8,63,45
+//fr o,17,8,63,50
+//fr o,17,8,63,53
+//fr o,17,8,67
+//fr o,17,8,67,3
+//fr o,17,8,67,5
+//fr o,17,8,67,7
+//fr o,17,8,67,7,1
+//fr o,17,8,67,8
+//fr o,17,8,67,20
+//fr p,16,108

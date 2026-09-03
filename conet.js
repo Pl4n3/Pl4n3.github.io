@@ -1,7 +1,7 @@
 var Conet={};
 (function(Conet) {
   Conet.offline=false;
-  Conet.version='1.1076 ';//FOLDORUPDATEVERSION
+  Conet.version='1.1083 ';//FOLDORUPDATEVERSION
   Conet.files={};
   var uploads={},fns,logc,logs=[],//fn=>data,first
       logSameLineCount=0,ac,downloads={},PI=Math.PI;
@@ -431,11 +431,14 @@ var Conet={};
               let isrc=localStorage['conet2i'+fn];
               fn='ls:'+fn;
               let hn={fn:fn,isrc:isrc};
+              if (hn.fn==m.curFn) hn.background='#ffa';
               a.push(hn);
             }
           }
           //onsole.log(d);
         }
+        
+        //onsole.log('m.curFn='+m.curFn);
         
         for (let h of m.files) {
           cmax++;
@@ -656,9 +659,16 @@ var Conet={};
         
         //-----
         for (var i=m.files.length-1;i>=0;i--) {
-          if (m.files[i].fn.length>100) {
+          let fn0=m.files[i].fn;
+          if (fn0.length>100) {
             console.error('Conet.fileMenu: fn.len>100, splicing '+i);
             m.files.splice(i,1);
+          }
+          
+          if (p.fixPath) if (!fn0.startsWith('/')) {
+            fn0=p.fixPath+fn0;
+            console.log('fixed path: '+fn0);
+            m.files[i].fn=fn0;
           }
           //console.log('Conet.fileMenu files-i.len='+m.files[i].fn.length);
         }
@@ -1820,11 +1830,7 @@ var Conet={};
 )(Conet);
 console.log('Conet '+Conet.version);
 //fr o,1
-//fr o,1,6
-//fr o,1,8
-//fr o,1,9
 //fr o,1,9,33
-//fr o,1,10
 //fr o,1,10,29
 //fr o,1,10,31
 //fr o,1,13
@@ -1854,13 +1860,11 @@ console.log('Conet '+Conet.version);
 //fr o,1,14,1
 //fr o,1,21,4
 //fr o,1,50,13
-//fr o,1,55
 //fr o,1,55,5
 //fr o,1,64,3
 //fr o,1,65,2
 //fr o,1,117,2
 //fr o,1,117,11
-//fr o,1,121
 //fr o,1,121,8
 //fr o,1,121,8,32
 //fr o,1,121,10,0
@@ -1870,4 +1874,4 @@ console.log('Conet '+Conet.version);
 //fr o,1,124,1,16
 //fr o,1,124,9
 //fr o,1,129,6
-//fr p,27,481
+//fr p,2,224

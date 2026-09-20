@@ -3,25 +3,135 @@
 //
 (function() {
   //----
-  console.log('v0.169 ');//FOLDORUPDATEVERSION
+  console.log('v0.317 ');//FOLDORUPDATEVERSION
   let view=cano.view,posx,posy,scx,scy,width,height,dpr,
       objs=cano.objs,
       tweens=cano.tweens,
       arrowp=[[0,-0.3],[0.7,-0.3],[0.7,-0.6],[1,0],[0.7,0.6],
        [0.7,0.3],[0,0.3]//,[0,-0.3]
-      ];
+      ],speechVol=1;
+      
+  function addShapes(ps) {
+    //---
+    //onsole.log(ps);
+    let h={},t0;
+    for (let a of ps.a) {
+      let sh=a[0],shapes=ps.allShapes[sh],t=0;
+      for (let i=1;i<a.length;i++) {
+        let h0=a[i];
+        t+=h0.t;
+        shapes.push(h0);
+      }
+      h[sh]=1;
+      //onsole.log('t='+t);
+      if (t0===undefined) t0=t; else 
+      if (t0!=t) console.error('different times: '+t0+', '+t);
+    }
+    //for (let shapes of ps.allShapes) {
+    for (let sh of Object.keys(ps.allShapes)) {
+      if (h[sh]) continue;
+      ps.allShapes[sh].push({t:t0});
+      //onsole.log('added idle shape '+t0);
+    }
+    //...
+  }
+  
+  cano.addShapes=addShapes;
   
   function arrow(ps) {
     //---
+    //onsole.log('arrow');
     //
     let pos0=ps.pos0,pos1=ps.pos1;
     return {arrow:1,shapes:[{t:0,r:0,g:100,b:0,a:0.4,pos0:pos0,pos1:pos0},{t:ps.t,pos1:pos0},{t:10,pos1:pos1},{t:(ps.duration||60),pos1:pos1},{t:0,pos1:pos0},{t:40,pos1:pos0}]};
     //...
   }
   
+  cano.arrow=arrow;
+  
+  //--- adds an episode link to an mdiv, invoked by shapeScript
+  let episodes=(function() {
+    //---
+    let ui,a=[],self={},highlight;
+    function click() {
+      //---
+      //onsole.log(this);
+      for (let ep of a) if (ep.c===this) {
+        let range=document.getElementById('menuRange');
+        if (range) { range.value=ep.t;range.oninput(); }
+        else cano.mtime.value=ep.t;
+        //onsole.log(cano.mtime.range);
+        //cano.mtime.range.value=ep.t;
+        //cano.mtime.oninput(ep.t);
+        //onsole.log(ep);
+        break;
+      }
+      //...
+    }
+    
+    self.add=function(ps) {
+      //---
+      if (!ui) {
+        Conet.mdiv(ui={text:'<div style="font-size:1.5em;margin-bottom:4px;">Episodes</div>'
+      // +'<select>'
+      // +'<option value="cam0">Camera on Handling 0.</option>'
+      // +'<option value="camNon">No camera.</option>'
+      // +'</select>'
+        ,x:ps.x||50,y:ps.y||300,w:ps.w||450,h:ps.h||300
+        ,backgroundColor:'rgba(187,187,170,0.5)'
+        });
+        if (!ui.md.c) throw('mdiv.js must be preloaded for now.');
+        let sel=document.createElement('select');
+        let opt=document.createElement('option');
+        opt.value='';opt.innerHTML='cam0';opt.selected=1;
+        sel.appendChild(opt);
+        opt=document.createElement('option');
+        opt.value='cam1';opt.innerHTML='cam1';
+        sel.appendChild(opt);
+        opt=document.createElement('option');
+        opt.value='camNone';opt.innerHTML='No camera.';//opt.selected=1;
+        sel.appendChild(opt);
+        self.camSel=sel;
+        if (!ps.hideCamSel) {
+        ui.md.c.appendChild(sel);
+        }
+        this.text='';
+      }
+      //if (!ui.md.c) throw('mdiv.js must be preloaded for now.');
+      let c=document.createElement('div');
+      c.innerHTML=ps.text;this.text+=ps.text+'\n';
+      c.style.cursor='pointer';
+      c.onclick=click;
+      ui.md.c.appendChild(c);
+      ps.c=c;
+      a.push(ps);
+      //...
+    }
+    self.draw=function() {
+      //---
+      //console.log(cano.mtime.value);
+      let t=cano.mtime.value;
+      let eph;
+      for (let ep of a) {
+        if (ep.t<=t) eph=ep;
+        ep.c.style.backgroundColor=(ep.t<=t)
+          ?'rgba(180,180,180,0.7)'//,'#aaa'
+          :'rgba(210,210,180,0.7)';//'#cca';
+      }
+      if (eph===highlight) return;
+      if (highlight) highlight.c.style.fontWeight='normal';
+      highlight=eph;
+      if (highlight) highlight.c.style.fontWeight='bold';
+      //...
+    }
+    return self;
+    //...
+  }
+  )();
   
   function hookObj(o) {
     //---
+    console.log('hooking: shapes.js');
     //o.onselect=start;
     //o.onselect();
     
@@ -68,8 +178,31 @@
     //...
   }
   
+  function speak(sp) {
+    //---
+    let synth=speechSynthesis,utt=new SpeechSynthesisUtterance(sp.speech);
+    let voice=synth.getVoices()[6];
+    //console.log('speak '+(voice==utt.voice));
+    //console.log(voice);
+    //console.log(utt.voice);
+    
+    /*
+    synth.onvoiceschanged=function() {
+      //---
+      console.log('voice changed '+sp.speech);
+      //...
+    }
+    */
+    utt.voice=synth.getVoices()[6];
+    //utt.default=false;
+    synth.speak(utt);
+    //...
+  }
+  
   cano.handlerAdd('draw0',function(dt,ct) {
     //----
+    //onsole.log('shapes.draw tweens.length='+tweens.length);
+    
     
     posx=view.posx,posy=view.posy,scx=view.scx,scy=view.scy;
     width=view.width;height=view.height;dpr=view.dpr;
@@ -173,7 +306,7 @@
           }
           if (t>cano.mtime.range.max) {
             cano.mtime.range.max=t;
-            console.log('mtime.max='+t);
+            //onsole.log('mtime.max='+t);
           }
         }
         console.log('created intern.shapeDefs');
@@ -220,12 +353,22 @@
           let m=ct.measureText(sp.text),
               fist=ct.fillStyle;
           ct.fillStyle='rgba(200,200,200,0.5)';
-          ct.fillRect(x-m.width/2,y-h*0.55,m.width,h);
+          ct.fillRect(x-((sp.textAlign=='left')?0:m.width/2),y-h*0.55,m.width,h);
           ct.fillStyle=fist;
           
-          ct.textAlign='center';
+          ct.textAlign=sp.textAlign||'center';
           ct.textBaseline='middle';
           ct.fillText(sp.text,x,y);
+          if ((sp.fs>0)&&!sp.oldFs)
+            //if (sp.text.startsWith('1143')) 
+            if (sp.speech&&speechVol) {
+              speak(sp);
+              //let utt=new SpeechSynthesisUtterance(sp.speech);
+              //utt.voice=speechSynthesis.getVoices()[6];
+              //speechSynthesis.speak(utt);
+              //onsole.log(sp.text+' '+sp.fs);
+            }
+          sp.oldFs=sp.fs;
         }
         if (sd.poly) {
           //onsole.log('isPoly');
@@ -294,7 +437,8 @@
           //} catch (e) {}
           //onsole.log('draw img.');
         }
-        if (sd.view) {
+        //if ((episodes.camSel.value!='camNone')&&sd.view) {
+        if (episodes.camSel&&sd.view&&((sd.cam||'')==episodes.camSel.value)) {
           if (sp.x) view.posx=sp.x;
           if (sp.y) view.posy=sp.y;
           if (sp.scx) view.scx=sp.scx;
@@ -304,23 +448,37 @@
     }
     ct.textAlign='start';
     ct.textBaseline='alphabetic';
+    //console.log(episodes.camSel.value);
     
-    
+    episodes.draw();
     //...
   }
   );
   
   
   cano.addScriptHook(hookObj);
+  
+  window.shapesSpeech=function() {
+    //---
+    speechVol=speechVol?0:1;
+    console.log('speechVol='+speechVol);
+    //...
+  }
+  
+  Conet.consoleInfo({head:'shapes console functions',funcs:['shapesSpeech']});
+  if (window.speechSynthesis) window.speechSynthesis.getVoices();//so that voices are loaded
   //...
 }
 )();
 //...
 //fr o,3
 //fr o,3,9
-//fr o,3,12
-//fr o,3,12,21
-//fr o,3,14
-//fr o,3,16
-//fr o,3,16,168
-//fr p,94,98
+//fr o,3,13
+//fr o,3,18
+//fr o,3,18,2
+//fr o,3,18,4
+//fr o,3,18,5
+//fr o,3,21
+//fr o,3,25
+//fr o,3,33
+//fr p,44,101

@@ -1,11 +1,12 @@
 import * as THREE from 'three';
 import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFactory.js';
+//import { XRButton } from 'three/addons/webxr/XRButton.js';
 //import * as THREE from '/three/r124/build/three.module.js';
 //import { XRControllerModelFactory } from '/three/r124/examples/jsm/webxr/XRControllerModelFactory.js';
 let XrUtil={};
 (function(pself) {
   //---
-  let version='v.1.779 ',//FOLDORUPDATEVERSION
+  let version='v.1.793 ',//FOLDORUPDATEVERSION
       self=pself,ctrl0,ctrl1,gp0,gp1,camera,scene,room,vrPos,huds=[],hudMesh,
       hud={lines:['XrUtil '+version],cursor:{x:0.5,y:0.5,vis:false},buttons:[]},
       raycaster,INTERSECTED,hudCount=0,needDrawUi=false,input,uisc=2,gps,
@@ -201,7 +202,9 @@ let XrUtil={};
     
     
     let mode='immersive-vr',currentSession=null;
-    const sessionInit={optionalFeatures:['local-floor','bounded-floor','hand-tracking'
+    //document.body.appendChild( XRButton.createButton( renderer, { optionalFeatures: [ 'webgpu' ] } ) );
+    const sessionInit={optionalFeatures:[//'webgpu',
+      'local-floor','bounded-floor','hand-tracking'
       //,'layers' // doesnt start xr on quest3 with 124, maybe with 143?
       ]};
     async function onSessionStarted(session) {
@@ -777,7 +780,7 @@ let XrUtil={};
         if (l.light instanceof THREE.PointLight) {
           if (l.intensity===undefined) l.intensity=l.light.intensity;
           l.light.intensity=scfg.lint*l.intensity*1;
-          //onsole.log(l.light.intensity);
+          //onsole.log('pointlight.intensity='+l.light.intensity);
         } //else console.log(l.light);
       
         if (l.distance===undefined) l.distance=l.light.distance;
@@ -823,13 +826,15 @@ let XrUtil={};
         if (scfg.roomPos) {
           rp.x=scfg.roomPos.x;rp.y=scfg.roomPos.y;rp.z=scfg.roomPos.z;
         }
-        self.log('vrPos '+Conet.f4(vrPos.x)+' '+Conet.f4(vrPos.y)+' '+Conet.f4(vrPos.z));
-        if (oscfg) oscfg.vrPos={x:vrPos.x,y:vrPos.y,z:vrPos.z}
-        if (scfg.vrPos) {
-          vrPos.x=scfg.vrPos.x;vrPos.y=scfg.vrPos.y;vrPos.z=scfg.vrPos.z;
-        //  //blockWalk.tweens.push({o:vrPos,key:'x',t:t,value:scfg.vrPos.x});
-        //  //blockWalk.tweens.push({o:vrPos,key:'y',t:t,value:scfg.vrPos.y});
-        //  //blockWalk.tweens.push({o:vrPos,key:'z',t:t,value:scfg.vrPos.z});
+        if (vrPos) {
+          self.log('vrPos '+Conet.f4(vrPos.x)+' '+Conet.f4(vrPos.y)+' '+Conet.f4(vrPos.z));
+          if (oscfg) oscfg.vrPos={x:vrPos.x,y:vrPos.y,z:vrPos.z}
+          if (scfg.vrPos) {
+            vrPos.x=scfg.vrPos.x;vrPos.y=scfg.vrPos.y;vrPos.z=scfg.vrPos.z;
+          //  //blockWalk.tweens.push({o:vrPos,key:'x',t:t,value:scfg.vrPos.x});
+          //  //blockWalk.tweens.push({o:vrPos,key:'y',t:t,value:scfg.vrPos.y});
+          //  //blockWalk.tweens.push({o:vrPos,key:'z',t:t,value:scfg.vrPos.z});
+          }
         }
         //if (scfg.far) {
         //  camera.far=scfg.far;
@@ -843,7 +848,7 @@ let XrUtil={};
         if (oscfg) oscfg.camPos={x:cp.x,y:cp.y,z:cp.z};
         if (scfg.camPos) {
           cp.x=scfg.camPos.x;cp.y=scfg.camPos.y;cp.z=scfg.camPos.z;
-          //console.log('setting camPos '+cp.x+' '+cp.y+' '+cp.z);
+          //onsole.log('setting camPos '+cp.x+' '+cp.y+' '+cp.z);
           //blockWalk.tweens.push({o:cp,key:'x',t:t,value:scfg.camPos.x});
           //blockWalk.tweens.push({o:cp,key:'y',t:t,value:scfg.camPos.y});
           //blockWalk.tweens.push({o:cp,key:'z',t:t,value:scfg.camPos.z});
@@ -1220,31 +1225,31 @@ let XrUtil={};
 }
 )(XrUtil);
 export { XrUtil };
-//fr o,5
-//fr o,5,15
-//fr o,5,15,9
-//fr o,5,15,11
-//fr o,5,15,42
-//fr o,5,15,59
-//fr o,5,15,82
-//fr o,5,15,83
-//fr o,5,15,85
-//fr o,5,15,98
-//fr o,5,15,102
-//fr o,5,15,102,6
-//fr o,5,18,3
-//fr o,5,18,5
-//fr o,5,24,37
-//fr o,5,24,41
-//fr o,5,24,43
-//fr o,5,24,45
-//fr o,5,26
-//fr o,5,28
-//fr o,5,28,17
-//fr o,5,30,1
-//fr o,5,32,12
-//fr o,5,32,19
-//fr o,5,32,23
-//fr o,5,32,25
-//fr o,5,34
-//fr p,70,440
+//fr o,6
+//fr o,6,15
+//fr o,6,15,9
+//fr o,6,15,11
+//fr o,6,15,42
+//fr o,6,15,59
+//fr o,6,15,84
+//fr o,6,15,85
+//fr o,6,15,87
+//fr o,6,15,100
+//fr o,6,15,104
+//fr o,6,15,104,6
+//fr o,6,18,3
+//fr o,6,18,5
+//fr o,6,24,37
+//fr o,6,24,41
+//fr o,6,24,43
+//fr o,6,24,45
+//fr o,6,26
+//fr o,6,28
+//fr o,6,28,17
+//fr o,6,30,1
+//fr o,6,32,12
+//fr o,6,32,19
+//fr o,6,32,23
+//fr o,6,32,25
+//fr o,6,34
+//fr p,6,362

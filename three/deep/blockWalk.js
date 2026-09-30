@@ -1,5 +1,5 @@
 //----
-console.log('BlockWalk 1.455 ');//FOLDORUPDATEVERSION
+console.log('BlockWalk 1.520 ');//FOLDORUPDATEVERSION
 var BlockWalk=function(bwps) {
   //---
   const self=this,PI=Math.PI;
@@ -71,8 +71,36 @@ var BlockWalk=function(bwps) {
           let d=len2(x,z,uh.pos.x,uh.pos.z),md=r0+r1;
           if (d>=md*md) continue;
           d=Math.sqrt(d);
-          x=uh.pos.x+(x-uh.pos.x)*md/d;
-          z=uh.pos.z+(z-uh.pos.z)*md/d;
+          //onsole.log(u);
+          if (!(u.push&&uh.push)) {
+            x=uh.pos.x+(x-uh.pos.x)*md/d;
+            z=uh.pos.z+(z-uh.pos.z)*md/d;
+          } else {
+            let dx=(x-uh.pos.x)*md/d,
+                dz=(z-uh.pos.z)*md/d,
+                f=0.97;
+            //    f=uh.push-u.push;
+            //if (f<-0.5) f=0.9;
+            //else if (f>0.5) f=0.995;
+            //else f=0.97;
+            ////=((uh.push-u.push)+1)/2;
+            ////if (f<0) f=0;if (f>1) f=1;
+            ////f=0.925+f*0.07;
+            x=uh.pos.x+dx*f;z=uh.pos.z+dz*f;
+            
+            //let a=Math.PI/4+Math.atan2(dz,dx);
+            //f=1;
+            //let dx2=Math.sin(a)*f,
+            //    dz2=Math.cos(a)*f;
+            //console.log(Conet.f4(dx)+' '+Conet.f4(dz)+' - '+Conet.f4(dx2)+' '+Conet.f4(dz2));
+            //uh.pos.x-=dx2;
+            //uh.pos.z-=dz2;
+            
+            //uh.pos.x-=dx*(1-f);uh.pos.z-=dz*(1-f);//---todo:instead set uh.v
+            uh.pushdx=-dx*(1-f);
+            uh.pushdz=-dz*(1-f);
+            // set uh.speed, uh.keeptSpeedT
+          }
           //console.log('collr check');
         }
       }
@@ -264,6 +292,7 @@ var BlockWalk=function(bwps) {
   
   function steer(u,dt) {
     //---
+    //onsole.log(self.room?'room':'noroom');
     //let animMove=false,animTurn=false;
     u.speed=0;
     
@@ -573,9 +602,9 @@ var BlockWalk=function(bwps) {
     //if (!u) return;
     for (let u of units) {
       steer(u,dt);
-      if (u.speed!=0) {
-        const dx=u.speed*dt*Math.sin(u.a);
-        const dz=u.speed*dt*Math.cos(u.a);
+      if ((u.speed!=0)||u.pushdx||u.pushdz) {
+        const dx=u.speed*dt*Math.sin(u.a)+(u.pushdx||0);
+        const dz=u.speed*dt*Math.cos(u.a)+(u.pushdz||0);
         const m=u.o.meshes[0].tmesh;
         if (0) {
           m.position.x+=dx;
@@ -584,6 +613,8 @@ var BlockWalk=function(bwps) {
           if (!checkWalk(u,dx,0)) 
             checkWalk(u,0,dz);
         }
+        delete(u.pushdx);
+        delete(u.pushdz);
       }
     }
     Conet.calcTweens(self.tweens,dt);
@@ -599,9 +630,7 @@ var BlockWalk=function(bwps) {
 //...
 //fr o,2
 //fr o,2,11
-//fr o,2,15
 //fr o,2,15,4
-//fr o,2,21
 //fr o,2,23
 //fr o,2,30
-//fr p,38,301
+//fr p,2,145

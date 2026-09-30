@@ -1,7 +1,7 @@
 //--- bricks
 var Bricks={};
 (function (Bricks) {
-  let version='1.1763 ',stats,//FOLDORUPDATEVERSION
+  let version='1.1765 ',stats,//FOLDORUPDATEVERSION
       brickts={},bricktc=0,
       camera,controls,scene,renderer,sel,mmode,mmenu,mtype,mmultisel,
       mpos,mdim,click,raycaster,//=new THREE.Raycaster(),
@@ -1992,6 +1992,7 @@ var Bricks={};
       
       let m=Conet.lastLoadMenu;
       //onsole.log(m);
+      if (!m) return;
       
       if (m.cfmo.isrc!=isrc) {
         m.c2=new Image();
@@ -2033,8 +2034,6 @@ var Bricks={};
 
 
 //fr o,2
-//fr o,2,17
-//fr o,2,34
 //fr o,2,34,13
 //fr o,2,34,14
 //fr o,2,34,15
@@ -2046,15 +2045,8 @@ var Bricks={};
 //fr o,2,34,73
 //fr o,2,34,86
 //fr o,2,34,107
-//fr o,2,39
-//fr o,2,41
-//fr o,2,43
-//fr o,2,45
-//fr o,2,46
-//fr o,2,48
 //fr o,2,48,189
 //fr o,2,48,190
-//fr o,2,50
 //fr o,2,50,56
 //fr o,2,50,71
 //fr o,2,50,72
@@ -2064,6 +2056,7 @@ var Bricks={};
 //fr o,2,50,151
 //fr o,2,50,151,2
 //fr o,2,50,155
+//fr o,2,52
 //fr o,2,52,10
 //fr o,2,58
-//fr p,72,968
+//fr p,0,82

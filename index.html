@@ -420,6 +420,28 @@ body {
     //...
   }
   
+  else if (path=='bricks') /* */ {
+    //---
+    pathDescr='Brick editor, optional XR.';
+    cells=[
+    
+    {descr:'Brick editor (<a href="/anim/bricks/bricks.htm?fn=/three/lego/towerDarkBright2025.json">gpu-version</a>).',
+    link:'/three/bricks.htm?fn=/three/lego/towerDarkBright2025.json',
+    img:'/blog/hub/bricks.jpg',
+    date:'2023',
+    }
+    
+    ,{descr:'House with cave (<a href="/anim/bricks/bricks.htm?fn=/three/lego/2026/house1.json">gpu-version</a>).',
+    link:'/three/bricks.htm?fn=/three/lego/2026/house1.json',
+    img:'/blog/hub/bricks/house1.png',
+    date:'2026-09-30',
+    }
+    
+    ];
+    //...
+  }
+  
+  
   else /* */ {
     
     cells=[
@@ -429,6 +451,12 @@ body {
     date:'2026-07-15',
     img:'/blog/hub/spiderforest.jpg',
     threads:'https://www.threads.com/@pl4n3d/post/Daz_DpWEsxW',
+    },
+    
+    {descr:'<span style="font-size:0.7em;"><b>Autumn</b> 2026-09-30</span>',// spaeter mit link /photos
+    img:'/blog/hub/fotos/herbst2026.jpg',
+    //date:'2026-09-30',
+    twoRows:1,bgSize:'600px'
     },
     
     
@@ -528,8 +556,8 @@ body {
     twitter:'https://x.com/Pl4n3/status/1671209060488687621',
     }
     
-    ,{descr:'Brick editor (<a href="/anim/bricks/bricks.htm">gpu-version</a>).',
-    link:'/three/bricks.htm',
+    ,{descr:'Brick editor (<a href="/anim/bricks/bricks.htm?fn=/three/lego/towerDarkBright2025.json">gpu-version</a>, <a href="/index.html?path=bricks">/bricks</a>).',
+    link:'/three/bricks.htm?fn=/three/lego/towerDarkBright2025.json',
     img:'/blog/hub/bricks.jpg',
     date:'2023',
     }
@@ -614,10 +642,11 @@ body {
     //+'<img src="/canvas/paint/avatar.png" width=20 style="vertical-align:middle;"/>'
     +'<li>Subsites:'
     +' <a href="/index.html?path=blockbuild">BlockBuild</a>'
+    +', <a href="/index.html?path=bricks">Bricks</a>'
     +', <a href="/index.html?path=editxr">EditXr</a>'
+    +', <a href="/index.html?path=music">Music</a>'
     +', <a href="/index.html?path=turnbased">Turnbased</a>'
     +', <a href="/index.html?path=voxed">VoxelEdit</a>'
-    +', <a href="/index.html?path=music">Music</a>'
     //+'<br>'
     +'<li>'
     +'Comments appreciated:<br><a href="https://mastodon.social/@Pl4n3">Mastodon</a>'
@@ -698,7 +727,7 @@ body {
     st.background=sh;
     
     
-    st.backgroundSize='450px';
+    st.backgroundSize=c.bgSize||'450px';
     st.backgroundPosition=c.imgPos||'center center';
     
     //st.boxShadow='3px 3x 3px #111111';
@@ -722,7 +751,7 @@ body {
     });
   }
   
-  h.files.push({text:'Pl4n3 Hub Version 1.0.143 ',//FOLDORUPDATEVERSION
+  h.files.push({text:'Pl4n3 Hub Version 1.0.172 ',//FOLDORUPDATEVERSION
   draw:function(el) {
     //...
     let st=el.style;
@@ -765,7 +794,13 @@ body {
 //fr o,25
 //fr o,25,10
 //fr o,25,10,24
+//fr o,25,15
 //fr o,25,15,5
+//fr o,25,15,52
+//fr o,25,16
 //fr o,25,20
-//fr o,25,71
-//fr p,72,148
+//fr o,25,23
+//fr o,25,75
+//fr o,25,117
+//fr o,25,122
+//fr p,0,244

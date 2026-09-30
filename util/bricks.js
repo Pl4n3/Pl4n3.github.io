@@ -1,7 +1,7 @@
 //--- bricks
 var Bricks={};
 (function (Bricks) {
-  let version='1.1667 ',stats,//FOLDORUPDATEVERSION
+  let version='1.1763 ',stats,//FOLDORUPDATEVERSION
       brickts={},bricktc=0,
       camera,controls,scene,renderer,sel,mmode,mmenu,mtype,mmultisel,
       mpos,mdim,click,raycaster,//=new THREE.Raycaster(),
@@ -12,7 +12,7 @@ var Bricks={};
       userData,groundBox,clock,tsd,
       blockWalk,unitPlayer,defLights=[],render0,
       lint=1,xrUtil,room,lights=[],mScale,meditable,cfmenu,
-      renderPipeline;
+      renderPipeline,scaleCfg,vrPos;
   const PI=Math.PI;
   
   //onsole.log('Brick Construction Tool, Version '+version);
@@ -430,7 +430,7 @@ var Bricks={};
     Menu.cpy=0.07;
     var loadMs=false;
     let cfm=Conet.fileMenu({fn:'/three/lego/files.txt',defFn:'/three/lego/test0.txt',url:'fn',noStartLoad:url.data||url.gen,loadMs:loadMs,loadList:1,
-      grid:1,gridLs:'conet2',serialize:serialize,//fixPath:'/three/',
+      grid:{x:140,y:60},gridLs:'conet2',serialize:serialize,//fixPath:'/three/',
     load:function(ps) {
       //---
       parseLoad(ps.data);
@@ -480,6 +480,9 @@ var Bricks={};
     (loadMs?cfm.sub:[cfm]).concat([
     
     cfm.fileGrid,
+    
+    {s:'Edit',sub:[
+    
     
     {s:'ColorIndex',r:1,actionf:function() {
       var col=(sel.col+1)%ms.length;
@@ -587,20 +590,64 @@ var Bricks={};
     
     
     
-    {s:'Del Brick',r:1,keys:[46],ms:'key: del',actionf:function() {
+    {s:'Del Bricks',r:1,keys:[46],ms:'key: del',actionf:function() {
       if (bricks.length<2) return;
-      var i=bricks.indexOf(sel);
-      room.remove(sel.mesh);
-      bricks.splice(i,1);
-      if (i==bricks.length) i--;
-      sel=bricks[i];
+      
+      if (1) {
+        for (let j=sels.length-1;j>=0;j--) {
+          let b=sels[j];
+          unselect(j);
+          let i=bricks.indexOf(b);
+          room.remove(b.mesh);
+          bricks.splice(i,1);
+        }
+        sel=undefined;
+      } else {
+        let i=bricks.indexOf(sel);
+        room.remove(sel.mesh);
+        bricks.splice(i,1);
+        if (i==bricks.length) i--;
+        sel=bricks[i];
+      }
+      
       Menu.ms(mmenu,bricks.length+' bricks');
+    }
+    }
+    
+    ]}
+    ,
+    
+    {s:'Select',sub:[
+    
+    mmultisel={s:Menu.soff,ms:'multi select',checkbox:1,r:1},
+    
+    {s:'All',actionf:function() {
+      //---
+      //Conet.alert('n/i');
+      for (let b of bricks) select(b,true);
+      //...
     }
     },
     
-    {s:'Config',ms:'Version '+version,sub:[
+    {s:'Invert',actionf:function() {
+      //---
+      //Conet.alert('n/i');
+      for (let b of bricks) {
+        let i=sels.indexOf(b);
+        if (i==-1) 
+          select(b,true);
+        else
+          unselect(i);
+      }
+      //...
+    }
+    }
     
-    mmultisel={s:Menu.soff,ms:'multi select',checkbox:1,r:1},
+    
+    ]},
+    
+    
+    {s:'Config',ms:'Version '+version,sub:[
     
     {ms:'multi mesh',checkbox:1,checked:multi,
     actionf:function() {
@@ -628,20 +675,27 @@ var Bricks={};
     }
     }
     
-    ]},
-    
-    {s:'Rotate',actionf:function() {
+    ,{s:'Rotate',actionf:function() {
       controls.autoRotate=!controls.autoRotate;//...
     }
     },
     
     {s:'Clear',actionf:clear},
     {s:'Generate',ms:'amazing maze',r:1,actionf:legoGenMaze}
+    
+    
+    
+    ]},
+    
+    xrUtil.menuXr,
+    meditable={ms:'Editable',checkbox:1,checked:1,r:1},
+    
+    
     ])},
     
     
-    xrUtil.menuXr,
-    meditable={ms:'Editable',checkbox:1,checked:1},
+    //xrUtil.menuXr,
+    //meditable={ms:'Editable',checkbox:1,checked:1},
     
     //mmode={s:'Mode',ms:'Position',autoval:2,sub:[{s:'Position',r:1},{s:'Dimension',r:1},{s:'Select',r:1}]},
     {s:'\u2190',px:lbx0    ,py:by0+dy      ,pw:lbw,ph:lbw,ydown:true,fs:1.4,actionf:menuArrow},
@@ -732,6 +786,7 @@ var Bricks={};
   }
   function onClick(e) {
     //onsole.log(e);
+    //onsole.log('onClick');
     click=new THREE.Vector2(2*e.clientX/window.innerWidth-1,-2*e.clientY/window.innerHeight+1);
     //console.log(click);
   }
@@ -766,7 +821,7 @@ var Bricks={};
   function brickLoaded(v) {
     var o=JSON.parse(v),
         a=[o.pa,o.meshes[0].fa];
-    console.log('brickLoaded ');
+    //onsole.log('brickLoaded ');
     var t=this.bt;
     //t=t.substr(0,t.length-1);
     brickts[t]={a:a,fn:this.fn};
@@ -809,6 +864,15 @@ var Bricks={};
         if (userData.noground&&groundBox) { room.remove(groundBox);groundBox.visible=false; }
         if (userData.blockWalk) blockWalkInit(userData.blockWalk);
         if (userData.clearColor&&renderer) renderer.setClearColor(new THREE.Color(userData.clearColor));
+        let v;
+        if ((v=userData.editable)!==undefined) Menu.setChecked(meditable,v);
+        if ((v=userData.scaleCfg)!==undefined) {
+          //onsole.log(JSON.stringify(scaleCfg));
+          for (let i=0;i<v.length;i++) if (v[i]) Conet.hcopy(v[i],scaleCfg[i]);
+          //onsole.log(JSON.stringify(scaleCfg));
+          //onsole.log('set scaleCfg params nao!!!1');
+        }
+        if ((v=userData.scaleOnLoad)!=undefined) if (XrUtil.scfg!==scaleCfg[v]) mScale.ondown();
       }
     }
     
@@ -888,10 +952,12 @@ var Bricks={};
     if (stats) stats.update();
     xrUtil.renderHud();
     
-    //let p=camera.position,t=controls.target;
-    //console.log('campos x:'+Conet.f4(p.x)+',y:'+Conet.f4(p.y)+',z:'+Conet.f4(p.z)
-    //  +' target x:'+Conet.f4(t.x)+',y:'+Conet.f4(t.y)+',z:'+Conet.f4(t.z)
-    //);//+' '
+    if (0) {
+    let p=camera.position,t=controls.target;
+    console.log('campos x:'+Conet.f4(p.x)+',y:'+Conet.f4(p.y)+',z:'+Conet.f4(p.z)
+      +' target x:'+Conet.f4(t.x)+',y:'+Conet.f4(t.y)+',z:'+Conet.f4(t.z)
+    );//+' '
+    }
     
     //---
     if (renderPipeline)
@@ -900,19 +966,30 @@ var Bricks={};
       renderer.render(scene,camera);
     //...
   }
+  
+  function unselect(i) {
+    //---
+    let bh=sels[i];
+    brickPos(bh,0);
+    if (bh.omaterial) { bh.mesh.material=bh.omaterial;delete(bh.omaterial); }
+    sels.splice(i,1);
+    //...
+  }
+  
   function select(b,multisel) {
-    brickPos(sel,0);
+    if (sel) brickPos(sel,0);
     sel=b;Menu.ms(mtype,sel.t);
     Conet.log('Selected '+sel.x+','+sel.y+','+sel.z+' '+sel.w+','+sel.h+','+sel.b);
-    console.log(sel);
+    //onsole.log(sel);
     
     if (!multisel) {
       for (var i=sels.length-1;i>=0;i--) {
-        let bh=sels[i];
-        brickPos(bh,0);
-        if (bh.omaterial) { bh.mesh.material=bh.omaterial;delete(bh.omaterial); }
+        unselect(i);
+        //let bh=sels[i];
+        //brickPos(bh,0);
+        //if (bh.omaterial) { bh.mesh.material=bh.omaterial;delete(bh.omaterial); }
       }
-      sels.length=0;
+      //sels.length=0;
     } else if (sels.indexOf(b)!=-1) return;
     sels.push(b);
     if (!b.omaterial) b.omaterial=b.mesh.material;
@@ -929,6 +1006,7 @@ var Bricks={};
       +'},"cam1":{"x":'+Conet.f4(p1.x)+',"y":'+Conet.f4(p1.y)+',"z":'+Conet.f4(p1.z)+'},\n';
       
     if (!defLights[0].visible) s+='"noDefaultLights":1,\n';
+    //s+='"editable":'+(meditable.checked?1:0)+',\n';
     
     var a=[];
     for (var k in brickts) if (brickts.hasOwnProperty(k)) a.push(k);
@@ -1120,7 +1198,7 @@ var Bricks={};
     
     room=new THREE.Group();scene.add(room);
     //let sc=0.1;lint*=sc*sc;room.scale.set(sc,sc,sc);
-    
+    //room.matrixAutoUpdate=false;
     
     var ca=[0x666666,0x333333,0xf0f000,0x90f000,0x00f000,0x009090,0x0030d0];
     for (var i=0;i<ca.length;i++) {
@@ -1156,15 +1234,17 @@ var Bricks={};
     container.appendChild(el); }
     
     xrUtil=XrUtil;
+    vrPos=new THREE.Vector3(0,0,0);
     xrUtil.init({
       scene:scene,renderer:renderer,camera:camera,room:room,controls:controls,pointers:1,
-      sculpt:1,
+      sculpt:1,vrPos:vrPos
       });
     xrUtil.initHud();
+    //let o7;
     xrUtil.hud.buttons=[
     mScale={s:'Scale',x:0.05,y:0.5,w:0.55,h:0.1
       ,ondown:xrUtil.scaleSwitch({
-        scaleCfg:[
+        scaleCfg:scaleCfg=[
           //{sc:0.0015,lint:0.000003*lint,bgop:0,flightSpeed:0.001,camPos:{x:0,y:0.24,z:1}   ,roomPos:{x:-0.48,y:0.99,z:-0.65}},
           {sc:0.0007,lint:0.0000005*lint,bgop:0,flightSpeed:0.001
              ,camPos:{x:0.0,y:0.1,z:0.4}//{x:0,y:0.24,z:1}   
@@ -1178,6 +1258,7 @@ var Bricks={};
     }
     
     ];
+    //console.log(o7);
     xrUtil.log('Bricks '+version);
     xrUtil.onSessionStarted=function() {
       //---
@@ -1192,7 +1273,7 @@ var Bricks={};
       //onsole.log(ps);//
       //onsole.log(ps.oroomsc+' -> '+ps.scfg.sc);
       //console.log(lights.length);
-      console.log(lights);
+      //onsole.log(lights);
       for (let l of lights) {
         //if (l.light.distance==0) continue;
         //l.light.distance=l.light.distance*ps.scfg.sc/ps.oroomsc;
@@ -1304,6 +1385,10 @@ var Bricks={};
     if (!ps.noAttack) blockWalk.tsd1=tsd[1];
     blockWalk.xrUtil=xrUtil;//250101 reactivated
     blockWalk.camera=camera;
+    
+    //room.matrixAutoUpdate=false;
+    //console.log(room);
+    blockWalk.room=room;
     //blockWalk.speed=0.15;
     
     function bbdraw(bb) {
@@ -1688,7 +1773,9 @@ var Bricks={};
     else 
       Menu.roots[0].sub.push(mgen);
       
+    let mRotRoom;
     Menu.roots[0].sub.push(Menu.initMenu(mIsoView={checkbox:1,r:1,ms:'Iso view',checked:1}));
+    Menu.roots[0].sub.push(Menu.initMenu(mRotRoom={checkbox:1,r:1,ms:'Rotate room',checked:0}));
     
     let dy=0.2;
     Menu.roots.push(
@@ -1754,6 +1841,58 @@ var Bricks={};
         let u=unitPlayer;
         
         if (!u) return;
+        
+        
+        let unit0=u;
+        if (mRotRoom.checked&&unit0) {//&&!roomMatrix) {
+          //onsole.log('room-set');
+          const p=unit0.m.position,sc=room.scale.x,move0=false;
+          let x=-p.x*sc,
+              y=-p.y*sc,//-0.05*sc,
+              z=-p.z*sc,
+              a=Math.PI-unit0.o.ay;
+          let f=1//(room.scale.x-scaleCfg[0].sc)/(scaleCfg[1].sc-scaleCfg[0].sc)
+            ,f1=1-f;
+          //onsole.log('room-set f='+f);
+          //if (blockWalk.room) {
+            let a0=-a,
+                x0=x*Math.cos(a0)-z*Math.sin(a0),
+                z0=x*Math.sin(a0)+z*Math.cos(a0);
+            x=x0*f +(move0?x*f1:0);
+            y=y*f  +(move0?y*f1:0);
+            z=z0*f +(move0?z*f1:0);
+            room.rotation.y=f*a;
+          //} else 
+          //  room.rotation.y=0;
+          room.position.set(
+            x              +vrPos.x,
+            y-0.05*sc      +vrPos.y,
+            //-p.y*sc-0.05*sc+vrPos.y,
+            z              +vrPos.z);
+          //room.rotation.y=a;
+          
+          //room.quaternion.setFromEuler(room.rotation,false);
+          //room.matrix.compose(room.quaternion,room.position,room.scale);
+          //room.matrix.compose(room.position,room.quaternion,room.scale);
+          //room.matrixWorldNeedsUpdate=true;
+          
+          room.updateMatrix();
+        }
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         //console.log(u.pos.x);
         //check for exit area
         //onsole.log(Conet.f4(u.pos.x)+' '+Conet.f4(u.pos.y)+' '+Conet.f4(u.pos.z));
@@ -1894,32 +2033,37 @@ var Bricks={};
 
 
 //fr o,2
-//fr o,2,16
+//fr o,2,17
 //fr o,2,34
 //fr o,2,34,13
 //fr o,2,34,14
 //fr o,2,34,15
 //fr o,2,34,21
 //fr o,2,34,25
-//fr o,2,34,56
-//fr o,2,34,60
-//fr o,2,34,64
-//fr o,2,34,70
-//fr o,2,34,89
-//fr o,2,34,94
+//fr o,2,34,59
+//fr o,2,34,63
+//fr o,2,34,67
+//fr o,2,34,73
+//fr o,2,34,86
+//fr o,2,34,107
 //fr o,2,39
-//fr o,2,45,186
-//fr o,2,45,187
-//fr o,2,47
-//fr o,2,47,67
-//fr o,2,47,68
-//fr o,2,47,69
-//fr o,2,47,76,45
-//fr o,2,47,112
-//fr o,2,47,145
-//fr o,2,47,145,2
-//fr o,2,47,149
-//fr o,2,49
-//fr o,2,49,10
-//fr o,2,55
-//fr p,5,405
+//fr o,2,41
+//fr o,2,43
+//fr o,2,45
+//fr o,2,46
+//fr o,2,48
+//fr o,2,48,189
+//fr o,2,48,190
+//fr o,2,50
+//fr o,2,50,56
+//fr o,2,50,71
+//fr o,2,50,72
+//fr o,2,50,73
+//fr o,2,50,80,45
+//fr o,2,50,116
+//fr o,2,50,151
+//fr o,2,50,151,2
+//fr o,2,50,155
+//fr o,2,52,10
+//fr o,2,58
+//fr p,72,968

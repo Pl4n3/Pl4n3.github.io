@@ -441,6 +441,32 @@ body {
     //...
   }
   
+  else if (path=='photos') /* */ {
+    //---
+    pathDescr='Photos.';
+    cells=[
+    
+    {descr:'<span style="font-size:0.7em;"><a href="/blog/hub/fotos/2026grass.jpg" style="text-decoration:none;"><b>Grass</b> 2026-10-03</a></span>',// spaeter mit link /photos
+    //img:'/blog/hub/fotos/herbst2026.jpg',
+    img:'/blog/hub/fotos/2026grass.jpg',
+    //date:'2026-09-30',
+    //twoRows:1,
+    bgSize:'600px'
+    },
+    
+    
+    {descr:'<span style="font-size:0.7em;"><a href="/blog/hub/fotos/herbst2026.jpg" style="text-decoration:none;"><b>Parthenocissus</b> 2026-09-30</a></span>',// spaeter mit link /photos
+    img:'/blog/hub/fotos/herbst2026.jpg',
+    //date:'2026-09-30',
+    //twoRows:1,
+    bgSize:'600px'
+    }
+    
+    
+    ];
+    
+    //...
+  }
   
   else /* */ {
     
@@ -453,8 +479,9 @@ body {
     threads:'https://www.threads.com/@pl4n3d/post/Daz_DpWEsxW',
     },
     
-    {descr:'<span style="font-size:0.7em;"><b>Autumn</b> 2026-09-30</span>',// spaeter mit link /photos
-    img:'/blog/hub/fotos/herbst2026.jpg',
+    {descr:'<a href="/index.html?path=photos" style="font-size:0.7em;">/photos</a>',// spaeter mit link /photos
+    //img:'/blog/hub/fotos/herbst2026.jpg',
+    img:'/blog/hub/fotos/2026grass.jpg',
     //date:'2026-09-30',
     twoRows:1,bgSize:'600px'
     },
@@ -645,6 +672,7 @@ body {
     +', <a href="/index.html?path=bricks">Bricks</a>'
     +', <a href="/index.html?path=editxr">EditXr</a>'
     +', <a href="/index.html?path=music">Music</a>'
+    +', <a href="/index.html?path=photos">Photos</a>'
     +', <a href="/index.html?path=turnbased">Turnbased</a>'
     +', <a href="/index.html?path=voxed">VoxelEdit</a>'
     //+'<br>'
@@ -751,7 +779,7 @@ body {
     });
   }
   
-  h.files.push({text:'Pl4n3 Hub Version 1.0.172 ',//FOLDORUPDATEVERSION
+  h.files.push({text:'Pl4n3 Hub Version 1.0.191 ',//FOLDORUPDATEVERSION
   draw:function(el) {
     //...
     let st=el.style;
@@ -799,8 +827,9 @@ body {
 //fr o,25,15,52
 //fr o,25,16
 //fr o,25,20
-//fr o,25,23
-//fr o,25,75
-//fr o,25,117
-//fr o,25,122
-//fr p,0,244
+//fr o,25,22
+//fr o,25,24
+//fr o,25,77
+//fr o,25,119
+//fr o,25,124
+//fr p,17,242
